@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "node build.js && node build-auth-patch.js && node build-step2-patch.js",
+    "build": "node build.js && node build-auth-patch.js",
     "start": "python3 -m http.server 5173"
   },
   "devDependencies": {}
