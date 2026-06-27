@@ -4,13 +4,13 @@ function cleanCardTitle(value) {
 }
 function clearTitleFit(card) {
   if (!card) return;
-  card.classList.remove('title-fit-1', 'title-fit-2', 'title-fit-3');
+  card.classList.remove('title-fit-1', 'title-fit-2', 'title-fit-3', 'title-fit-4');
 }
 function fitOneTitle(title) {
   const card = title.closest('.card');
   if (!card) return;
   clearTitleFit(card);
-  const steps = ['', 'title-fit-1', 'title-fit-2', 'title-fit-3'];
+  const steps = ['', 'title-fit-1', 'title-fit-2', 'title-fit-3', 'title-fit-4'];
   for (const step of steps) {
     clearTitleFit(card);
     if (step) card.classList.add(step);
@@ -22,22 +22,36 @@ function fitCardTitles(root = document) {
     root.querySelectorAll('.card .ctop strong').forEach(fitOneTitle);
   });
 }
+function scheduleTitleFit(root = document) {
+  fitCardTitles(root);
+  setTimeout(() => fitCardTitles(root), 80);
+  setTimeout(() => fitCardTitles(root), 260);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitCardTitles(root)).catch(() => {});
+}
 function injectTitleSizingStyles() {
   if (document.getElementById('ctcgTitleSizingStyles')) return;
   const style = document.createElement('style');
   style.id = 'ctcgTitleSizingStyles';
   style.textContent = `
-.card{container-type:inline-size;--titleScale:1}.card.title-fit-1{--titleScale:.9}.card.title-fit-2{--titleScale:.8}.card.title-fit-3{--titleScale:.7}.card .ctop{min-width:0!important}.card .ctop strong{display:block!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1!important}
-.card .ctop strong{font-size:clamp(calc(.68rem * var(--titleScale)),calc(8.8cqw * var(--titleScale)),calc(1.28rem * var(--titleScale)))!important;letter-spacing:calc(-.045em - ((1 - var(--titleScale)) * .09em))!important}
-.grid .card .ctop strong,.battle .card .ctop strong{font-size:clamp(calc(.58rem * var(--titleScale)),calc(7cqw * var(--titleScale)),calc(.92rem * var(--titleScale)))!important;max-width:58%!important}
+.card{container-type:inline-size;--titleScale:1}.card.title-fit-1{--titleScale:.92}.card.title-fit-2{--titleScale:.84}.card.title-fit-3{--titleScale:.76}.card.title-fit-4{--titleScale:.68}.card .ctop{min-width:0!important}.card .ctop strong{display:block!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1!important}
+.card .ctop strong{font-size:clamp(calc(.68rem * var(--titleScale)),calc(8.8cqw * var(--titleScale)),calc(1.28rem * var(--titleScale)))!important;letter-spacing:calc(-.045em - ((1 - var(--titleScale)) * .08em))!important;max-width:calc(100% - 4.6rem)!important}
+.grid .card .ctop strong{font-size:clamp(calc(.58rem * var(--titleScale)),calc(7cqw * var(--titleScale)),calc(.92rem * var(--titleScale)))!important;max-width:58%!important}
+.battle .card .ctop strong{font-size:clamp(calc(.86rem * var(--titleScale)),calc(5.7cqw * var(--titleScale)),calc(1.42rem * var(--titleScale)))!important;max-width:calc(100% - 5.2rem)!important}
 .preview .card.bigcard .ctop strong,.cardDetailPreview .card.bigcard .ctop strong{font-size:clamp(calc(.86rem * var(--titleScale)),calc(5.7cqw * var(--titleScale)),calc(1.34rem * var(--titleScale)))!important;max-width:calc(100% - 4.75rem)!important}
-`;document.head.appendChild(style);
+`;
+  document.head.appendChild(style);
 }
 injectTitleSizingStyles();
 const titleLimitCardHtml = cardHtml;
 cardHtml = function(c, big = false) {
-  if (c && typeof c === 'object') c = { ...c, title: cleanCardTitle(c.title) };
-  return titleLimitCardHtml(c, big);
+  let titleValue = '';
+  if (c && typeof c === 'object') {
+    titleValue = cleanCardTitle(c.title || 'Untitled');
+    c = { ...c, title: titleValue };
+  }
+  let html = titleLimitCardHtml(c, big);
+  if (titleValue) html = html.replace(/(<div class="ctop"><strong>)([\s\S]*?)(<\/strong>)/, `$1${h(titleValue)}$3`);
+  return html;
 };
 function setupTitleLimit() {
   const input = document.getElementById('ct');
@@ -56,7 +70,7 @@ function setupTitleLimit() {
     const previewTitle = document.querySelector('.preview .card .ctop strong');
     const shown = next || fallback;
     if (previewTitle) previewTitle.textContent = shown;
-    fitCardTitles(document.querySelector('.preview') || document);
+    scheduleTitleFit(document.querySelector('.preview') || document);
   }
   input.addEventListener('input', update);
   update();
@@ -66,6 +80,12 @@ bind = function() {
   titleLimitBind();
   injectTitleSizingStyles();
   setupTitleLimit();
-  fitCardTitles();
+  scheduleTitleFit();
 };
-window.addEventListener('resize', () => fitCardTitles());
+window.addEventListener('resize', () => scheduleTitleFit());
+const titleFitObserver = new MutationObserver(mutations => {
+  if (mutations.some(m => Array.from(m.addedNodes || []).some(n => n.nodeType === 1 && (n.matches?.('.card,.cardDetailBackdrop') || n.querySelector?.('.card'))))) {
+    scheduleTitleFit();
+  }
+});
+titleFitObserver.observe(document.body, { childList: true, subtree: true });
