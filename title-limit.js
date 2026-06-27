@@ -1,4 +1,5 @@
 const CARD_TITLE_LIMIT = 25;
+const FLAVOR_TAGS = ['Champion','Guardian','Trickster','Wildcard','Support','Brawler','Oracle','Commander','Menace','Artisan','Mystic'];
 function cleanCardTitle(value) {
   return String(value || '').slice(0, CARD_TITLE_LIMIT);
 }
@@ -27,6 +28,18 @@ function scheduleTitleFit(root = document) {
   setTimeout(() => fitCardTitles(root), 80);
   setTimeout(() => fitCardTitles(root), 260);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitCardTitles(root)).catch(() => {});
+}
+function setupFlavorTags() {
+  const select = document.getElementById('tag');
+  if (!select) return;
+  const current = FLAVOR_TAGS.includes(state.draft.tag) ? state.draft.tag : FLAVOR_TAGS[0];
+  if (state.draft.tag !== current) {
+    state.draft.tag = current;
+    queueMeta();
+  }
+  const html = FLAVOR_TAGS.map(t => `<option ${t === current ? 'selected' : ''}>${h(t)}</option>`).join('');
+  if (select.innerHTML !== html) select.innerHTML = html;
+  select.value = current;
 }
 function injectTitleSizingStyles() {
   if (document.getElementById('ctcgTitleSizingStyles')) return;
@@ -79,6 +92,7 @@ const titleLimitBind = bind;
 bind = function() {
   titleLimitBind();
   injectTitleSizingStyles();
+  setupFlavorTags();
   setupTitleLimit();
   scheduleTitleFit();
 };
