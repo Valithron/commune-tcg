@@ -6,9 +6,9 @@ A private character-based trading card game prototype.
 
 Cloudflare-backed frontend with a seven-account vault gate. Each Commune member has a fixed account and creates a 4-digit Vault PIN the first time they enter.
 
-Player vaults are separated server-side. Commune Cash, token balances, cards, equipped cards, draft state, and battle log are scoped to the signed-in account. Uploaded card images are stored in R2. The browser still keeps a per-user `localStorage` cache/fallback, but D1/R2 are the deployed source of truth.
+Player vaults are separated server-side. Commune Cash, token balances, cards, equipped cards, draft state, and battle log are scoped to the signed-in account. Uploaded card images are stored in R2. D1/R2 are the deployed source of truth.
 
-Core game actions are now performed by Pages Functions instead of by direct client mutation.
+Core game actions are performed by Pages Functions instead of by direct client mutation.
 
 No real money, no blockchain.
 
@@ -21,16 +21,20 @@ Use these settings:
 - Build output directory: `dist`
 - Root directory: leave blank
 
-The build script copies the static app files into `dist/` for Cloudflare Pages and applies the build-time UI patches.
-
-## Required Cloudflare bindings
+## Required Cloudflare bindings and secrets
 
 The Pages project needs these bindings:
 
 - D1 database binding: `DB`
 - R2 bucket binding: `CARD_IMAGES`
 
-The app currently uses:
+The admin panel also needs this secret/environment variable in Cloudflare Pages:
+
+- `ADMIN_PASSWORD`
+
+Set it in the production environment before using `/admin`.
+
+## Player app APIs
 
 - `GET /api/auth/users` to show the seven fixed accounts
 - `POST /api/auth/setup-pin` to create a first-time 4-digit PIN
@@ -47,6 +51,28 @@ The app currently uses:
 - `POST /api/market/buy` to buy 10 tokens using the shared market price
 - `POST /api/market/sell` to sell 10 tokens using the shared market price
 - `POST /api/battle/fight` to run a server-side battle and award tokens
+
+## Admin panel
+
+Hidden admin page:
+
+- `/admin`
+
+Admin features currently deployed:
+
+- Separate admin login using `ADMIN_PASSWORD`
+- Separate admin session cookie
+- Overview stats
+- Edit user cash balances
+- Edit all token balances
+- Reset player PINs
+- Review all cards
+- Edit card owner, character, title, rarity, stats, passive income, tag, effect, and equipped status
+- Hard delete cards from D1, and delete their R2 image when possible
+- Edit global market prices
+- Reset market prices to defaults
+
+Hard delete is enabled. Deleted cards are not soft-deleted.
 
 ## Data model status
 
@@ -86,17 +112,4 @@ To test the Cloudflare-style build locally:
 npm run build
 ```
 
-The D1/R2 APIs only work on Cloudflare unless you add a local Wrangler setup.
-
-## Current features
-
-- Vault selection screen with first-time 4-digit PIN setup
-- Collection page grouped by character and rarity
-- Mint Card page with image upload, character selection, rarity preview, stat rolling, image crop controls, and server-side minting
-- Uploaded card images saved to R2
-- Signed-in user state saved to D1
-- Equip up to 3 passive cards per character
-- Server-side passive token collection
-- Server-side battle arena
-- Shared fake token market prices
-- Token vault dashboard
+The D1/R2/admin APIs only work on Cloudflare unless you add a local Wrangler setup.
