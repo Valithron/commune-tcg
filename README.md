@@ -11,11 +11,11 @@ Static frontend only. No backend, no accounts, no real money, no blockchain. Car
 Use these settings:
 
 - Framework preset: None
-- Build command: leave blank
-- Build output directory: `/`
+- Build command: `npm run build`
+- Build output directory: `dist`
 - Root directory: leave blank
 
-Because this is a plain static app, Cloudflare can serve it directly from the repository.
+The build script copies the static app files into `dist/` for Cloudflare Pages.
 
 ## Local development
 
@@ -26,6 +26,12 @@ python3 -m http.server 5173
 ```
 
 Then open `http://localhost:5173`.
+
+To test the Cloudflare-style build locally:
+
+```bash
+npm run build
+```
 
 ## Current features
 
