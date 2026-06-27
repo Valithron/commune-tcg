@@ -6,7 +6,9 @@ A private character-based trading card game prototype.
 
 Cloudflare-backed frontend with a seven-account vault gate. Each Commune member has a fixed account and creates a 4-digit Vault PIN the first time they enter.
 
-Player vaults are now separated server-side. Commune Cash, token balances, cards, equipped cards, draft state, and battle log are scoped to the signed-in account. Uploaded card images are stored in R2. The browser still keeps a per-user `localStorage` cache/fallback, but D1/R2 are the deployed source of truth.
+Player vaults are separated server-side. Commune Cash, token balances, cards, equipped cards, draft state, and battle log are scoped to the signed-in account. Uploaded card images are stored in R2. The browser still keeps a per-user `localStorage` cache/fallback, but D1/R2 are the deployed source of truth.
+
+Core game actions are now performed by Pages Functions instead of by direct client mutation.
 
 No real money, no blockchain.
 
@@ -35,10 +37,16 @@ The app currently uses:
 - `POST /api/auth/login` to enter an existing vault
 - `POST /api/auth/logout` to switch vaults
 - `GET /api/auth/me` to restore an active session
-- `GET /api/state` to load the signed-in user's vault from D1
-- `POST /api/state` to save the signed-in user's vault to D1
+- `GET /api/state` to load the signed-in user's vault from D1, collect passive income, and refresh global market prices
+- `POST /api/state` to save only UI/meta state such as page, draft, search, and log
 - `POST /api/upload` to save uploaded card art to R2
 - `GET /api/image/:key` to serve saved card art from R2
+- `POST /api/cards/mint` to mint a server-generated card for the signed-in user
+- `POST /api/cards/equip` to equip a card owned by the signed-in user
+- `POST /api/cards/unequip` to unequip a card owned by the signed-in user
+- `POST /api/market/buy` to buy 10 tokens using the shared market price
+- `POST /api/market/sell` to sell 10 tokens using the shared market price
+- `POST /api/battle/fight` to run a server-side battle and award tokens
 
 ## Data model status
 
@@ -52,7 +60,15 @@ Step 1 is deployed:
 - Per-user owned cards
 - Shared market price table
 
-Step 2 still needs to move individual game actions fully server-side. Right now, the frontend still performs the prototype game logic, then saves the signed-in user's result back to D1.
+Step 2 is deployed:
+
+- Minting is server-side and deducts the signed-in user's tokens
+- Equipping is server-side and enforces ownership plus 3 equipped cards per character
+- Buying and selling are server-side and use the shared market price table
+- Battles are server-side and award tokens to the signed-in user
+- Passive income is lazily collected on state load instead of ticking client-side
+- Market drift is global and happens on state load, not independently per browser
+- `POST /api/state` no longer accepts client-side overwrites of cash, token balances, cards, or prices
 
 ## Local development
 
@@ -76,11 +92,11 @@ The D1/R2 APIs only work on Cloudflare unless you add a local Wrangler setup.
 
 - Vault selection screen with first-time 4-digit PIN setup
 - Collection page grouped by character and rarity
-- Mint Card page with image upload, character selection, rarity preview, stat rolling, image crop controls, and minting
+- Mint Card page with image upload, character selection, rarity preview, stat rolling, image crop controls, and server-side minting
 - Uploaded card images saved to R2
 - Signed-in user state saved to D1
 - Equip up to 3 passive cards per character
-- Passive token generation
-- Simple battle arena
+- Server-side passive token collection
+- Server-side battle arena
 - Shared fake token market prices
 - Token vault dashboard
