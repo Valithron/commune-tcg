@@ -66,6 +66,26 @@ cardHtml = function(c, big = false) {
   if (titleValue) html = html.replace(/(<div class="ctop"><strong>)([\s\S]*?)(<\/strong>)/, `$1${h(titleValue)}$3`);
   return html;
 };
+const originalCollectionView = collection;
+function visibleAllCards(q) {
+  return state.cards.filter(x => !q || (String(x.title) + String(x.tag) + String(x.effect) + ch(x.cid).name).toLowerCase().includes(q));
+}
+function sortAllCards(a, b) {
+  return ch(a.cid).name.localeCompare(ch(b.cid).name) || score(b) - score(a) || String(a.title || '').localeCompare(String(b.title || ''));
+}
+function allRarityGroup(r, cards) {
+  const bunch = cards.filter(x => x.rar === r).sort(sortAllCards);
+  return `<div class="rgrp" style="--r:${R[r][2]}"><div class="rlabel">${R[r][0].toUpperCase()} · ${bunch.length}</div><div class="grid">${bunch.length ? bunch.map(x => cardHtml(x)).join('') : `<div class="emptymsg">No ${R[r][0]} Cards Yet</div>`}</div></div>`;
+}
+function allCharactersCollection() {
+  const q = (state.q || '').toLowerCase();
+  const cards = visibleAllCards(q);
+  const passive = C.reduce((s, c) => s + income(c.id), 0);
+  return shell(strip() + `<div class="head"><div><h1>Card Collection</h1><p>${cards.length} visible · ${state.cards.length} total · $${num(total())} Vault Value</p></div><div class="row"><button class="gold" data-page="mint">Mint Card</button></div></div><div class="sections"><section class="section allBunch"><div class="sectiontop"><div class="title"><div class="big" style="--a:#e9c349">ALL</div><div><h2>All Characters</h2><p>Grouped by rarity · sorted by character inside each rarity · +${passive}/min Passive</p></div></div><div class="slots"><div class="strong">Total Cards<b>${cards.length}</b></div><div class="strong">Passive<b>+${passive}/min</b></div></div></div>${['legendary','rare','uncommon','common'].map(r => allRarityGroup(r, cards)).join('')}</section></div>`);
+}
+collection = function() {
+  return state.sel === 'all' ? allCharactersCollection() : originalCollectionView();
+};
 function setupTitleLimit() {
   const input = document.getElementById('ct');
   if (!input || input.dataset.titleLimitReady) return;
