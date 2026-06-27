@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env }) {
 
     const character = String(body.cid || 'card').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 40) || 'card';
     const safeId = String(body.id || crypto.randomUUID()).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 80) || crypto.randomUUID();
-    const key = `${character}/${Date.now()}-${safeId}.${decoded.ext}`;
+    const key = `${character}-${Date.now()}-${safeId}.${decoded.ext}`;
 
     await env.CARD_IMAGES.put(key, decoded.bytes, {
       httpMetadata: { contentType: decoded.mime },
