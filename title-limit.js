@@ -1,7 +1,12 @@
 const CARD_TITLE_LIMIT = 25;
 const FLAVOR_TAGS = ['Champion','Guardian','Trickster','Wildcard','Support','Brawler','Oracle','Commander','Menace','Artisan','Mystic'];
+const CARD_RARITIES = ['common','uncommon','rare','legendary'];
 function cleanCardTitle(value) {
   return String(value || '').slice(0, CARD_TITLE_LIMIT);
+}
+function rarityClass(value) {
+  const rarity = CARD_RARITIES.includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : 'rare';
+  return `rarity-${rarity}`;
 }
 function clearTitleFit(card) {
   if (!card) return;
@@ -47,6 +52,10 @@ function injectTitleSizingStyles() {
   style.id = 'ctcgTitleSizingStyles';
   style.textContent = `
 .card{container-type:inline-size;--titleScale:1}.card.title-fit-1{--titleScale:.92}.card.title-fit-2{--titleScale:.84}.card.title-fit-3{--titleScale:.76}.card.title-fit-4{--titleScale:.68}.card .ctop{min-width:0!important}.card .ctop strong{display:block!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;line-height:1!important}
+.card.rarity-common{--frame:#cfd3dc;--frame2:#7f8794;--cardText:#e9edf8;background:radial-gradient(circle at 18% 8%,rgba(255,255,255,.08),transparent 28%),linear-gradient(145deg,#07101f,#11182b 45%,#050914)!important;box-shadow:0 10px 34px rgba(0,0,0,.42),0 0 0 1px color-mix(in srgb,var(--frame),transparent 35%),0 0 26px color-mix(in srgb,var(--frame),transparent 76%)!important}
+.card.rarity-uncommon{--frame:#30ff99;--frame2:#0bcf82;--cardText:#9fffc8;background:radial-gradient(circle at 22% 0,rgba(80,255,170,.24),transparent 30%),linear-gradient(145deg,#06191d,#071426 42%,#041012)!important;box-shadow:0 10px 36px rgba(0,0,0,.46),0 0 0 1px rgba(48,255,153,.7),0 0 32px rgba(48,255,153,.42)!important}
+.card.rarity-rare{--frame:#ffc13b;--frame2:#9c6810;--cardText:#ffe59a;background:radial-gradient(circle at 25% 0,rgba(255,193,59,.24),transparent 30%),linear-gradient(145deg,#0e111f,#111827 46%,#070a14)!important;box-shadow:0 10px 38px rgba(0,0,0,.48),0 0 0 1px rgba(255,193,59,.8),0 0 34px rgba(255,193,59,.45)!important}
+.card.rarity-legendary{--frame:#ee83ff;--frame2:#69e8ff;--cardText:#eecbff;background:radial-gradient(circle at 18% 0,rgba(238,131,255,.34),transparent 30%),radial-gradient(circle at 90% 20%,rgba(105,232,255,.26),transparent 32%),linear-gradient(145deg,#091330,#131235 45%,#09091f)!important;box-shadow:0 10px 42px rgba(0,0,0,.5),0 0 0 1px rgba(238,131,255,.7),0 0 38px rgba(105,232,255,.38),0 0 54px rgba(238,131,255,.22)!important}
 .card .ctop strong{font-size:clamp(calc(.68rem * var(--titleScale)),calc(8.8cqw * var(--titleScale)),calc(1.28rem * var(--titleScale)))!important;letter-spacing:calc(-.045em - ((1 - var(--titleScale)) * .08em))!important;max-width:calc(100% - 4.6rem)!important}
 .grid .card .ctop strong{font-size:clamp(calc(.58rem * var(--titleScale)),calc(7cqw * var(--titleScale)),calc(.92rem * var(--titleScale)))!important;max-width:58%!important}
 .battle .card .ctop strong{font-size:clamp(calc(.86rem * var(--titleScale)),calc(5.7cqw * var(--titleScale)),calc(1.42rem * var(--titleScale)))!important;max-width:calc(100% - 5.2rem)!important}
@@ -58,11 +67,14 @@ injectTitleSizingStyles();
 const titleLimitCardHtml = cardHtml;
 cardHtml = function(c, big = false) {
   let titleValue = '';
+  let className = 'rarity-rare';
   if (c && typeof c === 'object') {
     titleValue = cleanCardTitle(c.title || 'Untitled');
+    className = rarityClass(c.rar);
     c = { ...c, title: titleValue };
   }
   let html = titleLimitCardHtml(c, big);
+  html = html.replace(/(<article[^>]*class=")card\s*/, `$1card ${className} `);
   if (titleValue) html = html.replace(/(<div class="ctop"><strong>)([\s\S]*?)(<\/strong>)/, `$1${h(titleValue)}$3`);
   return html;
 };
