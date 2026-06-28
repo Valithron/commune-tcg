@@ -18,7 +18,15 @@ function injectMobileCollectionStyles(){
 `;
   document.head.appendChild(style);
 }
+function loadEncounterPatch(){
+  if(document.getElementById('ctcgEncounterPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgEncounterPatch';
+  script.src='/ai-'+'enemy-type.js?v=28';
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
+loadEncounterPatch();
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
