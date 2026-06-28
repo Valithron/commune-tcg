@@ -6,11 +6,11 @@ const RARITY_CRIT={common:0,uncommon:.01,rare:.02,legendary:.05};
 const BOT_CACHE_TYPE='system-vs-ai-bot';
 const BOT_RULESET='ai-autobattle-v1';
 const ENEMY_TYPES={
-  random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,names:['Rogue Min-Maxer','Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Vibes Strategist','Mild Crisis'],bias:{p:1,d:1,s:1},difficulty:1},
-  household_chaos:{label:'Household Chaos',characters:['cydney','gabi','ashley'],names:['Laundry Hydra','Sticky Floor Imp','Crayon Goblin','Sippy Cup Ghost','Missing Shoe Spirit','Unfolded Load'],bias:{p:.97,d:1.14,s:1.03},difficulty:1},
-  yard_project:{label:'Yard Project',characters:['sterling','cooper','ashley'],names:['Retaining Wall Golem','Gravel Wraith','Broken Sprinkler','Deck Splinter','Creeping Bindweed','Unleveled Paver'],bias:{p:1.1,d:1.1,s:.93},difficulty:1},
-  rival_commune:{label:'Rival Commune',characters:CHARACTER_IDS,names:['Rival Matriarch','False Project Manager','Overcommitted Wizard','Garage Sale Baron','Softball Revenant','Sourdough Oracle','Counterpart Strategist'],bias:{p:1.04,d:1.04,s:1.04},difficulty:1.04},
-  boss_fight:{label:'Boss Fight',characters:CHARACTER_IDS,names:['Schedule Devourer','Budget Leviathan','Final Errand','Endless Deck Project','Domestic Calamity','Great Paperwork Beast','Appointment Hydra'],bias:{p:1.12,d:1.18,s:1.04},difficulty:1.1}
+  random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,names:{common:['Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Mild Crisis','Forgotten Appointment','Coupon Gremlin'],uncommon:['Rogue Min-Maxer','Vibes Strategist','Calendar Goblin','Overthinking Imp','Budget Sidewinder','Inbox Phantom'],rare:['Errand Chain Warden','Panic Purchase Baron','Deadline Marauder','The Wrong Receipt','Schedule Saboteur'],legendary:['The Minor Emergency','Lord of One More Thing','The Sudden Obligation','The Vibes Tribunal']},bias:{p:1,d:1,s:1},difficulty:1},
+  household_chaos:{label:'Household Chaos',characters:['cydney','gabi','ashley'],names:{common:['Sticky Floor Imp','Crayon Goblin','Sippy Cup Ghost','Missing Shoe Spirit','Cereal Spill Sprite','Sock Drawer Gremlin'],uncommon:['Laundry Hydra','Unfolded Load','Cabinet Door Wraith','Tiny Crumb Swarm','Bedtime Delay Goblin','Mystery Smell'],rare:['Toy Box Revenant','The Breakfast Aftermath','Diaper Bag Phantom','Kitchen Counter Golem','The Wet Sleeve'],legendary:['The Great Domestic Calamity','Queen of the Unsorted Pile','The Never-Clean Room','Matriarch of Mess']},bias:{p:.97,d:1.14,s:1.03},difficulty:1},
+  yard_project:{label:'Yard Project',characters:['sterling','cooper','ashley'],names:{common:['Deck Splinter','Unleveled Paver','Loose Gravel Rat','Bent Screw Spirit','Patchy Lawn Goblin','Shovel Blister'],uncommon:['Retaining Wall Golem','Gravel Wraith','Broken Sprinkler','Creeping Bindweed','Fence Leaner','Mud Pit Ambusher'],rare:['Drainage Problem','The Crooked String Line','Pressure Washer Wraith','Three Trips to Lowe\'s','The Wrong Board Length'],legendary:['The Endless Deck Project','The Slope That Fought Back','Lord of the Gravel Base','The Saturday Devourer']},bias:{p:1.1,d:1.1,s:.93},difficulty:1},
+  rival_commune:{label:'Rival Commune',characters:CHARACTER_IDS,names:{common:['Rival Helper','Borrowed Tool Guy','Awkward Houseguest','Uninvited Advisor','Snack Table Scout','Minor Contrarian'],uncommon:['False Project Manager','Garage Sale Baron','Sourdough Oracle','Softball Revenant','Overcommitted Wizard','Budget Prophet'],rare:['Rival Matriarch','Counterpart Strategist','The Other Best Man','Schedule Negotiator','Passive Income Pretender'],legendary:['The Mirror Commune','The Rival Council','The Sevenfold Opposition','The Almost Better Plan']},bias:{p:1.04,d:1.04,s:1.04},difficulty:1.04},
+  boss_fight:{label:'Boss Fight',characters:CHARACTER_IDS,names:{common:['Heavy Errand','Large Problem','Serious Invoice','Dire Calendar Block'],uncommon:['Schedule Devourer','Budget Leviathan','Appointment Hydra','Great Paperwork Beast','Final Errand'],rare:['Domestic Calamity','Endless Deck Project','The Month-End Monster','The Overtime Warden','The Broken Routine'],legendary:['The Final Obligation','The Great Household Reckoning','The Project That Would Not Die','The Budget Apocalypse']},bias:{p:1.12,d:1.18,s:1.04},difficulty:1.1}
 };
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
@@ -26,6 +26,8 @@ function glanceChance(attacker,defender){return Math.min(.25,Math.max(.03,(Numbe
 function enemyTypeConfig(type){return ENEMY_TYPES[type]||ENEMY_TYPES.random_encounter}
 function validEnemyType(type){return ENEMY_TYPES[type]?type:'random_encounter'}
 function resolveEnemyType(meta,body){return validEnemyType(body?.aiEnemyType||meta?.aiEnemyType||'random_encounter')}
+function namePoolFor(type,rarity){const names=enemyTypeConfig(type).names||{};return Array.isArray(names)?names:[...(names[rarity]||[]),...(names.any||[])]}
+function themedEnemyName(type,enemy,index,used=new Set()){let pool=namePoolFor(type,enemy.rar).filter(Boolean);if(!pool.length)pool=[`Rival ${displayName(enemy.cid)} ${index+1}`];let name=pick(pool);for(let i=0;i<7&&used.has(name)&&pool.length>1;i++)name=pick(pool);used.add(name);return String(name).slice(0,25)}
 function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
 function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'AI Bot',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,crop:x.crop||{x:50,y:50,z:1},equipped:false,enemyType:x.enemyType||null,enemyTypeLabel:x.enemyTypeLabel||null}}
 function topOwned(cards,exclude=new Set()){return cards.map(cleanCard).filter(c=>!exclude.has(c.id)).sort((a,b)=>cardScore(b)-cardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
@@ -50,10 +52,9 @@ function enemyRarity(r){
   const pool=['common','uncommon','rare','legendary'];
   return pick(pool);
 }
-function applyEnemyType(enemy,type,index){
+function applyEnemyType(enemy,type,index,usedNames=new Set()){
   const pool=enemyTypeConfig(type),bias=pool.bias||{},difficulty=Number(pool.difficulty||1);
-  const name=pick(pool.names||[] )||`Rival ${displayName(enemy.cid)} ${index+1}`;
-  enemy.title=String(name).slice(0,25);
+  enemy.title=themedEnemyName(type,enemy,index,usedNames);
   enemy.tag=pool.label;
   enemy.enemyType=type;
   enemy.enemyTypeLabel=pool.label;
@@ -64,12 +65,12 @@ function applyEnemyType(enemy,type,index){
   return cleanCard(enemy);
 }
 function makeEnemySquad(playerSquad,type='random_encounter'){
-  const pool=enemyTypeConfig(type),chars=(pool.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id));
+  const pool=enemyTypeConfig(type),chars=(pool.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id)),usedNames=new Set();
   return playerSquad.map((c,i)=>{
     const candidates=(chars.length?chars:CHARACTER_IDS).filter(id=>id!==c.cid);
     const cid=pick(candidates.length?candidates:(chars.length?chars:CHARACTER_IDS));
     const enemy=makeCard({cid,rar:enemyRarity(c.rar),title:`Rival ${displayName(cid)} ${i+1}`,tag:pool.label});
-    return applyEnemyType(enemy,type,i);
+    return applyEnemyType(enemy,type,i,usedNames);
   });
 }
 function fighter(card,team,index){
