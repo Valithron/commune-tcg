@@ -1,5 +1,5 @@
 const CARD_TITLE_LIMIT = 25;
-const FLAVOR_TAGS = ['Champion','Guardian','Trickster','Wildcard','Support','Brawler','Oracle','Commander','Menace','Artisan','Mystic'];
+const FLAVOR_TAGS = ['Champion','Guardian','Trickster','Wildcard','Support','Brawler','Oracle','Commander','Menace','Artisan','Mystic','Spicy'];
 const CARD_RARITIES = ['common','uncommon','rare','legendary'];
 const vaultCache = {};
 const vaultLoading = {};
@@ -114,7 +114,7 @@ function visibleAllCards(q) {
   return state.cards.filter(x => !q || (String(x.title) + String(x.tag) + String(x.effect) + ch(x.cid).name).toLowerCase().includes(q));
 }
 function sortAllCards(a, b) {
-  return ch(a.cid).name.localeCompare(ch(b.cid).name) || score(b) - score(a) || String(a.title || '').localeCompare(String(b.title || ''));
+  return ch(a.cid).name.localeCompare(ch(b.cid).name) || score(b) - score(a);
 }
 function allRarityGroup(r, cards) {
   const bunch = cards.filter(x => x.rar === r).sort(sortAllCards);
@@ -161,216 +161,128 @@ function candidateSquad() {
   all.forEach(c => { if (chosen.length < 3 && !used.has(c.id)) { chosen.push(c); used.add(c.id); } });
   return chosen;
 }
+function fighterHtml(c, team, index) {
+  const max = Math.max(20, Math.round(80 + Number(c.d || 0) * 2));
+  return `<div class="battleFighter" data-team="${team}" data-fighter-id="${h(c.id)}"><div class="hpBox"><div class="hpLine"><span>${team === 'player' ? 'You' : 'Enemy'} ${index + 1}</span><b><span class="hpNow">${max}</span>/<span class="hpMax">${max}</span></b></div><div class="hpTrack"><div class="hpFill" style="width:100%"></div></div></div>${cardHtml(c)}</div>`;
+}
 function battleRulesHtml() {
-  return `<div class="battleRules"><h3>Auto-Battle Rules</h3><div class="battleRulesGrid"><div class="battleRule"><b>Squad</b>Uses your 3 strongest equipped cards. If fewer than 3 are equipped, it fills from your strongest owned cards.</div><div class="battleRule"><b>Stats</b>POW drives damage. DEF creates HP and reduces damage. SPD controls turn order, crits, and glancing blows.</div><div class="battleRule"><b>Luck</b>Attacks have light damage variance, crit chances, and glancing blows. Stats matter more than randomness.</div><div class="battleRule"><b>Reward</b>The MVP card decides the reward token. Wins pay more. Losses still give a small consolation reward.</div></div></div>`;
-}
-function hpBox(f, full = true) {
-  const hp = full ? f.maxHp : (f.finalHp ?? f.maxHp);
-  const pct = Math.max(0, Math.min(100, (Number(hp || 0) / Number(f.maxHp || 1)) * 100));
-  return `<div class="hpBox"><div class="hpLine"><span>HP</span><b data-hp-text>${Math.round(hp)} / ${Math.round(f.maxHp || 0)}</b></div><div class="hpTrack"><div class="hpFill" data-hp-fill style="width:${pct}%"></div></div></div>`;
-}
-function battleFighter(f, team, replay = false) {
-  const fighter = replay ? f : {...f, maxHp: Math.max(20, Math.round(80 + Number(f.d || 0) * 2)), finalHp: Math.max(20, Math.round(80 + Number(f.d || 0) * 2))};
-  return `<div class="battleFighter" data-team="${team}" data-fighter-id="${h(fighter.id)}" data-max-hp="${h(fighter.maxHp || 1)}">${cardHtml(fighter)}${hpBox(fighter, true)}</div>`;
-}
-function battleLogHtml(b) {
-  if (!b) return '';
-  const rounds = (b.rounds || []).map(r => `<div class="battleLogRound">Round ${r.round}</div>${(r.events || []).map(e => `<div class="battleLogEvent">${h(e.text)}</div>`).join('')}`).join('');
-  return `<div class="battleFeed"><div class="battleFeedTop"><div><div class="battleResult">${b.win ? 'Victory' : 'Defeat'}</div><div class="battleEventText" id="battleEventText">${h(b.summary || '')}</div></div><button class="btn" id="skipBattleReplay">Skip Replay</button></div><div class="battleLogList">${rounds || '<div>No replay events yet.</div>'}</div></div>`;
+  return `<div class="battleRules"><h3>Auto-Battle Rules</h3><div class="battleRulesGrid"><div class="battleRule"><b>Squad</b>Uses up to 3 equipped cards first. Empty slots fill from your strongest owned cards.</div><div class="battleRule"><b>Stats</b>POW drives damage. DEF creates HP and reduces damage. SPD controls turn order, crits, and glancing blows.</div><div class="battleRule"><b>Matchups</b>Strong matchups hit harder. Weak matchups hit softer. Neutral stays steady.</div><div class="battleRule"><b>Reward</b>The MVP card decides the reward token. Wins pay more. Losses still give a small consolation reward.</div></div></div>`;
 }
 function battleStageHtml(b) {
-  if (!b) {
-    const squad = candidateSquad();
-    if (!squad.length) return `<div class="battleEmpty">Mint at least one card before battling.</div>`;
-    return `<div class="battleStage"><div class="battleTeamTitle"><span>Your next squad</span><span>Preview</span></div><div class="battleTeamGrid">${squad.map(c => battleFighter(c, 'player', false)).join('')}</div><div class="battleEmpty">Start Battle to generate an enemy squad and run the auto-battle replay.</div></div>`;
-  }
-  return `<div class="battleStage" id="battleStage"><div class="battleTeamTitle"><span>Enemy Squad</span><span>${h(b.reason || '')}</span></div><div class="battleTeamGrid">${(b.enemy || []).map(f => battleFighter(f, 'enemy', true)).join('')}</div><div class="battleTeamTitle"><span>Your Squad</span><span>MVP: ${h(b.mvpTitle || 'None')}</span></div><div class="battleTeamGrid">${(b.player || []).map(f => battleFighter(f, 'player', true)).join('')}</div>${battleLogHtml(b)}</div>`;
+  const player = b?.player || candidateSquad();
+  const enemy = b?.enemy || [];
+  if (!player.length) return `<div class="battleEmpty">No cards yet. Mint a card before battling.</div>`;
+  return `<div class="battleStage" id="battleStage"><div class="battleTeamTitle"><span>Your Squad</span><span>${b ? (b.win ? 'Victory' : 'Defeat') : 'Ready'}</span></div><div class="battleTeamGrid" id="playerTeam">${player.map((c, i) => fighterHtml(c, 'player', i)).join('')}</div><div class="battleTeamTitle"><span>Enemy Squad</span><span>${enemy.length ? 'AI Opponent' : 'Generated on battle start'}</span></div><div class="battleTeamGrid" id="enemyTeam">${enemy.length ? enemy.map((c, i) => fighterHtml(c, 'enemy', i)).join('') : `<div class="battleEmpty">Start an auto-battle to reveal the enemy squad.</div>`}</div><div class="battleFeed"><div class="battleFeedTop"><div><div class="battleResult" id="battleResult">${b ? h(b.summary) : 'Ready to battle.'}</div><div class="battleEventText" id="battleEventText">${b ? 'Replay the latest battle or start a new one.' : 'Click Start Auto-Battle.'}</div></div><div class="row">${b ? '<button class="btn" id="replayBattle">Replay</button>' : ''}<button class="btn" id="skipBattle" style="display:none">Skip Replay</button></div></div><div class="battleLogList" id="battleLogList">${b ? renderBattleLog(b) : ''}</div></div></div>`;
+}
+function renderBattleLog(b) {
+  return (b.rounds || []).map(r => `<div class="battleLogRound">Round ${r.round}</div>${(r.events || []).map(e => `<div class="battleLogEvent">${h(e.text)}</div>`).join('')}`).join('');
 }
 battle = function() {
   const b = state.lastBattle || null;
-  return shell(`<div class="battleAuto"><div class="head"><div><h1>Battle Arena</h1><p>Fast auto-battles using your best equipped cards, card stats, crits, glancing blows, and matchup bonuses.</p></div><div class="row"><button class="gold" id="fight">Start Auto-Battle</button></div></div>${battleRulesHtml()}${battleStageHtml(b)}</div>`);
+  return shell(`<div class="battleAuto"><div class="head"><div><h1>Battle Arena</h1><p>Server-run auto-battles using your selected squad, stats, crits, glancing blows, and matchup bonuses.</p></div><div class="row"><button class="gold" id="fight">Start Auto-Battle</button></div></div>${battleRulesHtml()}${battleStageHtml(b)}</div>`);
 };
-function setHp(slot, hp, maxHp) {
-  const fill = slot?.querySelector('[data-hp-fill]');
-  const text = slot?.querySelector('[data-hp-text]');
-  const pct = Math.max(0, Math.min(100, (Number(hp || 0) / Number(maxHp || 1)) * 100));
-  if (fill) fill.style.width = `${pct}%`;
-  if (text) text.textContent = `${Math.round(hp)} / ${Math.round(maxHp)}`;
-  if (Number(hp || 0) <= 0) slot?.classList.add('ko');
-}
 function fighterSlot(team, id) {
   return document.querySelector(`.battleFighter[data-team="${team}"][data-fighter-id="${CSS.escape(String(id))}"]`);
 }
-function damagePop(slot, event) {
-  if (!slot) return;
-  const pop = document.createElement('div');
-  pop.className = `damagePop ${event.crit ? 'crit' : ''}`;
-  pop.textContent = `${event.crit ? 'CRIT ' : ''}-${event.damage}${event.glance ? ' glancing' : ''}`;
-  slot.appendChild(pop);
-  setTimeout(() => pop.remove(), 760);
+function setFighterHp(team, id, hp, maxHp) {
+  const el = fighterSlot(team, id);
+  if (!el) return;
+  const now = el.querySelector('.hpNow');
+  const max = el.querySelector('.hpMax');
+  const fill = el.querySelector('.hpFill');
+  if (now) now.textContent = Math.max(0, Math.round(hp));
+  if (max) max.textContent = Math.round(maxHp);
+  if (fill) fill.style.width = `${Math.max(0, Math.min(100, (hp / maxHp) * 100))}%`;
+  if (hp <= 0) el.classList.add('ko');
 }
-function applyFinalBattleState(b) {
-  [...(b?.player || []), ...(b?.enemy || [])].forEach(f => {
-    const slot = fighterSlot(f.team, f.id);
-    setHp(slot, f.finalHp ?? f.maxHp, f.maxHp);
-  });
-  const text = document.getElementById('battleEventText');
-  if (text && b?.summary) text.textContent = b.summary;
+function flashAttack(attackerTeam, attackerId, defenderTeam, defenderId, ev) {
+  const attacker = fighterSlot(attackerTeam, attackerId);
+  const defender = fighterSlot(defenderTeam, defenderId);
+  if (attacker) attacker.classList.add('attacking');
+  if (defender) defender.classList.add('defending');
+  if (defender) {
+    const pop = document.createElement('div');
+    pop.className = `damagePop ${ev.crit ? 'crit' : ''}`;
+    pop.textContent = `${ev.crit ? 'CRIT ' : ''}-${ev.damage}`;
+    defender.appendChild(pop);
+    setTimeout(() => pop.remove(), 760);
+  }
+  setTimeout(() => {
+    if (attacker) attacker.classList.remove('attacking');
+    if (defender) defender.classList.remove('defending');
+  }, 260);
 }
 async function playBattleReplay(b) {
   if (!b) return;
   battleAnimating = true;
   battleSkipRequested = false;
   const stage = document.getElementById('battleStage');
-  const text = document.getElementById('battleEventText');
-  stage?.classList.add('playing');
-  [...(b.player || []), ...(b.enemy || [])].forEach(f => {
-    const slot = fighterSlot(f.team, f.id);
-    slot?.classList.remove('ko');
-    setHp(slot, f.maxHp, f.maxHp);
-  });
-  await wait(450);
+  const txt = document.getElementById('battleEventText');
+  const result = document.getElementById('battleResult');
+  const skip = document.getElementById('skipBattle');
+  if (stage) stage.classList.add('playing');
+  if (skip) {
+    skip.style.display = '';
+    skip.onclick = () => battleSkipRequested = true;
+  }
+  [...(b.player || []), ...(b.enemy || [])].forEach(f => setFighterHp(f.team, f.id, f.maxHp, f.maxHp));
   for (const round of b.rounds || []) {
     if (battleSkipRequested) break;
-    if (text) text.textContent = `Round ${round.round}`;
-    await wait(360);
-    for (const event of round.events || []) {
+    if (txt) txt.textContent = `Round ${round.round}`;
+    await wait(450);
+    for (const ev of round.events || []) {
       if (battleSkipRequested) break;
-      const attacker = fighterSlot(event.attackerTeam, event.attackerId);
-      const defender = fighterSlot(event.defenderTeam, event.defenderId);
-      attacker?.classList.add('attacking');
-      defender?.classList.add('defending');
-      if (text) text.textContent = event.text;
-      damagePop(defender, event);
-      await wait(event.crit ? 330 : 250);
-      setHp(defender, event.defenderHp, event.defenderMaxHp);
-      await wait(event.crit ? 430 : 340);
-      attacker?.classList.remove('attacking');
-      defender?.classList.remove('defending');
+      flashAttack(ev.attackerTeam, ev.attackerId, ev.defenderTeam, ev.defenderId, ev);
+      setFighterHp(ev.defenderTeam, ev.defenderId, ev.defenderHp, ev.defenderMaxHp);
+      if (txt) txt.textContent = ev.text;
+      await wait(760);
     }
   }
-  applyFinalBattleState(b);
-  stage?.classList.remove('playing');
+  (b.player || []).forEach(f => setFighterHp('player', f.id, f.finalHp, f.maxHp));
+  (b.enemy || []).forEach(f => setFighterHp('enemy', f.id, f.finalHp, f.maxHp));
+  if (result) result.textContent = b.summary;
+  if (txt) txt.textContent = b.win ? 'Battle complete. Victory.' : 'Battle complete. Defeat.';
+  if (stage) stage.classList.remove('playing');
+  if (skip) skip.style.display = 'none';
   battleAnimating = false;
 }
-function showVaultCardDetail(id) {
-  const data = vaultCache[state.vaultOwner];
-  const c = data?.cards?.find(x => x.id === id);
-  if (!c) return;
-  const cc = ch(c.cid), rar = (R[c.rar] && R[c.rar][0]) || c.rar || 'Unknown', grade = Number(c.grade || score(c));
-  const ownerName = data?.owner?.displayName || cc.name;
-  const modal = document.createElement('div');
-  modal.className = 'cardDetailBackdrop';
-  modal.innerHTML = `<div class="cardDetailModal"><div class="cardDetailPreview">${cardHtml(c,true)}</div><aside class="cardDetailPanel"><div class="cardDetailTop"><div><span class="detailPill">${h(rar)} · ${h(cc.name)}</span><h2>${h(c.title || 'Untitled')}</h2><p>${h(c.tag || 'Battle')} · Owned by ${h(ownerName)}</p></div><button class="cardDetailClose" type="button" data-detail-close>Close</button></div><div class="detailGrid"><div class="detailStat"><small>POW</small><b>${h(c.p)}</b></div><div class="detailStat"><small>DEF</small><b>${h(c.d)}</b></div><div class="detailStat"><small>SPD</small><b>${h(c.s)}</b></div></div><div class="detailGrid"><div class="detailBox"><small>Passive</small><b>+${h(c.passive)}/min</b></div><div class="detailBox"><small>Grade</small><b>${h(grade)}</b></div><div class="detailBox"><small>Status</small><b>${c.equipped ? 'Equipped' : 'Unequipped'}</b></div></div><div class="detailBox detailEffect"><small>Effect / Flavor</small><p>${h(c.effect || E[c.cid] || 'No effect text.')}</p></div><div class="detailBox"><small>Card ID</small><p>${h(c.id)}</p></div><div class="detailActions"><button class="btn" type="button" data-detail-close>Back to Vault</button></div></aside></div>`;
-  document.body.appendChild(modal);
-  modal.querySelectorAll('[data-detail-close]').forEach(b => b.onclick = () => modal.remove());
-  modal.onclick = e => { if (e.target === modal) modal.remove(); };
-  scheduleTitleFit(modal);
+async function runAutoBattle() {
+  if (battleAnimating) return;
+  const fight = document.getElementById('fight');
+  try {
+    if (fight) { fight.disabled = true; fight.textContent = 'Battling...'; }
+    const data = await api('/api/battle/fight', {method:'POST'});
+    state.lastBattle = data.battle;
+    state.log = [{win:data.battle.win,txt:data.battle.summary}, ...(Array.isArray(state.log) ? state.log : [])].slice(0,40);
+    state.tokens[data.battle.tokenType] = Number(state.tokens[data.battle.tokenType] || 0) + Number(data.battle.reward || 0);
+    render();
+    await playBattleReplay(data.battle);
+    await loadState();
+  } catch(e) {
+    alert(e.message || 'Battle failed');
+    if (fight) { fight.disabled = false; fight.textContent = 'Start Auto-Battle'; }
+  }
 }
-function setupVaultsPage() {
-  document.querySelectorAll('[data-vault-owner]').forEach(b => {
-    if (b.dataset.vaultReady) return;
-    b.dataset.vaultReady = '1';
-    b.onclick = () => {
-      state.vaultOwner = b.dataset.vaultOwner;
-      vaultError = '';
+const titleLimitOldBind = bind;
+bind = function() {
+  titleLimitOldBind();
+  setupFlavorTags();
+  scheduleTitleFit();
+  document.querySelectorAll('[data-vault-owner]').forEach(btn => {
+    btn.onclick = () => {
+      state.vaultOwner = btn.dataset.vaultOwner;
       queueMeta();
       render();
     };
   });
-  const refresh = document.getElementById('refreshVault');
-  if (refresh && !refresh.dataset.vaultReady) {
-    refresh.dataset.vaultReady = '1';
-    refresh.onclick = () => {
-      delete vaultCache[state.vaultOwner];
-      loadPublicVault(state.vaultOwner);
-      render();
-    };
-  }
-  document.querySelectorAll('.vaults .grid .card[data-card-id]').forEach(card => {
-    if (card.dataset.vaultDetailReady) return;
-    card.dataset.vaultDetailReady = '1';
-    card.addEventListener('click', e => {
-      if (e.target.closest('button')) return;
-      showVaultCardDetail(card.dataset.cardId);
-    });
-    card.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        showVaultCardDetail(card.dataset.cardId);
-      }
-    });
-  });
-}
-function setupBattlePage() {
-  if (state.page !== 'battle') return;
-  applyFinalBattleState(state.lastBattle);
-  const skip = document.getElementById('skipBattleReplay');
-  if (skip && !skip.dataset.battleReady) {
-    skip.dataset.battleReady = '1';
-    skip.onclick = () => {
-      battleSkipRequested = true;
-      applyFinalBattleState(state.lastBattle);
-    };
-  }
-  const fight = document.getElementById('fight');
-  if (!fight || fight.dataset.autoBattleReady) return;
-  fight.dataset.autoBattleReady = '1';
-  fight.onclick = async () => {
-    if (battleAnimating) return;
-    try {
-      fight.disabled = true;
-      fight.textContent = 'Battling...';
-      const data = await api('/api/battle/fight', { method: 'POST' });
-      state.lastBattle = data.battle;
-      state.log = [{ win: data.battle.win, txt: data.battle.summary }, ...(Array.isArray(state.log) ? state.log : [])].slice(0, 40);
-      state.tokens[data.battle.tokenType] = Number(state.tokens[data.battle.tokenType] || 0) + Number(data.battle.reward || 0);
-      render();
-      await playBattleReplay(data.battle);
-      await loadState();
-    } catch (e) {
-      alert(e.message || 'Battle failed');
-      fight.disabled = false;
-      fight.textContent = 'Start Auto-Battle';
-    }
+  const refreshVault = document.getElementById('refreshVault');
+  if (refreshVault) refreshVault.onclick = () => {
+    const ownerId = state.vaultOwner || user?.id || 'cydney';
+    delete vaultCache[ownerId];
+    loadPublicVault(ownerId);
   };
-}
-function setupTitleLimit() {
-  const input = document.getElementById('ct');
-  if (!input || input.dataset.titleLimitReady) return;
-  input.dataset.titleLimitReady = '1';
-  input.maxLength = CARD_TITLE_LIMIT;
-  let counter = document.createElement('small');
-  counter.className = 'titleCounter';
-  input.insertAdjacentElement('afterend', counter);
-  function update() {
-    const fallback = cleanCardTitle(title(state.draft.cid || 'cydney'));
-    const next = cleanCardTitle(input.value);
-    if (input.value !== next) input.value = next;
-    state.draft.title = next;
-    counter.textContent = `${next.length}/${CARD_TITLE_LIMIT}`;
-    const previewTitle = document.querySelector('.preview .card .ctop strong');
-    const shown = next || fallback;
-    if (previewTitle) previewTitle.textContent = shown;
-    scheduleTitleFit(document.querySelector('.preview') || document);
-  }
-  input.addEventListener('input', update);
-  update();
-}
-const titleLimitBind = bind;
-bind = function() {
-  titleLimitBind();
-  injectTitleSizingStyles();
-  setupFlavorTags();
-  setupTitleLimit();
-  setupVaultsPage();
-  setupBattlePage();
-  scheduleTitleFit();
+  const replay = document.getElementById('replayBattle');
+  if (replay) replay.onclick = () => playBattleReplay(state.lastBattle);
+  const fight = document.getElementById('fight');
+  if (fight) fight.onclick = runAutoBattle;
 };
-window.addEventListener('resize', () => scheduleTitleFit());
-const titleFitObserver = new MutationObserver(mutations => {
-  if (mutations.some(m => Array.from(m.addedNodes || []).some(n => n.nodeType === 1 && (n.matches?.('.card,.cardDetailBackdrop') || n.querySelector?.('.card'))))) {
-    scheduleTitleFit();
-  }
-});
-titleFitObserver.observe(document.body, { childList: true, subtree: true });
