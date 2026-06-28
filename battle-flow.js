@@ -7,19 +7,19 @@ const BATTLE_FLOW_ENEMY_TYPES=[
 ];
 function battleFlowView(){return ['home','history','team','enemy','playback','results'].includes(state.battleView)?state.battleView:'home'}
 function setBattleFlowView(v){state.battleView=v;render()}
-function battleFlowEnemy(){return BATTLE_FLOW_ENEMY_TYPES.some(x=>x.id===state.aiEnemyType)?state.aiEnemyType:'random_encounter'}
-function battleFlowEnemyInfo(id=battleFlowEnemy()){return BATTLE_FLOW_ENEMY_TYPES.find(x=>x.id===id)||BATTLE_FLOW_ENEMY_TYPES[0]}
+function battleFlowEnemyId(){return BATTLE_FLOW_ENEMY_TYPES.some(x=>x.id===state.aiEnemyType)?state.aiEnemyType:'random_encounter'}
+function battleFlowEnemyInfo(id=battleFlowEnemyId()){return BATTLE_FLOW_ENEMY_TYPES.find(x=>x.id===id)||BATTLE_FLOW_ENEMY_TYPES[0]}
 function battleFlowCardScore(c){return Number(c.grade||0)||score(c)}
 function battleFlowSortedCards(exclude=new Set()){return (state.cards||[]).slice().filter(c=>!exclude.has(c.id)).sort((a,b)=>battleFlowCardScore(b)-battleFlowCardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
 function battleFlowAutoSquad(){return battleFlowSortedCards().slice(0,3)}
 function battleFlowSquadIds(){return Array.isArray(state.aiBattleSquad)?state.aiBattleSquad.map(String).filter(Boolean).slice(0,3):[]}
+function battleFlowSelectedIds(){return state.aiBattleSquadMode==='manual'?battleFlowSquadIds():battleFlowAutoSquad().map(c=>c.id)}
 function battleFlowResolvedSquad(){
   const chosen=[],used=new Set();
-  for(const id of battleFlowSquadIds()){let c=(state.cards||[]).find(x=>String(x.id)===id);if(c&&!used.has(c.id)&&chosen.length<3){chosen.push(c);used.add(c.id)}}
+  for(const id of battleFlowSelectedIds()){let c=(state.cards||[]).find(x=>String(x.id)===id);if(c&&!used.has(c.id)&&chosen.length<3){chosen.push(c);used.add(c.id)}}
   for(const c of battleFlowSortedCards(used)){if(chosen.length<3){chosen.push(c);used.add(c.id)}}
   return chosen;
 }
-function battleFlowSelectedIds(){return battleFlowSquadIds().length?battleFlowSquadIds():battleFlowAutoSquad().map(c=>c.id)}
 function battleFlowRecord(){const hist=typeof battleHistoryList==='function'?battleHistoryList():(Array.isArray(state.battleHistory)?state.battleHistory:[]);const total=hist.length,wins=hist.filter(x=>x.win).length,xp=hist.reduce((s,x)=>s+Number(x.xpAwarded||0),0),tokens=hist.reduce((s,x)=>s+Number(x.reward||0),0);return{hist,total,wins,losses:total-wins,winRate:total?Math.round(wins/total*100):0,xp,tokens}}
 function battleFlowHome(){
   const r=battleFlowRecord(),last=state.lastBattle;
@@ -38,7 +38,7 @@ function battleFlowTeam(){
   const cards=battleFlowSortedCards();
   return shell(`<div class="battleFlow"><div class="head"><div><h1>Choose Your Squad</h1><p>Pick up to three cards. Empty slots auto-fill from your strongest remaining cards.</p></div><div class="row"><button class="btn" data-battle-flow="home">Back</button><button class="gold" data-battle-flow="enemy">Continue</button></div></div><section class="box battleFlowSelected"><div class="battleFlowTop"><h3>Selected Squad</h3><div class="row"><button class="btn" data-battle-auto-squad>Auto Pick Best</button><button class="btn" data-battle-clear-squad>Clear</button></div></div><div class="battleFlowSlots">${[0,1,2].map(i=>battleFlowSlot(selected[i],i)).join('')}</div></section><section class="box"><div class="battleFlowTop"><h3>Card Pool</h3><small>${selected.length}/3 selected</small></div><div class="battleFlowPickGrid">${cards.length?cards.map(c=>`<button class="battleFlowPick ${selectedSet.has(c.id)?'on':''}" data-battle-pick="${h(c.id)}">${cardHtml(c)}<span>Grade ${h(battleFlowCardScore(c))}</span></button>`).join(''):'<div>No cards available. Mint a card first.</div>'}</div></section></div>`);
 }
-function battleFlowEnemy(){
+function battleFlowEnemyView(){
   const active=battleFlowEnemyInfo();
   const squad=battleFlowResolvedSquad();
   return shell(`<div class="battleFlow"><div class="head"><div><h1>Choose Encounter</h1><p>Select what kind of AI squad you want to fight.</p></div><div class="row"><button class="btn" data-battle-flow="team">Back</button><button class="gold" data-begin-battle-flow>Begin Battle</button></div></div><section class="box"><h3>Your Squad</h3><div class="battleFlowMiniSquad">${squad.map(c=>`<div><b>${h(c.title)}</b><small>${h(ch(c.cid).name)} · Grade ${h(battleFlowCardScore(c))}</small></div>`).join('')||'<p>No squad selected.</p>'}</div></section><section class="box"><h3>Enemy Type</h3><p>Current: <b>${h(active.label)}</b></p><div class="battleFlowEnemyGrid">${BATTLE_FLOW_ENEMY_TYPES.map(e=>`<button class="battleFlowEnemy ${active.id===e.id?'on':''}" data-battle-enemy="${e.id}"><b>${h(e.label)}</b><small>${h(e.desc)}</small></button>`).join('')}</div></section></div>`);
@@ -58,7 +58,7 @@ function battleFlowPage(){
   const view=battleFlowView();
   if(view==='history')return battleFlowHistory();
   if(view==='team')return battleFlowTeam();
-  if(view==='enemy')return battleFlowEnemy();
+  if(view==='enemy')return battleFlowEnemyView();
   if(view==='playback')return battleFlowPlayback();
   if(view==='results')return battleFlowResults();
   return battleFlowHome();
@@ -67,12 +67,12 @@ async function beginBattleFlow(){
   if(state.battleFlowRunning)return;
   try{
     state.battleFlowRunning=true;
-    const ids=battleFlowSelectedIds().slice(0,3);
+    const ids=battleFlowResolvedSquad().map(c=>c.id).slice(0,3);
     state.aiBattleSquad=ids;
     state.aiBattleSquadMode=ids.length?'manual':'auto';
     state.battleView='playback';
     render();
-    const data=await api('/api/battle/fight',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'next',aiBattleSquadMode:state.aiBattleSquadMode,aiBattleSquad:ids,aiEnemyType:battleFlowEnemy()})});
+    const data=await api('/api/battle/fight',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'next',aiBattleSquadMode:state.aiBattleSquadMode,aiBattleSquad:ids,aiEnemyType:battleFlowEnemyId()})});
     state.lastBattle=data.battle;
     state.battleFlowActiveBattle=data.battle;
     if(data.battleHistory)state.battleHistory=data.battleHistory;
@@ -90,9 +90,9 @@ async function beginBattleFlow(){
 function bindBattleFlow(){
   document.getElementById('battleHistoryPanel')?.remove();
   document.querySelectorAll('[data-battle-flow]').forEach(b=>{if(b.dataset.battleFlowReady)return;b.dataset.battleFlowReady='1';b.onclick=()=>setBattleFlowView(b.dataset.battleFlow)});
-  document.querySelectorAll('[data-battle-pick]').forEach(b=>{if(b.dataset.battlePickReady)return;b.dataset.battlePickReady='1';b.onclick=()=>{let id=b.dataset.battlePick,ids=battleFlowSelectedIds().filter(Boolean);ids=ids.includes(id)?ids.filter(x=>x!==id):(ids.length<3?[...ids,id]:ids);state.aiBattleSquad=ids;state.aiBattleSquadMode=ids.length?'manual':'auto';render()}});
-  document.querySelector('[data-battle-auto-squad]')?.addEventListener('click',()=>{state.aiBattleSquad=battleFlowAutoSquad().map(c=>c.id);state.aiBattleSquadMode='auto';render()});
-  document.querySelector('[data-battle-clear-squad]')?.addEventListener('click',()=>{state.aiBattleSquad=[];state.aiBattleSquadMode='auto';render()});
+  document.querySelectorAll('[data-battle-pick]').forEach(b=>{if(b.dataset.battlePickReady)return;b.dataset.battlePickReady='1';b.onclick=()=>{let id=b.dataset.battlePick,ids=battleFlowSquadIds();ids=ids.includes(id)?ids.filter(x=>x!==id):(ids.length<3?[...ids,id]:ids);state.aiBattleSquad=ids;state.aiBattleSquadMode='manual';render()}});
+  document.querySelector('[data-battle-auto-squad]')?.addEventListener('click',()=>{state.aiBattleSquad=[];state.aiBattleSquadMode='auto';render()});
+  document.querySelector('[data-battle-clear-squad]')?.addEventListener('click',()=>{state.aiBattleSquad=[];state.aiBattleSquadMode='manual';render()});
   document.querySelectorAll('[data-battle-enemy]').forEach(b=>{if(b.dataset.battleEnemyReady)return;b.dataset.battleEnemyReady='1';b.onclick=()=>{state.aiEnemyType=b.dataset.battleEnemy;render()}});
   document.querySelector('[data-begin-battle-flow]')?.addEventListener('click',beginBattleFlow);
 }
