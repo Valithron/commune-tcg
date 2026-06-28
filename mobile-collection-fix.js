@@ -59,14 +59,14 @@ function loadBattleRulesPatch(){
   if(document.getElementById('ctcgBattleRulesPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleRulesPatch';
-  script.src='/battle-rules.js?v=44';
+  script.src='/battle-rules.js?v=46';
   document.body.appendChild(script);
 }
 function loadBattleFlowPatch(){
   if(document.getElementById('ctcgBattleFlowPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFlowPatch';
-  script.src='/battle-flow.js?v=45';
+  script.src='/battle-flow.js?v=46';
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
