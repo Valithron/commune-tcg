@@ -47,10 +47,19 @@ function loadBattleHistoryPatch(){
   script.onload=()=>{if(user&&state.page==='battle')render()};
   document.body.appendChild(script);
 }
+function loadCardXpPatch(){
+  if(document.getElementById('ctcgCardXpPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgCardXpPatch';
+  script.src='/card-xp.js?v=39';
+  script.onload=()=>{if(user)render()};
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
 loadEncounterPatch();
 loadMarketSparklinePatch();
 loadBattleHistoryPatch();
+loadCardXpPatch();
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
