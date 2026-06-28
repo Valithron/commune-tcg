@@ -1,4 +1,5 @@
 const marketChartState={loading:false,data:null,loadedAt:0};
+const marketTradeState={};
 function marketPoints(id){
   const rows=(marketChartState.data&&marketChartState.data[id])||[];
   const current={price:Number(state.prices[id]||0),createdAt:new Date().toISOString(),source:'current'};
@@ -25,9 +26,16 @@ function marketSparkline(id,color){
   const flat=pts.length===1?`M ${pad} ${hgt/2} L ${w-pad} ${hgt/2}`:`M ${coords.replace(/ /g,' L ')}`;
   return`<svg class="marketSpark" viewBox="0 0 ${w} ${hgt}" preserveAspectRatio="none" aria-label="24 hour price chart"><path class="sparkFill" d="${flat} L ${w-pad} ${hgt-pad} L ${pad} ${hgt-pad} Z" style="--a:${color}"></path><polyline points="${coords}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
 }
+function marketTradeDefaults(id){
+  return marketTradeState[id]||{action:'buy',qty:10};
+}
+function marketTradeControls(c){
+  const cur=marketTradeDefaults(c.id),isSell=cur.action==='sell';
+  return`<div class="marketTradeControls ${isSell?'sell':'buy'}" data-market-id="${c.id}"><select class="marketAction" data-market-action="${c.id}" aria-label="Trade action"><option value="buy" ${!isSell?'selected':''}>Buy</option><option value="sell" ${isSell?'selected':''}>Sell</option></select><select class="marketQty" data-market-qty="${c.id}" aria-label="Trade amount"><option value="10" ${Number(cur.qty)===10?'selected':''}>10</option><option value="100" ${Number(cur.qty)===100?'selected':''}>100</option><option value="1000" ${Number(cur.qty)===1000?'selected':''}>1000</option></select><button class="marketTradeSubmit ${isSell?'sell':'buy'}" data-market-submit="${c.id}">${isSell?'Sell':'Buy'}</button></div>`;
+}
 function marketCardWithChart(c){
   const trend=marketTrend(c.id),trendClass=trend.pct>=0?'up':'down';
-  return`<article class="box marketCardChart" style="--a:${c.a}"><div class="row marketCardTop"><span class="coin" style="--a:${c.a}">${c.in}</span><b>${c.name}</b></div><div class="marketPriceChartRow"><div><h3>$${Number(state.prices[c.id]||0).toFixed(2)}</h3><p>${fmt(state.tokens[c.id])} tokens</p></div><div class="marketChartBox">${marketSparkline(c.id,c.a)}<small class="trend ${trendClass}">${h(trend.label)}</small></div></div><div class="row"><button class="btn" data-buy="${c.id}">Buy 10</button><button class="btn" data-sell="${c.id}">Sell 10</button></div></article>`;
+  return`<article class="box marketCardChart" style="--a:${c.a}"><div class="row marketCardTop"><span class="coin" style="--a:${c.a}">${c.in}</span><b>${c.name}</b></div><div class="marketPriceChartRow"><div><h3>$${Number(state.prices[c.id]||0).toFixed(2)}</h3><p>${fmt(state.tokens[c.id])} tokens</p></div><div class="marketChartBox">${marketSparkline(c.id,c.a)}<small class="trend ${trendClass}">${h(trend.label)}</small></div></div>${marketTradeControls(c)}</article>`;
 }
 const marketChartOldMarket=market;
 market=function(){return shell(`<div class="head"><div><h1>Token Market</h1><p>Shared prices. Sparklines show recorded movement over the last 24 hours.</p></div><button class="btn">Cash: $${num(state.cash)}</button></div><div class="market">${C.map(c=>marketCardWithChart(c)).join('')}</div>`)};
@@ -37,15 +45,40 @@ async function loadMarketChart(){
   try{const d=await api('/api/market/chart');marketChartState.data=d.history||{};marketChartState.loadedAt=Date.now();if(state.page==='market')render()}catch(e){console.warn(e)}
   finally{marketChartState.loading=false}
 }
+function updateMarketTradeBox(box){
+  if(!box)return;
+  const id=box.dataset.marketId,action=box.querySelector('.marketAction')?.value||'buy',qty=Number(box.querySelector('.marketQty')?.value||10),btn=box.querySelector('[data-market-submit]');
+  marketTradeState[id]={action,qty};
+  box.classList.toggle('sell',action==='sell');
+  box.classList.toggle('buy',action!=='sell');
+  if(btn){btn.textContent=action==='sell'?'Sell':'Buy';btn.classList.toggle('sell',action==='sell');btn.classList.toggle('buy',action!=='sell')}
+}
+function bindMarketTradeControls(){
+  document.querySelectorAll('.marketTradeControls').forEach(box=>updateMarketTradeBox(box));
+  document.querySelectorAll('[data-market-action],[data-market-qty]').forEach(el=>el.onchange=()=>updateMarketTradeBox(el.closest('.marketTradeControls')));
+  document.querySelectorAll('[data-market-submit]').forEach(btn=>btn.onclick=async()=>{
+    const box=btn.closest('.marketTradeControls'),id=btn.dataset.marketSubmit;
+    if(!box||!id)return;
+    updateMarketTradeBox(box);
+    const cur=marketTradeDefaults(id),action=cur.action==='sell'?'sell':'buy',qty=[10,100,1000].includes(Number(cur.qty))?Number(cur.qty):10;
+    const oldText=btn.textContent;
+    try{
+      btn.disabled=true;
+      btn.textContent=action==='sell'?'Selling...':'Buying...';
+      await api(`/api/market/${action}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,qty})});
+      await loadState();
+    }catch(e){alert(e.message);btn.disabled=false;btn.textContent=oldText}
+  });
+}
 function injectMarketChartStyles(){
   if(document.getElementById('ctcgMarketChartStyles'))return;
   const style=document.createElement('style');
   style.id='ctcgMarketChartStyles';
   style.textContent=`
-.marketCardChart{display:grid;gap:14px}.marketCardTop{align-items:center}.marketPriceChartRow{display:grid;grid-template-columns:minmax(0,1fr)minmax(150px,220px);gap:14px;align-items:center}.marketCardChart h3{margin:0 0 8px}.marketChartBox{border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#0b1020;padding:8px;display:grid;gap:4px}.marketSpark{width:100%;height:54px;display:block;overflow:visible}.sparkFill{fill:color-mix(in srgb,var(--a),transparent 84%)}.marketSparkEmpty{height:54px;display:grid;place-items:center;color:#8f96b2;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase}.trend{display:block;text-align:right;color:#aeb2cc;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase}.trend.up{color:#35d6c5}.trend.down{color:#ff8f70}@media(max-width:720px){.marketPriceChartRow{grid-template-columns:1fr}.marketChartBox{margin-top:2px}.marketSpark{height:48px}.trend{text-align:left}}
+.marketCardChart{display:grid;gap:14px}.marketCardTop{align-items:center}.marketPriceChartRow{display:grid;grid-template-columns:minmax(0,1fr)minmax(150px,220px);gap:14px;align-items:center}.marketCardChart h3{margin:0 0 8px}.marketChartBox{border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#0b1020;padding:8px;display:grid;gap:4px}.marketSpark{width:100%;height:54px;display:block;overflow:visible}.sparkFill{fill:color-mix(in srgb,var(--a),transparent 84%)}.marketSparkEmpty{height:54px;display:grid;place-items:center;color:#8f96b2;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase}.trend{display:block;text-align:right;color:#aeb2cc;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase}.trend.up{color:#35d6c5}.trend.down{color:#ff8f70}.marketTradeControls{display:grid;grid-template-columns:minmax(0,1fr)minmax(0,.85fr)minmax(104px,1fr);gap:10px;align-items:center}.marketTradeControls select,.marketTradeSubmit{height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#171b2f;color:#dfe4ff;padding:0 12px;font:900 .86rem 'JetBrains Mono',monospace}.marketTradeControls.buy .marketAction{color:#28e07b;border-color:rgba(40,224,123,.45)}.marketTradeControls.sell .marketAction{color:#ff6b6b;border-color:rgba(255,107,107,.48)}.marketTradeSubmit{cursor:pointer;text-transform:uppercase;letter-spacing:.04em}.marketTradeSubmit.buy{background:rgba(40,224,123,.14);border-color:rgba(40,224,123,.58);color:#6cffab}.marketTradeSubmit.sell{background:rgba(255,107,107,.14);border-color:rgba(255,107,107,.6);color:#ff9a9a}.marketTradeSubmit:disabled{opacity:.6;cursor:wait}@media(max-width:720px){.marketPriceChartRow{grid-template-columns:1fr}.marketChartBox{margin-top:2px}.marketSpark{height:48px}.trend{text-align:left}.marketTradeControls{grid-template-columns:1fr 1fr}.marketTradeSubmit{grid-column:1/-1}}
 `;
   document.head.appendChild(style);
 }
 const marketChartOldBind=bind;
-bind=function(){marketChartOldBind();injectMarketChartStyles();if(state.page==='market'&&(!marketChartState.data||Date.now()-marketChartState.loadedAt>60000))loadMarketChart()};
+bind=function(){marketChartOldBind();injectMarketChartStyles();bindMarketTradeControls();if(state.page==='market'&&(!marketChartState.data||Date.now()-marketChartState.loadedAt>60000))loadMarketChart()};
 injectMarketChartStyles();
