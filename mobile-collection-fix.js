@@ -59,8 +59,7 @@ function loadBattleRulesPatch(){
   if(document.getElementById('ctcgBattleRulesPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleRulesPatch';
-  script.src='/battle-rules.js?v=43';
-  script.onload=()=>{if(user&&state.page==='battle')render()};
+  script.src='/battle-rules.js?v=44';
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
