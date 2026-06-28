@@ -66,7 +66,7 @@ function loadBattleFlowPatch(){
   if(document.getElementById('ctcgBattleFlowPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFlowPatch';
-  script.src='/battle-flow.js?v=47';
+  script.src='/battle-flow.js?v=48';
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
