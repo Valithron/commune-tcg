@@ -9,6 +9,10 @@ function mobileCollectionFilterHtml(){
   const chars=mobileCollectionCharacters();
   return `<div class="mobileCollectionFilter" aria-label="Collection character filter"><button class="mobileChar ${allOn?'on':''}" data-char="all"><span class="av" style="--a:#e9c349">ALL</span><b>All</b></button>${chars.map(c=>`<button class="mobileChar ${state.sel===c.id?'on':''}" data-char="${c.id}"><span class="av" style="--a:${c.a}">${c.in}</span><b>${c.name}</b></button>`).join('')}</div>`;
 }
+function battleLogHtml(b){
+  const log=typeof renderBattleLog==='function'?renderBattleLog(b):((b&&b.rounds)||[]).map(r=>`<div class="battleLogRound">Round ${r.round}</div>${(r.events||[]).map(e=>`<div class="battleLogEvent">${h(e.text||'')}</div>`).join('')}`).join('');
+  return `<div class="battleFeed"><div class="battleFeedTop"><div><div class="battleResult" id="battleResult">${b?h(b.summary||'Battle complete.'):'Ready to battle.'}</div><div class="battleEventText" id="battleEventText">${b?'Replay the latest battle or start a new one.':'Click Start Auto-Battle.'}</div></div><div class="row">${b?'<button class="btn" id="replayBattle">Replay</button>':''}<button class="btn" id="skipBattle" style="display:none">Skip Replay</button></div></div><div class="battleLogList" id="battleLogList">${log}</div></div>`;
+}
 function injectMobileCollectionStyles(){
   if(document.getElementById('ctcgMobileCollectionFixStyles'))return;
   const style=document.createElement('style');
