@@ -39,9 +39,18 @@ function loadMarketSparklinePatch(){
   script.onload=()=>{if(user&&state.page==='market')render()};
   document.body.appendChild(script);
 }
+function loadBattleHistoryPatch(){
+  if(document.getElementById('ctcgBattleHistoryPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleHistoryPatch';
+  script.src='/battle-history.js?v=37';
+  script.onload=()=>{if(user&&state.page==='battle')render()};
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
 loadEncounterPatch();
 loadMarketSparklinePatch();
+loadBattleHistoryPatch();
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
