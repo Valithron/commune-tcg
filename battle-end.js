@@ -3,9 +3,32 @@ function injectBattleEndStyles() {
   const style = document.createElement('style');
   style.id = 'ctcgBattleEndStyles';
   style.textContent = `
-.battleEndPanel{display:none;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:radial-gradient(circle at 18% 0,rgba(243,201,63,.18),transparent 32%),linear-gradient(145deg,#131a2d,#080c18);padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.34);position:relative;overflow:hidden}.battleEndPanel.show{display:grid;gap:14px}.battleStage.playing .battleEndPanel{display:none!important}.battleEndPanel.victory{border-color:rgba(243,201,63,.42)}.battleEndPanel.defeat{border-color:rgba(255,95,118,.34)}.battleEndHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.battleEndKicker{font:900 .68rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:#aeb2cc}.battleEndTitle{font:900 clamp(1.55rem,4vw,3rem) Sora,Inter,sans-serif;margin:2px 0;color:#f3c93f}.battleEndPanel.defeat .battleEndTitle{color:#ff7b91}.battleEndReason{color:#c8ccdf;font-weight:700}.battleRewardCard{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.13);border-radius:16px;background:#0a0f1d;padding:12px 14px;min-width:min(100%,310px)}.battleRewardCard .coin{width:42px;height:42px;font-size:.85rem;flex:none}.battleRewardCard small,.battleReportStat small{display:block;color:#9fa5bf;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}.battleRewardCard b{display:block;color:#fff;font:900 1.15rem Sora,Inter,sans-serif}.battleReportGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.battleReportStat{border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#0c1121;padding:11px}.battleReportStat b{display:block;color:#edf1ff;font:900 1rem Sora,Inter,sans-serif;margin-top:3px}.battleEndActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.battleEndActions .gold{font-size:.95rem;padding:12px 18px}.battleEndNote{color:#9fa5bf;font-size:.82rem}.battleEndMvp{color:#edf1ff;font-weight:900}.battleEndPanel:after{content:"";position:absolute;right:-80px;top:-80px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.1),transparent 62%);pointer-events:none}@media(max-width:720px){.battleEndHeader{display:grid}.battleRewardCard{min-width:0}.battleEndActions{display:grid}.battleEndActions .gold,.battleEndActions .btn{width:100%}}
+.battleEndPanel{display:none;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:radial-gradient(circle at 18% 0,rgba(243,201,63,.18),transparent 32%),linear-gradient(145deg,#131a2d,#080c18);padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.34);position:relative;overflow:hidden}.battleEndPanel.show{display:grid;gap:14px}.battleStage.playing .battleEndPanel{display:none!important}.battleEndPanel.victory{border-color:rgba(243,201,63,.42)}.battleEndPanel.defeat{border-color:rgba(255,95,118,.34)}.battleEndHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.battleEndKicker{font:900 .68rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:#aeb2cc}.battleEndTitle{font:900 clamp(1.55rem,4vw,3rem) Sora,Inter,sans-serif;margin:2px 0;color:#f3c93f}.battleEndPanel.defeat .battleEndTitle{color:#ff7b91}.battleEndReason{color:#c8ccdf;font-weight:700}.battleRewardCard{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.13);border-radius:16px;background:#0a0f1d;padding:12px 14px;min-width:min(100%,310px)}.battleRewardCard .coin{width:42px;height:42px;font-size:.85rem;flex:none}.battleRewardCard small,.battleReportStat small{display:block;color:#9fa5bf;font:900 .62rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}.battleRewardCard b{display:block;color:#fff;font:900 1.15rem Sora,Inter,sans-serif}.battleReportGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.battleReportStat{border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#0c1121;padding:11px}.battleReportStat b{display:block;color:#edf1ff;font:900 1rem Sora,Inter,sans-serif;margin-top:3px}.battleEndActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.battleEndActions .gold{font-size:.95rem;padding:12px 18px}.battleEndNote{color:#9fa5bf;font-size:.82rem}.battleEndMvp{color:#edf1ff;font-weight:900}.battleEndPanel:after{content:"";position:absolute;right:-80px;top:-80px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.1),transparent 62%);pointer-events:none}
+.battleAuto .card{--battleTitleScale:1}.battleAuto .card.battle-title-fit-1{--battleTitleScale:.92}.battleAuto .card.battle-title-fit-2{--battleTitleScale:.84}.battleAuto .card.battle-title-fit-3{--battleTitleScale:.76}.battleAuto .card.battle-title-fit-4{--battleTitleScale:.68}.battleAuto .card.battle-title-fit-5{--battleTitleScale:.60}.battleAuto .card.battle-title-fit-6{--battleTitleScale:.52}.battleAuto .card .ctop strong{font-size:clamp(calc(.70rem * var(--battleTitleScale)),calc(5cqw * var(--battleTitleScale)),calc(1.08rem * var(--battleTitleScale)))!important;letter-spacing:calc(-.055em - ((1 - var(--battleTitleScale)) * .08em))!important;max-width:calc(100% - 3.55rem)!important;line-height:.96!important}.battleAuto .battleTeamGrid .card .badge{font-size:clamp(.34rem,2.1cqw,.52rem)!important;padding:.34em .48em!important}.battleAuto .battleTeamGrid .card .ctop{gap:.25rem!important}
+@media(max-width:720px){.battleEndHeader{display:grid}.battleRewardCard{min-width:0}.battleEndActions{display:grid}.battleEndActions .gold,.battleEndActions .btn{width:100%}.battleAuto .card .ctop strong{font-size:clamp(calc(.56rem * var(--battleTitleScale)),calc(5.8cqw * var(--battleTitleScale)),calc(.86rem * var(--battleTitleScale)))!important;max-width:calc(100% - 3rem)!important}}
 `;
   document.head.appendChild(style);
+}
+function clearBattleTitleFit(card) {
+  card?.classList.remove('battle-title-fit-1','battle-title-fit-2','battle-title-fit-3','battle-title-fit-4','battle-title-fit-5','battle-title-fit-6');
+}
+function fitOneBattleTitle(title) {
+  const card = title.closest('.battleAuto .card');
+  if (!card) return;
+  const steps = ['', 'battle-title-fit-1', 'battle-title-fit-2', 'battle-title-fit-3', 'battle-title-fit-4', 'battle-title-fit-5', 'battle-title-fit-6'];
+  for (const step of steps) {
+    clearBattleTitleFit(card);
+    if (step) card.classList.add(step);
+    if (title.scrollWidth <= title.clientWidth + 1) break;
+  }
+}
+function fitBattleTitles(root = document) {
+  requestAnimationFrame(() => root.querySelectorAll('.battleAuto .card .ctop strong').forEach(fitOneBattleTitle));
+}
+function scheduleBattleTitleFit(root = document) {
+  fitBattleTitles(root);
+  setTimeout(() => fitBattleTitles(root), 80);
+  setTimeout(() => fitBattleTitles(root), 260);
 }
 function battleEndReportStats(b) {
   const player = b?.player || [];
@@ -100,4 +123,12 @@ bind = function() {
   battleEndOldBind();
   injectBattleEndStyles();
   setupBattleEndButtons();
+  scheduleBattleTitleFit();
 };
+window.addEventListener('resize', () => scheduleBattleTitleFit());
+const battleTitleObserver = new MutationObserver(mutations => {
+  if (mutations.some(m => Array.from(m.addedNodes || []).some(n => n.nodeType === 1 && (n.matches?.('.battleAuto .card') || n.querySelector?.('.battleAuto .card'))))) {
+    scheduleBattleTitleFit();
+  }
+});
+battleTitleObserver.observe(document.body, { childList: true, subtree: true });
