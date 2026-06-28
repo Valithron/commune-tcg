@@ -46,3 +46,4 @@ async function deleteCard(){let c=state.modal.card;try{await post('/api/admin/ca
 async function saveEnemy(){let e=state.modal.enemy||{};try{let upload=await maybeUpload('enemy-template');let payload=enemyPayload({id:e.id,img:upload.url||e.img||null,imageKey:upload.key||e.imageKey||null});await post('/api/admin/enemy-template',payload);state.modal=null;state.ok='Enemy template saved.';await load()}catch(err){state.err=err.message;render()}}
 async function deleteEnemy(){let e=state.modal.enemy;try{await post('/api/admin/enemy-template',{action:'delete',id:e.id});state.modal=null;state.ok='Enemy template deleted.';await load()}catch(err){state.err=err.message;render()}}
 init();
+(function(){if(document.getElementById('adminPrestigePatch'))return;let s=document.createElement('script');s.id='adminPrestigePatch';s.src='/admin/prestige.js?v=1';document.body.appendChild(s)})();
