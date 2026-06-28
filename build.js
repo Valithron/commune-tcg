@@ -4,7 +4,7 @@ const path = require('path');
 const outDir = path.join(__dirname, 'dist');
 fs.mkdirSync(outDir, { recursive: true });
 
-const files = ['index.html', 'app.css', 'app.js', 'crop-touch.css', 'crop-touch.js', 'title-limit.js', 'battle-end.js', 'mint-upload-enhance.js', 'mint-flavor.js', 'mint-success-redirect.js', 'ai-battle-squad.js', 'ai-enemy-type.js', 'market-sparklines.js', 'battle-history.js', 'card-xp.js', 'battle-rules.js', 'battle-flow.js', 'battle-team-fix.js', 'mobile-collection-fix.js', 'collection-desktop-layout.css', 'collection-mobile.css', 'ticker-fix.css', '_headers', '_redirects'];
+const files = ['index.html', 'app.css', 'app.js', 'crop-touch.css', 'crop-touch.js', 'title-limit.js', 'battle-end.js', 'mint-upload-enhance.js', 'mint-flavor.js', 'mint-success-redirect.js', 'ai-battle-squad.js', 'ai-enemy-type.js', 'market-sparklines.js', 'battle-history.js', 'card-xp.js', 'battle-rules.js', 'battle-flow.js', 'battle-team-fix.js', 'battle-fullscreen.js', 'mobile-collection-fix.js', 'collection-desktop-layout.css', 'collection-mobile.css', 'ticker-fix.css', '_headers', '_redirects'];
 for (const file of files) {
   const source = path.join(__dirname, file);
   if (fs.existsSync(source)) fs.copyFileSync(source, path.join(outDir, file));
