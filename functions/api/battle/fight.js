@@ -148,6 +148,10 @@ function makeOpponentCache(enemySquad,existingId=null,enemyType='random_encounte
   enemyType=validEnemyType(enemyType);
   return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:existingId||crypto.randomUUID(),enemyType,enemyTypeLabel:enemyTypeConfig(enemyType).label,enemySquad:enemySquad.map(cacheCard),updatedAt:new Date().toISOString()};
 }
+function battleHistorySummary(b){
+  const player=b.player||[],enemy=b.enemy||[];
+  return{id:b.id,createdAt:b.createdAt,win:!!b.win,enemyType:b.enemyType||'random_encounter',enemyTypeLabel:b.enemyTypeLabel||enemyTypeConfig(b.enemyType).label,squadMode:b.squadMode||'auto',mode:b.mode||'next',mvpTitle:b.mvpTitle||'None',reward:Number(b.reward||0),tokenType:b.tokenType||'cydney',tokenName:b.tokenName||displayName(b.tokenType||'cydney'),rounds:(b.rounds||[]).length,playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,enemyCount:enemy.length,totalDamage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),summary:b.summary||''};
+}
 
 export async function onRequestPost({request,env}){
   try{
@@ -188,11 +192,12 @@ export async function onRequestPost({request,env}){
     meta.aiBotOpponentCache.lastMode=mode;
     meta.aiBotOpponentCache.lastBattleId=battle.id;
     meta.lastBattle=battle;
+    meta.battleHistory=[battleHistorySummary(battle),...(Array.isArray(meta.battleHistory)?meta.battleHistory:[])].slice(0,50);
     meta.log=[{win:battle.win,txt:battle.summary},...(Array.isArray(meta.log)?meta.log:[])].slice(0,40);
     await env.DB.batch([
       env.DB.prepare("UPDATE token_balances SET balance=balance+?,updated_at=datetime('now') WHERE user_id=? AND token_type=?").bind(battle.reward,user.id,battle.tokenType),
       env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta))
     ]);
-    return json({ok:true,battle,win:battle.win,reward:battle.reward,tokenType:battle.tokenType,txt:battle.summary});
+    return json({ok:true,battle,battleHistory:meta.battleHistory,win:battle.win,reward:battle.reward,tokenType:battle.tokenType,txt:battle.summary});
   }catch(e){return json({error:e.message||'Battle failed'},500)}
 }
