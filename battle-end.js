@@ -18,18 +18,24 @@ function battleEndReportStats(b) {
     rounds: (b?.rounds || []).length
   };
 }
+function playerCount(b) { return (b?.player || []).length || 0; }
+function enemyCount(b) { return (b?.enemy || []).length || 0; }
+function battleActionButtons(b) {
+  if (b?.win) {
+    return `<button class="gold" type="button" data-run-battle="next">Next Battle</button>`;
+  }
+  return `<button class="gold" type="button" data-run-battle="rematch">Rematch Same AI Team</button><button class="btn" type="button" data-run-battle="next">Next Battle</button>`;
+}
 function battleEndPanelHtml(b) {
   if (!b) return '';
   const token = ch(b.tokenType || b.mvpCid || 'cydney');
   const stats = battleEndReportStats(b);
   const resultClass = b.win ? 'victory' : 'defeat';
   const resultTitle = b.win ? 'Victory' : 'Defeat';
-  const buttonText = b.win ? 'Next Battle' : 'Rematch';
   const rewardLabel = `${b.win ? '+' : 'Consolation +'}${num(b.reward || 0)} ${token.name} Tokens`;
-  return `<div class="battleEndPanel ${resultClass} show" id="battleEndPanel"><div class="battleEndHeader"><div><div class="battleEndKicker">Battle Report</div><div class="battleEndTitle">${resultTitle}</div><div class="battleEndReason">${h(b.reason || '')}</div></div><div class="battleRewardCard" style="--a:${token.a}"><span class="coin" style="--a:${token.a}">${token.in}</span><div><small>Reward earned</small><b>${h(rewardLabel)}</b></div></div></div><div class="battleReportGrid"><div class="battleReportStat"><small>MVP</small><b class="battleEndMvp">${h(b.mvpTitle || 'None')}</b></div><div class="battleReportStat"><small>Your cards standing</small><b>${stats.playerStanding} / ${playerCount(b)}</b></div><div class="battleReportStat"><small>Enemy cards standing</small><b>${stats.enemyStanding} / ${enemyCount(b)}</b></div><div class="battleReportStat"><small>Total damage</small><b>${num(stats.totalDamage)}</b></div><div class="battleReportStat"><small>Critical hits</small><b>${num(stats.crits)}</b></div><div class="battleReportStat"><small>Rounds</small><b>${num(stats.rounds)}</b></div></div><div class="battleEndActions"><button class="gold" type="button" data-run-battle>${buttonText}</button><button class="btn" type="button" data-page="collection">Back to Collection</button><span class="battleEndNote">Future update: cached enemy pools by enemy type.</span></div></div>`;
+  const source = b.mode === 'rematch' ? 'Cached AI bot rematch' : 'System vs AI bot';
+  return `<div class="battleEndPanel ${resultClass} show" id="battleEndPanel"><div class="battleEndHeader"><div><div class="battleEndKicker">${h(source)} · Battle Report</div><div class="battleEndTitle">${resultTitle}</div><div class="battleEndReason">${h(b.reason || '')}</div></div><div class="battleRewardCard" style="--a:${token.a}"><span class="coin" style="--a:${token.a}">${token.in}</span><div><small>Reward earned</small><b>${h(rewardLabel)}</b></div></div></div><div class="battleReportGrid"><div class="battleReportStat"><small>MVP</small><b class="battleEndMvp">${h(b.mvpTitle || 'None')}</b></div><div class="battleReportStat"><small>Your cards standing</small><b>${stats.playerStanding} / ${playerCount(b)}</b></div><div class="battleReportStat"><small>Enemy cards standing</small><b>${stats.enemyStanding} / ${enemyCount(b)}</b></div><div class="battleReportStat"><small>Total damage</small><b>${num(stats.totalDamage)}</b></div><div class="battleReportStat"><small>Critical hits</small><b>${num(stats.crits)}</b></div><div class="battleReportStat"><small>Rounds</small><b>${num(stats.rounds)}</b></div></div><div class="battleEndActions">${battleActionButtons(b)}<button class="btn" type="button" data-page="collection">Back to Collection</button><span class="battleEndNote">These are system vs AI bot opponents. Rematch reuses the same cached bot squad. Next Battle generates a new bot squad.</span></div></div>`;
 }
-function playerCount(b) { return (b?.player || []).length || 0; }
-function enemyCount(b) { return (b?.enemy || []).length || 0; }
 function revealBattleEndPanel(b) {
   const panel = document.getElementById('battleEndPanel');
   if (!panel) return;
@@ -49,7 +55,7 @@ battleStageHtml = function(b) {
 };
 battle = function() {
   const b = state.lastBattle || null;
-  return shell(`<div class="battleAuto"><div class="head"><div><h1>Battle Arena</h1><p>Fast auto-battles using your best equipped cards, card stats, crits, glancing blows, and matchup bonuses.</p></div><div class="row"><button class="gold" id="fight">Start Auto-Battle</button></div></div>${battleRulesHtml()}${battleStageHtml(b)}</div>`);
+  return shell(`<div class="battleAuto"><div class="head"><div><h1>Battle Arena</h1><p>System vs AI bot auto-battles using your best equipped cards, stats, crits, glancing blows, and matchup bonuses.</p></div><div class="row"><button class="gold" id="fight" data-battle-mode="next">Start Auto-Battle</button></div></div>${battleRulesHtml()}${battleStageHtml(b)}</div>`);
 };
 const battleEndOldPlayReplay = playBattleReplay;
 playBattleReplay = async function(b) {
@@ -57,11 +63,36 @@ playBattleReplay = async function(b) {
   await battleEndOldPlayReplay(b);
   revealBattleEndPanel(b);
 };
+async function runAiBotBattle(mode = 'next') {
+  if (battleAnimating) return;
+  const buttons = Array.from(document.querySelectorAll('#fight,[data-run-battle]'));
+  try {
+    buttons.forEach(b => b.disabled = true);
+    const fight = document.getElementById('fight');
+    if (fight) fight.textContent = mode === 'rematch' ? 'Rematching...' : 'Battling...';
+    const data = await api('/api/battle/fight', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode }) });
+    state.lastBattle = data.battle;
+    state.log = [{ win: data.battle.win, txt: data.battle.summary }, ...(Array.isArray(state.log) ? state.log : [])].slice(0, 40);
+    state.tokens[data.battle.tokenType] = Number(state.tokens[data.battle.tokenType] || 0) + Number(data.battle.reward || 0);
+    render();
+    await playBattleReplay(data.battle);
+    await loadState();
+  } catch (e) {
+    alert(e.message || 'Battle failed');
+    buttons.forEach(b => b.disabled = false);
+    const fight = document.getElementById('fight');
+    if (fight) fight.textContent = 'Start Auto-Battle';
+  }
+}
 function setupBattleEndButtons() {
+  const fight = document.getElementById('fight');
+  if (fight) {
+    fight.onclick = () => runAiBotBattle(fight.dataset.battleMode || 'next');
+  }
   document.querySelectorAll('[data-run-battle]').forEach(button => {
     if (button.dataset.battleEndReady) return;
     button.dataset.battleEndReady = '1';
-    button.onclick = () => document.getElementById('fight')?.click();
+    button.onclick = () => runAiBotBattle(button.dataset.runBattle || 'next');
   });
 }
 const battleEndOldBind = bind;
