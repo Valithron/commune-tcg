@@ -14,17 +14,15 @@ const BATTLE_RULES_SECTIONS=[
   ['Prestige and Market Influence','Card strength, XP, owner diversity, wins, MVPs, and recent activity contribute to character prestige. Prestige affects each token market anchor.'],
   ['Rules Source','The working source of truth is docs/battle-rules.md in the repo. We will expand and check the popup against that document as rules are finalized.']
 ];
-function battleRulesHtml(){return`<div class="battleRulesBackdrop" id="battleRulesModal" role="dialog" aria-modal="true" aria-labelledby="battleRulesTitle"><div class="battleRulesModal"><div class="battleRulesTop"><div><h2 id="battleRulesTitle">Battle Rules</h2><p>Draft reference. Full rules source lives in docs/battle-rules.md.</p></div><button class="btn" id="closeBattleRules" type="button">Close</button></div><div class="battleRulesBody">${BATTLE_RULES_SECTIONS.map(([title,body])=>`<section><h3>${h(title)}</h3><p>${h(body)}</p></section>`).join('')}</div></div></div>`}
-function openBattleRules(){
-  document.getElementById('battleRulesModal')?.remove();
+function closeBattleRules(){document.querySelectorAll('.battleRulesBackdrop,#battleRulesModal').forEach(x=>x.remove())}
+function battleRulesHtml(){return`<div class="battleRulesBackdrop" id="battleRulesModal" role="dialog" aria-modal="true" aria-labelledby="battleRulesTitle" data-battle-rules-backdrop="true"><div class="battleRulesModal"><div class="battleRulesTop"><div><h2 id="battleRulesTitle">Battle Rules</h2><p>Draft reference. Full rules source lives in docs/battle-rules.md.</p></div><button class="btn" data-battle-rules-close="true" type="button">Close</button></div><div class="battleRulesBody">${BATTLE_RULES_SECTIONS.map(([title,body])=>`<section><h3>${h(title)}</h3><p>${h(body)}</p></section>`).join('')}</div></div></div>`}
+function openBattleRules(e){
+  if(e){e.preventDefault();e.stopPropagation()}
+  closeBattleRules();
   document.body.insertAdjacentHTML('beforeend',battleRulesHtml());
-  const close=()=>document.getElementById('battleRulesModal')?.remove();
-  document.getElementById('closeBattleRules')?.addEventListener('click',close);
-  document.getElementById('battleRulesModal')?.addEventListener('click',e=>{if(e.target.id==='battleRulesModal')close()});
-  document.addEventListener('keydown',function escRules(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',escRules)}});
 }
 function injectBattleRulesButton(){
-  if(!user||state.page!=='battle')return;
+  if(!user||state.page!=='battle'){closeBattleRules();return}
   const head=document.querySelector('main.content .head');
   if(!head||document.getElementById('battleRulesBtn'))return;
   const btn=document.createElement('button');
@@ -32,9 +30,21 @@ function injectBattleRulesButton(){
   btn.id='battleRulesBtn';
   btn.type='button';
   btn.textContent='Rules';
-  btn.addEventListener('click',openBattleRules);
+  btn.setAttribute('data-battle-rules-open','true');
   const row=head.querySelector('.row');
   if(row)row.appendChild(btn);else head.appendChild(btn);
+}
+function bindBattleRulesDelegates(){
+  if(window.__ctcgBattleRulesDelegates)return;
+  window.__ctcgBattleRulesDelegates=true;
+  document.addEventListener('click',e=>{
+    const open=e.target.closest&&e.target.closest('[data-battle-rules-open]');
+    if(open){openBattleRules(e);return}
+    const close=e.target.closest&&e.target.closest('[data-battle-rules-close]');
+    if(close){e.preventDefault();e.stopPropagation();closeBattleRules();return}
+    if(e.target&&e.target.matches&&e.target.matches('[data-battle-rules-backdrop]')){closeBattleRules()}
+  },true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeBattleRules()});
 }
 function injectBattleRulesStyles(){
   if(document.getElementById('ctcgBattleRulesStyles'))return;
@@ -46,6 +56,7 @@ function injectBattleRulesStyles(){
   document.head.appendChild(style);
 }
 const battleRulesOldBind=bind;
-bind=function(){battleRulesOldBind();injectBattleRulesStyles();injectBattleRulesButton()};
+bind=function(){battleRulesOldBind();injectBattleRulesStyles();bindBattleRulesDelegates();injectBattleRulesButton()};
 injectBattleRulesStyles();
+bindBattleRulesDelegates();
 setTimeout(injectBattleRulesButton,0);
