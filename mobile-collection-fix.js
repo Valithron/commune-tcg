@@ -43,7 +43,7 @@ function loadBattleHistoryPatch(){
   if(document.getElementById('ctcgBattleHistoryPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleHistoryPatch';
-  script.src='/battle-history.js?v=37';
+  script.src='/battle-history.js?v=40';
   script.onload=()=>{if(user&&state.page==='battle')render()};
   document.body.appendChild(script);
 }
