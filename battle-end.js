@@ -30,6 +30,11 @@ function scheduleBattleTitleFit(root = document) {
   setTimeout(() => fitBattleTitles(root), 80);
   setTimeout(() => fitBattleTitles(root), 260);
 }
+function battleFighter(f, team, done = false) {
+  if (typeof fighterHtml === 'function') return fighterHtml(f, team, Number(f.index || 0));
+  const id = h(f.id || `${team}-${Number(f.index || 0)}`);
+  return `<div class="battleFighter" data-team="${team}" data-fighter-id="${id}">${cardHtml(f)}</div>`;
+}
 function battleEndReportStats(b) {
   const player = b?.player || [];
   const enemy = b?.enemy || [];
