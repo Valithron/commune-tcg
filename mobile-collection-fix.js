@@ -55,11 +55,20 @@ function loadCardXpPatch(){
   script.onload=()=>{if(user)render()};
   document.body.appendChild(script);
 }
+function loadBattleRulesPatch(){
+  if(document.getElementById('ctcgBattleRulesPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleRulesPatch';
+  script.src='/battle-rules.js?v=43';
+  script.onload=()=>{if(user&&state.page==='battle')render()};
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
 loadEncounterPatch();
 loadMarketSparklinePatch();
 loadBattleHistoryPatch();
 loadCardXpPatch();
+loadBattleRulesPatch();
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
