@@ -31,8 +31,16 @@ function loadEncounterPatch(){
   script.src='/ai-'+'enemy-type.js?v=28';
   document.body.appendChild(script);
 }
+function loadMarketSparklinePatch(){
+  if(document.getElementById('ctcgMarketSparklinePatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgMarketSparklinePatch';
+  script.src='/market-sparklines.js?v=36';
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
 loadEncounterPatch();
+loadMarketSparklinePatch();
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
