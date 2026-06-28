@@ -3,6 +3,8 @@ import{displayName,makeCard,mod,score}from'../../_shared/actions.js';
 
 const RARITY_HP={common:0,uncommon:2,rare:5,legendary:10};
 const RARITY_CRIT={common:0,uncommon:.01,rare:.02,legendary:.05};
+const RARITY_FLOOR={common:1,uncommon:6,rare:11,legendary:21};
+const XP_STEPS=[0,80,180,320,500,750,1050,1400,1800,2250,2800,3400,4100,4900,5800,6800,7950,9250,10700,12300,14100,16100,18300,20700,23300,26200,29400,32900,36700,40800];
 const BOT_CACHE_TYPE='system-vs-ai-bot';
 const BOT_RULESET='ai-autobattle-v1';
 const RARITY_ORDER=['common','uncommon','rare','legendary'];
@@ -29,7 +31,14 @@ function validEnemyType(type){return ENEMY_TYPES[type]?type:'random_encounter'}
 function resolveEnemyType(meta,body){return validEnemyType(body?.aiEnemyType||meta?.aiEnemyType||'random_encounter')}
 function namePoolFor(type,rarity){const names=enemyTypeConfig(type).names||{};return Array.isArray(names)?names:[...(names[rarity]||[]),...(names.any||[])]}
 function themedEnemyName(type,enemy,index,used=new Set()){let pool=namePoolFor(type,enemy.rar).filter(Boolean);if(!pool.length)pool=[`Rival ${displayName(enemy.cid)} ${index+1}`];let name=pick(pool);for(let i=0;i<7&&used.has(name)&&pool.length>1;i++)name=pick(pool);used.add(name);return String(name).slice(0,25)}
-function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
+function xpProgress(rar,xp){
+  const floor=RARITY_FLOOR[rar]||1,earned=Math.max(0,Number(xp||0));
+  let plus=0;
+  for(let i=1;i<XP_STEPS.length&&floor+i<=30;i++){if(earned>=XP_STEPS[i])plus=i;else break}
+  const level=Math.min(30,floor+plus),current=XP_STEPS[plus]||0,next=level>=30?null:XP_STEPS[plus+1]||null;
+  return{level,current,next};
+}
+function cleanCard(c){let x={...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),xp:Number(c.xp||0),battles:Number(c.battles||0),wins:Number(c.wins||0),mvpCount:Number(c.mvpCount||0),grade:cardScore(c)};x.level=Number(c.level||0)||xpProgress(x.rar,x.xp).level;return x}
 function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'AI Bot',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,imageKey:x.imageKey||null,crop:x.crop||{x:50,y:50,z:1},equipped:false,enemyType:x.enemyType||null,enemyTypeLabel:x.enemyTypeLabel||null,templateId:x.templateId||null}}
 function topOwned(cards,exclude=new Set()){return cards.map(cleanCard).filter(c=>!exclude.has(c.id)).sort((a,b)=>cardScore(b)-cardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
 function cleanSquadIds(list){return Array.isArray(list)?list.map(x=>String(x||'')).filter(Boolean).slice(0,3):[]}
@@ -145,6 +154,38 @@ function runBattle(playerCards,enemyCards,meta={}){
   const enemyType=validEnemyType(meta.enemyType||'random_encounter'),enemyTypeLabel=enemyTypeConfig(enemyType).label;
   return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),battleType:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,mode:meta.mode||'next',squadMode:meta.squadMode||'auto',selectedSquadIds:meta.selectedSquadIds||[],enemyType,enemyTypeLabel,opponentCacheId:meta.opponentCacheId||null,opponentSource:meta.opponentSource||'generated-ai-bot',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'} vs ${enemyTypeLabel}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
 }
+function xpGainForFighter(f,battle){
+  let xp=10;
+  if(battle.win)xp+=10;
+  if(Number(f.finalHp||0)>0)xp+=5;
+  if(f.id===battle.mvpId)xp+=15;
+  xp+=Math.min(25,Math.floor(Number(f.damageDone||0)/10));
+  xp+=Math.min(9,Number(f.crits||0)*3);
+  return Math.max(1,Math.round(xp));
+}
+function xpReasonForFighter(f,battle,xp){
+  const parts=['participation'];
+  if(battle.win)parts.push('win');
+  if(Number(f.finalHp||0)>0)parts.push('survived');
+  if(f.id===battle.mvpId)parts.push('mvp');
+  if(Number(f.damageDone||0)>0)parts.push(`${Math.round(Number(f.damageDone||0))} damage`);
+  if(Number(f.crits||0)>0)parts.push(`${Number(f.crits||0)} crit`);
+  return `${xp} XP: ${parts.join(', ')}`;
+}
+function xpUpdateJobs(env,cards,battle,userId){
+  const byId=new Map(cards.map(c=>[String(c.id),c])),jobs=[],gains=[];
+  for(const f of battle.player||[]){
+    const card=byId.get(String(f.id));
+    if(!card)continue;
+    const xp=xpGainForFighter(f,battle),reason=xpReasonForFighter(f,battle,xp),oldLevel=xpProgress(card.rar,card.xp).level;
+    const next={...card,xp:Number(card.xp||0)+xp,battles:Number(card.battles||0)+1,wins:Number(card.wins||0)+(battle.win?1:0),mvpCount:Number(card.mvpCount||0)+(f.id===battle.mvpId?1:0),lastXpAt:battle.createdAt};
+    next.level=xpProgress(next.rar,next.xp).level;
+    jobs.push(env.DB.prepare("UPDATE cards SET card_json=?,updated_at=datetime('now') WHERE id=?").bind(JSON.stringify(next),next.id));
+    jobs.push(env.DB.prepare("INSERT INTO card_xp_events (id,card_id,owner_user_id,character_id,xp,reason,battle_id,created_at) VALUES (?,?,?,?,?,?,?,datetime('now'))").bind(crypto.randomUUID(),next.id,userId,next.cid,xp,reason,battle.id));
+    gains.push({cardId:next.id,title:next.title,cid:next.cid,xp,level:next.level,leveledUp:next.level>oldLevel,reason});
+  }
+  return{jobs,gains,total:gains.reduce((s,g)=>s+g.xp,0)};
+}
 function readCachedOpponent(meta){
   const cached=meta?.aiBotOpponentCache;
   if(cached?.type===BOT_CACHE_TYPE&&Array.isArray(cached.enemySquad)&&cached.enemySquad.length)return cached;
@@ -159,8 +200,8 @@ function makeOpponentCache(enemySquad,existingId=null,enemyType='random_encounte
   return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:existingId||crypto.randomUUID(),enemyType,enemyTypeLabel:enemyTypeConfig(enemyType).label,enemySquad:enemySquad.map(cacheCard),updatedAt:new Date().toISOString()};
 }
 function battleHistorySummary(b){
-  const player=b.player||[],enemy=b.enemy||[];
-  return{id:b.id,createdAt:b.createdAt,win:!!b.win,enemyType:b.enemyType||'random_encounter',enemyTypeLabel:b.enemyTypeLabel||enemyTypeConfig(b.enemyType).label,squadMode:b.squadMode||'auto',mode:b.mode||'next',mvpTitle:b.mvpTitle||'None',reward:Number(b.reward||0),tokenType:b.tokenType||'cydney',tokenName:b.tokenName||displayName(b.tokenType||'cydney'),rounds:(b.rounds||[]).length,playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,enemyCount:enemy.length,totalDamage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),summary:b.summary||''};
+  const player=b.player||[],enemy=b.enemy||[],xpGains=b.xpGains||[];
+  return{id:b.id,createdAt:b.createdAt,win:!!b.win,enemyType:b.enemyType||'random_encounter',enemyTypeLabel:b.enemyTypeLabel||enemyTypeConfig(b.enemyType).label,squadMode:b.squadMode||'auto',mode:b.mode||'next',mvpTitle:b.mvpTitle||'None',reward:Number(b.reward||0),tokenType:b.tokenType||'cydney',tokenName:b.tokenName||displayName(b.tokenType||'cydney'),rounds:(b.rounds||[]).length,playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,enemyCount:enemy.length,totalDamage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),xpAwarded:xpGains.reduce((s,g)=>s+Number(g.xp||0),0),summary:b.summary||''};
 }
 
 export async function onRequestPost({request,env}){
@@ -196,6 +237,9 @@ export async function onRequestPost({request,env}){
       opponentSource=templates.length?'admin-template-or-generated-ai-bot':'generated-ai-bot';
     }
     const battle=runBattle(squad,enemy,{mode,squadMode:squadConfig.mode,selectedSquadIds:squadConfig.selectedIds,enemyType,opponentCacheId:opponentCache.opponentId,opponentSource});
+    const xp= xpUpdateJobs(env,cards,battle,user.id);
+    battle.xpGains=xp.gains;
+    battle.summary += ` XP earned: ${xp.total}.`;
     meta.aiBattleSquadMode=squadConfig.mode;
     meta.aiBattleSquad=squadConfig.selectedIds;
     meta.aiEnemyType=requestedEnemyType;
@@ -207,8 +251,9 @@ export async function onRequestPost({request,env}){
     meta.log=[{win:battle.win,txt:battle.summary},...(Array.isArray(meta.log)?meta.log:[])].slice(0,40);
     await env.DB.batch([
       env.DB.prepare("UPDATE token_balances SET balance=balance+?,updated_at=datetime('now') WHERE user_id=? AND token_type=?").bind(battle.reward,user.id,battle.tokenType),
+      ...xp.jobs,
       env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta))
     ]);
-    return json({ok:true,battle,battleHistory:meta.battleHistory,win:battle.win,reward:battle.reward,tokenType:battle.tokenType,txt:battle.summary});
+    return json({ok:true,battle,battleHistory:meta.battleHistory,xpGains:xp.gains,win:battle.win,reward:battle.reward,tokenType:battle.tokenType,txt:battle.summary});
   }catch(e){return json({error:e.message||'Battle failed'},500)}
 }
