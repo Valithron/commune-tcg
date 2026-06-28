@@ -1,18 +1,18 @@
 function battleHistoryList(){
   let hist=Array.isArray(state.battleHistory)?state.battleHistory.slice():[];
   if(!hist.length&&state.lastBattle){
-    const b=state.lastBattle,player=b.player||[],enemy=b.enemy||[];
-    hist=[{id:b.id,createdAt:b.createdAt,win:!!b.win,enemyType:b.enemyType||'random_encounter',enemyTypeLabel:b.enemyTypeLabel||'AI Battle',squadMode:b.squadMode||'auto',mode:b.mode||'next',mvpTitle:b.mvpTitle||'None',reward:Number(b.reward||0),tokenType:b.tokenType||'cydney',tokenName:b.tokenName||ch(b.tokenType||'cydney').name,rounds:(b.rounds||[]).length,playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,enemyCount:enemy.length,totalDamage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),summary:b.summary||''}];
+    const b=state.lastBattle,player=b.player||[],enemy=b.enemy||[],xpGains=b.xpGains||[];
+    hist=[{id:b.id,createdAt:b.createdAt,win:!!b.win,enemyType:b.enemyType||'random_encounter',enemyTypeLabel:b.enemyTypeLabel||'AI Battle',squadMode:b.squadMode||'auto',mode:b.mode||'next',mvpTitle:b.mvpTitle||'None',reward:Number(b.reward||0),tokenType:b.tokenType||'cydney',tokenName:b.tokenName||ch(b.tokenType||'cydney').name,rounds:(b.rounds||[]).length,playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,enemyCount:enemy.length,totalDamage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),xpAwarded:xpGains.reduce((s,g)=>s+Number(g.xp||0),0),summary:b.summary||''}];
   }
   return hist;
 }
 function battleHistoryStats(hist){
-  const total=hist.length,wins=hist.filter(x=>x.win).length,losses=total-wins,tokens=hist.reduce((s,x)=>s+Number(x.reward||0),0),damage=hist.reduce((s,x)=>s+Number(x.totalDamage||0),0),crits=hist.reduce((s,x)=>s+Number(x.crits||0),0);
+  const total=hist.length,wins=hist.filter(x=>x.win).length,losses=total-wins,tokens=hist.reduce((s,x)=>s+Number(x.reward||0),0),damage=hist.reduce((s,x)=>s+Number(x.totalDamage||0),0),crits=hist.reduce((s,x)=>s+Number(x.crits||0),0),xp=hist.reduce((s,x)=>s+Number(x.xpAwarded||0),0);
   const mvpCounts={};
   const typeCounts={};
   for(const hst of hist){if(hst.mvpTitle)mvpCounts[hst.mvpTitle]=(mvpCounts[hst.mvpTitle]||0)+1;if(hst.enemyTypeLabel)typeCounts[hst.enemyTypeLabel]=(typeCounts[hst.enemyTypeLabel]||0)+1}
   const top=(obj,empty)=>Object.entries(obj).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]?.[0]||empty;
-  return{total,wins,losses,winRate:total?Math.round((wins/total)*100):0,tokens,damage,crits,topMvp:top(mvpCounts,'None yet'),topType:top(typeCounts,'None yet')};
+  return{total,wins,losses,winRate:total?Math.round((wins/total)*100):0,tokens,damage,crits,xp,topMvp:top(mvpCounts,'None yet'),topType:top(typeCounts,'None yet')};
 }
 function battleHistoryTime(ts){
   if(!ts)return'';
@@ -21,12 +21,12 @@ function battleHistoryTime(ts){
 function battleHistoryRow(hst){
   const token=ch(hst.tokenType||'cydney');
   const result=hst.win?'Victory':'Defeat';
-  return`<div class="battleHistoryRow ${hst.win?'win':'loss'}"><div class="battleHistoryResult"><b>${result}</b><small>${h(battleHistoryTime(hst.createdAt))}</small></div><div class="battleHistoryMain"><b>${h(hst.enemyTypeLabel||'AI Battle')}</b><small>MVP: ${h(hst.mvpTitle||'None')} · ${num(hst.rounds||0)} rounds · ${h(hst.squadMode||'auto')} squad</small></div><div class="battleHistoryMeta"><span style="--a:${token.a}">+${num(hst.reward||0)} ${token.in}</span><small>${num(hst.totalDamage||0)} dmg · ${num(hst.crits||0)} crit</small></div><div class="battleHistoryStanding"><small>Standing</small><b>${num(hst.playerStanding||0)}/${num(hst.playerCount||0)} vs ${num(hst.enemyStanding||0)}/${num(hst.enemyCount||0)}</b></div></div>`;
+  return`<div class="battleHistoryRow ${hst.win?'win':'loss'}"><div class="battleHistoryResult"><b>${result}</b><small>${h(battleHistoryTime(hst.createdAt))}</small></div><div class="battleHistoryMain"><b>${h(hst.enemyTypeLabel||'AI Battle')}</b><small>MVP: ${h(hst.mvpTitle||'None')} · ${num(hst.rounds||0)} rounds · ${h(hst.squadMode||'auto')} squad</small></div><div class="battleHistoryMeta"><span style="--a:${token.a}">+${num(hst.reward||0)} ${token.in}</span><small>${num(hst.xpAwarded||0)} XP · ${num(hst.totalDamage||0)} dmg · ${num(hst.crits||0)} crit</small></div><div class="battleHistoryStanding"><small>Standing</small><b>${num(hst.playerStanding||0)}/${num(hst.playerCount||0)} vs ${num(hst.enemyStanding||0)}/${num(hst.enemyCount||0)}</b></div></div>`;
 }
 function battleHistoryPanelHtml(){
   const hist=battleHistoryList();
   const s=battleHistoryStats(hist);
-  return`<section class="battleHistoryPanel" id="battleHistoryPanel"><div class="battleHistoryHead"><div><h2>Battle Record</h2><p>Compact history of your last ${hist.length?Math.min(hist.length,50):0} AI bot battles.</p></div><button class="btn" id="refreshBattleHistory" type="button">Refresh</button></div><div class="battleHistoryStats"><div><small>Record</small><b>${num(s.wins)}-${num(s.losses)}</b></div><div><small>Win Rate</small><b>${num(s.winRate)}%</b></div><div><small>Tokens Earned</small><b>${num(s.tokens)}</b></div><div><small>Total Damage</small><b>${num(s.damage)}</b></div><div><small>Critical Hits</small><b>${num(s.crits)}</b></div><div><small>Top MVP</small><b>${h(s.topMvp)}</b></div><div><small>Most Fought</small><b>${h(s.topType)}</b></div></div><div class="battleHistoryList">${hist.length?hist.slice(0,12).map(battleHistoryRow).join(''):'<div class="battleHistoryEmpty">No battle history yet. Run a battle and this record will start filling in.</div>'}</div></section>`;
+  return`<section class="battleHistoryPanel" id="battleHistoryPanel"><div class="battleHistoryHead"><div><h2>Battle Record</h2><p>Compact history of your last ${hist.length?Math.min(hist.length,50):0} AI bot battles.</p></div><button class="btn" id="refreshBattleHistory" type="button">Refresh</button></div><div class="battleHistoryStats"><div><small>Record</small><b>${num(s.wins)}-${num(s.losses)}</b></div><div><small>Win Rate</small><b>${num(s.winRate)}%</b></div><div><small>Tokens Earned</small><b>${num(s.tokens)}</b></div><div><small>Card XP</small><b>${num(s.xp)}</b></div><div><small>Total Damage</small><b>${num(s.damage)}</b></div><div><small>Critical Hits</small><b>${num(s.crits)}</b></div><div><small>Top MVP</small><b>${h(s.topMvp)}</b></div><div><small>Most Fought</small><b>${h(s.topType)}</b></div></div><div class="battleHistoryList">${hist.length?hist.slice(0,12).map(battleHistoryRow).join(''):'<div class="battleHistoryEmpty">No battle history yet. Run a battle and this record will start filling in.</div>'}</div></section>`;
 }
 function injectBattleHistoryStyles(){
   if(document.getElementById('ctcgBattleHistoryStyles'))return;
