@@ -11,10 +11,10 @@ function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
 function nextMarketPrice(tokenType,currentPrice){
   const base=Number(BASE_PRICES[tokenType]||10),price=Math.max(.5,Number(currentPrice||base)),vol=Number(MARKET_VOL[tokenType]||.05);
   const randomMove=(Math.random()*2-1)*vol;
-  let gravity=clamp(((base-price)/base)*.015,-.025,.025);
-  const softFloor=base*.35,softCeiling=base*4;
-  if(price>softCeiling)gravity-=clamp(((price/softCeiling)-1)*.08,0,.12);
-  if(price<softFloor)gravity+=clamp(((softFloor/price)-1)*.08,0,.12);
+  let gravity=clamp(((base-price)/base)*.006,-.01,.01);
+  const softFloor=base*.2,softCeiling=base*8;
+  if(price>softCeiling)gravity-=clamp(((price/softCeiling)-1)*.04,0,.06);
+  if(price<softFloor)gravity+=clamp(((softFloor/price)-1)*.04,0,.06);
   const move=clamp(randomMove+gravity,-.18,.18);
   return Math.max(.5,Number((price*(1+move)).toFixed(2)));
 }
