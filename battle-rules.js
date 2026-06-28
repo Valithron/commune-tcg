@@ -22,9 +22,11 @@ function openBattleRules(e){
   document.body.insertAdjacentHTML('beforeend',battleRulesHtml());
 }
 function injectBattleRulesButton(){
-  if(!user||state.page!=='battle'){closeBattleRules();return}
+  const old=document.getElementById('battleRulesBtn');
+  const view=state&&state.battleView?state.battleView:'home';
+  if(!user||state.page!=='battle'||view!=='home'){old?.remove();if(state.page!=='battle')closeBattleRules();return}
   const head=document.querySelector('main.content .head');
-  if(!head||document.getElementById('battleRulesBtn'))return;
+  if(!head||old)return;
   const btn=document.createElement('button');
   btn.className='btn battleRulesBtn';
   btn.id='battleRulesBtn';
