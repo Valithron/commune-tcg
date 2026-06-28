@@ -36,6 +36,7 @@ function loadMarketSparklinePatch(){
   const script=document.createElement('script');
   script.id='ctcgMarketSparklinePatch';
   script.src='/market-sparklines.js?v=36';
+  script.onload=()=>{if(user&&state.page==='market')render()};
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
