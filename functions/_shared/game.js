@@ -20,7 +20,12 @@ export async function ensureGameSchema(env){
     'CREATE TABLE IF NOT EXISTS token_balances (user_id TEXT NOT NULL, token_type TEXT NOT NULL, balance REAL NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, token_type))',
     'CREATE TABLE IF NOT EXISTS cards (id TEXT PRIMARY KEY, owner_user_id TEXT NOT NULL, character_id TEXT NOT NULL, card_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS player_meta (user_id TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS market_prices (token_type TEXT PRIMARY KEY, price REAL NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)'
+    'CREATE TABLE IF NOT EXISTS market_prices (token_type TEXT PRIMARY KEY, price REAL NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS market_price_history (id INTEGER PRIMARY KEY AUTOINCREMENT, token_type TEXT NOT NULL, price REAL NOT NULL, source TEXT NOT NULL DEFAULT "drift", created_at TEXT DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE INDEX IF NOT EXISTS idx_market_price_history_token_created ON market_price_history(token_type,created_at)',
+    'CREATE TABLE IF NOT EXISTS enemy_card_templates (id TEXT PRIMARY KEY, enemy_type TEXT NOT NULL, character_id TEXT NOT NULL, rarity TEXT NOT NULL, title TEXT NOT NULL, tag TEXT NOT NULL, effect TEXT NOT NULL, pow REAL NOT NULL, def REAL NOT NULL, spd REAL NOT NULL, passive REAL NOT NULL DEFAULT 0, image_key TEXT, image_url TEXT, crop_json TEXT, weight REAL NOT NULL DEFAULT 1, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_enabled ON enemy_card_templates(enemy_type,enabled)',
+    'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_rarity ON enemy_card_templates(enemy_type,rarity)'
   ];
   for(const sql of ddl){await env.DB.prepare(sql).run()}
   const statements=[];
