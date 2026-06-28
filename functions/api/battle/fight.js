@@ -5,6 +5,13 @@ const RARITY_HP={common:0,uncommon:2,rare:5,legendary:10};
 const RARITY_CRIT={common:0,uncommon:.01,rare:.02,legendary:.05};
 const BOT_CACHE_TYPE='system-vs-ai-bot';
 const BOT_RULESET='ai-autobattle-v1';
+const ENEMY_TYPES={
+  random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,names:['Rogue Min-Maxer','Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Vibes Strategist','Mild Crisis'],bias:{p:1,d:1,s:1},difficulty:1},
+  household_chaos:{label:'Household Chaos',characters:['cydney','gabi','ashley'],names:['Laundry Hydra','Sticky Floor Imp','Crayon Goblin','Sippy Cup Ghost','Missing Shoe Spirit','Unfolded Load'],bias:{p:.97,d:1.14,s:1.03},difficulty:1},
+  yard_project:{label:'Yard Project',characters:['sterling','cooper','ashley'],names:['Retaining Wall Golem','Gravel Wraith','Broken Sprinkler','Deck Splinter','Creeping Bindweed','Unleveled Paver'],bias:{p:1.1,d:1.1,s:.93},difficulty:1},
+  rival_commune:{label:'Rival Commune',characters:CHARACTER_IDS,names:['Rival Matriarch','False Project Manager','Overcommitted Wizard','Garage Sale Baron','Softball Revenant','Sourdough Oracle','Counterpart Strategist'],bias:{p:1.04,d:1.04,s:1.04},difficulty:1.04},
+  boss_fight:{label:'Boss Fight',characters:CHARACTER_IDS,names:['Schedule Devourer','Budget Leviathan','Final Errand','Endless Deck Project','Domestic Calamity','Great Paperwork Beast','Appointment Hydra'],bias:{p:1.12,d:1.18,s:1.04},difficulty:1.1}
+};
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
 function randFloat(a,b){return a+Math.random()*(b-a)}
@@ -16,8 +23,11 @@ function critChance(c){return Math.min(.35,.05+Number(c.s||0)*.0025+(RARITY_CRIT
 function matchupMult(a,b){let m=mod(a,b);return m>1?1.15:m<1?.9:1}
 function matchupText(a,b){let m=mod(a,b);return m>1?'strong':m<1?'weak':'neutral'}
 function glanceChance(attacker,defender){return Math.min(.25,Math.max(.03,(Number(defender.s||0)-Number(attacker.s||0))*.0025))}
+function enemyTypeConfig(type){return ENEMY_TYPES[type]||ENEMY_TYPES.random_encounter}
+function validEnemyType(type){return ENEMY_TYPES[type]?type:'random_encounter'}
+function resolveEnemyType(meta,body){return validEnemyType(body?.aiEnemyType||meta?.aiEnemyType||'random_encounter')}
 function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
-function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'Enemy',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,crop:x.crop||{x:50,y:50,z:1},equipped:false}}
+function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'AI Bot',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,crop:x.crop||{x:50,y:50,z:1},equipped:false,enemyType:x.enemyType||null,enemyTypeLabel:x.enemyTypeLabel||null}}
 function topOwned(cards,exclude=new Set()){return cards.map(cleanCard).filter(c=>!exclude.has(c.id)).sort((a,b)=>cardScore(b)-cardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
 function cleanSquadIds(list){return Array.isArray(list)?list.map(x=>String(x||'')).filter(Boolean).slice(0,3):[]}
 function resolveSquadConfig(meta,body){
@@ -40,11 +50,26 @@ function enemyRarity(r){
   const pool=['common','uncommon','rare','legendary'];
   return pick(pool);
 }
-function makeEnemySquad(playerSquad){
+function applyEnemyType(enemy,type,index){
+  const pool=enemyTypeConfig(type),bias=pool.bias||{},difficulty=Number(pool.difficulty||1);
+  const name=pick(pool.names||[] )||`Rival ${displayName(enemy.cid)} ${index+1}`;
+  enemy.title=String(name).slice(0,25);
+  enemy.tag=pool.label;
+  enemy.enemyType=type;
+  enemy.enemyTypeLabel=pool.label;
+  enemy.p=Math.max(4,Math.round(Number(enemy.p||0)*Number(bias.p||1)*difficulty));
+  enemy.d=Math.max(4,Math.round(Number(enemy.d||0)*Number(bias.d||1)*difficulty));
+  enemy.s=Math.max(4,Math.round(Number(enemy.s||0)*Number(bias.s||1)*difficulty));
+  enemy.grade=score(enemy);
+  return cleanCard(enemy);
+}
+function makeEnemySquad(playerSquad,type='random_encounter'){
+  const pool=enemyTypeConfig(type),chars=(pool.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id));
   return playerSquad.map((c,i)=>{
-    const cid=pick(CHARACTER_IDS.filter(id=>id!==c.cid));
-    const enemy=makeCard({cid,rar:enemyRarity(c.rar),title:`Rival ${displayName(cid)} ${i+1}`,tag:'AI Bot'});
-    return cleanCard(enemy);
+    const candidates=(chars.length?chars:CHARACTER_IDS).filter(id=>id!==c.cid);
+    const cid=pick(candidates.length?candidates:(chars.length?chars:CHARACTER_IDS));
+    const enemy=makeCard({cid,rar:enemyRarity(c.rar),title:`Rival ${displayName(cid)} ${i+1}`,tag:pool.label});
+    return applyEnemyType(enemy,type,i);
   });
 }
 function fighter(card,team,index){
@@ -52,7 +77,7 @@ function fighter(card,team,index){
   return{...card,team,index,maxHp:hp,hp,alive:true,damageDone:0,crits:0};
 }
 function publicFighter(f){
-  return{id:f.id,team:f.team,index:f.index,cid:f.cid,title:f.title,tag:f.tag,rar:f.rar,p:f.p,d:f.d,s:f.s,passive:f.passive,effect:f.effect,grade:f.grade,img:f.img||null,crop:f.crop||{x:50,y:50,z:1},equipped:!!f.equipped,maxHp:f.maxHp,finalHp:f.hp,damageDone:f.damageDone,crits:f.crits};
+  return{id:f.id,team:f.team,index:f.index,cid:f.cid,title:f.title,tag:f.tag,rar:f.rar,p:f.p,d:f.d,s:f.s,passive:f.passive,effect:f.effect,grade:f.grade,img:f.img||null,crop:f.crop||{x:50,y:50,z:1},equipped:!!f.equipped,maxHp:f.maxHp,finalHp:f.hp,damageDone:f.damageDone,crits:f.crits,enemyType:f.enemyType||null,enemyTypeLabel:f.enemyTypeLabel||null};
 }
 function living(list){return list.filter(f=>f.alive&&f.hp>0)}
 function targetFor(attacker,opponents){
@@ -107,18 +132,21 @@ function runBattle(playerCards,enemyCards,meta={}){
   const playerCrits=player.reduce((s,f)=>s+f.crits,0),allSurvive=player.every(f=>f.hp>0),enemyAvg=avg(enemy.map(cardScore));
   const mvp=player.slice().sort((a,b)=>b.damageDone-a.damageDone||cardScore(b)-cardScore(a))[0]||player[0];
   const reward=win?Math.round(40+enemyAvg*.8+playerCrits*5+(allSurvive?10:0)):Math.round(10+player.length*5+playerCrits*2);
-  return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),battleType:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,mode:meta.mode||'next',squadMode:meta.squadMode||'auto',selectedSquadIds:meta.selectedSquadIds||[],opponentCacheId:meta.opponentCacheId||null,opponentSource:meta.opponentSource||'generated-ai-bot',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
+  const enemyType=validEnemyType(meta.enemyType||'random_encounter'),enemyTypeLabel=enemyTypeConfig(enemyType).label;
+  return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),battleType:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,mode:meta.mode||'next',squadMode:meta.squadMode||'auto',selectedSquadIds:meta.selectedSquadIds||[],enemyType,enemyTypeLabel,opponentCacheId:meta.opponentCacheId||null,opponentSource:meta.opponentSource||'generated-ai-bot',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'} vs ${enemyTypeLabel}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
 }
 function readCachedOpponent(meta){
   const cached=meta?.aiBotOpponentCache;
   if(cached?.type===BOT_CACHE_TYPE&&Array.isArray(cached.enemySquad)&&cached.enemySquad.length)return cached;
   if(meta?.lastBattle?.battleType===BOT_CACHE_TYPE&&meta.lastBattle.win===false&&Array.isArray(meta.lastBattle.enemy)&&meta.lastBattle.enemy.length){
-    return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:meta.lastBattle.opponentCacheId||`legacy-${meta.lastBattle.id||crypto.randomUUID()}`,enemySquad:meta.lastBattle.enemy.map(cacheCard),createdAt:meta.lastBattle.createdAt||new Date().toISOString()};
+    const enemyType=validEnemyType(meta.lastBattle.enemyType||'random_encounter');
+    return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:meta.lastBattle.opponentCacheId||`legacy-${meta.lastBattle.id||crypto.randomUUID()}`,enemyType,enemyTypeLabel:enemyTypeConfig(enemyType).label,enemySquad:meta.lastBattle.enemy.map(cacheCard),createdAt:meta.lastBattle.createdAt||new Date().toISOString()};
   }
   return null;
 }
-function makeOpponentCache(enemySquad,existingId=null){
-  return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:existingId||crypto.randomUUID(),enemySquad:enemySquad.map(cacheCard),updatedAt:new Date().toISOString()};
+function makeOpponentCache(enemySquad,existingId=null,enemyType='random_encounter'){
+  enemyType=validEnemyType(enemyType);
+  return{type:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,opponentId:existingId||crypto.randomUUID(),enemyType,enemyTypeLabel:enemyTypeConfig(enemyType).label,enemySquad:enemySquad.map(cacheCard),updatedAt:new Date().toISOString()};
 }
 
 export async function onRequestPost({request,env}){
@@ -135,24 +163,28 @@ export async function onRequestPost({request,env}){
     const metaRow=await env.DB.prepare('SELECT value FROM player_meta WHERE user_id=?').bind(user.id).first();
     let meta={};
     try{meta=metaRow?JSON.parse(metaRow.value):{}}catch{meta={}}
+    const requestedEnemyType=resolveEnemyType(meta,body);
     const squadConfig=chooseSquad(cards,meta,body);
     const squad=squadConfig.cards;
     if(!squad.length)return json({error:'No valid battle cards found'},400);
-    let enemy,opponentCache,opponentSource;
+    let enemy,opponentCache,opponentSource,enemyType;
     if(mode==='rematch'){
       opponentCache=readCachedOpponent(meta);
       if(!opponentCache)return json({error:'No cached AI bot opponent is available for rematch'},400);
+      enemyType=validEnemyType(opponentCache.enemyType||'random_encounter');
       enemy=opponentCache.enemySquad.map(cleanCard);
       opponentSource='cached-ai-bot-rematch';
     }else{
-      enemy=makeEnemySquad(squad);
-      opponentCache=makeOpponentCache(enemy);
+      enemyType=requestedEnemyType;
+      enemy=makeEnemySquad(squad,enemyType);
+      opponentCache=makeOpponentCache(enemy,null,enemyType);
       opponentSource='generated-ai-bot';
     }
-    const battle=runBattle(squad,enemy,{mode,squadMode:squadConfig.mode,selectedSquadIds:squadConfig.selectedIds,opponentCacheId:opponentCache.opponentId,opponentSource});
+    const battle=runBattle(squad,enemy,{mode,squadMode:squadConfig.mode,selectedSquadIds:squadConfig.selectedIds,enemyType,opponentCacheId:opponentCache.opponentId,opponentSource});
     meta.aiBattleSquadMode=squadConfig.mode;
     meta.aiBattleSquad=squadConfig.selectedIds;
-    meta.aiBotOpponentCache=makeOpponentCache(enemy,opponentCache.opponentId);
+    meta.aiEnemyType=requestedEnemyType;
+    meta.aiBotOpponentCache=makeOpponentCache(enemy,opponentCache.opponentId,enemyType);
     meta.aiBotOpponentCache.lastMode=mode;
     meta.aiBotOpponentCache.lastBattleId=battle.id;
     meta.lastBattle=battle;
