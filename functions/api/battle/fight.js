@@ -5,6 +5,7 @@ const RARITY_HP={common:0,uncommon:2,rare:5,legendary:10};
 const RARITY_CRIT={common:0,uncommon:.01,rare:.02,legendary:.05};
 const BOT_CACHE_TYPE='system-vs-ai-bot';
 const BOT_RULESET='ai-autobattle-v1';
+const RARITY_ORDER=['common','uncommon','rare','legendary'];
 const ENEMY_TYPES={
   random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,names:{common:['Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Mild Crisis','Forgotten Appointment','Coupon Gremlin'],uncommon:['Rogue Min-Maxer','Vibes Strategist','Calendar Goblin','Overthinking Imp','Budget Sidewinder','Inbox Phantom'],rare:['Errand Chain Warden','Panic Purchase Baron','Deadline Marauder','The Wrong Receipt','Schedule Saboteur'],legendary:['The Minor Emergency','Lord of One More Thing','The Sudden Obligation','The Vibes Tribunal']},bias:{p:1,d:1,s:1},difficulty:1},
   household_chaos:{label:'Household Chaos',characters:['cydney','gabi','ashley'],names:{common:['Sticky Floor Imp','Crayon Goblin','Sippy Cup Ghost','Missing Shoe Spirit','Cereal Spill Sprite','Sock Drawer Gremlin'],uncommon:['Laundry Hydra','Unfolded Load','Cabinet Door Wraith','Tiny Crumb Swarm','Bedtime Delay Goblin','Mystery Smell'],rare:['Toy Box Revenant','The Breakfast Aftermath','Diaper Bag Phantom','Kitchen Counter Golem','The Wet Sleeve'],legendary:['The Great Domestic Calamity','Queen of the Unsorted Pile','The Never-Clean Room','Matriarch of Mess']},bias:{p:.97,d:1.14,s:1.03},difficulty:1},
@@ -29,9 +30,15 @@ function resolveEnemyType(meta,body){return validEnemyType(body?.aiEnemyType||me
 function namePoolFor(type,rarity){const names=enemyTypeConfig(type).names||{};return Array.isArray(names)?names:[...(names[rarity]||[]),...(names.any||[])]}
 function themedEnemyName(type,enemy,index,used=new Set()){let pool=namePoolFor(type,enemy.rar).filter(Boolean);if(!pool.length)pool=[`Rival ${displayName(enemy.cid)} ${index+1}`];let name=pick(pool);for(let i=0;i<7&&used.has(name)&&pool.length>1;i++)name=pick(pool);used.add(name);return String(name).slice(0,25)}
 function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
-function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'AI Bot',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,crop:x.crop||{x:50,y:50,z:1},equipped:false,enemyType:x.enemyType||null,enemyTypeLabel:x.enemyTypeLabel||null}}
+function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'AI Bot',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,imageKey:x.imageKey||null,crop:x.crop||{x:50,y:50,z:1},equipped:false,enemyType:x.enemyType||null,enemyTypeLabel:x.enemyTypeLabel||null,templateId:x.templateId||null}}
 function topOwned(cards,exclude=new Set()){return cards.map(cleanCard).filter(c=>!exclude.has(c.id)).sort((a,b)=>cardScore(b)-cardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
 function cleanSquadIds(list){return Array.isArray(list)?list.map(x=>String(x||'')).filter(Boolean).slice(0,3):[]}
+function parseCrop(v){try{return JSON.parse(v||'')}catch{return{x:50,y:50,z:1}}}
+function templateFromRow(r){return{id:r.id,enemyType:r.enemy_type,cid:r.character_id,rar:r.rarity,title:r.title,tag:r.tag,effect:r.effect,p:Number(r.pow||0),d:Number(r.def||0),s:Number(r.spd||0),passive:Number(r.passive||0),img:r.image_url||null,imageKey:r.image_key||null,crop:parseCrop(r.crop_json),weight:Math.max(0,Number(r.weight||1)),enabled:!!r.enabled}}
+async function loadEnemyTemplates(env,type){try{let rows=await env.DB.prepare('SELECT * FROM enemy_card_templates WHERE enemy_type=? AND enabled=1 ORDER BY rarity,title').bind(type).all();return(rows.results||[]).map(templateFromRow).filter(t=>CHARACTER_IDS.includes(t.cid)&&RARITY_ORDER.includes(t.rar))}catch{return[]}}
+function weightedPick(arr){let total=arr.reduce((s,x)=>s+Math.max(0,Number(x.weight||1)),0);if(total<=0)return pick(arr);let roll=Math.random()*total;for(const x of arr){roll-=Math.max(0,Number(x.weight||1));if(roll<=0)return x}return arr[arr.length-1]}
+function chooseTemplate(templates,targetRarity,playerCid,used=new Set()){if(!templates.length)return null;let pool=templates.filter(t=>t.rar===targetRarity&&t.cid!==playerCid&&!used.has(t.id));if(!pool.length)pool=templates.filter(t=>t.rar===targetRarity&&t.cid!==playerCid);if(!pool.length)pool=templates.filter(t=>t.cid!==playerCid&&!used.has(t.id));if(!pool.length)pool=templates.filter(t=>t.cid!==playerCid);if(!pool.length)pool=templates.filter(t=>!used.has(t.id));if(!pool.length)pool=templates;if(!pool.length)return null;let t=weightedPick(pool);used.add(t.id);return t}
+function cardFromTemplate(t,type){const label=enemyTypeConfig(type).label;return cleanCard({id:crypto.randomUUID(),templateId:t.id,cid:t.cid,title:t.title,tag:t.tag||label,rar:t.rar,p:t.p,d:t.d,s:t.s,passive:t.passive,effect:t.effect||'',img:t.img||null,imageKey:t.imageKey||null,crop:t.crop||{x:50,y:50,z:1},equipped:false,enemyType:type,enemyTypeLabel:label,grade:cardScore(t)})}
 function resolveSquadConfig(meta,body){
   const incomingMode=body?.aiBattleSquadMode;
   const mode=incomingMode==='manual'||incomingMode==='auto'?incomingMode:(meta?.aiBattleSquadMode==='manual'?'manual':'auto');
@@ -49,8 +56,7 @@ function chooseSquad(cards,meta={},body={}){
 }
 function enemyRarity(r){
   if(Math.random()<.72)return r;
-  const pool=['common','uncommon','rare','legendary'];
-  return pick(pool);
+  return pick(RARITY_ORDER);
 }
 function applyEnemyType(enemy,type,index,usedNames=new Set()){
   const pool=enemyTypeConfig(type),bias=pool.bias||{},difficulty=Number(pool.difficulty||1);
@@ -64,12 +70,15 @@ function applyEnemyType(enemy,type,index,usedNames=new Set()){
   enemy.grade=score(enemy);
   return cleanCard(enemy);
 }
-function makeEnemySquad(playerSquad,type='random_encounter'){
-  const pool=enemyTypeConfig(type),chars=(pool.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id)),usedNames=new Set();
+function makeEnemySquad(playerSquad,type='random_encounter',templates=[]){
+  const pool=enemyTypeConfig(type),chars=(pool.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id)),usedNames=new Set(),usedTemplates=new Set();
   return playerSquad.map((c,i)=>{
+    const targetRarity=enemyRarity(c.rar);
+    const t=chooseTemplate(templates,targetRarity,c.cid,usedTemplates);
+    if(t)return cardFromTemplate(t,type);
     const candidates=(chars.length?chars:CHARACTER_IDS).filter(id=>id!==c.cid);
     const cid=pick(candidates.length?candidates:(chars.length?chars:CHARACTER_IDS));
-    const enemy=makeCard({cid,rar:enemyRarity(c.rar),title:`Rival ${displayName(cid)} ${i+1}`,tag:pool.label});
+    const enemy=makeCard({cid,rar:targetRarity,title:`Rival ${displayName(cid)} ${i+1}`,tag:pool.label});
     return applyEnemyType(enemy,type,i,usedNames);
   });
 }
@@ -78,7 +87,7 @@ function fighter(card,team,index){
   return{...card,team,index,maxHp:hp,hp,alive:true,damageDone:0,crits:0};
 }
 function publicFighter(f){
-  return{id:f.id,team:f.team,index:f.index,cid:f.cid,title:f.title,tag:f.tag,rar:f.rar,p:f.p,d:f.d,s:f.s,passive:f.passive,effect:f.effect,grade:f.grade,img:f.img||null,crop:f.crop||{x:50,y:50,z:1},equipped:!!f.equipped,maxHp:f.maxHp,finalHp:f.hp,damageDone:f.damageDone,crits:f.crits,enemyType:f.enemyType||null,enemyTypeLabel:f.enemyTypeLabel||null};
+  return{id:f.id,team:f.team,index:f.index,cid:f.cid,title:f.title,tag:f.tag,rar:f.rar,p:f.p,d:f.d,s:f.s,passive:f.passive,effect:f.effect,grade:f.grade,img:f.img||null,imageKey:f.imageKey||null,crop:f.crop||{x:50,y:50,z:1},equipped:!!f.equipped,maxHp:f.maxHp,finalHp:f.hp,damageDone:f.damageDone,crits:f.crits,enemyType:f.enemyType||null,enemyTypeLabel:f.enemyTypeLabel||null,templateId:f.templateId||null};
 }
 function living(list){return list.filter(f=>f.alive&&f.hp>0)}
 function targetFor(attacker,opponents){
@@ -181,9 +190,10 @@ export async function onRequestPost({request,env}){
       opponentSource='cached-ai-bot-rematch';
     }else{
       enemyType=requestedEnemyType;
-      enemy=makeEnemySquad(squad,enemyType);
+      const templates=await loadEnemyTemplates(env,enemyType);
+      enemy=makeEnemySquad(squad,enemyType,templates);
       opponentCache=makeOpponentCache(enemy,null,enemyType);
-      opponentSource='generated-ai-bot';
+      opponentSource=templates.length?'admin-template-or-generated-ai-bot':'generated-ai-bot';
     }
     const battle=runBattle(squad,enemy,{mode,squadMode:squadConfig.mode,selectedSquadIds:squadConfig.selectedIds,enemyType,opponentCacheId:opponentCache.opponentId,opponentSource});
     meta.aiBattleSquadMode=squadConfig.mode;
