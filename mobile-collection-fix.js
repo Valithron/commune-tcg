@@ -62,11 +62,19 @@ function loadBattleRulesPatch(){
   script.src='/battle-rules.js?v=46';
   document.body.appendChild(script);
 }
+function loadBattleNoFlavorPatch(){
+  if(document.getElementById('ctcgBattleNoFlavorPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleNoFlavorPatch';
+  script.src='/battle-no-flavor.js?v=51';
+  document.body.appendChild(script);
+}
 function loadBattleFullscreenPatch(){
   if(document.getElementById('ctcgBattleFullscreenPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFullscreenPatch';
   script.src='/battle-fullscreen.js?v=50';
+  script.onload=()=>setTimeout(loadBattleNoFlavorPatch,40);
   document.body.appendChild(script);
 }
 function loadBattleFlowPatch(){
