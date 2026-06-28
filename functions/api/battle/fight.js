@@ -18,13 +18,22 @@ function matchupText(a,b){let m=mod(a,b);return m>1?'strong':m<1?'weak':'neutral
 function glanceChance(attacker,defender){return Math.min(.25,Math.max(.03,(Number(defender.s||0)-Number(attacker.s||0))*.0025))}
 function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
 function cacheCard(c){let x=cleanCard(c);return{id:x.id,cid:x.cid,title:x.title,tag:x.tag||'Enemy',rar:x.rar,p:x.p,d:x.d,s:x.s,passive:x.passive,effect:x.effect||'',grade:x.grade,img:x.img||null,crop:x.crop||{x:50,y:50,z:1},equipped:false}}
-function chooseSquad(cards){
-  const all=cards.map(cleanCard).sort((a,b)=>cardScore(b)-cardScore(a));
-  const chosen=[];
-  const used=new Set();
-  for(const c of all.filter(c=>c.equipped)){if(chosen.length<3&&!used.has(c.id)){chosen.push(c);used.add(c.id)}}
-  for(const c of all){if(chosen.length<3&&!used.has(c.id)){chosen.push(c);used.add(c.id)}}
-  return chosen;
+function topOwned(cards,exclude=new Set()){return cards.map(cleanCard).filter(c=>!exclude.has(c.id)).sort((a,b)=>cardScore(b)-cardScore(a)||String(a.title||'').localeCompare(String(b.title||'')))}
+function cleanSquadIds(list){return Array.isArray(list)?list.map(x=>String(x||'')).filter(Boolean).slice(0,3):[]}
+function resolveSquadConfig(meta,body){
+  const incomingMode=body?.aiBattleSquadMode;
+  const mode=incomingMode==='manual'||incomingMode==='auto'?incomingMode:(meta?.aiBattleSquadMode==='manual'?'manual':'auto');
+  const ids=cleanSquadIds(Array.isArray(body?.aiBattleSquad)?body.aiBattleSquad:meta?.aiBattleSquad);
+  return{mode,ids};
+}
+function chooseSquad(cards,meta={},body={}){
+  const config=resolveSquadConfig(meta,body);
+  const all=cards.map(cleanCard),byId=new Map(all.map(c=>[String(c.id),c]));
+  if(config.mode!=='manual')return{cards:topOwned(all).slice(0,3),mode:'auto',selectedIds:[]};
+  const chosen=[],used=new Set();
+  for(const id of config.ids){let c=byId.get(String(id));if(c&&!used.has(c.id)&&chosen.length<3){chosen.push(c);used.add(c.id)}}
+  for(const c of topOwned(all,used)){if(chosen.length<3&&!used.has(c.id)){chosen.push(c);used.add(c.id)}}
+  return{cards:chosen,mode:'manual',selectedIds:config.ids};
 }
 function enemyRarity(r){
   if(Math.random()<.72)return r;
@@ -98,7 +107,7 @@ function runBattle(playerCards,enemyCards,meta={}){
   const playerCrits=player.reduce((s,f)=>s+f.crits,0),allSurvive=player.every(f=>f.hp>0),enemyAvg=avg(enemy.map(cardScore));
   const mvp=player.slice().sort((a,b)=>b.damageDone-a.damageDone||cardScore(b)-cardScore(a))[0]||player[0];
   const reward=win?Math.round(40+enemyAvg*.8+playerCrits*5+(allSurvive?10:0)):Math.round(10+player.length*5+playerCrits*2);
-  return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),battleType:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,mode:meta.mode||'next',opponentCacheId:meta.opponentCacheId||null,opponentSource:meta.opponentSource||'generated-ai-bot',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
+  return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),battleType:BOT_CACHE_TYPE,rulesVersion:BOT_RULESET,mode:meta.mode||'next',squadMode:meta.squadMode||'auto',selectedSquadIds:meta.selectedSquadIds||[],opponentCacheId:meta.opponentCacheId||null,opponentSource:meta.opponentSource||'generated-ai-bot',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
 }
 function readCachedOpponent(meta){
   const cached=meta?.aiBotOpponentCache;
@@ -123,11 +132,12 @@ export async function onRequestPost({request,env}){
     const rows=await env.DB.prepare('SELECT card_json FROM cards WHERE owner_user_id=?').bind(user.id).all();
     const cards=(rows.results||[]).map(r=>{try{return JSON.parse(r.card_json)}catch{return null}}).filter(Boolean);
     if(!cards.length)return json({error:'Mint a card before battling'},400);
-    const squad=chooseSquad(cards);
-    if(!squad.length)return json({error:'No valid battle cards found'},400);
     const metaRow=await env.DB.prepare('SELECT value FROM player_meta WHERE user_id=?').bind(user.id).first();
     let meta={};
     try{meta=metaRow?JSON.parse(metaRow.value):{}}catch{meta={}}
+    const squadConfig=chooseSquad(cards,meta,body);
+    const squad=squadConfig.cards;
+    if(!squad.length)return json({error:'No valid battle cards found'},400);
     let enemy,opponentCache,opponentSource;
     if(mode==='rematch'){
       opponentCache=readCachedOpponent(meta);
@@ -139,7 +149,9 @@ export async function onRequestPost({request,env}){
       opponentCache=makeOpponentCache(enemy);
       opponentSource='generated-ai-bot';
     }
-    const battle=runBattle(squad,enemy,{mode,opponentCacheId:opponentCache.opponentId,opponentSource});
+    const battle=runBattle(squad,enemy,{mode,squadMode:squadConfig.mode,selectedSquadIds:squadConfig.selectedIds,opponentCacheId:opponentCache.opponentId,opponentSource});
+    meta.aiBattleSquadMode=squadConfig.mode;
+    meta.aiBattleSquad=squadConfig.selectedIds;
     meta.aiBotOpponentCache=makeOpponentCache(enemy,opponentCache.opponentId);
     meta.aiBotOpponentCache.lastMode=mode;
     meta.aiBotOpponentCache.lastBattleId=battle.id;
