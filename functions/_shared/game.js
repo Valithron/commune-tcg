@@ -25,7 +25,10 @@ export async function ensureGameSchema(env){
     'CREATE INDEX IF NOT EXISTS idx_market_price_history_token_created ON market_price_history(token_type,created_at)',
     'CREATE TABLE IF NOT EXISTS enemy_card_templates (id TEXT PRIMARY KEY, enemy_type TEXT NOT NULL, character_id TEXT NOT NULL, rarity TEXT NOT NULL, title TEXT NOT NULL, tag TEXT NOT NULL, effect TEXT NOT NULL, pow REAL NOT NULL, def REAL NOT NULL, spd REAL NOT NULL, passive REAL NOT NULL DEFAULT 0, image_key TEXT, image_url TEXT, crop_json TEXT, weight REAL NOT NULL DEFAULT 1, enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_enabled ON enemy_card_templates(enemy_type,enabled)',
-    'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_rarity ON enemy_card_templates(enemy_type,rarity)'
+    'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_rarity ON enemy_card_templates(enemy_type,rarity)',
+    'CREATE TABLE IF NOT EXISTS card_xp_events (id TEXT PRIMARY KEY, card_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, character_id TEXT NOT NULL, xp REAL NOT NULL, reason TEXT NOT NULL, battle_id TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_card_created ON card_xp_events(card_id,created_at)',
+    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_character_created ON card_xp_events(character_id,created_at)'
   ];
   for(const sql of ddl){await env.DB.prepare(sql).run()}
   const statements=[];
