@@ -19,7 +19,7 @@ shell=function(content){
   let html=adminPrestigeOldShell(content);
   if(html.includes('data-tab="prestige"'))return html;
   const btn=`<button class="${state.tab==='prestige'?'on':''}" data-tab="prestige">Prestige</button>`;
-  return html.replace('<button class="'+(state.tab==='market'?'on':'')+'" data-tab="market">Market</button>',`<button class="${state.tab==='market'?'on':''}" data-tab="market">Market</button>${btn}`).replace('</nav>',`${btn}</nav>`);
+  return html.replace('</nav>',`${btn}</nav>`);
 };
 const adminPrestigeOldRender=render;
 render=function(){
