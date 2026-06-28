@@ -40,3 +40,4 @@ runAiBotBattle=runAiBotBattleWithEnemyType;
 function setupAiEnemyType(){injectAiEnemyTypeStyles();if(state.page!=='battle')return;document.querySelectorAll('[data-ai-enemy-type]').forEach(b=>{if(b.dataset.enemyTypeReady)return;b.dataset.enemyTypeReady='1';b.onclick=()=>{state.aiEnemyType=b.dataset.aiEnemyType;queueMeta();render()}})}
 const aiEnemyOldBind=bind;
 bind=function(){aiEnemyOldBind();setupAiEnemyType()};
+setTimeout(()=>{if(user&&state.page==='battle')render()},0);
