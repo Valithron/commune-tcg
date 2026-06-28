@@ -62,12 +62,20 @@ function loadBattleRulesPatch(){
   script.src='/battle-rules.js?v=44';
   document.body.appendChild(script);
 }
+function loadBattleFlowPatch(){
+  if(document.getElementById('ctcgBattleFlowPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleFlowPatch';
+  script.src='/battle-flow.js?v=45';
+  document.body.appendChild(script);
+}
 injectMobileCollectionStyles();
 loadEncounterPatch();
 loadMarketSparklinePatch();
 loadBattleHistoryPatch();
 loadCardXpPatch();
 loadBattleRulesPatch();
+setTimeout(loadBattleFlowPatch,260);
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
