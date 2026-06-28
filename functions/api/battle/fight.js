@@ -1,3 +1,125 @@
 import{CHARACTER_IDS,ensureGameSchema,getSessionUser,json}from'../../_shared/game.js';
-import{displayName,makeCard,mod,pick,rarity,rnd,score}from'../../_shared/actions.js';
-export async function onRequestPost({request,env}){try{await ensureGameSchema(env);let user=await getSessionUser(request,env);if(!user)return json({error:'Not logged in'},401);let rows=await env.DB.prepare('SELECT card_json FROM cards WHERE owner_user_id=?').bind(user.id).all();let cards=(rows.results||[]).map(r=>{try{return JSON.parse(r.card_json)}catch{return null}}).filter(Boolean);if(!cards.length)return json({error:'Mint a card before battling'},400);let me=pick(cards),enemyCid=pick(CHARACTER_IDS.filter(id=>id!==me.cid)),enemy=makeCard({cid:enemyCid,rar:rarity()}),ms=Math.round((score(me)+rnd(1,30))*mod(me.cid,enemy.cid)),es=Math.round((score(enemy)+rnd(1,30))*mod(enemy.cid,me.cid)),win=ms>=es,reward=win?Math.round(Number(me.passive||0)*20+Number(me.p||0)/2+rnd(10,60)):Math.round(Number(me.passive||0)*3),txt=`${me.title} ${win?'defeated':'lost to'} ${enemy.title}. Score ${ms} to ${es}. ${win?'+':'Consolation +'}${reward} ${displayName(me.cid)} Tokens.`;let metaRow=await env.DB.prepare('SELECT value FROM player_meta WHERE user_id=?').bind(user.id).first(),meta=metaRow?JSON.parse(metaRow.value):{};meta.log=[{win,txt},...(Array.isArray(meta.log)?meta.log:[])].slice(0,40);await env.DB.batch([env.DB.prepare("UPDATE token_balances SET balance=balance+?,updated_at=datetime('now') WHERE user_id=? AND token_type=?").bind(reward,user.id,me.cid),env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta))]);return json({ok:true,win,reward,txt})}catch(e){return json({error:e.message||'Battle failed'},500)}}
+import{displayName,makeCard,mod,score}from'../../_shared/actions.js';
+
+const RARITY_HP={common:0,uncommon:2,rare:5,legendary:10};
+const RARITY_CRIT={common:0,uncommon:.01,rare:.02,legendary:.05};
+const RARITY_ORDER={legendary:0,rare:1,uncommon:2,common:3};
+
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function randFloat(a,b){return a+Math.random()*(b-a)}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function avg(arr){return arr.length?arr.reduce((s,n)=>s+n,0)/arr.length:0}
+function cardScore(c){return Number(c.grade||0)||score(c)}
+function maxHp(c){return Math.max(20,Math.round(80+Number(c.d||0)*2+(RARITY_HP[c.rar]||0)))}
+function critChance(c){return Math.min(.35,.05+Number(c.s||0)*.0025+(RARITY_CRIT[c.rar]||0))}
+function matchupMult(a,b){let m=mod(a,b);return m>1?1.15:m<1?.9:1}
+function matchupText(a,b){let m=mod(a,b);return m>1?'strong':m<1?'weak':'neutral'}
+function glanceChance(attacker,defender){return Math.min(.25,Math.max(.03,(Number(defender.s||0)-Number(attacker.s||0))*.0025))}
+function cleanCard(c){return{...c,title:String(c.title||'Untitled').slice(0,25),p:Number(c.p||0),d:Number(c.d||0),s:Number(c.s||0),passive:Number(c.passive||0),grade:cardScore(c)}}
+function chooseSquad(cards){
+  const all=cards.map(cleanCard).sort((a,b)=>cardScore(b)-cardScore(a));
+  const chosen=[];
+  const used=new Set();
+  for(const c of all.filter(c=>c.equipped)){if(chosen.length<3&&!used.has(c.id)){chosen.push(c);used.add(c.id)}}
+  for(const c of all){if(chosen.length<3&&!used.has(c.id)){chosen.push(c);used.add(c.id)}}
+  return chosen;
+}
+function enemyRarity(r){
+  if(Math.random()<.72)return r;
+  const pool=['common','uncommon','rare','legendary'];
+  return pick(pool);
+}
+function makeEnemySquad(playerSquad){
+  return playerSquad.map((c,i)=>{
+    const cid=pick(CHARACTER_IDS.filter(id=>id!==c.cid));
+    const enemy=makeCard({cid,rar:enemyRarity(c.rar),title:`Rival ${displayName(cid)} ${i+1}`,tag:'Enemy'});
+    return cleanCard(enemy);
+  });
+}
+function fighter(card,team,index){
+  const hp=maxHp(card);
+  return{...card,team,index,maxHp:hp,hp,alive:true,damageDone:0,crits:0};
+}
+function publicFighter(f){
+  return{id:f.id,team:f.team,index:f.index,cid:f.cid,title:f.title,tag:f.tag,rar:f.rar,p:f.p,d:f.d,s:f.s,passive:f.passive,effect:f.effect,grade:f.grade,img:f.img||null,crop:f.crop||{x:50,y:50,z:1},equipped:!!f.equipped,maxHp:f.maxHp,finalHp:f.hp,damageDone:f.damageDone,crits:f.crits};
+}
+function living(list){return list.filter(f=>f.alive&&f.hp>0)}
+function targetFor(attacker,opponents){
+  const live=living(opponents);
+  if(!live.length)return null;
+  if(Math.random()<.7)return live.slice().sort((a,b)=>a.hp-b.hp||a.d-b.d)[0];
+  return pick(live);
+}
+function attack(attacker,defender){
+  const matchup=matchupText(attacker.cid,defender.cid),mult=matchupMult(attacker.cid,defender.cid);
+  const crit=Math.random()<critChance(attacker);
+  const glance=Math.random()<glanceChance(attacker,defender);
+  let raw=(Number(attacker.p||0)*randFloat(.85,1.15)*mult*(crit?1.6:1))-Number(defender.d||0)*.35;
+  let damage=Math.max(5,Math.round(raw));
+  if(glance)damage=Math.max(3,Math.round(damage*.5));
+  const before=defender.hp;
+  defender.hp=Math.max(0,defender.hp-damage);
+  if(defender.hp<=0)defender.alive=false;
+  attacker.damageDone+=damage;
+  if(crit)attacker.crits+=1;
+  const defeated=before>0&&defender.hp===0;
+  const flags=[crit?'CRIT':null,glance?'GLANCE':null,matchup!=='neutral'?matchup.toUpperCase():null].filter(Boolean).join(' · ');
+  return{type:'hit',attackerTeam:attacker.team,attackerId:attacker.id,attackerTitle:attacker.title,defenderTeam:defender.team,defenderId:defender.id,defenderTitle:defender.title,damage,crit,glance,matchup,defeated,defenderHp:defender.hp,defenderMaxHp:defender.maxHp,text:`${attacker.title} hit ${defender.title} for ${damage} damage${flags?` (${flags})`:''}${defeated?' and knocked them out.':'.'}`};
+}
+function runBattle(playerCards,enemyCards){
+  const player=playerCards.map((c,i)=>fighter(c,'player',i));
+  const enemy=enemyCards.map((c,i)=>fighter(c,'enemy',i));
+  const rounds=[];
+  for(let round=1;round<=8;round++){
+    if(!living(player).length||!living(enemy).length)break;
+    const order=[...living(player),...living(enemy)].sort((a,b)=>(Number(b.s||0)+rnd(0,8))-(Number(a.s||0)+rnd(0,8)));
+    const events=[];
+    for(const actor of order){
+      if(!actor.alive||actor.hp<=0)continue;
+      const opponents=actor.team==='player'?enemy:player;
+      const target=targetFor(actor,opponents);
+      if(!target)break;
+      events.push(attack(actor,target));
+      if(!living(player).length||!living(enemy).length)break;
+    }
+    rounds.push({round,events});
+  }
+  const playerAlive=living(player),enemyAlive=living(enemy);
+  let win;
+  let reason='';
+  if(playerAlive.length&&!enemyAlive.length){win=true;reason='Enemy squad defeated'}
+  else if(enemyAlive.length&&!playerAlive.length){win=false;reason='Your squad was defeated'}
+  else{
+    const php=player.reduce((s,f)=>s+f.hp,0),ehp=enemy.reduce((s,f)=>s+f.hp,0);
+    win=php>=ehp;reason='Round limit reached';
+  }
+  const playerCrits=player.reduce((s,f)=>s+f.crits,0),allSurvive=player.every(f=>f.hp>0),enemyAvg=avg(enemy.map(cardScore));
+  const mvp=player.slice().sort((a,b)=>b.damageDone-a.damageDone||cardScore(b)-cardScore(a))[0]||player[0];
+  const reward=win?Math.round(40+enemyAvg*.8+playerCrits*5+(allSurvive?10:0)):Math.round(10+player.length*5+playerCrits*2);
+  return{ id:crypto.randomUUID(),createdAt:new Date().toISOString(),rulesVersion:'autobattle-v1',win,reason,reward,tokenType:mvp.cid,tokenName:displayName(mvp.cid),mvpId:mvp.id,mvpTitle:mvp.title,summary:`${win?'Victory':'Defeat'}: ${reason}. MVP: ${mvp.title}. ${win?'+':'Consolation +'}${reward} ${displayName(mvp.cid)} Tokens.`,player:player.map(publicFighter),enemy:enemy.map(publicFighter),rounds };
+}
+
+export async function onRequestPost({request,env}){
+  try{
+    await ensureGameSchema(env);
+    const user=await getSessionUser(request,env);
+    if(!user)return json({error:'Not logged in'},401);
+    const rows=await env.DB.prepare('SELECT card_json FROM cards WHERE owner_user_id=?').bind(user.id).all();
+    const cards=(rows.results||[]).map(r=>{try{return JSON.parse(r.card_json)}catch{return null}}).filter(Boolean);
+    if(!cards.length)return json({error:'Mint a card before battling'},400);
+    const squad=chooseSquad(cards);
+    if(!squad.length)return json({error:'No valid battle cards found'},400);
+    const enemy=makeEnemySquad(squad);
+    const battle=runBattle(squad,enemy);
+    const metaRow=await env.DB.prepare('SELECT value FROM player_meta WHERE user_id=?').bind(user.id).first();
+    let meta={};
+    try{meta=metaRow?JSON.parse(metaRow.value):{}}catch{meta={}}
+    meta.lastBattle=battle;
+    meta.log=[{win:battle.win,txt:battle.summary},...(Array.isArray(meta.log)?meta.log:[])].slice(0,40);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE token_balances SET balance=balance+?,updated_at=datetime('now') WHERE user_id=? AND token_type=?").bind(battle.reward,user.id,battle.tokenType),
+      env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta))
+    ]);
+    return json({ok:true,battle,win:battle.win,reward:battle.reward,tokenType:battle.tokenType,txt:battle.summary});
+  }catch(e){return json({error:e.message||'Battle failed'},500)}
+}
