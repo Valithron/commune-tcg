@@ -31,17 +31,22 @@
 .card.ctcgFaceRedesign>.cardXpBadge{display:none!important}\
 .card.ctcgFaceRedesign .cbot button,.card.ctcgFaceRedesign .vaultReadOnlyMark{display:none!important}\
 .card.ctcgFaceRedesign .cbot{justify-content:flex-start!important}\
+.card.ctcgFaceRedesign .ctop{left:8.2%!important;right:8.2%!important;width:auto!important;max-width:none!important;display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;overflow:visible!important}\
+.card.ctcgFaceRedesign .ctop strong{flex:1 1 auto!important;min-width:0!important;max-width:calc(100% - 6.1rem)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}\
+.card.ctcgFaceRedesign .badge{flex:0 0 auto!important;margin-left:auto!important;max-width:none!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;font-size:clamp(.32rem,2.9cqw,.58rem)!important;padding:.52em .62em!important;letter-spacing:.01em!important}\
+.card.bigcard.ctcgFaceRedesign .ctop strong{max-width:calc(100% - 7.3rem)!important}\
+.card.bigcard.ctcgFaceRedesign .badge{font-size:clamp(.46rem,2.15cqw,.82rem)!important;padding:.56em .72em!important}\
 .card.ctcgFaceRedesign .stats{left:31.2%!important;right:7.7%!important;bottom:14.2%!important}\
 .cardFaceLevel{position:absolute;z-index:7;left:7.7%;bottom:14.45%;width:19.4%;height:6.2%;border:1.3px solid color-mix(in srgb,var(--frame),transparent 16%);border-radius:6px;background:linear-gradient(180deg,rgba(16,22,37,.96),rgba(5,9,20,.96));box-shadow:0 0 10px color-mix(in srgb,var(--frame),transparent 78%);display:grid;place-items:center;color:var(--cardText);font:900 clamp(.46rem,4.2cqw,.76rem) Sora,Inter,sans-serif;text-shadow:0 1px 2px #000;line-height:1;text-transform:uppercase;letter-spacing:-.02em}\
-.cardFaceCharacter{position:absolute;z-index:6;left:8.2%;right:34%;top:4.55%;color:color-mix(in srgb,var(--cardText),white 10%);font:900 clamp(.34rem,3.2cqw,.54rem) JetBrains Mono,monospace;line-height:1;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;opacity:.92}\
+.cardFaceCharacter{position:absolute;z-index:6;left:8.2%;right:34%;top:4.55%;color:color-mix(in srgb,var(--cardText),white 10%);font:900 clamp(.38rem,3.5cqw,.62rem) JetBrains Mono,monospace;line-height:1;text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;opacity:.92}\
 .cardXpRailV{position:absolute;z-index:7;left:5.05%;top:14.4%;bottom:7.3%;width:4px;border-radius:999px;background:rgba(8,15,28,.64);box-shadow:inset 0 0 0 1px rgba(255,255,255,.13),0 0 8px rgba(53,214,197,.2);overflow:hidden;pointer-events:none}\
 .cardXpRailV i{position:absolute;left:0;right:0;bottom:0;height:var(--xpPct,0%);border-radius:inherit;background:linear-gradient(180deg,#7ffff1,#35d6c5 55%,#189f9a);box-shadow:0 0 10px rgba(53,214,197,.54)}\
 .card.bigcard .cardFaceLevel{font-size:clamp(.7rem,3.4cqw,1.05rem);border-radius:8px}\
 .card.bigcard .cardXpRailV{width:5px}\
-.card.bigcard .cardFaceCharacter{font-size:clamp(.48rem,2.7cqw,.72rem)}\
+.card.bigcard .cardFaceCharacter{font-size:clamp(.56rem,2.9cqw,.88rem)}\
 .battleFighter .card.ctcgFaceRedesign .stats{left:31.2%!important;right:7.7%!important}\
 .vaults .card .cardFaceLevel,.vaults .card .cardXpRailV,.vaults .card .cardFaceCharacter,.vaultsPage .card .cardFaceLevel,.vaultsPage .card .cardXpRailV,.vaultsPage .card .cardFaceCharacter,.vaultCardModal .card .cardFaceLevel,.vaultCardModal .card .cardXpRailV,.vaultCardModal .card .cardFaceCharacter{display:none!important}\
-@media(max-width:720px){.cardFaceLevel{font-size:clamp(.4rem,4cqw,.62rem)}.cardXpRailV{width:3px}.grid .card.ctcgFaceRedesign .stats{left:31.5%!important;right:7.5%!important}.cardFaceCharacter{top:4.7%;font-size:clamp(.3rem,3cqw,.46rem)}}\
+@media(max-width:720px){.cardFaceLevel{font-size:clamp(.4rem,4cqw,.62rem)}.cardXpRailV{width:3px}.grid .card.ctcgFaceRedesign .stats{left:31.5%!important;right:7.5%!important}.cardFaceCharacter{top:4.7%;font-size:clamp(.34rem,3.2cqw,.52rem)}.card.ctcgFaceRedesign .ctop strong{max-width:calc(100% - 5.5rem)!important}.card.ctcgFaceRedesign .badge{font-size:clamp(.3rem,2.6cqw,.5rem)!important}}\
 ';
     document.head.appendChild(style);
   }
@@ -57,12 +62,12 @@
     if(!id)return;
     var c=cardById(id);
     if(!shouldDecorateCard(el,c))return;
-    var cc=typeof ch==='function'?ch(c.cid):{name:c.cid||'Card'};
+    var cc=typeof ch==='function'?ch(c.cid):{name:c.cid||'Card',in:String(c.cid||'').slice(0,2).toUpperCase()};
     var p=progressFor(c),level=Number(c.level||0)||p.level||1;
     el.classList.add('ctcgFaceRedesign');
     var oldChar=el.querySelector(':scope > .cardFaceCharacter');
     if(!oldChar){oldChar=document.createElement('div');oldChar.className='cardFaceCharacter';el.appendChild(oldChar)}
-    oldChar.textContent=(cc.name||c.cid||'Card')+' Card';
+    oldChar.textContent=String(cc.in||String(c.cid||'').slice(0,2)||'').toUpperCase();
     var oldLevel=el.querySelector(':scope > .cardFaceLevel');
     if(!oldLevel){oldLevel=document.createElement('div');oldLevel.className='cardFaceLevel';el.appendChild(oldLevel)}
     oldLevel.textContent='LVL '+level;
