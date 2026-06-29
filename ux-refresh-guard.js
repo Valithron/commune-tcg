@@ -11,11 +11,14 @@ function installUxRefreshGuard(){
     const tag=String(el.tagName||'').toLowerCase();
     return tag==='input'||tag==='textarea'||tag==='select'||el.isContentEditable;
   }
-  function blockingUiOpen(){
-    return !!document.querySelector('.marketInfoOverlay.show,#ascCeremony,#ascFailsafeConfirm,.battleFullscreen');
+  function modalOrEditorOpen(){
+    return activeElementIsEditing()||!!document.querySelector('.marketInfoOverlay.show,#ascCeremony,#ascFailsafeConfirm');
   }
-  function shouldDeferRefresh(){
-    return activeElementIsEditing()||blockingUiOpen();
+  function shouldDeferLoad(){
+    return modalOrEditorOpen()||!!document.querySelector('.battleFullscreen');
+  }
+  function shouldDeferRender(){
+    return modalOrEditorOpen();
   }
   function shouldRenderAfterLoad(){
     const el=document.activeElement;
@@ -34,7 +37,7 @@ function installUxRefreshGuard(){
   }
   function tryFlush(){
     const ux=window.__ctcgUxRefresh;
-    if(shouldDeferRefresh())return;
+    if(shouldDeferLoad()||shouldDeferRender())return;
     if(ux.pendingLoad){
       ux.pendingLoad=false;
       rawLoadState().catch(console.warn);
@@ -48,7 +51,7 @@ function installUxRefreshGuard(){
   loadState=async function(opts={}){
     const force=opts&&opts.force;
     if(force)return rawLoadState();
-    if(shouldDeferRefresh()){
+    if(shouldDeferLoad()){
       window.__ctcgUxRefresh.pendingLoad=true;
       return null;
     }
@@ -63,7 +66,7 @@ function installUxRefreshGuard(){
     }
   };
   render=function(){
-    if(shouldDeferRefresh()){
+    if(shouldDeferRender()){
       window.__ctcgUxRefresh.pendingRender=true;
       return;
     }
