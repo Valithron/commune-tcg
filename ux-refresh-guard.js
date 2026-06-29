@@ -18,6 +18,8 @@ function installUxRefreshGuard(){
     window.__ctcgUxRefresh={pendingLoad:false,pendingRender:false,lastExplicit:0,quietLoading:false};
     const UI_KEYS=['page','sel','q','draft','vaultOwner','battleView','aiBattleSquad','aiBattleSquadMode','aiEnemyType','battleTeamQ','battleTeamCid','battleTeamRar'];
     function markExplicit(){window.__ctcgUxRefresh.lastExplicit=Date.now()}
+    function recentlyExplicit(){return Date.now()-window.__ctcgUxRefresh.lastExplicit<6500}
+    function mobileViewport(){return (window.matchMedia&&window.matchMedia('(max-width: 820px), (pointer: coarse)').matches)||window.innerWidth<=820}
     function appStillLoading(){
       const app=document.getElementById('app');
       return !app||!!app.querySelector('.loading');
@@ -77,7 +79,7 @@ function installUxRefreshGuard(){
     function shouldRenderAfterLoad(){
       if(appStillLoading())return true;
       if(battleSetupActive())return false;
-      if(Date.now()-window.__ctcgUxRefresh.lastExplicit<6500)return true;
+      if(recentlyExplicit())return true;
       return false;
     }
     async function quietLoadState(){
@@ -92,24 +94,40 @@ function installUxRefreshGuard(){
       if(typeof cache==='function')cache();
       return d;
     }
+    async function mobileQuietOnly(){
+      try{
+        window.__ctcgUxRefresh.quietLoading=true;
+        return await quietLoadState();
+      }catch(e){
+        console.warn('Mobile background refresh skipped',e);
+        return null;
+      }finally{
+        window.__ctcgUxRefresh.quietLoading=false;
+      }
+    }
     function tryFlush(){
       try{
         const ux=window.__ctcgUxRefresh;
         if(!ux||shouldDeferLoad()||shouldDeferRender())return;
         if(ux.pendingLoad){
           ux.pendingLoad=false;
-          rawLoadState().catch(console.warn);
+          if(mobileViewport()&&!recentlyExplicit())mobileQuietOnly();
+          else rawLoadState().catch(console.warn);
           return;
         }
         if(ux.pendingRender){
           ux.pendingRender=false;
-          rawRender();
+          if(!(mobileViewport()&&!recentlyExplicit()))rawRender();
         }
       }catch(e){console.warn(e)}
     }
     loadState=async function(opts={}){
       const force=opts&&opts.force;
       if(force||appStillLoading())return rawLoadState();
+      if(mobileViewport()&&!recentlyExplicit()){
+        if(shouldDeferLoad())return null;
+        return mobileQuietOnly();
+      }
       if(shouldDeferLoad()){
         window.__ctcgUxRefresh.pendingLoad=true;
         return null;
