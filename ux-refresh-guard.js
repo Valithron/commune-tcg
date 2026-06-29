@@ -46,6 +46,7 @@ function installUxRefreshGuard(){
     state.battleTeamRar=snap.battleTeamRar;
   }
   function shouldRenderAfterLoad(){
+    if(battleSetupActive())return false;
     const el=document.activeElement;
     const tag=String(el?.tagName||'').toLowerCase();
     if(Date.now()-window.__ctcgUxRefresh.lastExplicit<6500)return true;
