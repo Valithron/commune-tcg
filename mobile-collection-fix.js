@@ -73,7 +73,7 @@ function loadBattleFullscreenPatch(){
   if(document.getElementById('ctcgBattleFullscreenPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFullscreenPatch';
-  script.src='/battle-fullscreen.js?v=52';
+  script.src='/battle-fullscreen.js?v=53';
   script.onload=()=>setTimeout(loadBattleNoFlavorPatch,40);
   document.body.appendChild(script);
 }
