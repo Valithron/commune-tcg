@@ -31,12 +31,20 @@ function loadEncounterPatch(){
   script.src='/ai-'+'enemy-type.js?v=28';
   document.body.appendChild(script);
 }
+function loadSmoothMarketRefreshPatch(){
+  if(document.getElementById('ctcgSmoothMarketRefreshPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgSmoothMarketRefreshPatch';
+  script.src='/market-smooth-refresh.js?v=64';
+  script.onload=()=>{if(user&&state.page==='market')render()};
+  document.body.appendChild(script);
+}
 function loadMarketSparklinePatch(){
   if(document.getElementById('ctcgMarketSparklinePatch'))return;
   const script=document.createElement('script');
   script.id='ctcgMarketSparklinePatch';
   script.src='/market-sparklines.js?v=63';
-  script.onload=()=>{if(user&&state.page==='market')render()};
+  script.onload=()=>setTimeout(loadSmoothMarketRefreshPatch,30);
   document.body.appendChild(script);
 }
 function loadBattleHistoryPatch(){
