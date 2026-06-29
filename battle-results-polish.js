@@ -1,44 +1,27 @@
 function battleResultsToken(b){return ch(b?.tokenType||b?.mvpCid||'cydney')}
 function battleResultsPlayer(b){return Array.isArray(b?.player)?b.player:[]}
 function battleResultsEnemy(b){return Array.isArray(b?.enemy)?b.enemy:[]}
+function battleResultsMaxHp(f){return typeof battleFsMaxHp==='function'?battleFsMaxHp(f):Math.max(20,Number(f?.maxHp||Math.round(80+Number(f?.d||0)*2)||20))}
 function battleResultsStats(b){
   const player=battleResultsPlayer(b),enemy=battleResultsEnemy(b),rounds=(b?.rounds||[]).length;
-  return{
-    playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,
-    enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,
-    playerCount:player.length,
-    enemyCount:enemy.length,
-    damage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),
-    crits:player.reduce((s,f)=>s+Number(f.crits||0),0),
-    rounds,
-    xp:(b?.xpGains||[]).reduce((s,g)=>s+Number(g.xp||0),0)
-  };
+  return{playerStanding:player.filter(f=>Number(f.finalHp||0)>0).length,enemyStanding:enemy.filter(f=>Number(f.finalHp||0)>0).length,playerCount:player.length,enemyCount:enemy.length,damage:player.reduce((s,f)=>s+Number(f.damageDone||0),0),crits:player.reduce((s,f)=>s+Number(f.crits||0),0),rounds,xp:(b?.xpGains||[]).reduce((s,g)=>s+Number(g.xp||0),0)};
 }
 function battleResultsCardById(id){return(state.cards||[]).find(c=>String(c.id)===String(id))}
 function battleResultsMvp(b){return battleResultsPlayer(b).find(f=>String(f.id)===String(b?.mvpId))||battleResultsPlayer(b).slice().sort((a,b)=>Number(b.damageDone||0)-Number(a.damageDone||0))[0]||null}
-function battleResultsPortrait(c){
-  const cc=ch(c?.cid||'cydney');
-  if(c?.img)return`<img src="${h(c.img)}" style="${cropStyle(c)}" alt="">`;
-  return`<div class="battleResultPh" style="--a:${cc.a}">${cc.in}</div>`;
-}
+function battleResultsPortrait(c){const cc=ch(c?.cid||'cydney');if(c?.img)return`<img src="${h(c.img)}" style="${cropStyle(c)}" alt="">`;return`<div class="battleResultPh" style="--a:${cc.a}">${cc.in}</div>`}
 function battleResultXpRow(g,b){
-  const card=battleResultsCardById(g.cardId)||battleResultsPlayer(b).find(f=>String(f.id)===String(g.cardId))||g;
-  const cc=ch(g.cid||card?.cid||'cydney');
-  const p=typeof cardXpProgress==='function'&&card?cardXpProgress(card):null;
+  const card=battleResultsCardById(g.cardId)||battleResultsPlayer(b).find(f=>String(f.id)===String(g.cardId))||g,cc=ch(g.cid||card?.cid||'cydney'),p=typeof cardXpProgress==='function'&&card?cardXpProgress(card):null;
   const ready=p&&p.ready,canPay=ready&&Number(state.tokens?.[card.cid]||0)>=Number(p.stage.cost||0);
   const ascend=ready?(canPay?`<button class="battleResultAscend" data-ascend-card="${h(card.id)}" type="button">Ascend Ready</button>`:`<span class="battleResultNeed">Need ${num(p.stage.cost)} ${cc.in}</span>`):'';
   return`<article class="battleResultXpRow" style="--a:${cc.a}"><span class="coin" style="--a:${cc.a}">${cc.in}</span><div><b>${h(g.title||card?.title||'Card')}</b><small>${h(g.reason||'Battle XP')}</small>${p?`<div class="battleResultXpTrack"><i style="width:${p.pct.toFixed(1)}%"></i></div>`:''}</div><div class="battleResultXpGain"><b>+${num(g.xp||0)} XP</b><span>${g.leveledUp?'Level Up':p?`LVL ${p.level}`:'Progress'}</span>${ascend}</div></article>`;
 }
 function battleResultFighterRow(f){
   const cc=ch(f.cid||'cydney'),alive=Number(f.finalHp||0)>0;
-  return`<div class="battleResultFighter ${alive?'alive':'ko'}" style="--a:${cc.a}">${battleResultsPortrait(f)}<div><b>${h(f.title||'Card')}</b><small>${h(cc.name)} · ${h((f.rar||'common').toUpperCase())}</small></div><div><b>${num(f.damageDone||0)}</b><small>Damage</small></div><div><b>${num(f.crits||0)}</b><small>Crits</small></div><div><b>${num(Math.max(0,Number(f.finalHp||0)))}/${num(battleFsMaxHp?battleFsMaxHp(f):f.maxHp||0)}</b><small>${alive?'Standing':'KO'}</small></div></div>`;
+  return`<div class="battleResultFighter ${alive?'alive':'ko'}" style="--a:${cc.a}">${battleResultsPortrait(f)}<div><b>${h(f.title||'Card')}</b><small>${h(cc.name)} · ${h((f.rar||'common').toUpperCase())}</small></div><div><b>${num(f.damageDone||0)}</b><small>Damage</small></div><div><b>${num(f.crits||0)}</b><small>Crits</small></div><div><b>${num(Math.max(0,Number(f.finalHp||0)))}/${num(battleResultsMaxHp(f))}</b><small>${alive?'Standing':'KO'}</small></div></div>`;
 }
 function battleFlowResults(){
-  const b=state.lastBattle;
-  if(!b)return battleFlowHome();
-  const token=battleResultsToken(b),stats=battleResultsStats(b),mvp=battleResultsMvp(b),xpGains=b.xpGains||[];
-  const resultClass=b.win?'victory':'defeat';
-  const rewardText=`${b.win?'+':'Consolation +'}${num(b.reward||0)} ${token.name} Tokens`;
+  const b=state.lastBattle;if(!b)return battleFlowHome();
+  const token=battleResultsToken(b),stats=battleResultsStats(b),mvp=battleResultsMvp(b),xpGains=b.xpGains||[],resultClass=b.win?'victory':'defeat',rewardText=`${b.win?'+':'Consolation +'}${num(b.reward||0)} ${token.name} Tokens`;
   return shell(`<div class="battleFlow battleResultsPage ${resultClass}"><section class="battleResultHero box" style="--a:${token.a}"><div class="battleResultHeroText"><div class="battleFlowKicker">${h(b.enemyTypeLabel||'AI Battle')}</div><h1>${b.win?'Victory':'Defeat'}</h1><p>${h(b.reason||'Battle complete')}</p></div><div class="battleResultReward"><span class="coin" style="--a:${token.a}">${token.in}</span><div><small>Reward earned</small><b>${h(rewardText)}</b></div></div></section><section class="battleResultActions"><button class="gold" data-battle-flow="enemy">Battle Again</button><button class="btn" data-battle-flow="team">Change Team</button><button class="btn" data-battle-flow="history">History</button><button class="btn" data-battle-flow="home">Home</button></section><div class="battleResultGrid"><section class="box battleResultMvp"><div class="battleFlowKicker">MVP</div>${mvp?`<div class="battleResultMvpCard" style="--a:${ch(mvp.cid).a}">${battleResultsPortrait(mvp)}<div><h2>${h(mvp.title||b.mvpTitle||'MVP')}</h2><p>${h(ch(mvp.cid).name)} · ${h((mvp.rar||'common').toUpperCase())}</p><div class="battleResultMvpStats"><span><b>${num(mvp.damageDone||0)}</b><small>Damage</small></span><span><b>${num(mvp.crits||0)}</b><small>Crits</small></span><span><b>${num(Math.max(0,Number(mvp.finalHp||0)))}</b><small>Final HP</small></span></div></div></div>`:`<p>No MVP data returned.</p>`}</section><section class="box battleResultReport"><div class="battleFlowKicker">Battle Report</div><div class="battleResultStatGrid"><div><small>Rounds</small><b>${num(stats.rounds)}</b></div><div><small>Your Cards</small><b>${num(stats.playerStanding)} / ${num(stats.playerCount)}</b></div><div><small>Enemy Cards</small><b>${num(stats.enemyStanding)} / ${num(stats.enemyCount)}</b></div><div><small>Total Damage</small><b>${num(stats.damage)}</b></div><div><small>Critical Hits</small><b>${num(stats.crits)}</b></div><div><small>Card XP</small><b>${num(stats.xp)}</b></div></div></section></div><section class="box battleResultProgress"><div class="battleResultSectionTop"><div><div class="battleFlowKicker">Card Progress</div><h2>XP Earned</h2></div></div><div class="battleResultXpList">${xpGains.length?xpGains.map(g=>battleResultXpRow(g,b)).join(''):'<p>No XP data returned.</p>'}</div></section><section class="box battleResultSquadReport"><div class="battleResultSectionTop"><div><div class="battleFlowKicker">Squad Report</div><h2>Your Cards</h2></div></div><div class="battleResultFighterList">${battleResultsPlayer(b).map(battleResultFighterRow).join('')}</div></section></div>`);
 }
 function injectBattleResultsPolishStyles(){
