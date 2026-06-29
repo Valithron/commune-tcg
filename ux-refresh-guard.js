@@ -16,6 +16,7 @@ function installUxRefreshGuard(){
     const rawLoadState=loadState;
     const rawRender=render;
     window.__ctcgUxRefresh={pendingLoad:false,pendingRender:false,lastExplicit:0,quietLoading:false};
+    const UI_KEYS=['page','sel','q','draft','vaultOwner','battleView','aiBattleSquad','aiBattleSquadMode','aiEnemyType','battleTeamQ','battleTeamCid','battleTeamRar'];
     function markExplicit(){window.__ctcgUxRefresh.lastExplicit=Date.now()}
     function appStillLoading(){
       const app=document.getElementById('app');
@@ -28,7 +29,7 @@ function installUxRefreshGuard(){
       return tag==='input'||tag==='textarea'||tag==='select'||el.isContentEditable;
     }
     function modalOrEditorOpen(){
-      return activeElementIsEditing()||!!document.querySelector('.marketInfoOverlay.show,#ascCeremony,#ascFailsafeConfirm');
+      return activeElementIsEditing()||!!document.querySelector('.marketInfoOverlay.show,#ascCeremony,#ascFailsafeConfirm,.cardDetailBackdrop,.vaultCardModalBackdrop');
     }
     function shouldDeferLoad(){
       if(appStillLoading())return false;
@@ -37,6 +38,16 @@ function installUxRefreshGuard(){
     function shouldDeferRender(){
       if(appStillLoading())return false;
       return modalOrEditorOpen();
+    }
+    function uiSnapshot(){
+      if(typeof state!=='object'||!state)return{};
+      const snap={};
+      UI_KEYS.forEach(k=>{if(Object.prototype.hasOwnProperty.call(state,k))snap[k]=Array.isArray(state[k])?state[k].slice():state[k]});
+      return snap;
+    }
+    function restoreUiSnapshot(snap){
+      if(!snap||typeof state!=='object'||!state)return;
+      Object.keys(snap).forEach(k=>{state[k]=snap[k]});
     }
     function battleSetupActive(){
       return typeof state==='object'&&state&&state.page==='battle'&&['team','enemy'].includes(state.battleView);
@@ -66,18 +77,17 @@ function installUxRefreshGuard(){
     function shouldRenderAfterLoad(){
       if(appStillLoading())return true;
       if(battleSetupActive())return false;
-      const el=document.activeElement;
-      const tag=String(el&&el.tagName||'').toLowerCase();
       if(Date.now()-window.__ctcgUxRefresh.lastExplicit<6500)return true;
-      if(tag==='button'||tag==='a')return true;
       return false;
     }
     async function quietLoadState(){
-      const preserve=battleSetupSnapshot();
+      const preserveUi=uiSnapshot();
+      const preserveBattle=battleSetupSnapshot();
       const d=await api('/api/state');
       user=d.user||user;
       state={...state,...d.state};
-      restoreBattleSetup(preserve);
+      restoreUiSnapshot(preserveUi);
+      restoreBattleSetup(preserveBattle);
       if(!state.sel)state.sel='all';
       if(typeof cache==='function')cache();
       return d;
@@ -131,7 +141,7 @@ function installUxRefreshGuard(){
       document.addEventListener(type,e=>{
         const t=e.target;
         if(!t)return;
-        if(t.closest&&t.closest('button,a,input,textarea,select,[contenteditable="true"],.marketInfoPanel,.marketTradeControls,.form,.cropGrid,.battleSetup'))markExplicit();
+        if(t.closest&&t.closest('button,a,input,textarea,select,[contenteditable="true"],.marketInfoPanel,.marketTradeControls,.form,.cropGrid,.battleSetup,.cardDetailModal,.vaultCardModal'))markExplicit();
       },true);
     });
     ['focusout','change','keyup','pointerup','touchend'].forEach(type=>document.addEventListener(type,()=>setTimeout(tryFlush,350),true));
