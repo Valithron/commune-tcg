@@ -6,6 +6,7 @@ const MARKET_VOL={cydney:.04,sterling:.05,ryan:.06,gabi:.05,cooper:.06,kenly:.05
 const RARITY_BONUS={common:0,uncommon:12,rare:35,legendary:80};
 const RARITY_WEIGHT={common:1,uncommon:1.6,rare:2.4,legendary:3.6};
 const STERLING_ASC_TEST_FLAG='ascensionTestCardSeeded';
+const STERLING_ASC_TEST_RESET_FLAG='ascensionTestCardResetV2';
 function validSel(sel,oldSel){return sel==='all'||CHARACTER_IDS.includes(sel)?sel:(oldSel||'all')}
 function validAiBattleMode(mode,oldMode){return mode==='manual'||mode==='auto'?mode:(oldMode||'auto')}
 function validAiEnemyType(type,oldType){return AI_ENEMY_TYPES.includes(type)?type:(AI_ENEMY_TYPES.includes(oldType)?oldType:'random_encounter')}
@@ -61,18 +62,22 @@ async function ensureMarketHistory(env){
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_market_history_token_time ON market_price_history(token_type,created_at)').run();
 }
 async function readMeta(env,user){let row=await env.DB.prepare('SELECT value FROM player_meta WHERE user_id=?').bind(user.id).first();if(!row)return defaultPlayerMeta(user.id);try{return{...defaultPlayerMeta(user.id),...JSON.parse(row.value)}}catch{return defaultPlayerMeta(user.id)}}
-async function writeMeta(env,user,state){let old=await readMeta(env,user),meta={...old,page:state.page||old.page,sel:validSel(state.sel,old.sel),draft:state.draft||old.draft,log:Array.isArray(state.log)?state.log.slice(0,40):old.log,q:typeof state.q==='string'?state.q.slice(0,100):old.q,aiBattleSquadMode:validAiBattleMode(state.aiBattleSquadMode,old.aiBattleSquadMode),aiBattleSquad:cleanBattleSquad(state.aiBattleSquad,old.aiBattleSquad),aiEnemyType:validAiEnemyType(state.aiEnemyType,old.aiEnemyType),ascensionTestCardSeeded:old.ascensionTestCardSeeded,ascensionTestCardSeededAt:old.ascensionTestCardSeededAt};await env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta)).run()}
+async function writeMeta(env,user,state){let old=await readMeta(env,user),meta={...old,page:state.page||old.page,sel:validSel(state.sel,old.sel),draft:state.draft||old.draft,log:Array.isArray(state.log)?state.log.slice(0,40):old.log,q:typeof state.q==='string'?state.q.slice(0,100):old.q,aiBattleSquadMode:validAiBattleMode(state.aiBattleSquadMode,old.aiBattleSquadMode),aiBattleSquad:cleanBattleSquad(state.aiBattleSquad,old.aiBattleSquad),aiEnemyType:validAiEnemyType(state.aiEnemyType,old.aiEnemyType),ascensionTestCardSeeded:old.ascensionTestCardSeeded,ascensionTestCardSeededAt:old.ascensionTestCardSeededAt,ascensionTestCardResetV2:old.ascensionTestCardResetV2,ascensionTestCardResetAt:old.ascensionTestCardResetAt};await env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta)).run()}
 async function driftMarket(env){await ensureMarketHistory(env);let rows=await env.DB.prepare('SELECT token_type,price,updated_at FROM market_prices').all(),now=Date.now(),oldest=0;for(let r of rows.results||[]){let t=Date.parse((r.updated_at||'').replace(' ','T')+'Z')||0;if(!oldest||t<oldest)oldest=t}if(oldest&&now-oldest<30000)return;let anchors=await marketAnchors(env),jobs=[];for(let r of rows.results||[]){let price=nextMarketPrice(r.token_type,r.price,anchors[r.token_type]?.anchor);jobs.push(env.DB.prepare("UPDATE market_prices SET price=?,updated_at=datetime('now') WHERE token_type=?").bind(price,r.token_type));jobs.push(env.DB.prepare("INSERT INTO market_price_history (token_type,price,source,created_at) VALUES (?,?,?,datetime('now'))").bind(r.token_type,price,'prestige_drift'))}jobs.push(env.DB.prepare("DELETE FROM market_price_history WHERE created_at < datetime('now','-48 hours')"));if(jobs.length)await env.DB.batch(jobs)}
 async function accrue(env,user,meta){let now=Date.now(),last=Number(meta.lastCollectedAt||now),mins=Math.max(0,Math.min(24*60,(now-last)/60000));if(mins<.05){return meta}let rows=await env.DB.prepare('SELECT card_json FROM cards WHERE owner_user_id=?').bind(user.id).all(),income=Object.fromEntries(CHARACTER_IDS.map(id=>[id,0]));for(let r of rows.results||[]){try{let c=JSON.parse(r.card_json);if(c.equipped)income[c.cid]=(income[c.cid]||0)+Number(c.passive||0)}catch{}}let jobs=[];for(let id of CHARACTER_IDS){let add=Number(((income[id]||0)*mins).toFixed(2));if(add>0)jobs.push(env.DB.prepare("UPDATE token_balances SET balance=balance+?,updated_at=datetime('now') WHERE user_id=? AND token_type=?").bind(add,user.id,id))}meta.lastCollectedAt=now;jobs.push(env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(meta)));await env.DB.batch(jobs);return meta}
+function sterlingTestCardJson(card,id){return{...card,id,owner:'sterling',cid:'sterling',title:'Sterling, Test Anvil',tag:'Ascension Test',rar:'common',p:10,d:10,s:10,passive:.01,effect:'One spark away from ascension.',img:card?.img||null,imageKey:card?.imageKey||null,crop:card?.crop||{x:50,y:50,z:1},equipped:false,xp:499,level:4,battles:0,wins:0,mvpCount:0,lifetimeXp:0,grade:30}}
 async function ensureSterlingAscensionTestCard(env,user,meta){
-  if(user.id!=='sterling'||meta[STERLING_ASC_TEST_FLAG])return meta;
-  const rows=await env.DB.prepare('SELECT card_json FROM cards WHERE owner_user_id=? AND character_id=?').bind('sterling','sterling').all();
-  const exists=(rows.results||[]).some(r=>{let c=safeParse(r.card_json)||{};return c.tag==='Ascension Test'&&String(c.title||'').includes('Test Anvil')});
-  const next={...meta,[STERLING_ASC_TEST_FLAG]:true,ascensionTestCardSeededAt:new Date().toISOString()};
+  if(user.id!=='sterling')return meta;
+  if(meta[STERLING_ASC_TEST_RESET_FLAG])return meta;
+  const rows=await env.DB.prepare('SELECT id, card_json FROM cards WHERE owner_user_id=? AND character_id=?').bind('sterling','sterling').all();
+  const existing=(rows.results||[]).map(r=>({rowId:r.id,card:safeParse(r.card_json)||{}})).find(x=>x.card.tag==='Ascension Test'&&String(x.card.title||'').includes('Test Anvil'));
+  const id=existing?.card?.id||existing?.rowId||crypto.randomUUID();
+  const card=sterlingTestCardJson(existing?.card||{},id);
+  const next={...meta,[STERLING_ASC_TEST_FLAG]:true,[STERLING_ASC_TEST_RESET_FLAG]:true,ascensionTestCardSeededAt:meta.ascensionTestCardSeededAt||new Date().toISOString(),ascensionTestCardResetAt:new Date().toISOString()};
   const jobs=[];
-  if(!exists){
-    const id=crypto.randomUUID();
-    const card={id,owner:'sterling',cid:'sterling',title:'Sterling, Test Anvil',tag:'Ascension Test',rar:'common',p:10,d:10,s:10,passive:.01,effect:'One spark away from ascension.',img:null,imageKey:null,crop:{x:50,y:50,z:1},equipped:false,xp:499,level:4,battles:0,wins:0,mvpCount:0,lifetimeXp:0,grade:30};
+  if(existing){
+    jobs.push(env.DB.prepare("UPDATE cards SET card_json=?, character_id=?, updated_at=datetime('now') WHERE id=?").bind(JSON.stringify(card),'sterling',existing.rowId));
+  }else{
     jobs.push(env.DB.prepare("INSERT INTO cards (id,owner_user_id,character_id,card_json,created_at,updated_at) VALUES (?,?,?,?,datetime('now'),datetime('now'))").bind(id,'sterling','sterling',JSON.stringify(card)));
   }
   jobs.push(env.DB.prepare("INSERT INTO player_meta (user_id,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(user_id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(user.id,JSON.stringify(next)));
