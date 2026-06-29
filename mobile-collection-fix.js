@@ -85,12 +85,20 @@ function loadBattleFullscreenPatch(){
   script.onload=()=>setTimeout(loadBattleKoFixPatch,40);
   document.body.appendChild(script);
 }
+function loadBattleResultsPatch(){
+  if(document.getElementById('ctcgBattleResultsPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleResultsPatch';
+  script.src='/battle-results-polish.js?v=55';
+  script.onload=()=>setTimeout(loadBattleFullscreenPatch,50);
+  document.body.appendChild(script);
+}
 function loadBattleFlowPatch(){
   if(document.getElementById('ctcgBattleFlowPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFlowPatch';
   script.src='/battle-flow.js?v=48';
-  script.onload=()=>setTimeout(loadBattleFullscreenPatch,90);
+  script.onload=()=>setTimeout(loadBattleResultsPatch,90);
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
