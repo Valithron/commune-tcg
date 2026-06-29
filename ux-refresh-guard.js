@@ -20,6 +20,31 @@ function installUxRefreshGuard(){
   function shouldDeferRender(){
     return modalOrEditorOpen();
   }
+  function battleSetupActive(){
+    return state.page==='battle'&&['team','enemy'].includes(state.battleView);
+  }
+  function battleSetupSnapshot(){
+    if(!battleSetupActive())return null;
+    return{
+      battleView:state.battleView,
+      aiBattleSquad:Array.isArray(state.aiBattleSquad)?state.aiBattleSquad.slice():[],
+      aiBattleSquadMode:state.aiBattleSquadMode,
+      aiEnemyType:state.aiEnemyType,
+      battleTeamQ:state.battleTeamQ,
+      battleTeamCid:state.battleTeamCid,
+      battleTeamRar:state.battleTeamRar
+    };
+  }
+  function restoreBattleSetup(snap){
+    if(!snap)return;
+    state.battleView=snap.battleView;
+    state.aiBattleSquad=snap.aiBattleSquad;
+    state.aiBattleSquadMode=snap.aiBattleSquadMode;
+    state.aiEnemyType=snap.aiEnemyType;
+    state.battleTeamQ=snap.battleTeamQ;
+    state.battleTeamCid=snap.battleTeamCid;
+    state.battleTeamRar=snap.battleTeamRar;
+  }
   function shouldRenderAfterLoad(){
     const el=document.activeElement;
     const tag=String(el?.tagName||'').toLowerCase();
@@ -28,9 +53,11 @@ function installUxRefreshGuard(){
     return false;
   }
   async function quietLoadState(){
+    const preserve=battleSetupSnapshot();
     const d=await api('/api/state');
     user=d.user||user;
     state={...state,...d.state};
+    restoreBattleSetup(preserve);
     if(!state.sel)state.sel='all';
     cache();
     return d;
@@ -82,7 +109,7 @@ function installUxRefreshGuard(){
     document.addEventListener(type,e=>{
       const t=e.target;
       if(!t)return;
-      if(t.closest?.('button,a,input,textarea,select,[contenteditable="true"],.marketInfoPanel,.marketTradeControls,.form,.cropGrid'))markExplicit();
+      if(t.closest?.('button,a,input,textarea,select,[contenteditable="true"],.marketInfoPanel,.marketTradeControls,.form,.cropGrid,.battleSetup'))markExplicit();
     },true);
   });
   ['focusout','change','keyup','pointerup','touchend'].forEach(type=>document.addEventListener(type,()=>setTimeout(tryFlush,350),true));
