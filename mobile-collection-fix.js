@@ -66,7 +66,7 @@ function loadAscensionCeremonyPatch(){
   if(document.getElementById('ctcgAscensionCeremonyPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgAscensionCeremonyPatch';
-  script.src='/ascension-ceremony.js?v=57';
+  script.src='/ascension-ceremony.js?v=60';
   script.onload=()=>setTimeout(loadAscensionMobileClickFix,40);
   document.body.appendChild(script);
 }
