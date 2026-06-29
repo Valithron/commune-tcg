@@ -96,7 +96,7 @@ function loadBattleKoFixPatch(){
   if(document.getElementById('ctcgBattleKoFixPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleKoFixPatch';
-  script.src='/battle-ko-fix.js?v=54';
+  script.src='/battle-ko-fix.js?v=61';
   script.onload=()=>setTimeout(loadBattleNoFlavorPatch,40);
   document.body.appendChild(script);
 }
