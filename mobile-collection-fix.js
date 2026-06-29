@@ -69,12 +69,20 @@ function loadBattleNoFlavorPatch(){
   script.src='/battle-no-flavor.js?v=51';
   document.body.appendChild(script);
 }
+function loadBattleKoFixPatch(){
+  if(document.getElementById('ctcgBattleKoFixPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleKoFixPatch';
+  script.src='/battle-ko-fix.js?v=54';
+  script.onload=()=>setTimeout(loadBattleNoFlavorPatch,40);
+  document.body.appendChild(script);
+}
 function loadBattleFullscreenPatch(){
   if(document.getElementById('ctcgBattleFullscreenPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFullscreenPatch';
   script.src='/battle-fullscreen.js?v=53';
-  script.onload=()=>setTimeout(loadBattleNoFlavorPatch,40);
+  script.onload=()=>setTimeout(loadBattleKoFixPatch,40);
   document.body.appendChild(script);
 }
 function loadBattleFlowPatch(){
