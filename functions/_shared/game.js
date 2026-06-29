@@ -1,6 +1,15 @@
 export const USERS=[['cydney','Cydney','CY','#789461'],['sterling','Sterling','ST','#c4c5db'],['ryan','Ryan','RY','#a98cff'],['gabi','Gabi','GA','#8ccdff'],['cooper','Cooper','CO','#ff8f70'],['kenly','Kenly','KE','#73e1c2'],['ashley','Ashley','AS','#ff9ccf']].map(([id,displayName,initials,color])=>({id,displayName,initials,color}));
 export const CHARACTER_IDS=USERS.map(u=>u.id);
 const DEFAULT_PRICES={cydney:13.4,sterling:12.3,ryan:11.2,gabi:10.1,cooper:9,kenly:7.9,ashley:6.8};
+const ENEMY_TEMPLATE_SEED_VERSION='enemyTemplateFallbackSeedV1';
+const RARITY_STATS={common:30,uncommon:42,rare:56,legendary:72};
+const ENEMY_TEMPLATE_SEEDS={
+  random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,bias:{p:1,d:1,s:1},names:{common:['Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Mild Crisis','Forgotten Appointment','Coupon Gremlin'],uncommon:['Rogue Min-Maxer','Vibes Strategist','Calendar Goblin','Overthinking Imp','Budget Sidewinder','Inbox Phantom'],rare:['Errand Chain Warden','Panic Purchase Baron','Deadline Marauder','The Wrong Receipt','Schedule Saboteur'],legendary:['The Minor Emergency','Lord of One More Thing','The Sudden Obligation','The Vibes Tribunal']}},
+  household_chaos:{label:'Household Chaos',characters:['cydney','gabi','ashley'],bias:{p:.97,d:1.14,s:1.03},names:{common:['Sticky Floor Imp','Crayon Goblin','Sippy Cup Ghost','Missing Shoe Spirit','Cereal Spill Sprite','Sock Drawer Gremlin'],uncommon:['Laundry Hydra','Unfolded Load','Cabinet Door Wraith','Tiny Crumb Swarm','Bedtime Delay Goblin','Mystery Smell'],rare:['Toy Box Revenant','The Breakfast Aftermath','Diaper Bag Phantom','Kitchen Counter Golem','The Wet Sleeve'],legendary:['The Great Domestic Calamity','Queen of the Unsorted Pile','The Never-Clean Room','Matriarch of Mess']}},
+  yard_project:{label:'Yard Project',characters:['sterling','cooper','ashley'],bias:{p:1.1,d:1.1,s:.93},names:{common:['Deck Splinter','Unleveled Paver','Loose Gravel Rat','Bent Screw Spirit','Patchy Lawn Goblin','Shovel Blister'],uncommon:['Retaining Wall Golem','Gravel Wraith','Broken Sprinkler','Creeping Bindweed','Fence Leaner','Mud Pit Ambusher'],rare:['Drainage Problem','The Crooked String Line','Pressure Washer Wraith',"Three Trips to Lowe's",'The Wrong Board Length'],legendary:['The Endless Deck Project','The Slope That Fought Back','Lord of the Gravel Base','The Saturday Devourer']}},
+  rival_commune:{label:'Rival Commune',characters:CHARACTER_IDS,bias:{p:1.04,d:1.04,s:1.04},names:{common:['Rival Helper','Borrowed Tool Guy','Awkward Houseguest','Uninvited Advisor','Snack Table Scout','Minor Contrarian'],uncommon:['False Project Manager','Garage Sale Baron','Sourdough Oracle','Softball Revenant','Overcommitted Wizard','Budget Prophet'],rare:['Rival Matriarch','Counterpart Strategist','The Other Best Man','Schedule Negotiator','Passive Income Pretender'],legendary:['The Mirror Commune','The Rival Council','The Sevenfold Opposition','The Almost Better Plan']}},
+  boss_fight:{label:'Boss Fight',characters:CHARACTER_IDS,bias:{p:1.12,d:1.18,s:1.04},names:{common:['Heavy Errand','Large Problem','Serious Invoice','Dire Calendar Block'],uncommon:['Schedule Devourer','Budget Leviathan','Appointment Hydra','Great Paperwork Beast','Final Errand'],rare:['Domestic Calamity','Endless Deck Project','The Month-End Monster','The Overtime Warden','The Broken Routine'],legendary:['The Final Obligation','The Great Household Reckoning','The Project That Would Not Die','The Budget Apocalypse']}}
+};
 
 export function json(data,status=200,extraHeaders={}){return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...extraHeaders}})}
 export function validatePin(pin){return typeof pin==='string'&&/^\d{4}$/.test(pin)}
@@ -12,6 +21,12 @@ export function getSessionToken(request){return parseCookies(request).ctcg_sessi
 export function sessionCookie(token,maxAge=60*60*24*30){return`ctcg_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`}
 export function clearSessionCookie(){return'ctcg_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0'}
 
+function slug(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,64)}
+function chunk(list,size=40){let out=[];for(let i=0;i<list.length;i+=size)out.push(list.slice(i,i+size));return out}
+function seedStat(rarity,biasKey,bias,index){const base=RARITY_STATS[rarity]||30,wiggle=[-2,-1,0,1,2][index%5];return Math.max(4,Math.round(base*Number(bias[biasKey]||1)+wiggle))}
+function buildEnemyTemplateSeeds(){const seeds=[];for(const [enemyType,cfg]of Object.entries(ENEMY_TEMPLATE_SEEDS)){const chars=(cfg.characters||CHARACTER_IDS).filter(id=>CHARACTER_IDS.includes(id));let counter=0;for(const [rarity,names]of Object.entries(cfg.names||{})){for(let i=0;i<names.length;i++){const title=String(names[i]),cid=chars[counter%chars.length]||CHARACTER_IDS[0],id=`seed-${enemyType}-${rarity}-${slug(title)}`;seeds.push({id,enemyType,cid,rarity,title,tag:cfg.label,effect:`Seeded ${cfg.label} enemy template. Add image art and tune effects later.`,p:seedStat(rarity,'p',cfg.bias||{},i),d:seedStat(rarity,'d',cfg.bias||{},i+1),s:seedStat(rarity,'s',cfg.bias||{},i+2),passive:0,weight:1,enabled:1});counter++}}}return seeds}
+async function seedFallbackEnemyTemplates(env){const existing=await env.DB.prepare('SELECT value FROM system_meta WHERE key=?').bind(ENEMY_TEMPLATE_SEED_VERSION).first();if(existing)return;const rows=await env.DB.prepare('SELECT enemy_type,title FROM enemy_card_templates').all();const existingTitles=new Set((rows.results||[]).map(r=>`${r.enemy_type}::${String(r.title||'').toLowerCase()}`));const jobs=[];for(const seed of buildEnemyTemplateSeeds()){if(existingTitles.has(`${seed.enemyType}::${seed.title.toLowerCase()}`))continue;jobs.push(env.DB.prepare("INSERT OR IGNORE INTO enemy_card_templates (id,enemy_type,character_id,rarity,title,tag,effect,pow,def,spd,passive,image_key,image_url,crop_json,weight,enabled,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))").bind(seed.id,seed.enemyType,seed.cid,seed.rarity,seed.title,seed.tag,seed.effect,seed.p,seed.d,seed.s,seed.passive,null,null,JSON.stringify({x:50,y:50,z:1}),seed.weight,seed.enabled))}jobs.push(env.DB.prepare("INSERT INTO system_meta (key,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(ENEMY_TEMPLATE_SEED_VERSION,JSON.stringify({seededAt:new Date().toISOString(),count:jobs.length})));for(const group of chunk(jobs)){await env.DB.batch(group)}}
+
 export async function ensureGameSchema(env){
   const ddl=[
     'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, initials TEXT NOT NULL, color TEXT NOT NULL, pin_hash TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
@@ -20,6 +35,7 @@ export async function ensureGameSchema(env){
     'CREATE TABLE IF NOT EXISTS token_balances (user_id TEXT NOT NULL, token_type TEXT NOT NULL, balance REAL NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, token_type))',
     'CREATE TABLE IF NOT EXISTS cards (id TEXT PRIMARY KEY, owner_user_id TEXT NOT NULL, character_id TEXT NOT NULL, card_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS player_meta (user_id TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS system_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS market_prices (token_type TEXT PRIMARY KEY, price REAL NOT NULL, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS market_price_history (id INTEGER PRIMARY KEY AUTOINCREMENT, token_type TEXT NOT NULL, price REAL NOT NULL, source TEXT NOT NULL DEFAULT "drift", created_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE INDEX IF NOT EXISTS idx_market_price_history_token_created ON market_price_history(token_type,created_at)',
@@ -39,7 +55,8 @@ export async function ensureGameSchema(env){
     for(const tokenType of CHARACTER_IDS){statements.push(env.DB.prepare('INSERT OR IGNORE INTO token_balances (user_id, token_type, balance) VALUES (?, ?, ?)').bind(user.id,tokenType,tokenType===user.id?1000:100))}
   }
   for(const tokenType of CHARACTER_IDS){statements.push(env.DB.prepare('INSERT OR IGNORE INTO market_prices (token_type, price) VALUES (?, ?)').bind(tokenType,DEFAULT_PRICES[tokenType]))}
-  if(statements.length)await env.DB.batch(statements)
+  if(statements.length)await env.DB.batch(statements);
+  await seedFallbackEnemyTemplates(env)
 }
 
 export async function createSession(env,userId){const token=`${crypto.randomUUID()}-${crypto.randomUUID()}`,expiresAt=Math.floor(Date.now()/1000)+60*60*24*30;await env.DB.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token,userId,expiresAt).run();return{token,expiresAt}}
