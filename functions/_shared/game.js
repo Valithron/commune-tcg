@@ -1,4 +1,4 @@
-export const USERS=[['cydney','Cydney','CY','#f3c93f'],['sterling','Sterling','ST','#c4c5db'],['ryan','Ryan','RY','#a98cff'],['gabi','Gabi','GA','#8ccdff'],['cooper','Cooper','CO','#ff8f70'],['kenly','Kenly','KE','#73e1c2'],['ashley','Ashley','AS','#ff9ccf']].map(([id,displayName,initials,color])=>({id,displayName,initials,color}));
+export const USERS=[['cydney','Cydney','CY','#789461'],['sterling','Sterling','ST','#c4c5db'],['ryan','Ryan','RY','#a98cff'],['gabi','Gabi','GA','#8ccdff'],['cooper','Cooper','CO','#ff8f70'],['kenly','Kenly','KE','#73e1c2'],['ashley','Ashley','AS','#ff9ccf']].map(([id,displayName,initials,color])=>({id,displayName,initials,color}));
 export const CHARACTER_IDS=USERS.map(u=>u.id);
 const DEFAULT_PRICES={cydney:13.4,sterling:12.3,ryan:11.2,gabi:10.1,cooper:9,kenly:7.9,ashley:6.8};
 
@@ -34,6 +34,7 @@ export async function ensureGameSchema(env){
   const statements=[];
   for(const user of USERS){
     statements.push(env.DB.prepare('INSERT OR IGNORE INTO users (id, display_name, initials, color) VALUES (?, ?, ?, ?)').bind(user.id,user.displayName,user.initials,user.color));
+    statements.push(env.DB.prepare("UPDATE users SET display_name=?, initials=?, color=?, updated_at=datetime('now') WHERE id=?").bind(user.displayName,user.initials,user.color,user.id));
     statements.push(env.DB.prepare('INSERT OR IGNORE INTO wallets (user_id, commune_cash) VALUES (?, ?)').bind(user.id,5000));
     for(const tokenType of CHARACTER_IDS){statements.push(env.DB.prepare('INSERT OR IGNORE INTO token_balances (user_id, token_type, balance) VALUES (?, ?, ?)').bind(user.id,tokenType,tokenType===user.id?1000:100))}
   }
@@ -41,7 +42,7 @@ export async function ensureGameSchema(env){
   if(statements.length)await env.DB.batch(statements)
 }
 
-export async function createSession(env,userId){const token=`${crypto.randomUUID()}-${crypto.randomUUID()}`,expiresAt=Math.floor(Date.now()/1000)+60*60*24*30;await env.DB.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token,userId,expiresAt).run();return{token,expiresAt}}
+export async function createSession(env,userId){const token=`${crypto.randomUUID()}-${crypto.randomUUID()}`,expiresAt=Math.floor(Date.now()/1000)+60*60*24*30;await env.DB.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(userId,token,expiresAt).run();return{token,expiresAt}}
 export async function getSessionUser(request,env){const token=getSessionToken(request);if(!token)return null;const now=Math.floor(Date.now()/1000),row=await env.DB.prepare('SELECT users.id, users.display_name, users.initials, users.color, sessions.expires_at FROM sessions JOIN users ON users.id = sessions.user_id WHERE sessions.token = ?').bind(token).first();if(!row)return null;if(Number(row.expires_at)<now){await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();return null}return{id:row.id,displayName:row.display_name,initials:row.initials,color:row.color}}
 export async function destroySession(request,env){const token=getSessionToken(request);if(token)await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run()}
 export function defaultPlayerMeta(userId){const name=USERS.find(u=>u.id===userId)?.displayName||'Cydney';return{page:'collection',sel:'cydney',draft:{cid:userId,title:`${name}, First Identity`,tag:'Kitchen',prev:'rare',roll:null,crop:{x:50,y:50,z:1}},log:[],q:'',lastCollectedAt:Date.now()}}
