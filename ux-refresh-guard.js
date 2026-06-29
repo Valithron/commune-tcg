@@ -17,6 +17,10 @@ function installUxRefreshGuard(){
     const rawRender=render;
     window.__ctcgUxRefresh={pendingLoad:false,pendingRender:false,lastExplicit:0,quietLoading:false};
     function markExplicit(){window.__ctcgUxRefresh.lastExplicit=Date.now()}
+    function appStillLoading(){
+      const app=document.getElementById('app');
+      return !app||!!app.querySelector('.loading');
+    }
     function activeElementIsEditing(){
       const el=document.activeElement;
       if(!el||el===document.body)return false;
@@ -27,9 +31,11 @@ function installUxRefreshGuard(){
       return activeElementIsEditing()||!!document.querySelector('.marketInfoOverlay.show,#ascCeremony,#ascFailsafeConfirm');
     }
     function shouldDeferLoad(){
+      if(appStillLoading())return false;
       return modalOrEditorOpen()||!!document.querySelector('.battleFullscreen');
     }
     function shouldDeferRender(){
+      if(appStillLoading())return false;
       return modalOrEditorOpen();
     }
     function battleSetupActive(){
@@ -58,6 +64,7 @@ function installUxRefreshGuard(){
       state.battleTeamRar=snap.battleTeamRar;
     }
     function shouldRenderAfterLoad(){
+      if(appStillLoading())return true;
       if(battleSetupActive())return false;
       const el=document.activeElement;
       const tag=String(el&&el.tagName||'').toLowerCase();
@@ -92,7 +99,7 @@ function installUxRefreshGuard(){
     }
     loadState=async function(opts={}){
       const force=opts&&opts.force;
-      if(force)return rawLoadState();
+      if(force||appStillLoading())return rawLoadState();
       if(shouldDeferLoad()){
         window.__ctcgUxRefresh.pendingLoad=true;
         return null;
