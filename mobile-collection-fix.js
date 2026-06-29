@@ -47,12 +47,19 @@ function loadBattleHistoryPatch(){
   script.onload=()=>{if(user&&state.page==='battle')render()};
   document.body.appendChild(script);
 }
+function loadAscensionCeremonyPatch(){
+  if(document.getElementById('ctcgAscensionCeremonyPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgAscensionCeremonyPatch';
+  script.src='/ascension-ceremony.js?v=56';
+  document.body.appendChild(script);
+}
 function loadCardXpPatch(){
   if(document.getElementById('ctcgCardXpPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgCardXpPatch';
   script.src='/card-xp.js?v=41';
-  script.onload=()=>{if(user)render()};
+  script.onload=()=>{setTimeout(loadAscensionCeremonyPatch,40);if(user)render()};
   document.body.appendChild(script);
 }
 function loadBattleRulesPatch(){
