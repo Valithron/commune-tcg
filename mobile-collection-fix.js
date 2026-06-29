@@ -124,12 +124,20 @@ function loadBattleResultsPatch(){
   script.onload=()=>setTimeout(loadBattleFullscreenPatch,50);
   document.body.appendChild(script);
 }
+function loadBattleSetupFixPatch(){
+  if(document.getElementById('ctcgBattleSetupFixPatch'))return;
+  const script=document.createElement('script');
+  script.id='ctcgBattleSetupFixPatch';
+  script.src='/battle-setup-fix.js?v=67';
+  script.onload=()=>{if(user&&state.page==='battle')render()};
+  document.body.appendChild(script);
+}
 function loadBattleFlowPatch(){
   if(document.getElementById('ctcgBattleFlowPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleFlowPatch';
   script.src='/battle-flow.js?v=48';
-  script.onload=()=>setTimeout(loadBattleResultsPatch,90);
+  script.onload=()=>{setTimeout(loadBattleSetupFixPatch,40);setTimeout(loadBattleResultsPatch,90)};
   document.body.appendChild(script);
 }
 injectMobileCollectionStyles();
