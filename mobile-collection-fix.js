@@ -51,7 +51,7 @@ function loadAscensionCeremonyPatch(){
   if(document.getElementById('ctcgAscensionCeremonyPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgAscensionCeremonyPatch';
-  script.src='/ascension-ceremony.js?v=56';
+  script.src='/ascension-ceremony.js?v=57';
   document.body.appendChild(script);
 }
 function loadCardXpPatch(){
