@@ -1,6 +1,7 @@
 let vaultsCache=null;
 let vaultsLoading=false;
 let vaultsErr='';
+let vaultsSelectedOwner=null;
 
 function vaultsRarityName(r){return (R[r]&&R[r][0])||String(r||'Common')}
 function vaultsOwnerName(id){let u=(vaultsCache||[]).find(v=>v.id===id);return u?u.displayName:(ch(id)?.name||id)}
@@ -17,12 +18,24 @@ async function loadVaults(force=false){
   try{
     let data=await api('/api/vaults');
     vaultsCache=data.vaults||[];
+    ensureVaultsSelectedOwner();
   }catch(e){
     vaultsErr=e.message||'Failed to load vaults.';
   }finally{
     vaultsLoading=false;
     if(user&&state.page==='vaults')render();
   }
+}
+function ensureVaultsSelectedOwner(){
+  if(!vaultsCache||!vaultsCache.length)return null;
+  if(vaultsSelectedOwner&&vaultsCache.some(v=>v.id===vaultsSelectedOwner))return vaultsSelectedOwner;
+  const other=vaultsCache.find(v=>!v.isCurrent);
+  vaultsSelectedOwner=(other||vaultsCache[0]).id;
+  return vaultsSelectedOwner;
+}
+function selectedVault(){
+  const id=ensureVaultsSelectedOwner();
+  return (vaultsCache||[]).find(v=>v.id===id)||(vaultsCache||[])[0]||null;
 }
 function vaultsShell(content){
   let html=shell(content);
@@ -36,14 +49,25 @@ function vaultsPage(){
   }else if(!vaultsCache){
     body='<div class="box">Loading vaults...</div>';
   }else{
-    body=vaultsCache.map(v=>vaultOwnerSection(v)).join('');
+    body=vaultsCompactBrowser();
   }
-  return vaultsShell(strip()+`<div class="vaultsPage"><div class="head"><div><h1>Vaults</h1><p>Browse everyone’s cards. Cards are view-only here.</p></div><div class="row"><button class="btn" data-vault-refresh>Refresh Vaults</button></div></div><div class="vaultsGrid">${body}</div></div>`);
+  return vaultsShell(strip()+`<div class="vaultsPage"><div class="head"><div><h1>Vaults</h1><p>Browse one vault at a time. Click a card to enlarge it in read-only view.</p></div><div class="row"><button class="btn" data-vault-refresh>Refresh Vaults</button></div></div>${body}</div>`);
+}
+function vaultsCompactBrowser(){
+  const vaults=vaultsCache||[];
+  const current=selectedVault();
+  return `<div class="vaultChooser" aria-label="Choose vault">${vaults.map(v=>vaultChip(v)).join('')}</div>${current?vaultOwnerSection(current):'<div class="box">No vault selected.</div>'}`;
+}
+function vaultChip(v){
+  const on=selectedVault()?.id===v.id;
+  const cards=Array.isArray(v.cards)?v.cards.length:0;
+  const label=v.isCurrent?'Your Vault':`${v.displayName} Vault`;
+  return `<button class="vaultChip ${on?'on':''}" data-vault-owner="${h(v.id)}" style="--a:${h(v.color)}"><span class="av" style="--a:${h(v.color)}">${h(v.initials)}</span><b>${h(label)}</b><small>${cards} cards</small></button>`;
 }
 function vaultOwnerSection(v){
   const cards=Array.isArray(v.cards)?v.cards:[];
   const ownerLabel=v.isCurrent?'Your Vault':`${v.displayName} Vault`;
-  return `<section class="vaultOwnerPanel" style="--a:${h(v.color)}"><div class="vaultOwnerTop"><div class="big" style="--a:${h(v.color)}">${h(v.initials)}</div><div><h2>${h(ownerLabel)}</h2><p>${cards.length} cards</p></div></div>${cards.length?`<div class="vaultCardGrid">${cards.map(c=>`<button class="vaultCardButton" data-vault-card="${h(c.id)}" aria-label="View ${h(c.title||'card')}">${vaultsReadOnlyCardHtml({...c,owner:c.owner||v.id})}</button>`).join('')}</div>`:'<div class="emptymsg">No cards in this vault yet.</div>'}</section>`;
+  return `<section class="vaultOwnerPanel compact" style="--a:${h(v.color)}"><div class="vaultOwnerTop"><div class="big" style="--a:${h(v.color)}">${h(v.initials)}</div><div><h2>${h(ownerLabel)}</h2><p>${cards.length} cards shown. Other vaults stay collapsed above.</p></div></div>${cards.length?`<div class="vaultCardGrid">${cards.map(c=>`<button class="vaultCardButton" data-vault-card="${h(c.id)}" aria-label="View ${h(c.title||'card')}">${vaultsReadOnlyCardHtml({...c,owner:c.owner||v.id})}</button>`).join('')}</div>`:'<div class="emptymsg">No cards in this vault yet.</div>'}</section>`;
 }
 function vaultCardDetails(c){
   let cc=ch(c.cid),rr=R[c.rar]||R.common;
@@ -81,12 +105,13 @@ function injectVaultsStyles(){
   const style=document.createElement('style');
   style.id='ctcgVaultsStyles';
   style.textContent=`
-.vaultsLayout{grid-template-columns:1fr!important}.vaultsHiddenAside{display:none!important}.vaultsPage{display:grid;gap:18px}.vaultsGrid{display:grid;gap:18px}.vaultOwnerPanel{border:1px solid rgba(255,255,255,.12);border-radius:22px;background:radial-gradient(circle at 0 0,color-mix(in srgb,var(--a) 18%,transparent),transparent 32%),linear-gradient(145deg,#11182a,#080d18);padding:16px;display:grid;gap:14px}.vaultOwnerTop{display:flex;align-items:center;gap:12px}.vaultOwnerTop h2{margin:0;font:900 1.15rem Sora,Inter,sans-serif}.vaultOwnerTop p{margin:3px 0 0;color:#aeb5cc}.vaultCardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:13px}.vaultCardButton{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;border-radius:18px}.vaultCardButton:focus-visible{outline:3px solid #f3c93f;outline-offset:4px}.vaultCardButton .card{width:100%!important}.vaultReadOnlyCard .cbot button{display:none!important}.vaultOwnerChip{margin:6px 10px 0;color:#aeb5cc;font:900 .58rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em}.vaultReadOnlyMark{color:#f3c93f;font:900 .58rem 'JetBrains Mono',monospace;text-transform:uppercase}.vaultCardModalBackdrop{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.74);display:grid;place-items:center;padding:18px}.vaultCardModal{width:min(980px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:#0b1020;padding:16px;box-shadow:0 24px 80px rgba(0,0,0,.58);display:grid;gap:16px}.vaultModalTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.vaultModalTop b{display:block;font:900 1.1rem Sora,Inter,sans-serif}.vaultModalTop small{display:block;color:#aeb5cc;margin-top:3px}.vaultCardDetailGrid{display:grid;grid-template-columns:minmax(250px,360px) 1fr;gap:18px;align-items:start}.vaultLargeCard{display:grid;justify-items:center}.vaultLargeCard .card{width:min(340px,100%)!important}.vaultStatsPanel{border:1px solid rgba(255,255,255,.1);border-radius:18px;background:#080d18;padding:16px;display:grid;gap:14px}.vaultStatsPanel h3{margin:0;font:900 1.25rem Sora,Inter,sans-serif}.vaultStatTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.vaultStatTiles div{background:#11182d;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:12px;text-align:center}.vaultStatTiles small{display:block;color:#aeb5cc;font:900 .62rem 'JetBrains Mono',monospace}.vaultStatTiles b{font:900 1.35rem Sora,Inter,sans-serif}.vaultDetailRows{display:grid;gap:8px}.vaultDetailRows div{display:grid;grid-template-columns:120px 1fr;gap:12px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:8px}.vaultDetailRows b{color:#dfe4ff}.vaultDetailRows span{color:#b9bed3}.vaultReadonlyNote{margin:0;color:#f3c93f;font:900 .76rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em}@media(max-width:760px){.vaultCardDetailGrid{grid-template-columns:1fr}.vaultDetailRows div{grid-template-columns:1fr;gap:3px}.vaultCardGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}}
+.vaultsLayout{grid-template-columns:1fr!important}.vaultsHiddenAside{display:none!important}.vaultsPage{display:grid;gap:18px}.vaultChooser{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;padding:2px 2px 10px;scrollbar-width:none}.vaultChooser::-webkit-scrollbar{display:none}.vaultChip{flex:0 0 auto;min-width:160px;display:grid;grid-template-columns:auto 1fr;grid-template-areas:'av name' 'av count';gap:2px 9px;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#11182a;color:#dfe4ff;padding:10px 12px;text-align:left;cursor:pointer}.vaultChip .av{grid-area:av}.vaultChip b{grid-area:name;font:900 .76rem Sora,Inter,sans-serif;white-space:nowrap}.vaultChip small{grid-area:count;color:#aeb5cc}.vaultChip.on{background:linear-gradient(135deg,var(--a),#f3c93f);border-color:var(--a);color:#090d18;box-shadow:0 0 0 2px rgba(243,201,63,.18)}.vaultChip.on small{color:#151515}.vaultOwnerPanel{border:1px solid rgba(255,255,255,.12);border-radius:22px;background:radial-gradient(circle at 0 0,rgba(243,201,63,.12),transparent 32%),linear-gradient(145deg,#11182a,#080d18);padding:16px;display:grid;gap:14px}.vaultOwnerTop{display:flex;align-items:center;gap:12px}.vaultOwnerTop h2{margin:0;font:900 1.15rem Sora,Inter,sans-serif}.vaultOwnerTop p{margin:3px 0 0;color:#aeb5cc}.vaultCardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:13px}.vaultCardButton{appearance:none;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;border-radius:18px}.vaultCardButton:focus-visible{outline:3px solid #f3c93f;outline-offset:4px}.vaultCardButton .card{width:100%!important}.vaultReadOnlyCard .cbot button{display:none!important}.vaultOwnerChip{margin:6px 10px 0;color:#aeb5cc;font:900 .58rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em}.vaultReadOnlyMark{color:#f3c93f;font:900 .58rem 'JetBrains Mono',monospace;text-transform:uppercase}.vaultCardModalBackdrop{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.74);display:grid;place-items:center;padding:18px}.vaultCardModal{width:min(980px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:#0b1020;padding:16px;box-shadow:0 24px 80px rgba(0,0,0,.58);display:grid;gap:16px}.vaultModalTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.vaultModalTop b{display:block;font:900 1.1rem Sora,Inter,sans-serif}.vaultModalTop small{display:block;color:#aeb5cc;margin-top:3px}.vaultCardDetailGrid{display:grid;grid-template-columns:minmax(250px,360px) 1fr;gap:18px;align-items:start}.vaultLargeCard{display:grid;justify-items:center}.vaultLargeCard .card{width:min(340px,100%)!important}.vaultStatsPanel{border:1px solid rgba(255,255,255,.1);border-radius:18px;background:#080d18;padding:16px;display:grid;gap:14px}.vaultStatsPanel h3{margin:0;font:900 1.25rem Sora,Inter,sans-serif}.vaultStatTiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.vaultStatTiles div{background:#11182d;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:12px;text-align:center}.vaultStatTiles small{display:block;color:#aeb5cc;font:900 .62rem 'JetBrains Mono',monospace}.vaultStatTiles b{font:900 1.35rem Sora,Inter,sans-serif}.vaultDetailRows{display:grid;gap:8px}.vaultDetailRows div{display:grid;grid-template-columns:120px 1fr;gap:12px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:8px}.vaultDetailRows b{color:#dfe4ff}.vaultDetailRows span{color:#b9bed3}.vaultReadonlyNote{margin:0;color:#f3c93f;font:900 .76rem 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em}@media(max-width:760px){.vaultCardDetailGrid{grid-template-columns:1fr}.vaultDetailRows div{grid-template-columns:1fr;gap:3px}.vaultCardGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}.vaultChip{min-width:138px}}
 `;
   document.head.appendChild(style);
 }
 function setupVaults(){
   injectVaultsStyles();
+  document.querySelectorAll('[data-vault-owner]').forEach(b=>{if(b.dataset.vaultReady)return;b.dataset.vaultReady='1';b.onclick=()=>{vaultsSelectedOwner=b.dataset.vaultOwner;render()}});
   document.querySelectorAll('[data-vault-card]').forEach(b=>{if(b.dataset.vaultReady)return;b.dataset.vaultReady='1';b.onclick=()=>showVaultCard(b.dataset.vaultCard)});
   document.querySelectorAll('[data-vault-refresh]').forEach(b=>{if(b.dataset.vaultReady)return;b.dataset.vaultReady='1';b.onclick=()=>loadVaults(true)});
 }
@@ -94,8 +119,7 @@ const vaultsOldShell=shell;
 shell=function(content){
   let html=vaultsOldShell(content);
   if(html.includes('data-page="vaults"'))return html;
-  const label=state.page==='vaults'?'Vaults':'Vaults';
-  const btn=`<button class="${state.page==='vaults'?'on':''}" data-page="vaults">${label}</button>`;
+  const btn=`<button class="${state.page==='vaults'?'on':''}" data-page="vaults">Vaults</button>`;
   return html.replace('</nav>',btn+'</nav>');
 };
 const vaultsOldRender=render;
