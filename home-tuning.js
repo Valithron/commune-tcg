@@ -15,7 +15,7 @@
 .homeHero h1{font-size:clamp(2.7rem,6.6vw,6.3rem)!important;max-width:980px!important}\
 .homeHero p{margin-left:auto!important;margin-right:auto!important}\
 .homeHeroBtns{justify-content:center!important}\
-@media(max-width:920px){.homeCardRain{opacity:.36!important}.homeHeroShade{background:linear-gradient(0deg,rgba(7,11,22,.94),rgba(7,11,22,.64))!important}.homeHero h1{font-size:clamp(3rem,11vw,5.4rem)!important}}\
+@media(max-width:920px){.homeCardRain{opacity:.36!important}.homeHeroShade{background:linear-gradient(0deg,rgba(7,11,22,.56),rgba(7,11,22,.38))!important}.homeHero h1{font-size:clamp(3rem,11vw,5.4rem)!important}}\
 ';
     document.head.appendChild(style);
   }
@@ -25,7 +25,7 @@
       if(col.dataset.homeSpeedTuned==='1')return;
       var raw=(col.style.getPropertyValue('--speed')||'').trim();
       var seconds=parseFloat(raw)||40;
-      col.style.setProperty('--speed',(seconds*1.3).toFixed(1)+'s');
+      col.style.setProperty('--speed',(seconds*1.69).toFixed(1)+'s');
       col.dataset.homeSpeedTuned='1';
     });
   }
