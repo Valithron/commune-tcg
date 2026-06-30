@@ -25,11 +25,11 @@
     if(full&&title.textContent!==full)title.textContent=full;
     if(full)title.setAttribute('title',full);
     title.style.setProperty('--titleScale','1');
-    var min=card.classList.contains('bigcard')?.48:.36;
+    var min=card.classList.contains('bigcard')?0.48:0.36;
     var scale=1;
     for(var i=0;i<18;i++){
       if(title.scrollWidth<=title.clientWidth+1)break;
-      scale=Math.max(min,scale-.04);
+      scale=Math.max(min,scale-0.04);
       title.style.setProperty('--titleScale',String(scale));
       if(scale<=min)break;
     }
