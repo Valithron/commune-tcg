@@ -2,8 +2,7 @@
   if(window.__ctcgHomeTuning)return;
   window.__ctcgHomeTuning=true;
   function installStyles(){
-    var old=document.getElementById('ctcgHomeTuningStyles');
-    if(old)old.remove();
+    if(document.getElementById('ctcgHomeTuningStyles'))return;
     var style=document.createElement('style');
     style.id='ctcgHomeTuningStyles';
     style.textContent='\
@@ -21,6 +20,7 @@
   }
   function slowColumns(root){
     root=root&&root.querySelectorAll?root:document;
+    if(!root.querySelector('.homePage'))return;
     root.querySelectorAll('.homeRainCol').forEach(function(col){
       if(col.dataset.homeSpeedTuned==='1')return;
       var raw=(col.style.getPropertyValue('--speed')||'').trim();
@@ -30,8 +30,10 @@
     });
   }
   function refresh(){installStyles();slowColumns(document)}
+  var oldRender=typeof render==='function'?render:null;
+  if(oldRender&&!oldRender.__ctcgHomeTuning){
+    render=function(){var out=oldRender.apply(this,arguments);setTimeout(refresh,0);return out};
+    render.__ctcgHomeTuning=true;
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
-  setTimeout(refresh,120);
-  setTimeout(refresh,500);
-  new MutationObserver(function(){setTimeout(refresh,30)}).observe(document.documentElement,{childList:true,subtree:true});
 })();
