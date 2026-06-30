@@ -112,7 +112,7 @@ function loadBattleSpeedPatch(){
   if(document.getElementById('ctcgBattleSpeedPatch'))return;
   const script=document.createElement('script');
   script.id='ctcgBattleSpeedPatch';
-  script.src='/battle-speed.js?v=108';
+  script.src='/battle-speed.js?v=109';
   script.onload=()=>setTimeout(loadBattleKoFixPatch,40);
   document.body.appendChild(script);
 }
