@@ -28,14 +28,16 @@
     var style=document.createElement('style');
     style.id='ctcgCardFaceRedesignStyles';
     style.textContent='\
+.card.ctcgFaceRedesign{--badgeW:clamp(48px,35cqw,76px)}\
 .card.ctcgFaceRedesign>.cardXpBadge{display:none!important}\
 .card.ctcgFaceRedesign .cbot button,.card.ctcgFaceRedesign .vaultReadOnlyMark{display:none!important}\
 .card.ctcgFaceRedesign .cbot{justify-content:flex-start!important}\
-.card.ctcgFaceRedesign .ctop{left:8.2%!important;right:8.2%!important;width:auto!important;max-width:none!important;display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;overflow:visible!important}\
-.card.ctcgFaceRedesign .ctop strong{flex:1 1 auto!important;min-width:0!important;max-width:calc(100% - 6.1rem)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}\
-.card.ctcgFaceRedesign .badge{flex:0 0 auto!important;margin-left:auto!important;max-width:none!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;font-size:clamp(.32rem,2.9cqw,.58rem)!important;padding:.52em .62em!important;letter-spacing:.01em!important}\
-.card.bigcard.ctcgFaceRedesign .ctop strong{max-width:calc(100% - 7.3rem)!important}\
-.card.bigcard.ctcgFaceRedesign .badge{font-size:clamp(.46rem,2.15cqw,.82rem)!important;padding:.56em .72em!important}\
+.card.ctcgFaceRedesign .ctop{left:8.2%!important;right:8.2%!important;width:auto!important;max-width:none!important;display:block!important;overflow:visible!important;position:absolute!important}\
+.card.ctcgFaceRedesign .ctop strong{display:block!important;width:calc(100% - var(--badgeW) - 7px)!important;max-width:calc(100% - var(--badgeW) - 7px)!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}\
+.card.ctcgFaceRedesign .badge{position:absolute!important;right:0!important;top:0!important;width:var(--badgeW)!important;box-sizing:border-box!important;display:block!important;max-width:var(--badgeW)!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;text-align:center!important;font-size:clamp(.32rem,3.1cqw,.58rem)!important;line-height:1.04!important;padding:.25em .22em!important;letter-spacing:-.025em!important;text-transform:uppercase!important}\
+.card.bigcard.ctcgFaceRedesign{--badgeW:clamp(78px,28cqw,108px)}\
+.card.bigcard.ctcgFaceRedesign .ctop strong{width:calc(100% - var(--badgeW) - 10px)!important;max-width:calc(100% - var(--badgeW) - 10px)!important}\
+.card.bigcard.ctcgFaceRedesign .badge{font-size:clamp(.48rem,2.4cqw,.86rem)!important;padding:.34em .34em!important}\
 .card.ctcgFaceRedesign .stats{left:31.2%!important;right:7.7%!important;bottom:14.2%!important}\
 .cardFaceLevel{position:absolute;z-index:7;left:7.7%;bottom:14.45%;width:19.4%;height:6.2%;border:1.3px solid color-mix(in srgb,var(--frame),transparent 16%);border-radius:6px;background:linear-gradient(180deg,rgba(16,22,37,.96),rgba(5,9,20,.96));box-shadow:0 0 10px color-mix(in srgb,var(--frame),transparent 78%);display:grid;place-items:center;color:var(--cardText);font:900 clamp(.46rem,4.2cqw,.76rem) Sora,Inter,sans-serif;text-shadow:0 1px 2px #000;line-height:1;text-transform:uppercase;letter-spacing:-.02em}\
 .cardFaceCharacter{position:absolute;z-index:6;left:8.2%;right:34%;top:4.55%;color:color-mix(in srgb,var(--cardText),white 10%);font:900 clamp(.38rem,3.5cqw,.62rem) JetBrains Mono,monospace;line-height:1;text-transform:uppercase;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;opacity:.92}\
@@ -46,7 +48,7 @@
 .card.bigcard .cardFaceCharacter{font-size:clamp(.56rem,2.9cqw,.88rem)}\
 .battleFighter .card.ctcgFaceRedesign .stats{left:31.2%!important;right:7.7%!important}\
 .vaults .card .cardFaceLevel,.vaults .card .cardXpRailV,.vaults .card .cardFaceCharacter,.vaultsPage .card .cardFaceLevel,.vaultsPage .card .cardXpRailV,.vaultsPage .card .cardFaceCharacter,.vaultCardModal .card .cardFaceLevel,.vaultCardModal .card .cardXpRailV,.vaultCardModal .card .cardFaceCharacter{display:none!important}\
-@media(max-width:720px){.cardFaceLevel{font-size:clamp(.4rem,4cqw,.62rem)}.cardXpRailV{width:3px}.grid .card.ctcgFaceRedesign .stats{left:31.5%!important;right:7.5%!important}.cardFaceCharacter{top:4.7%;font-size:clamp(.34rem,3.2cqw,.52rem)}.card.ctcgFaceRedesign .ctop strong{max-width:calc(100% - 5.5rem)!important}.card.ctcgFaceRedesign .badge{font-size:clamp(.3rem,2.6cqw,.5rem)!important}}\
+@media(max-width:720px){.card.ctcgFaceRedesign{--badgeW:clamp(44px,37cqw,62px)}.cardFaceLevel{font-size:clamp(.4rem,4cqw,.62rem)}.cardXpRailV{width:3px}.grid .card.ctcgFaceRedesign .stats{left:31.5%!important;right:7.5%!important}.cardFaceCharacter{top:4.7%;font-size:clamp(.34rem,3.2cqw,.52rem)}.card.ctcgFaceRedesign .ctop strong{width:calc(100% - var(--badgeW) - 5px)!important;max-width:calc(100% - var(--badgeW) - 5px)!important}.card.ctcgFaceRedesign .badge{font-size:clamp(.28rem,3cqw,.48rem)!important;padding:.18em .14em!important}}\
 ';
     document.head.appendChild(style);
   }
@@ -65,6 +67,8 @@
     var cc=typeof ch==='function'?ch(c.cid):{name:c.cid||'Card',in:String(c.cid||'').slice(0,2).toUpperCase()};
     var p=progressFor(c),level=Number(c.level||0)||p.level||1;
     el.classList.add('ctcgFaceRedesign');
+    var badge=el.querySelector(':scope > .ctop .badge');
+    if(badge){badge.title=badge.textContent||''}
     var oldChar=el.querySelector(':scope > .cardFaceCharacter');
     if(!oldChar){oldChar=document.createElement('div');oldChar.className='cardFaceCharacter';el.appendChild(oldChar)}
     oldChar.textContent=String(cc.in||String(c.cid||'').slice(0,2)||'').toUpperCase();
