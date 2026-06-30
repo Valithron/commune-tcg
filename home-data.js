@@ -37,6 +37,7 @@
       if(span)span.textContent=top.score?Number(top.score||0).toLocaleString(undefined,{maximumFractionDigits:0})+' prestige':'market leader';
     }
   }
+  window.__ctcgPatchHomeStats=patchStats;
   if(originalApi){
     api=async function(url,opt){
       if(isHomeRequest(url)){
@@ -50,6 +51,4 @@
       return originalApi.apply(this,arguments);
     };
   }
-  setInterval(function(){if(typeof state!=='undefined'&&state.page==='home')patchStats()},700);
-  new MutationObserver(function(){setTimeout(patchStats,40)}).observe(document.documentElement,{childList:true,subtree:true});
 })();
