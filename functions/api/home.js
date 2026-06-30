@@ -51,7 +51,6 @@ export async function onRequestGet({request,env}){
     const imageCards=cards.filter(c=>c.img);
     const backgroundPool=imageCards.length>=12?imageCards:cards;
     const featuredPool=cards.length?cards:backgroundPool;
-    const mobilePool=(imageCards.length?imageCards:cards).slice(0,10);
     const battleAppearances=cards.reduce((s,c)=>s+num(c.battles),0);
     const stats={
       totalCardsMinted:cards.length,
@@ -62,7 +61,6 @@ export async function onRequestGet({request,env}){
       user,
       stats,
       backgroundCards:shuffle(backgroundPool).slice(0,48).map(publicCard),
-      mobileBackgroundCards:mobilePool.map(publicCard),
       featuredCards:shuffle(featuredPool).slice(0,8).map(publicCard)
     });
   }catch(e){
