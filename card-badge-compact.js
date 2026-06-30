@@ -7,8 +7,8 @@
     var style=document.createElement('style');
     style.id='ctcgCardBadgeCompactStyles';
     style.textContent='\
-.card.ctcgFaceRedesign{--badgeW:clamp(50px,31cqw,70px)!important;--metaTop:4.7%;--titleGap:1.44em}\
-.card.bigcard.ctcgFaceRedesign{--badgeW:clamp(72px,20cqw,98px)!important;--metaTop:4.85%;--titleGap:1.42em}\
+.card.ctcgFaceRedesign{--badgeW:clamp(50px,31cqw,70px)!important;--metaTop:4.7%;--titleGap:1.16em}\
+.card.bigcard.ctcgFaceRedesign{--badgeW:clamp(72px,20cqw,98px)!important;--metaTop:4.85%;--titleGap:1.15em}\
 .card.ctcgFaceRedesign .cardFaceCharacter{top:var(--metaTop)!important;left:8.2%!important;right:auto!important;width:32%!important;line-height:1!important;z-index:8!important}\
 .card.ctcgFaceRedesign .ctop{left:8.2%!important;right:8.2%!important;top:var(--metaTop)!important;width:auto!important;max-width:none!important;height:10.9%!important;display:block!important;overflow:visible!important;position:absolute!important;z-index:8!important}\
 .card.ctcgFaceRedesign .ctop strong{position:absolute!important;left:0!important;right:0!important;top:var(--titleGap)!important;display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;font-size:clamp(.82rem,8.8cqw,1.24rem)!important;line-height:.98!important;letter-spacing:-.075em!important}\
@@ -19,7 +19,7 @@
 .card.bigcard.ctcgFaceRedesign .eq{font-size:clamp(.64rem,2.7cqw,.88rem)!important;padding:.28em .58em!important;bottom:1.25%!important}\
 .card.ctcgFaceRedesign .art{top:17.2%!important;height:63.8%!important}\
 .card.bigcard.ctcgFaceRedesign .art{top:17.1%!important;height:63.9%!important}\
-@media(max-width:720px){.card.ctcgFaceRedesign{--badgeW:clamp(48px,32cqw,64px)!important;--metaTop:4.85%;--titleGap:1.38em}.card.ctcgFaceRedesign .cardFaceCharacter{width:30%!important}.card.ctcgFaceRedesign .ctop{height:11.2%!important}.card.ctcgFaceRedesign .ctop strong{font-size:clamp(.76rem,8.6cqw,1.1rem)!important;letter-spacing:-.08em!important}.card.ctcgFaceRedesign .badge{font-size:clamp(.42rem,2.95cqw,.54rem)!important;padding:.14em .22em!important;border-radius:.16rem!important}.card.ctcgFaceRedesign .art{top:17.4%!important;height:63.6%!important}.card.ctcgFaceRedesign .eq{font-size:clamp(.38rem,3.05cqw,.52rem)!important;padding:.24em .46em!important}}\
+@media(max-width:720px){.card.ctcgFaceRedesign{--badgeW:clamp(48px,32cqw,64px)!important;--metaTop:4.85%;--titleGap:1.10em}.card.ctcgFaceRedesign .cardFaceCharacter{width:30%!important}.card.ctcgFaceRedesign .ctop{height:11.2%!important}.card.ctcgFaceRedesign .ctop strong{font-size:clamp(.76rem,8.6cqw,1.1rem)!important;letter-spacing:-.08em!important}.card.ctcgFaceRedesign .badge{font-size:clamp(.42rem,2.95cqw,.54rem)!important;padding:.14em .22em!important;border-radius:.16rem!important}.card.ctcgFaceRedesign .art{top:17.4%!important;height:63.6%!important}.card.ctcgFaceRedesign .eq{font-size:clamp(.38rem,3.05cqw,.52rem)!important;padding:.24em .46em!important}}\
 ';
     document.head.appendChild(style);
   }
