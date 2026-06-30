@@ -6,9 +6,9 @@
     var style=document.createElement('style');
     style.id='ctcgBattleSpeedStyles';
     style.textContent='\
-.battleFsFighter{transition-duration:.08s!important}\
-.battleFsDamage.pop{animation-duration:.28s!important}\
-.battleFsCaption{transition-duration:.08s!important}\
+.battleFsFighter{transition-duration:.10s!important}\
+.battleFsDamage.pop{animation-duration:.36s!important}\
+.battleFsCaption{transition-duration:.10s!important}\
 ';
     document.head.appendChild(style);
   }
@@ -17,7 +17,7 @@
     var base=battleFsPause;
     battleFsPause=async function(ms){
       var raw=Number(ms)||0;
-      var scaled=raw<=120?raw:Math.max(45,Math.round(raw*.34));
+      var scaled=raw<=120?raw:Math.max(58,Math.round(raw*.44));
       return base(scaled);
     };
     battleFsPause.__ctcgFast=true;
