@@ -23,9 +23,58 @@
 ';
     document.head.appendChild(style);
   }
-  function refresh(){install();if(typeof scheduleTitleFit==='function')setTimeout(function(){scheduleTitleFit(document)},30)}
+  function fitTitle(card){
+    if(!card||!card.classList||!card.classList.contains('ctcgFaceRedesign'))return;
+    var title=card.querySelector('.ctop strong'),row=card.querySelector('.ctop');
+    if(!title||!row)return;
+    var cardW=card.getBoundingClientRect().width,rowW=row.getBoundingClientRect().width;
+    if(!cardW||!rowW)return;
+    var text=(title.textContent||'').trim();
+    var big=card.classList.contains('bigcard')||!!card.closest('.cardDetailPreview');
+    var start=big?0.072:0.082;
+    var min=text.length<=25?(big?0.052:0.056):(big?0.048:0.05);
+    var hardMin=big?13:8;
+    var max=big?36:24;
+    var size=Math.min(max,Math.max(hardMin,cardW*start));
+    var floor=Math.max(hardMin,cardW*min);
+    title.style.setProperty('font-size',size+'px','important');
+    title.style.setProperty('letter-spacing','-.078em','important');
+    title.style.setProperty('white-space','nowrap','important');
+    title.style.setProperty('overflow','hidden','important');
+    title.style.setProperty('text-overflow','clip','important');
+    title.style.setProperty('line-height','.98','important');
+    var loops=0;
+    while(title.scrollWidth>title.clientWidth+1&&size>floor&&loops<30){
+      size=Math.max(floor,size*.94);
+      title.style.setProperty('font-size',size+'px','important');
+      loops++;
+    }
+    if(title.scrollWidth>title.clientWidth+1&&text.length<=25){
+      loops=0;
+      while(title.scrollWidth>title.clientWidth+1&&size>hardMin&&loops<24){
+        size=Math.max(hardMin,size*.96);
+        title.style.setProperty('font-size',size+'px','important');
+        loops++;
+      }
+    }
+    card.setAttribute('data-title-fit-px',String(Math.round(size*10)/10));
+  }
+  function fitAll(root){
+    root=root&&root.querySelectorAll?root:document;
+    root.querySelectorAll('.card.ctcgFaceRedesign').forEach(fitTitle);
+  }
+  function refresh(){
+    install();
+    requestAnimationFrame(function(){fitAll(document)});
+    setTimeout(function(){fitAll(document)},40);
+    setTimeout(function(){fitAll(document)},160);
+    if(typeof scheduleTitleFit==='function')setTimeout(function(){scheduleTitleFit(document);fitAll(document)},30);
+  }
+  window.fitCommuneCardTitles=fitAll;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh).catch(function(){});
   setTimeout(refresh,120);
   setTimeout(refresh,500);
-  new MutationObserver(function(){setTimeout(refresh,40)}).observe(document.documentElement,{childList:true,subtree:true});
+  new MutationObserver(function(){setTimeout(refresh,40)}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  window.addEventListener('resize',refresh);
 })();
