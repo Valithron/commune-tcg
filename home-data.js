@@ -7,6 +7,8 @@
   function isHomeRequest(url){return url==='/api/vaults'&&typeof state!=='undefined'&&state&&(state.page==='home'||state.page==='settings')}
   function asVaults(data){
     if(cachedVaultShape&&cachedHome===data)return cachedVaultShape;
+    cachedHome=data;
+    window.__ctcgHomeData=data;
     var cards=[],seen={};
     (data.backgroundCards||[]).concat(data.featuredCards||[]).forEach(function(c){
       if(!c||seen[c.id])return;
@@ -19,7 +21,6 @@
       if(!byOwner[owner])byOwner[owner]={id:owner,displayName:c._ownerName||owner,initials:c._ownerInitials||'',color:c._ownerColor||'#f3c93f',isCurrent:false,cards:[]};
       byOwner[owner].cards.push(c);
     });
-    cachedHome=data;
     cachedVaultShape={user:data.user,vaults:Object.keys(byOwner).map(function(k){return byOwner[k]})};
     return cachedVaultShape;
   }
@@ -42,6 +43,7 @@
         if(cachedHome)return asVaults(cachedHome);
         var data=await originalApi('/api/home',opt||{});
         cachedHome=data;
+        window.__ctcgHomeData=data;
         setTimeout(patchStats,30);
         return asVaults(data);
       }
