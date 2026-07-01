@@ -45,7 +45,7 @@ export async function ensureGameSchema(env){
     'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_rarity ON enemy_card_templates(enemy_type,rarity)',
     'CREATE TABLE IF NOT EXISTS card_xp_events (id TEXT PRIMARY KEY, card_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, character_id TEXT NOT NULL, xp REAL NOT NULL, reason TEXT NOT NULL, battle_id TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE INDEX IF NOT EXISTS idx_card_xp_events_card_created ON card_xp_events(card_id,created_at)',
-    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_character_created ON character_id'
+    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_character_created ON card_xp_events(character_id,created_at)'
   ];
   for(const sql of ddl){await env.DB.prepare(sql).run()}
   const statements=[];
