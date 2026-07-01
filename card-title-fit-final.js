@@ -1,3 +1,6 @@
+// Runtime status: copied by build.js, but not currently loaded by index.html or the mobile-collection-fix.js dynamic patch chain.
+// Keep this note in sync with docs/runtime-patch-map.md.
+
 (function(){
   if(window.__ctcgCardTitleFitFinal)return;
   window.__ctcgCardTitleFitFinal=true;
