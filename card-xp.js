@@ -40,23 +40,5 @@ cardHtml=function(c,big=false){
   if(!shouldShowCardXp(c))return html;
   return html.replace('</article>',cardXpBadge(c)+cardAscendControl(c)+'</article>');
 };
-async function ascendCard(id,btn){
-  const card=(state.cards||[]).find(c=>String(c.id)===String(id));
-  if(!card)return;
-  const p=cardXpProgress(card),token=ch(card.cid);
-  if(!p.ready){alert(`This card needs Level ${p.stage.cap} and ${p.need} XP first.`);return}
-  if(Number(state.tokens[card.cid]||0)<p.stage.cost){alert(`Ascension costs ${p.stage.cost} ${token.name} tokens.`);return}
-  if(!confirm(`Ascend ${card.title} to ${p.stage.next.toUpperCase()} for ${p.stage.cost} ${token.name} tokens?`))return;
-  try{
-    if(btn){btn.disabled=true;btn.textContent='Ascending...'}
-    await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
-    await loadState();
-  }catch(e){alert(e.message||'Ascension failed');if(btn){btn.disabled=false;btn.textContent='Ascend'}}
-}
-function bindCardXpControls(){
-  document.querySelectorAll('[data-ascend-card]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();ascendCard(btn.dataset.ascendCard,btn)});
-}
-const cardXpOldBind=bind;
-bind=function(){cardXpOldBind();bindCardXpControls()};
 injectCardXpStyles();
 setTimeout(()=>{if(user)render()},0);
