@@ -1,3 +1,13 @@
+/*
+ * BUILD FILE ALLOWLIST
+ *
+ * This build file maintains a strict allowlist of files copied to dist/.
+ * See docs/runtime-patch-map.md for current runtime script loading order
+ * and active vs dormant patches.
+ * We are intentionally minimizing scattered patch files.
+ * Do not add new files here without updating the runtime patch map.
+ */
+
 const fs = require('fs');
 const path = require('path');
 
