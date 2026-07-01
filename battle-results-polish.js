@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Owns the polished battle results page, including XP progress rows and result-level ascension readiness controls.
+ * Original problem solved: Battle completion needed a readable report, MVP summary, XP gains, and immediate ascension prompts after XP awards.
+ * Key assumptions: `battle-flow.js` owns the active battle page router; `cardXpProgress` exists when XP rows render; `ascension-ceremony.js` consumes `[data-ascend-card]` clicks.
+ * Known interactions: Emits `.battleResultAscend[data-ascend-card]`, which is also scanned by `ascension-failsafe.js`; wraps `bind` only to keep styles installed.
+ * Mobile/Desktop differences: CSS collapses result grids and XP rows under 820px.
+ */
 function battleResultsToken(b){return ch(b?.tokenType||b?.mvpCid||'cydney')}
 function battleResultsPlayer(b){return Array.isArray(b?.player)?b.player:[]}
 function battleResultsEnemy(b){return Array.isArray(b?.enemy)?b.enemy:[]}
@@ -33,6 +41,8 @@ function injectBattleResultsPolishStyles(){
 `;
   document.head.appendChild(style);
 }
+
+// Global override: keeps the result-page styles installed after the battle bind chain runs.
 const battleResultsPolishOldBind=bind;
 bind=function(){battleResultsPolishOldBind();injectBattleResultsPolishStyles()};
 injectBattleResultsPolishStyles();
