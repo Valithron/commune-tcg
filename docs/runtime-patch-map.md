@@ -64,4 +64,4 @@ This records the current outermost or last runtime owner visible from the load m
 - `bind`: `battle-fullscreen.js` after the battle dynamic patch chain loads
 - `cardHtml`: `card-title-stability.js` in the direct script chain; `card-xp.js` also wraps `cardHtml` dynamically, so this is a timing-sensitive chain
 - `battle`: `battle-flow.js`
-- `mintCard`: `mint-success-redirect.js`
+- `mintCard`: `mint-success-redirect.js` as the single mint patch owner; `mint-flavor.js` no longer overrides `mintCard`
