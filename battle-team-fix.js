@@ -1,3 +1,6 @@
+// Runtime status: copied by build.js, but not currently loaded by index.html or the mobile-collection-fix.js dynamic patch chain.
+// Keep this note in sync with docs/runtime-patch-map.md.
+
 function battleTeamCardSearchText(c){return `${c.title||''} ${c.tag||''} ${c.effect||''} ${ch(c.cid).name} ${c.rar||''}`.toLowerCase()}
 function battlePickCard(c,selected=false){
   const cc=ch(c.cid),rr=R[c.rar]||R.common;
