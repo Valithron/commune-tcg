@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Adds the mobile collection character filter and acts as the dynamic loader for XP, ascension, market, and battle patch chains.
+ * Original problem solved: The collection sidebar/filter model was cramped on mobile, and several later patches needed a reliable runtime injection point after the base app loaded.
+ * Key assumptions: `collection`, `bind`, `render`, `state`, `user`, `C`, and `ch` already exist from app.js/title-limit.js; injected scripts are idempotent by element id.
+ * Known interactions: Loads `card-xp.js`, which wraps `cardHtml`; loads ascension ceremony/mobile/failsafe patches; loads battle flow/setup/results/fullscreen/speed chain.
+ * Mobile/Desktop differences: Mobile gets the horizontal character filter. Desktop also receives section-top layout corrections from this file.
+ */
 function mobileCollectionCharacters(){
   const owner=user&&user.id;
   const primary=C.find(c=>c.id===owner);
@@ -156,6 +164,8 @@ loadBattleHistoryPatch();
 loadCardXpPatch();
 loadBattleRulesPatch();
 setTimeout(loadBattleFlowPatch,260);
+
+// Global override: collection is wrapped to prepend the mobile character filter only on collection page output.
 const mobileCollectionOldCollection=collection;
 collection=function(){
   const html=mobileCollectionOldCollection();
@@ -163,6 +173,8 @@ collection=function(){
   if(html.includes('mobileCollectionFilter'))return html;
   return html.replace('<main class="content">','<main class="content">'+mobileCollectionFilterHtml());
 };
+
+// Global override: bind is wrapped so mobile/desktop layout styles are restored after every render/bind cycle.
 const mobileCollectionOldBind=bind;
 bind=function(){
   mobileCollectionOldBind();
