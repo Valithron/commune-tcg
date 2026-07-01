@@ -6,70 +6,9 @@ function installAscensionFailsafe(){
   let suspendRefresh=false;
   let statePatchTimer=null;
   let refreshTimer=null;
-  let pauseClearTimer=null;
-  const MAX_ASC_DEFERRED_TIMEOUTS=8;
-  function ascFailsafeTime(){return typeof performance!=='undefined'?performance.now().toFixed(1):Date.now()}
   function clearFailsafeTimers(){
     if(statePatchTimer){clearTimeout(statePatchTimer);statePatchTimer=null}
     if(refreshTimer){clearTimeout(refreshTimer);refreshTimer=null}
-    if(pauseClearTimer){clearTimeout(pauseClearTimer);pauseClearTimer=null}
-  }
-  function beginAscObserverPause(reason){
-    if(window.__ctcgAscPauseNativeSetTimeout)return;
-    const nativeSetTimeout=window.setTimeout.bind(window);
-    window.__ctcgAscPauseNativeSetTimeout=nativeSetTimeout;
-    window.__ctcgAscDeferredTimeoutCount=0;
-    window.isAscensionCeremonyActive=true;
-    window.setTimeout=function(fn,delay,...args){
-      const ms=Number(delay||0);
-      if(window.isAscensionCeremonyActive&&typeof fn==='function'&&ms<=150){
-        window.__ctcgAscDeferredTimeoutCount=(window.__ctcgAscDeferredTimeoutCount||0)+1;
-        const count=window.__ctcgAscDeferredTimeoutCount;
-        if(count<=MAX_ASC_DEFERRED_TIMEOUTS){
-          console.log('[ascension] deferring non-ceremony timeout',count+'/'+MAX_ASC_DEFERRED_TIMEOUTS,ms,ascFailsafeTime());
-          return nativeSetTimeout(()=>nativeSetTimeout(fn,0,...args),2400);
-        }
-        if(count===MAX_ASC_DEFERRED_TIMEOUTS+1)console.warn('[ascension] suppressing additional short timeouts during ceremony',ascFailsafeTime());
-        return nativeSetTimeout(()=>{},Math.max(0,ms));
-      }
-      return nativeSetTimeout(fn,delay,...args);
-    };
-    console.log('[ascension] observer pause active',reason||'',ascFailsafeTime());
-  }
-  function endAscObserverPause(reason){
-    if(window.__ctcgAscPauseNativeSetTimeout){
-      window.setTimeout=window.__ctcgAscPauseNativeSetTimeout;
-      window.__ctcgAscPauseNativeSetTimeout=null;
-    }
-    window.__ctcgAscDeferredTimeoutCount=0;
-    window.isAscensionCeremonyActive=false;
-    console.log('[ascension] observer pause cleared',reason||'',ascFailsafeTime());
-  }
-  function installAscShowPauseWrapper(){
-    if(typeof ascShowCeremony!=='function'||ascShowCeremony.__ctcgObserverPauseWrapped)return;
-    const original=ascShowCeremony;
-    ascShowCeremony=function(){
-      beginAscObserverPause('ascShowCeremony');
-      let result;
-      try{result=original.apply(this,arguments)}
-      finally{
-        const nativeSetTimeout=window.__ctcgAscPauseNativeSetTimeout||window.setTimeout;
-        if(pauseClearTimer)clearTimeout(pauseClearTimer);
-        pauseClearTimer=nativeSetTimeout(()=>{pauseClearTimer=null;endAscObserverPause('auto')},2200);
-        const overlay=document.getElementById('ascCeremony');
-        if(overlay&&!overlay.__ctcgPauseCleanup){
-          overlay.__ctcgPauseCleanup=true;
-          overlay.addEventListener('click',e=>{
-            if(e.target?.closest?.('.ascClose,#ascCeremonyDone,[data-page=collection]')){
-              if(pauseClearTimer){clearTimeout(pauseClearTimer);pauseClearTimer=null}
-              endAscObserverPause('close');
-            }
-          },true);
-        }
-      }
-      return result;
-    };
-    ascShowCeremony.__ctcgObserverPauseWrapped=true;
   }
   function cardById(id){return(state.cards||[]).find(c=>String(c.id)===String(id))}
   function visible(el){
@@ -87,7 +26,7 @@ function installAscensionFailsafe(){
     return{card,p};
   }
   function showBar(){
-    if(suspendRefresh||window.isAscensionCeremonyActive)return;
+    if(suspendRefresh||document.getElementById('ascCeremony'))return;
     const btn=firstReady();
     let bar=document.getElementById('ascFailsafeBar');
     if(!btn){if(bar)bar.remove();document.body.classList.remove('ascFailsafeActive');return}
@@ -127,6 +66,11 @@ function installAscensionFailsafe(){
     const goBtn=modal.querySelector('#ascFailsafeConfirmGo');
     goBtn.onclick=go;goBtn.ontouchend=go;goBtn.onpointerup=go;
   }
+  function applyReturnedCard(newCard,result){
+    if(!newCard||!newCard.id)return;
+    state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
+    state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result?.cost||0))};
+  }
   async function doAscend(id,modal){
     if(busy)return;
     const info=eligibleCard(id);
@@ -141,35 +85,19 @@ function installAscensionFailsafe(){
       const go=modal?.querySelector('#ascFailsafeConfirmGo');
       if(go){go.disabled=true;go.textContent='Ascending...'}
       const result=await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
-      console.time('ascension-ceremony');
-      console.log('[ascension][failsafe] server response received',ascFailsafeTime());
       const newCard=result.card;
       modal?.remove();
-      console.log('[ascension][failsafe] before ascShowCeremony',ascFailsafeTime());
-      installAscShowPauseWrapper();
-      if(typeof ascShowCeremony==='function'){
-        ascShowCeremony(oldSnapshot,newCard,result,returnState);
-        console.log('[ascension][failsafe] ascShowCeremony returned',ascFailsafeTime(),!!document.getElementById('ascCeremony'));
-      }else{
-        alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);
-        await loadState();
-      }
-      statePatchTimer=setTimeout(()=>{
-        statePatchTimer=null;
-        console.log('[ascension][failsafe] before deferred state patch',ascFailsafeTime());
-        state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
-        state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
-        console.log('[ascension][failsafe] after deferred state patch',ascFailsafeTime());
-      },2300);
+      if(typeof ascShowCeremony==='function')ascShowCeremony(oldSnapshot,newCard,result,returnState);
+      else{alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);await loadState()}
+      statePatchTimer=setTimeout(()=>{statePatchTimer=null;applyReturnedCard(newCard,result)},1700);
     }catch(e){alert(e.message||'Ascension failed')}
     finally{
       busy=false;
       if(refreshTimer)clearTimeout(refreshTimer);
-      refreshTimer=setTimeout(()=>{refreshTimer=null;suspendRefresh=false;refresh()},3000);
+      refreshTimer=setTimeout(()=>{refreshTimer=null;suspendRefresh=false;refresh()},2500);
     }
   }
   function refresh(){showBar()}
-  installAscShowPauseWrapper();
   const style=document.createElement('style');
   style.id='ctcgAscFailsafeStyles';
   style.textContent=`
@@ -180,6 +108,6 @@ function installAscensionFailsafe(){
   document.head.appendChild(style);
   refresh();
   setInterval(refresh,700);
-  new MutationObserver(()=>{if(window.isAscensionCeremonyActive)return;setTimeout(refresh,40)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','disabled']});
+  new MutationObserver(()=>setTimeout(refresh,40)).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','disabled']});
 }
 installAscensionFailsafe();
