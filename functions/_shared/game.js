@@ -2,6 +2,7 @@ export const USERS=[['cydney','Cydney','CY','#789461'],['sterling','Sterling','S
 export const CHARACTER_IDS=USERS.map(u=>u.id);
 const DEFAULT_PRICES={cydney:13.4,sterling:12.3,ryan:11.2,gabi:10.1,cooper:9,kenly:7.9,ashley:6.8};
 const ENEMY_TEMPLATE_SEED_VERSION='enemyTemplateFallbackSeedV1';
+let enemyTemplateSeedChecked=false;
 const RARITY_STATS={common:30,uncommon:42,rare:56,legendary:72};
 const ENEMY_TEMPLATE_SEEDS={
   random_encounter:{label:'Random Encounter',characters:CHARACTER_IDS,bias:{p:1,d:1,s:1},names:{common:['Loose Coffee Goblin','Unexpected Errand','Side Quest Bandit','Mild Crisis','Forgotten Appointment','Coupon Gremlin'],uncommon:['Rogue Min-Maxer','Vibes Strategist','Calendar Goblin','Overthinking Imp','Budget Sidewinder','Inbox Phantom'],rare:['Errand Chain Warden','Panic Purchase Baron','Deadline Marauder','The Wrong Receipt','Schedule Saboteur'],legendary:['The Minor Emergency','Lord of One More Thing','The Sudden Obligation','The Vibes Tribunal']}},
@@ -44,7 +45,7 @@ export async function ensureGameSchema(env){
     'CREATE INDEX IF NOT EXISTS idx_enemy_templates_type_rarity ON enemy_card_templates(enemy_type,rarity)',
     'CREATE TABLE IF NOT EXISTS card_xp_events (id TEXT PRIMARY KEY, card_id TEXT NOT NULL, owner_user_id TEXT NOT NULL, character_id TEXT NOT NULL, xp REAL NOT NULL, reason TEXT NOT NULL, battle_id TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)',
     'CREATE INDEX IF NOT EXISTS idx_card_xp_events_card_created ON card_xp_events(card_id,created_at)',
-    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_character_created ON card_xp_events(character_id,created_at)'
+    'CREATE INDEX IF NOT EXISTS idx_card_xp_events_character_created ON character_id'
   ];
   for(const sql of ddl){await env.DB.prepare(sql).run()}
   const statements=[];
@@ -56,7 +57,10 @@ export async function ensureGameSchema(env){
   }
   for(const tokenType of CHARACTER_IDS){statements.push(env.DB.prepare('INSERT OR IGNORE INTO market_prices (token_type, price) VALUES (?, ?)').bind(tokenType,DEFAULT_PRICES[tokenType]))}
   if(statements.length)await env.DB.batch(statements);
-  await seedFallbackEnemyTemplates(env)
+  if(!enemyTemplateSeedChecked){
+    enemyTemplateSeedChecked=true;
+    try{await seedFallbackEnemyTemplates(env)}catch(e){console.warn('Enemy template seed skipped',e&&e.message?e.message:e)}
+  }
 }
 
 export async function createSession(env,userId){const token=`${crypto.randomUUID()}-${crypto.randomUUID()}`,expiresAt=Math.floor(Date.now()/1000)+60*60*24*30;await env.DB.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token,userId,expiresAt).run();return{token,expiresAt}}
