@@ -3,6 +3,7 @@ function installAscensionFailsafe(){
   window.__ctcgAscFailsafe=true;
   let activeId=null;
   let busy=false;
+  let suspendRefresh=false;
   function ascFailsafeTime(){return typeof performance!=='undefined'?performance.now().toFixed(1):Date.now()}
   function cardById(id){return(state.cards||[]).find(c=>String(c.id)===String(id))}
   function visible(el){
@@ -20,6 +21,7 @@ function installAscensionFailsafe(){
     return{card,p};
   }
   function showBar(){
+    if(suspendRefresh)return;
     const btn=firstReady();
     let bar=document.getElementById('ascFailsafeBar');
     if(!btn){if(bar)bar.remove();document.body.classList.remove('ascFailsafeActive');return}
@@ -68,6 +70,7 @@ function installAscensionFailsafe(){
     const returnState={page:state.page,battleView:state.battleView,sel:state.sel};
     try{
       busy=true;
+      suspendRefresh=true;
       const go=modal?.querySelector('#ascFailsafeConfirmGo');
       if(go){go.disabled=true;go.textContent='Ascending...'}
       const result=await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
@@ -83,13 +86,13 @@ function installAscensionFailsafe(){
         alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);
         await loadState();
       }
-      requestAnimationFrame(()=>setTimeout(()=>{
+      setTimeout(()=>{
         state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
         state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
         console.log('[ascension][failsafe] light state patch after ceremony start',ascFailsafeTime());
-      },10));
+      },900);
     }catch(e){alert(e.message||'Ascension failed')}
-    finally{busy=false;setTimeout(refresh,1500)}
+    finally{busy=false;setTimeout(()=>{suspendRefresh=false;refresh()},1500)}
   }
   function refresh(){showBar()}
   const style=document.createElement('style');
