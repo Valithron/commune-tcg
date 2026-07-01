@@ -41,16 +41,6 @@ function installAscensionFailsafe(){
     bar.querySelector('#ascFailsafeTitle').textContent=card?`Ascend ${card.title}`:'Ascend Ready';
     document.body.classList.add('ascFailsafeActive');
   }
-  function bindRealButtons(){
-    document.querySelectorAll('[data-ascend-card]').forEach(btn=>{
-      if(btn.dataset.ascFailsafeBound==='1')return;
-      btn.dataset.ascFailsafeBound='1';
-      const action=e=>{e.preventDefault();e.stopPropagation();openConfirm(btn.dataset.ascendCard)};
-      btn.onclick=action;
-      btn.ontouchend=action;
-      btn.onpointerup=action;
-    });
-  }
   function openConfirm(id){
     if(busy)return;
     const info=eligibleCard(id);
@@ -90,7 +80,7 @@ function installAscensionFailsafe(){
     }catch(e){alert(e.message||'Ascension failed')}
     finally{busy=false;setTimeout(refresh,120)}
   }
-  function refresh(){bindRealButtons();showBar()}
+  function refresh(){showBar()}
   const style=document.createElement('style');
   style.id='ctcgAscFailsafeStyles';
   style.textContent=`
