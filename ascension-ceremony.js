@@ -75,17 +75,13 @@ async function ascendCard(id,btn){
     const oldSnapshot=JSON.parse(JSON.stringify(oldCard));
     const result=await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
     const newCard=result.card;
-    state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
-    state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
-    ascPatchVisibleCard(newCard);
     ascShowCeremony(oldSnapshot,newCard,result,returnState);
-    setTimeout(async()=>{
+    requestAnimationFrame(()=>setTimeout(()=>{
+      state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
+      state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
       ascRestoreReturnState(returnState);
-      render();
-      await loadState();
-      ascRestoreReturnState(returnState);
-      render();
-    },180);
+      ascPatchVisibleCard(newCard);
+    },10));
   }catch(e){
     alert(e.message||'Ascension failed');
     if(btn){btn.disabled=false;btn.classList.remove('ascending');btn.textContent=btn.classList.contains('battleResultAscend')?'Ascend Ready':'Ascend'}
