@@ -49,9 +49,9 @@ Current inventory-only map of the Commune TCG browser patch load order. This fil
 - `battle-ko-fix.js`
 - `battle-no-flavor.js`
 
-## Files copied by build.js but not currently runtime-loaded
+## Removed dormant legacy patches
 
-These files are copied into `dist/` by `build.js`, but are not loaded directly by `index.html` and are not currently injected by `mobile-collection-fix.js`:
+These files were removed from the build allowlist and deleted from the repository:
 
 - `battle-team-fix.js`
 - `card-title-fit-final.js`
@@ -65,3 +65,10 @@ This records the current outermost or last runtime owner visible from the load m
 - `cardHtml`: `card-title-stability.js` in the direct script chain; `card-xp.js` also wraps `cardHtml` dynamically, so this is a timing-sensitive chain
 - `battle`: `battle-flow.js`
 - `mintCard`: `mint-success-redirect.js` as the single mint patch owner; `mint-flavor.js` no longer overrides `mintCard`
+
+## Ascension ownership
+
+- `card-xp.js`: owns XP calculation, XP badge rendering, and rendering `[data-ascend-card]` buttons; it no longer defines or binds `ascendCard`.
+- `ascension-ceremony.js`: owns the main `ascendCard` flow, the server ascend call for normal card-button activation, and `ascShowCeremony`.
+- `ascension-mobile-click-fix.js`: owns mobile/touch hit handling and calls the main `ascendCard` function.
+- `ascension-failsafe.js`: owns the backup bottom bar and fallback confirmation sheet; it no longer binds real card buttons directly.
