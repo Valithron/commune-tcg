@@ -64,15 +64,18 @@
     }
   }
   function applyCardPolish(root){
+    if(window.isAscensionCeremonyActive)return;
     installStyles();
     root=root&&root.querySelectorAll?root:document;
     var cards=root.querySelectorAll('.card');
     for(var i=0;i<cards.length;i++)normalizeCardFrame(cards[i]);
     window.requestAnimationFrame(function(){
+      if(window.isAscensionCeremonyActive)return;
       var titles=root.querySelectorAll('.card .ctop strong');
       for(var j=0;j<titles.length;j++)fitTitle(titles[j]);
     });
     setTimeout(function(){
+      if(window.isAscensionCeremonyActive)return;
       var titles=root.querySelectorAll('.card .ctop strong');
       for(var j=0;j<titles.length;j++)fitTitle(titles[j]);
     },120);
@@ -100,7 +103,7 @@
     var oldRender=render;
     render=function(){
       var out=oldRender.apply(this,arguments);
-      applyCardPolish(document);
+      if(!window.isAscensionCeremonyActive)applyCardPolish(document);
       return out;
     };
   }
@@ -108,11 +111,12 @@
   function startObserver(){
     if(mo||!document.body)return;
     mo=new MutationObserver(function(list){
+      if(window.isAscensionCeremonyActive)return;
       var should=false;
       for(var i=0;i<list.length;i++){
         if(list[i].addedNodes&&list[i].addedNodes.length){should=true;break;}
       }
-      if(should)setTimeout(function(){applyCardPolish(document);},30);
+      if(should)setTimeout(function(){if(!window.isAscensionCeremonyActive)applyCardPolish(document);},30);
     });
     mo.observe(document.body,{childList:true,subtree:true});
   }
