@@ -61,6 +61,24 @@ function installAscensionFailsafe(){
     const goBtn=modal.querySelector('#ascFailsafeConfirmGo');
     goBtn.onclick=go;goBtn.ontouchend=go;goBtn.onpointerup=go;
   }
+  function runCeremonyOutsideBody(fn){
+    const body=document.body,root=document.documentElement||body,original=body&&body.appendChild;
+    let redirected=false;
+    if(!body||!original||!root||root===body)return fn();
+    body.appendChild=function(node){
+      if(node&&node.id==='ascCeremony'){
+        redirected=true;
+        console.log('[ascension][failsafe] redirecting ceremony overlay outside body',ascFailsafeTime());
+        return root.appendChild(node);
+      }
+      return original.call(this,node);
+    };
+    try{return fn()}
+    finally{
+      body.appendChild=original;
+      console.log('[ascension][failsafe] restored body append',ascFailsafeTime(),redirected);
+    }
+  }
   async function doAscend(id,modal){
     if(busy)return;
     const info=eligibleCard(id);
@@ -80,19 +98,20 @@ function installAscensionFailsafe(){
       modal?.remove();
       console.log('[ascension][failsafe] before ascShowCeremony',ascFailsafeTime());
       if(typeof ascShowCeremony==='function'){
-        ascShowCeremony(oldSnapshot,newCard,result,returnState);
+        runCeremonyOutsideBody(()=>ascShowCeremony(oldSnapshot,newCard,result,returnState));
         console.log('[ascension][failsafe] ascShowCeremony returned',ascFailsafeTime(),!!document.getElementById('ascCeremony'));
       }else{
         alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);
         await loadState();
       }
       setTimeout(()=>{
+        console.log('[ascension][failsafe] before deferred state patch',ascFailsafeTime());
         state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
         state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
-        console.log('[ascension][failsafe] light state patch after ceremony start',ascFailsafeTime());
-      },900);
+        console.log('[ascension][failsafe] after deferred state patch',ascFailsafeTime());
+      },1700);
     }catch(e){alert(e.message||'Ascension failed')}
-    finally{busy=false;setTimeout(()=>{suspendRefresh=false;refresh()},1500)}
+    finally{busy=false;setTimeout(()=>{suspendRefresh=false;refresh()},2600)}
   }
   function refresh(){showBar()}
   const style=document.createElement('style');
