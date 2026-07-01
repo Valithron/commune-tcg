@@ -1,6 +1,7 @@
 function ascRarityLabel(r){return (R[String(r||'common')]||R.common)[0]}
 function ascRarityColor(r){return (R[String(r||'common')]||R.common)[2]}
 function ascLevel(c){return typeof cardXpProgress==='function'?cardXpProgress(c).level:Number(c?.level||1)}
+function ascLogTime(){return typeof performance!=='undefined'?performance.now().toFixed(1):Date.now()}
 function ascPortrait(c){
   const cc=ch(c?.cid||'cydney');
   if(c?.img)return`<img src='${h(c.img)}' style='${cropStyle(c)}' alt=''>`;
@@ -15,6 +16,7 @@ function ascCeremonyCard(card,label){
   return`<article class='ascCard' style='--a:${cc.a};--r:${ascRarityColor(rar)}'><div class='ascCardLabel'>${h(label)}</div><div class='ascArt'>${ascPortrait(card)}</div><div class='ascCardBody'><div class='ascRarity'>${h(ascRarityLabel(rar))}</div><h2>${h(card?.title||'Card')}</h2><div class='ascCardStats'><span>POW <b>${num(card?.p||0)}</b></span><span>DEF <b>${num(card?.d||0)}</b></span><span>SPD <b>${num(card?.s||0)}</b></span></div><div class='ascPassive'>+${Number(card?.passive||0).toFixed(2)}/min · LVL ${ascLevel(card)}</div></div></article>`;
 }
 function ascShowCeremony(oldCard,newCard,result,returnState){
+  console.log('[ascension] ascShowCeremony called',ascLogTime());
   document.getElementById('ascCeremony')?.remove();
   const cc=ch(newCard.cid),from=ascRarityLabel(result.from||oldCard.rar),to=ascRarityLabel(result.to||newCard.rar);
   const overlay=document.createElement('div');
@@ -22,11 +24,12 @@ function ascShowCeremony(oldCard,newCard,result,returnState){
   overlay.className='ascCeremony';
   overlay.innerHTML=`<div class='ascStars'></div><section class='ascPanel' style='--a:${cc.a};--r:${ascRarityColor(newCard.rar)}'><div class='ascTop'><div><div class='ascKicker'>Ascension Complete</div><h1>${h(from)} to ${h(to)}</h1><p>${h(newCard.title||'Card')} has reached a higher rarity.</p></div><button class='ascClose' type='button' aria-label='Close ascension ceremony'>×</button></div><div class='ascTransformStage'><div class='ascTransformAura'></div><div class='ascTransformSlot' id='ascTransformSlot'>${ascCeremonyCard(oldCard,'Before Ascension')}</div><div class='ascTransformCaption' id='ascTransformCaption'>Rarity border is being reforged...</div></div><div class='ascChanges'><div class='ascKicker'>Stat Comparison</div><div class='ascChangeGrid'>${ascStatRow('POW',oldCard.p,newCard.p)}${ascStatRow('DEF',oldCard.d,newCard.d)}${ascStatRow('SPD',oldCard.s,newCard.s)}${ascStatRow('Passive',Number(oldCard.passive||0).toFixed(2),Number(newCard.passive||0).toFixed(2),'/m')}${ascStatRow('Level',ascLevel(oldCard),ascLevel(newCard))}<div class='ascStatRow up'><small>Cost</small><b>${num(result.cost||0)}</b><span></span><b>${cc.in}</b><em>Spent</em></div></div></div><div class='ascActions'><button class='gold' id='ascCeremonyDone' type='button'>Return</button><button class='btn' data-page='collection' type='button'>View Collection</button></div></section>`;
   document.body.appendChild(overlay);
+  console.log('[ascension] overlay appended',ascLogTime(),!!document.getElementById('ascCeremony'));
   const slot=overlay.querySelector('#ascTransformSlot'),caption=overlay.querySelector('#ascTransformCaption');
-  requestAnimationFrame(()=>overlay.classList.add('show'));
-  setTimeout(()=>{slot.classList.add('charging');if(caption)caption.textContent='The old rarity gives way.'},260);
-  setTimeout(()=>{slot.classList.add('swapOut')},1030);
-  setTimeout(()=>{slot.innerHTML=ascCeremonyCard(newCard,'After Ascension');slot.className='ascTransformSlot revealed';if(caption)caption.textContent='Ascension complete. Compare the stat changes below.'},1280);
+  requestAnimationFrame(()=>{overlay.classList.add('show');console.log('[ascension] overlay show class applied',ascLogTime(),!!document.getElementById('ascCeremony'));console.timeEnd('ascension-ceremony')});
+  setTimeout(()=>{slot.classList.add('charging');if(caption)caption.textContent='The old rarity gives way.';console.log('[ascension] charging animation step',ascLogTime())},260);
+  setTimeout(()=>{slot.classList.add('swapOut');console.log('[ascension] swapOut animation step',ascLogTime())},1030);
+  setTimeout(()=>{slot.innerHTML=ascCeremonyCard(newCard,'After Ascension');slot.className='ascTransformSlot revealed';if(caption)caption.textContent='Ascension complete. Compare the stat changes below.';console.log('[ascension] revealed animation step',ascLogTime())},1280);
   const close=async()=>{
     overlay.classList.add('leaving');
     setTimeout(()=>overlay.remove(),260);
@@ -43,26 +46,6 @@ function ascShowCeremony(oldCard,newCard,result,returnState){
   overlay.querySelector('#ascCeremonyDone').onclick=close;
   overlay.querySelector('[data-page=collection]').onclick=async()=>{overlay.remove();state.page='collection';state.sel=newCard.cid;await loadState();state.page='collection';state.sel=newCard.cid;render()};
 }
-function ascPatchVisibleCard(card){
-  try{
-    if(!card||!card.id||typeof cardHtml!=='function')return;
-    const safe=window.CSS&&CSS.escape?CSS.escape(String(card.id)):String(card.id).replace(/"/g,'\\"');
-    const current=document.querySelector(`[data-card-id="${safe}"]`);
-    if(!current)return;
-    const big=current.classList.contains('bigcard')||!!current.closest('.cardDetailPreview');
-    const wrap=document.createElement('div');
-    wrap.innerHTML=cardHtml(card,big);
-    const fresh=wrap.firstElementChild;
-    if(!fresh)return;
-    current.replaceWith(fresh);
-    if(typeof scheduleTitleFit==='function')scheduleTitleFit(fresh);
-  }catch(e){console.warn('Ascension card DOM patch skipped',e)}
-}
-function ascRestoreReturnState(returnState){
-  state.page=returnState.page||state.page;
-  if(returnState.battleView)state.battleView=returnState.battleView;
-  if(returnState.sel)state.sel=returnState.sel;
-}
 async function ascendCard(id,btn){
   const oldCard=(state.cards||[]).find(c=>String(c.id)===String(id));
   if(!oldCard)return;
@@ -74,14 +57,16 @@ async function ascendCard(id,btn){
     if(btn){btn.disabled=true;btn.classList.add('ascending');btn.textContent='Ascending...'}
     const oldSnapshot=JSON.parse(JSON.stringify(oldCard));
     const result=await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
+    console.time('ascension-ceremony');
+    console.log('[ascension] server response received',ascLogTime());
     const newCard=result.card;
+    state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
+    state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
+    console.log('[ascension] state patched; before render',ascLogTime());
+    render();
+    console.log('[ascension] render returned; before ascShowCeremony',ascLogTime());
     ascShowCeremony(oldSnapshot,newCard,result,returnState);
-    requestAnimationFrame(()=>setTimeout(()=>{
-      state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
-      state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
-      ascRestoreReturnState(returnState);
-      ascPatchVisibleCard(newCard);
-    },10));
+    console.log('[ascension] ascShowCeremony returned',ascLogTime(),!!document.getElementById('ascCeremony'));
   }catch(e){
     alert(e.message||'Ascension failed');
     if(btn){btn.disabled=false;btn.classList.remove('ascending');btn.textContent=btn.classList.contains('battleResultAscend')?'Ascend Ready':'Ascend'}
