@@ -14,6 +14,7 @@ function battleLogHtml(b){
   return `<div class="battleFeed"><div class="battleFeedTop"><div><div class="battleResult" id="battleResult">${b?h(b.summary||'Battle complete.'):'Ready to battle.'}</div><div class="battleEventText" id="battleEventText">${b?'Replay the latest battle or start a new one.':'Click Start Auto-Battle.'}</div></div><div class="row">${b?'<button class="btn" id="replayBattle">Replay</button>':''}<button class="btn" id="skipBattle" style="display:none">Skip Replay</button></div></div><div class="battleLogList" id="battleLogList">${log}</div></div>`;
 }
 function injectMobileCollectionStyles(){
+  if(window.isAscensionCeremonyActive)return;
   if(document.getElementById('ctcgMobileCollectionFixStyles'))return;
   const style=document.createElement('style');
   style.id='ctcgMobileCollectionFixStyles';
@@ -165,5 +166,5 @@ collection=function(){
 const mobileCollectionOldBind=bind;
 bind=function(){
   mobileCollectionOldBind();
-  injectMobileCollectionStyles();
+  if(!window.isAscensionCeremonyActive)injectMobileCollectionStyles();
 };
