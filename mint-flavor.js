@@ -1,6 +1,4 @@
 const MINT_FLAVOR_LIMIT=120;
-let pendingMintHighlightId=null;
-let mintToastTimer=null;
 function defaultFlavorForCharacter(id){return E[id]||'Flavor text'}
 function cleanFlavorText(value){return String(value||'').slice(0,MINT_FLAVOR_LIMIT)}
 function draftFlavor(){let d=state.draft||{};return cleanFlavorText(d.effect||d.flavorText||defaultFlavorForCharacter(d.cid||'cydney'))}
