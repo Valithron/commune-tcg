@@ -43,6 +43,26 @@ function ascShowCeremony(oldCard,newCard,result,returnState){
   overlay.querySelector('#ascCeremonyDone').onclick=close;
   overlay.querySelector('[data-page=collection]').onclick=async()=>{overlay.remove();state.page='collection';state.sel=newCard.cid;await loadState();state.page='collection';state.sel=newCard.cid;render()};
 }
+function ascPatchVisibleCard(card){
+  try{
+    if(!card||!card.id||typeof cardHtml!=='function')return;
+    const safe=window.CSS&&CSS.escape?CSS.escape(String(card.id)):String(card.id).replace(/"/g,'\\"');
+    const current=document.querySelector(`[data-card-id="${safe}"]`);
+    if(!current)return;
+    const big=current.classList.contains('bigcard')||!!current.closest('.cardDetailPreview');
+    const wrap=document.createElement('div');
+    wrap.innerHTML=cardHtml(card,big);
+    const fresh=wrap.firstElementChild;
+    if(!fresh)return;
+    current.replaceWith(fresh);
+    if(typeof scheduleTitleFit==='function')scheduleTitleFit(fresh);
+  }catch(e){console.warn('Ascension card DOM patch skipped',e)}
+}
+function ascRestoreReturnState(returnState){
+  state.page=returnState.page||state.page;
+  if(returnState.battleView)state.battleView=returnState.battleView;
+  if(returnState.sel)state.sel=returnState.sel;
+}
 async function ascendCard(id,btn){
   const oldCard=(state.cards||[]).find(c=>String(c.id)===String(id));
   if(!oldCard)return;
@@ -57,16 +77,15 @@ async function ascendCard(id,btn){
     const newCard=result.card;
     state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
     state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
-    state.page=returnState.page||state.page;
-    if(returnState.battleView)state.battleView=returnState.battleView;
-    if(returnState.sel)state.sel=returnState.sel;
-    render();
-    setTimeout(()=>ascShowCeremony(oldSnapshot,newCard,result,returnState),0);
-    await loadState();
-    state.page=returnState.page||state.page;
-    if(returnState.battleView)state.battleView=returnState.battleView;
-    if(returnState.sel)state.sel=returnState.sel;
-    render();
+    ascPatchVisibleCard(newCard);
+    ascShowCeremony(oldSnapshot,newCard,result,returnState);
+    setTimeout(async()=>{
+      ascRestoreReturnState(returnState);
+      render();
+      await loadState();
+      ascRestoreReturnState(returnState);
+      render();
+    },180);
   }catch(e){
     alert(e.message||'Ascension failed');
     if(btn){btn.disabled=false;btn.classList.remove('ascending');btn.textContent=btn.classList.contains('battleResultAscend')?'Ascend Ready':'Ascend'}
