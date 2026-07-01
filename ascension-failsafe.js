@@ -3,6 +3,7 @@ function installAscensionFailsafe(){
   window.__ctcgAscFailsafe=true;
   let activeId=null;
   let busy=false;
+  function ascFailsafeTime(){return typeof performance!=='undefined'?performance.now().toFixed(1):Date.now()}
   function cardById(id){return(state.cards||[]).find(c=>String(c.id)===String(id))}
   function visible(el){
     if(!el||el.disabled)return false;
@@ -70,15 +71,25 @@ function installAscensionFailsafe(){
       const go=modal?.querySelector('#ascFailsafeConfirmGo');
       if(go){go.disabled=true;go.textContent='Ascending...'}
       const result=await api('/api/cards/ascend',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});
+      console.time('ascension-ceremony');
+      console.log('[ascension][failsafe] server response received',ascFailsafeTime());
       const newCard=result.card;
-      state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
-      state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
       modal?.remove();
-      render();
-      if(typeof ascShowCeremony==='function')ascShowCeremony(oldSnapshot,newCard,result,returnState);
-      else{alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);await loadState()}
+      console.log('[ascension][failsafe] before ascShowCeremony',ascFailsafeTime());
+      if(typeof ascShowCeremony==='function'){
+        ascShowCeremony(oldSnapshot,newCard,result,returnState);
+        console.log('[ascension][failsafe] ascShowCeremony returned',ascFailsafeTime(),!!document.getElementById('ascCeremony'));
+      }else{
+        alert(`${newCard.title} ascended to ${String(result.to||newCard.rar).toUpperCase()}.`);
+        await loadState();
+      }
+      requestAnimationFrame(()=>setTimeout(()=>{
+        state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
+        state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
+        console.log('[ascension][failsafe] light state patch after ceremony start',ascFailsafeTime());
+      },10));
     }catch(e){alert(e.message||'Ascension failed')}
-    finally{busy=false;setTimeout(refresh,120)}
+    finally{busy=false;setTimeout(refresh,1500)}
   }
   function refresh(){showBar()}
   const style=document.createElement('style');
