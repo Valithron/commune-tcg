@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Stabilizes battle setup selection styling and persists setup choices after user interactions.
+ * Original problem solved: Battle setup state could be visually unclear or lost around team/enemy step changes.
+ * Key assumptions: `battle-flow.js` functions exist or will appear shortly; `bindBattleFlow` is the correct narrow hook for setup controls.
+ * Known interactions: Wraps `bindBattleFlow` after it appears and listens globally for battle setup clicks to call `queueMeta` soon after interaction.
+ * Mobile/Desktop differences: Enemy selection badge positioning changes under 720px.
+ */
 function installBattleSetupFix(){
   if(window.__ctcgBattleSetupFixInstalled)return;
   window.__ctcgBattleSetupFixInstalled=true;
@@ -16,12 +24,16 @@ function installBattleSetupFix(){
       try{if(typeof queueMeta==='function')queueMeta()}catch(e){console.warn(e)}
     },80);
   }
+
+  // Capture listener: observes setup-related clicks so battle setup state is queued for persistence after the flow mutates state.
   document.addEventListener('click',e=>{
     const target=e.target&&e.target.closest&&e.target.closest('[data-battle-pick],[data-battle-remove],[data-battle-auto-squad],[data-battle-clear-squad],[data-battle-enemy],[data-battle-flow]');
     if(!target)return;
     setTimeout(persistBattleSetupSoon,0);
   },true);
   const rawBind=typeof bindBattleFlow==='function'?bindBattleFlow:null;
+
+  // Global override: wraps the battle-flow-specific bind hook rather than the app-wide bind hook.
   if(rawBind){
     bindBattleFlow=function(){
       rawBind();

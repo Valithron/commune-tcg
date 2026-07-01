@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Provides a backup bottom-bar ascension path when card-level ascend buttons are hidden, hard to tap, or blocked by mobile layout issues.
+ * Original problem solved: Ready ascension controls could become difficult to activate on mobile/touch surfaces or after layered card patches changed hit targets.
+ * Key assumptions: `card-xp.js` has emitted `[data-ascend-card]`; `cardXpProgress`, `state.cards`, `state.tokens`, `ch`, `api`, `loadState`, and optional `ascShowCeremony` exist.
+ * Known interactions: Scans the same `[data-ascend-card]` contract consumed by `ascension-ceremony.js`; suspends around ceremony/fallback activity to avoid fighting the main flow.
+ * Mobile/Desktop differences: Mobile uses a full-width bottom bar; desktop constrains the failsafe bar to a right-side width and avoids adding bottom padding.
+ */
 function installAscensionFailsafe(){
   if(window.__ctcgAscFailsafe)return;
   window.__ctcgAscFailsafe=true;
@@ -107,7 +115,13 @@ function installAscensionFailsafe(){
   document.getElementById('ctcgAscFailsafeStyles')?.remove();
   document.head.appendChild(style);
   refresh();
+
+  // Polling trigger: keeps the fallback bar in sync even if a card button appears without a mutation pattern this patch recognizes.
+  // Current cost: scans visible `[data-ascend-card]` controls every 700ms for the lifetime of the app after this patch loads.
   setInterval(refresh,700);
+
+  // Observer: reacts to card/button insertion and class/style/disabled changes that can make an ascend button visible or hidden.
+  // Current cost: broad body subtree plus selected attributes, so layout/class changes from other card/battle patches can schedule refresh.
   new MutationObserver(()=>setTimeout(refresh,40)).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','disabled']});
 }
 installAscensionFailsafe();

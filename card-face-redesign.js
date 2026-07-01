@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Applies the current collectible card-face redesign, including compact top metadata, character initials, level box, vertical XP rail, and detail modal layout.
+ * Original problem solved: The original card face became visually cluttered after XP, level, equipped state, and ascension controls were added.
+ * Key assumptions: Card DOM has `.card[data-card-id]`, `.ctop .badge`, `.stats`, and card ids that match `state.cards`; vault/enemy/preview cards should not receive owned-card redesign decorations.
+ * Known interactions: Depends on `cardXpProgress` when available; calls `scheduleTitleFit` and `applyCardPolish`; later `card-title-stability.js` and `card-badge-compact.js` further adjust title/badge sizing.
+ * Mobile/Desktop differences: Has explicit 720px mobile rules for badge width, title sizing, XP rail width, and stats positioning; vault contexts explicitly hide redesign-only additions.
+ */
 (function(){
   if(window.__ctcgCardFaceRedesign)return;
   window.__ctcgCardFaceRedesign=true;
@@ -96,6 +104,7 @@
   }
   function installDetailOverride(){
     if(typeof showCardDetail!=='function'||showCardDetail.__ctcgFaceRedesign)return;
+    // Global override: replaces showCardDetail so the detail modal mirrors the redesigned card progression information.
     showCardDetail=function(id){
       var c=cardById(id);if(!c)return;
       var cc=typeof ch==='function'?ch(c.cid):{name:c.cid||'Card'},rar=(typeof rarityName==='function'?rarityName(c.rar):String(c.rar||'Unknown')),grade=Number(c.grade||0)||(typeof score==='function'?score(c):Number(c.p||0)+Number(c.d||0)+Number(c.s||0)),p=progressFor(c);
@@ -110,6 +119,8 @@
     showCardDetail.__ctcgFaceRedesign=true;
   }
   var oldRender=typeof render==='function'?render:null;
+
+  // Global override: after every full app render, decorate eligible owned cards and ensure the detail modal override is installed.
   if(oldRender&&!oldRender.__ctcgFaceRedesign){
     render=function(){var out=oldRender.apply(this,arguments);installDetailOverride();apply(document);return out};
     render.__ctcgFaceRedesign=true;
@@ -117,5 +128,8 @@
   installStyles();installDetailOverride();apply(document);
   setTimeout(function(){installDetailOverride();apply(document)},120);
   setTimeout(function(){installDetailOverride();apply(document)},500);
+
+  // Observer: catches cards inserted outside the wrapped render path, such as detail/modal content or dynamically loaded patch output.
+  // Current cost: any body subtree insertion schedules a full-document owned-card decoration pass plus downstream title/polish passes.
   new MutationObserver(function(){setTimeout(function(){installDetailOverride();apply(document)},35)}).observe(document.body,{childList:true,subtree:true});
 })();

@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Adds card XP/level progress metadata and ascend controls into card HTML.
+ * Original problem solved: Owned cards needed visible progression and ascension readiness without changing the original app.js card factory.
+ * Key assumptions: `cardHtml`, `state`, `ch`, `h`, and `render` exist; owned player cards can be identified by state/XP/level fields; enemy cards should not receive XP controls.
+ * Known interactions: `card-face-redesign.js` hides the legacy horizontal XP badge and replaces it visually with a vertical rail; `ascension-ceremony.js` and `ascension-failsafe.js` consume `[data-ascend-card]` buttons.
+ * Mobile/Desktop differences: CSS shifts badge/control sizes and positions at 720px; battle/vault contexts intentionally hide ascend controls.
+ */
 const CARD_XP_STAGE={
   common:{floor:1,cap:5,thresholds:[0,80,180,320,500],next:'uncommon',cost:250},
   uncommon:{floor:6,cap:10,thresholds:[0,300,650,1050,1500],next:'rare',cost:1000},
@@ -34,6 +42,9 @@ function injectCardXpStyles(){
 `;
   document.head.appendChild(style);
 }
+
+// Global override: appends XP badge markup and ascension controls into every eligible owned card returned by the current cardHtml chain.
+// Downstream note: the redesigned face hides `.cardXpBadge` and renders the vertical XP rail from state, but `[data-ascend-card]` remains the activation contract.
 const cardXpOldCardHtml=cardHtml;
 cardHtml=function(c,big=false){
   let html=cardXpOldCardHtml(c,big);
@@ -41,4 +52,6 @@ cardHtml=function(c,big=false){
   return html.replace('</article>',cardXpBadge(c)+cardAscendControl(c)+'</article>');
 };
 injectCardXpStyles();
+
+// Render trigger: card-xp is loaded dynamically after the initial app boot, so it forces one render to rebuild cards with XP/ascend markup.
 setTimeout(()=>{if(user)render()},0);

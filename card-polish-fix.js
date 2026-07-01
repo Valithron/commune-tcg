@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Normalizes card rarity classes/frame variables and performs a post-render title fit pass.
+ * Original problem solved: Cards with inconsistent rarity strings/classes rendered with inconsistent frames, and long titles could overflow the top row.
+ * Key assumptions: Base `cardHtml` emits `.card`, `.ctop strong`, and `.badge`; `render` is the central full-page render hook; card DOM may be inserted after render.
+ * Known interactions: Runs before `card-face-redesign.js`, `card-title-stability.js`, and `card-badge-compact.js`; exposes `window.applyCardPolish` for card-face-redesign follow-up passes.
+ * Mobile/Desktop differences: No explicit viewport branch, but title fitting is sensitive to card size and grid width across desktop/mobile layouts.
+ */
 (function(){
   if(window.__ctcgCardPolishFix)return;
   window.__ctcgCardPolishFix=true;
@@ -81,6 +89,8 @@
     },120);
   }
   window.applyCardPolish=applyCardPolish;
+
+  // Global override: wraps cardHtml so every base card receives a normalized rarity class before later card-face patches inspect it.
   if(typeof cardHtml==='function'){
     var oldCardHtml=cardHtml;
     cardHtml=function(c,big){
@@ -99,6 +109,8 @@
       return html;
     };
   }
+
+  // Global override: runs the polish pass immediately after a full app render so freshly rendered cards get normalized.
   if(typeof render==='function'){
     var oldRender=render;
     render=function(){
@@ -110,6 +122,8 @@
   var mo=null;
   function startObserver(){
     if(mo||!document.body)return;
+    // Observer: watches broad DOM insertions because cards can arrive from full renders, detail modals, vault modals, or dynamic patch renders.
+    // Current cost: any added node anywhere can schedule a full-document card polish pass.
     mo=new MutationObserver(function(list){
       if(window.isAscensionCeremonyActive)return;
       var should=false;

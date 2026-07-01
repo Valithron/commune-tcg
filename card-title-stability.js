@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Keeps full card titles available and repeatedly fits them after render/font/layout changes.
+ * Original problem solved: Earlier cardHtml/title-limit behavior truncated titles, causing title data loss and unstable display when badges/card redesign changed available width.
+ * Key assumptions: Base card markup has `.card`, `.ctop strong`, and optional `data-card-id`; owned cards are available in `state.cards` for restoring full titles by id.
+ * Known interactions: Wraps `cardHtml`, `scheduleTitleFit`, and `render`; runs after `card-face-redesign.js` in direct load order and before `card-badge-compact.js` final compact sizing.
+ * Mobile/Desktop differences: Uses the same fitting logic everywhere, but mobile widths increase the likelihood of repeated scale passes.
+ */
 (function(){
   if(window.__ctcgCardTitleStability)return;
   window.__ctcgCardTitleStability=true;
@@ -49,6 +57,8 @@
     setTimeout(function(){fitCardTitlesStable(root)},420);
     if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){fitCardTitlesStable(root)}).catch(function(){});
   }
+
+  // Global override: preserves full title text in `data-card-title` and restores full text into `.ctop strong` after earlier title-limit truncation.
   if(typeof cardHtml==='function'&&!cardHtml.__ctcgTitleStability){
     var oldCardHtml=cardHtml;
     cardHtml=function(c,big){
@@ -63,11 +73,15 @@
     cardHtml.__ctcgTitleStability=true;
   }
   var oldSchedule=typeof scheduleTitleFit==='function'?scheduleTitleFit:null;
+
+  // Global override: preserves the original title-fit hook while adding the stable full-title pass.
   if(oldSchedule&&!oldSchedule.__ctcgTitleStability){
     scheduleTitleFit=function(root){try{oldSchedule(root)}catch(e){}scheduleStable(root||document)};
     scheduleTitleFit.__ctcgTitleStability=true;
   }
   var oldRender=typeof render==='function'?render:null;
+
+  // Global override: schedules title stabilization after each full render.
   if(oldRender&&!oldRender.__ctcgTitleStability){
     render=function(){var out=oldRender.apply(this,arguments);scheduleStable(document);return out};
     render.__ctcgTitleStability=true;
@@ -75,5 +89,8 @@
   installStyles();
   scheduleStable(document);
   setTimeout(function(){scheduleStable(document)},800);
+
+  // Observer: watches broad DOM insertions because cards/modals can be inserted outside the central render hook.
+  // Current cost: every body subtree insertion schedules multiple delayed title-fit passes over all card titles.
   new MutationObserver(function(){setTimeout(function(){scheduleStable(document)},35)}).observe(document.body,{childList:true,subtree:true});
 })();

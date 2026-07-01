@@ -1,3 +1,11 @@
+/*
+ * Commune TCG Runtime Patch Inventory
+ * Purpose: Final compact layout pass for redesigned card titles, rarity badges, art position, and equipped marker placement.
+ * Original problem solved: Rarity badges were getting lost or colliding with long titles after the card-face redesign.
+ * Key assumptions: `card-face-redesign.js` has added `.ctcgFaceRedesign`; card title and badge live inside `.ctop`; title fitting may need to run after fonts/layout settle.
+ * Known interactions: Runs after `card-title-stability.js` and calls `scheduleTitleFit` when available; exposes `window.fitCommuneCardTitles`.
+ * Mobile/Desktop differences: Has explicit mobile sizing rules under 720px and recalculates title size from rendered card width.
+ */
 (function(){
   if(window.__ctcgCardBadgeCompact)return;
   window.__ctcgCardBadgeCompact=true;
@@ -75,6 +83,11 @@
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh).catch(function(){});
   setTimeout(refresh,120);
   setTimeout(refresh,500);
+
+  // Observer: final safety net for late card/title/badge mutations after direct render hooks, modal inserts, and font/layout shifts.
+  // Current cost: observes the whole document including characterData, so unrelated text changes can schedule the full compact-title refresh.
   new MutationObserver(function(){setTimeout(refresh,40)}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+
+  // Resize trigger: required because title fitting depends on measured card width, especially across mobile breakpoints.
   window.addEventListener('resize',refresh);
 })();
