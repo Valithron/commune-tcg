@@ -3,16 +3,16 @@ function ascRarityColor(r){return (R[String(r||'common')]||R.common)[2]}
 function ascLevel(c){return typeof cardXpProgress==='function'?cardXpProgress(c).level:Number(c?.level||1)}
 function ascPortrait(c){
   const cc=ch(c?.cid||'cydney');
-  if(c?.img)return`<img src="${h(c.img)}" style="${cropStyle(c)}" alt="">`;
-  return`<div class="ascPh" style="--a:${cc.a}">${cc.in}</div>`;
+  if(c?.img)return`<img src='${h(c.img)}' style='${cropStyle(c)}' alt=''>`;
+  return`<div class='ascPh' style='--a:${cc.a}'>${cc.in}</div>`;
 }
 function ascStatRow(label,oldVal,newVal,suffix=''){
   const oldNum=Number(oldVal||0),newNum=Number(newVal||0),delta=newNum-oldNum;
-  return`<div class="ascStatRow ${delta>0?'up':''}"><small>${h(label)}</small><b>${h(String(oldVal??0))}${suffix}</b><span>→</span><b>${h(String(newVal??0))}${suffix}</b>${delta?`<em>+${Number(delta.toFixed(2))}${suffix}</em>`:''}</div>`;
+  return`<div class='ascStatRow ${delta>0?'up':''}'><small>${h(label)}</small><b>${h(String(oldVal??0))}${suffix}</b><span>→</span><b>${h(String(newVal??0))}${suffix}</b>${delta?`<em>+${Number(delta.toFixed(2))}${suffix}</em>`:''}</div>`;
 }
 function ascCeremonyCard(card,label){
   const cc=ch(card?.cid||'cydney'),rar=String(card?.rar||'common');
-  return`<article class="ascCard" style="--a:${cc.a};--r:${ascRarityColor(rar)}"><div class="ascCardLabel">${h(label)}</div><div class="ascArt">${ascPortrait(card)}</div><div class="ascCardBody"><div class="ascRarity">${h(ascRarityLabel(rar))}</div><h2>${h(card?.title||'Card')}</h2><div class="ascCardStats"><span>POW <b>${num(card?.p||0)}</b></span><span>DEF <b>${num(card?.d||0)}</b></span><span>SPD <b>${num(card?.s||0)}</b></span></div><div class="ascPassive">+${Number(card?.passive||0).toFixed(2)}/min · LVL ${ascLevel(card)}</div></div></article>`;
+  return`<article class='ascCard' style='--a:${cc.a};--r:${ascRarityColor(rar)}'><div class='ascCardLabel'>${h(label)}</div><div class='ascArt'>${ascPortrait(card)}</div><div class='ascCardBody'><div class='ascRarity'>${h(ascRarityLabel(rar))}</div><h2>${h(card?.title||'Card')}</h2><div class='ascCardStats'><span>POW <b>${num(card?.p||0)}</b></span><span>DEF <b>${num(card?.d||0)}</b></span><span>SPD <b>${num(card?.s||0)}</b></span></div><div class='ascPassive'>+${Number(card?.passive||0).toFixed(2)}/min · LVL ${ascLevel(card)}</div></div></article>`;
 }
 function ascShowCeremony(oldCard,newCard,result,returnState){
   document.getElementById('ascCeremony')?.remove();
@@ -20,7 +20,7 @@ function ascShowCeremony(oldCard,newCard,result,returnState){
   const overlay=document.createElement('div');
   overlay.id='ascCeremony';
   overlay.className='ascCeremony';
-  overlay.innerHTML=`<div class="ascStars"></div><section class="ascPanel" style="--a:${cc.a};--r:${ascRarityColor(newCard.rar)}"><div class="ascTop"><div><div class="ascKicker">Ascension Complete</div><h1>${h(from)} to ${h(to)}</h1><p>${h(newCard.title||'Card')} has reached a higher rarity.</p></div><button class="ascClose" type="button" aria-label="Close ascension ceremony">×</button></div><div class="ascTransformStage"><div class="ascTransformAura"></div><div class="ascTransformSlot" id="ascTransformSlot">${ascCeremonyCard(oldCard,'Before Ascension')}</div><div class="ascTransformCaption" id="ascTransformCaption">Rarity border is being reforged...</div></div><div class="ascChanges"><div class="ascKicker">Stat Comparison</div><div class="ascChangeGrid">${ascStatRow('POW',oldCard.p,newCard.p)}${ascStatRow('DEF',oldCard.d,newCard.d)}${ascStatRow('SPD',oldCard.s,newCard.s)}${ascStatRow('Passive',Number(oldCard.passive||0).toFixed(2),Number(newCard.passive||0).toFixed(2),'/m')}${ascStatRow('Level',ascLevel(oldCard),ascLevel(newCard))}<div class="ascStatRow up"><small>Cost</small><b>${num(result.cost||0)}</b><span></span><b>${cc.in}</b><em>Spent</em></div></div></div><div class="ascActions"><button class="gold" id="ascCeremonyDone" type="button">Return</button><button class="btn" data-page="collection" type="button">View Collection</button></div></section>`;
+  overlay.innerHTML=`<div class='ascStars'></div><section class='ascPanel' style='--a:${cc.a};--r:${ascRarityColor(newCard.rar)}'><div class='ascTop'><div><div class='ascKicker'>Ascension Complete</div><h1>${h(from)} to ${h(to)}</h1><p>${h(newCard.title||'Card')} has reached a higher rarity.</p></div><button class='ascClose' type='button' aria-label='Close ascension ceremony'>×</button></div><div class='ascTransformStage'><div class='ascTransformAura'></div><div class='ascTransformSlot' id='ascTransformSlot'>${ascCeremonyCard(oldCard,'Before Ascension')}</div><div class='ascTransformCaption' id='ascTransformCaption'>Rarity border is being reforged...</div></div><div class='ascChanges'><div class='ascKicker'>Stat Comparison</div><div class='ascChangeGrid'>${ascStatRow('POW',oldCard.p,newCard.p)}${ascStatRow('DEF',oldCard.d,newCard.d)}${ascStatRow('SPD',oldCard.s,newCard.s)}${ascStatRow('Passive',Number(oldCard.passive||0).toFixed(2),Number(newCard.passive||0).toFixed(2),'/m')}${ascStatRow('Level',ascLevel(oldCard),ascLevel(newCard))}<div class='ascStatRow up'><small>Cost</small><b>${num(result.cost||0)}</b><span></span><b>${cc.in}</b><em>Spent</em></div></div></div><div class='ascActions'><button class='gold' id='ascCeremonyDone' type='button'>Return</button><button class='btn' data-page='collection' type='button'>View Collection</button></div></section>`;
   document.body.appendChild(overlay);
   const slot=overlay.querySelector('#ascTransformSlot'),caption=overlay.querySelector('#ascTransformCaption');
   requestAnimationFrame(()=>overlay.classList.add('show'));
@@ -41,7 +41,7 @@ function ascShowCeremony(oldCard,newCard,result,returnState){
   };
   overlay.querySelector('.ascClose').onclick=close;
   overlay.querySelector('#ascCeremonyDone').onclick=close;
-  overlay.querySelector('[data-page="collection"]').onclick=async()=>{overlay.remove();state.page='collection';state.sel=newCard.cid;await loadState();state.page='collection';state.sel=newCard.cid;render()};
+  overlay.querySelector('[data-page=collection]').onclick=async()=>{overlay.remove();state.page='collection';state.sel=newCard.cid;await loadState();state.page='collection';state.sel=newCard.cid;render()};
 }
 async function ascendCard(id,btn){
   const oldCard=(state.cards||[]).find(c=>String(c.id)===String(id));
@@ -57,8 +57,16 @@ async function ascendCard(id,btn){
     const newCard=result.card;
     state.cards=(state.cards||[]).map(c=>String(c.id)===String(newCard.id)?newCard:c);
     state.tokens={...(state.tokens||{}),[newCard.cid]:Math.max(0,Number(state.tokens?.[newCard.cid]||0)-Number(result.cost||0))};
+    state.page=returnState.page||state.page;
+    if(returnState.battleView)state.battleView=returnState.battleView;
+    if(returnState.sel)state.sel=returnState.sel;
     render();
-    ascShowCeremony(oldSnapshot,newCard,result,returnState);
+    setTimeout(()=>ascShowCeremony(oldSnapshot,newCard,result,returnState),0);
+    await loadState();
+    state.page=returnState.page||state.page;
+    if(returnState.battleView)state.battleView=returnState.battleView;
+    if(returnState.sel)state.sel=returnState.sel;
+    render();
   }catch(e){
     alert(e.message||'Ascension failed');
     if(btn){btn.disabled=false;btn.classList.remove('ascending');btn.textContent=btn.classList.contains('battleResultAscend')?'Ascend Ready':'Ascend'}
