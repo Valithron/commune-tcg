@@ -1,0 +1,29 @@
+/* ============================================================================
+   Standard Card Density
+   Purpose: normal collection/mobile card overrides. Shared card foundation stays
+   in cards.css. These values are promoted from the standard Card Lab tuner.
+   ============================================================================ */
+
+.tcg-card--standard {
+  --card-art-x: 3%;
+  --card-art-y: 2%;
+  --card-art-w: 94%;
+  --card-art-h: 92%;
+  --card-nameplate-x: 3%;
+  --card-nameplate-y: 78%;
+  --card-nameplate-w: 94%;
+  --card-nameplate-h: 16%;
+  --card-pills-x: 5%;
+  --card-pills-y: 85%;
+  --card-pills-w: 90%;
+  --card-pills-h: 5%;
+  --card-stats-x: 25%;
+  --card-stats-y: 71%;
+  --card-stats-w: 50%;
+  --card-stats-h: 7%;
+  --card-title-size: clamp(0.78rem, 3.2vw, 0.96rem);
+  --card-rarity-size: 0.56rem;
+  --card-stat-value-size: 0.88rem;
+  --card-stat-label-size: 0.46rem;
+  padding: 0.55rem;
+}
