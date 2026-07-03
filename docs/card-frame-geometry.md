@@ -32,6 +32,16 @@ Equivalent CSS variables:
 --card-stats-h: 7%;
 ```
 
+## Title fitting
+
+Card titles are constrained to one line for title-bearing densities.
+
+`src/components/cardTitleFit.js` runs once after each route render. It measures each non-thumbnail title and sets `--card-title-fit-size` only when the title needs to shrink to fit the available width.
+
+It does not use a polling loop or a persistent observer.
+
+Thumbnail cards do not show titles and are skipped by the fitter.
+
 ## Source tuner values
 
 User-provided source values before rounding:
@@ -63,3 +73,4 @@ The previous layout did not have production percentage geometry for art, namepla
 - Geometry values are percentages so they can scale across showcase, standard, and thumbnail densities.
 - Pixel measurements in the tuner are visual aids only.
 - The Card Lab tuner remains the place to adjust geometry before promoting values to production CSS.
+- Title fitting is post-render and one-time per route render.
