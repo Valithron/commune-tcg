@@ -15,11 +15,13 @@
 }
 
 .card-lab-hero,
-.card-lab-summary {
+.card-lab-summary,
+.card-lab-detail-preview {
   margin-bottom: var(--space-5);
 }
 
-.card-lab-summary {
+.card-lab-summary,
+.card-lab-detail-preview {
   padding: var(--space-4);
 }
 
@@ -31,6 +33,38 @@
   min-width: 0;
   margin: 0;
   transform: none;
+}
+
+.card-lab-detail-preview {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.card-lab-detail-copy {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.card-lab-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.card-lab-detail-card-stage {
+  width: min(100%, 24rem);
+}
+
+.card-lab-detail-sheet {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.card-lab-detail-stat-grid {
+  max-width: 28rem;
 }
 
 .card-lab-section {
@@ -169,6 +203,17 @@
 @media (min-width: 80rem) {
   .card-lab-row--showcase .card-lab-cell {
     flex-basis: clamp(18rem, 18vw, 23rem);
+  }
+}
+
+@media (max-width: 48rem) {
+  .card-lab-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card-lab-detail-card-stage {
+    width: min(100%, 22rem);
+    margin: 0 auto;
   }
 }
 
