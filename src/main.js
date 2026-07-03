@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 3 responsibility: wire static routes, route params, and query values.
+   Phase 4 responsibility: wire static routes, route params, and query values.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -9,6 +9,7 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/cards.css';
 import './styles/battle.css';
+import './styles/phase4.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderHome } from './routes/Home.js';
@@ -24,6 +25,8 @@ import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
 import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
+import { renderSubmitCard } from './routes/SubmitCard.js';
+import { renderAdminDashboard } from './routes/AdminDashboard.js';
 
 const appRoot = document.querySelector('#app');
 
@@ -41,6 +44,8 @@ const routeDefinitions = [
   { pattern: '/battle/encounters', navRoute: '/battle', render: renderEncounterSelect },
   { pattern: '/battle/squad', navRoute: '/battle', render: renderSquadBuilder },
   { pattern: '/battle/results', navRoute: '/battle', render: renderBattleResults },
+  { pattern: '/submit', navRoute: '/library', render: renderSubmitCard },
+  { pattern: '/admin', navRoute: '/home', render: renderAdminDashboard },
 ];
 
 function parseHashRoute() {
