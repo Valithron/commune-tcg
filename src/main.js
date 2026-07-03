@@ -13,6 +13,7 @@ import './styles/card-geometry-test.css';
 import './styles/battle.css';
 import './styles/phase4.css';
 import './styles/card-lab.css';
+import './styles/card-standard-tuner.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
