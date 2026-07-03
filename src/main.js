@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 1 responsibility: wire the static shell, hash router, and starter routes.
+   Phase 2 responsibility: wire static routes, route params, and query values.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -12,34 +12,91 @@ import './styles/cards.css';
 import { renderAppShell } from './components/AppShell.js';
 import { renderHome } from './routes/Home.js';
 import { renderPull } from './routes/Pull.js';
+import { renderPullConfirm } from './routes/PullConfirm.js';
+import { renderPullResults } from './routes/PullResults.js';
 import { renderVault } from './routes/Vault.js';
+import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
 import { renderLibrary } from './routes/Library.js';
+import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
+import { renderTicketShop } from './routes/TicketShop.js';
 
 const appRoot = document.querySelector('#app');
 
-const routes = {
-  '/home': renderHome,
-  '/pull': renderPull,
-  '/vault': renderVault,
-  '/library': renderLibrary,
-};
+const routeDefinitions = [
+  { pattern: '/home', navRoute: '/home', render: renderHome },
+  { pattern: '/pull', navRoute: '/pull', render: renderPull },
+  { pattern: '/pull/confirm', navRoute: '/pull', render: renderPullConfirm },
+  { pattern: '/pull/results', navRoute: '/pull', render: renderPullResults },
+  { pattern: '/vault', navRoute: '/vault', render: renderVault },
+  { pattern: '/vault/card/:cardId', navRoute: '/vault', render: renderVaultCardDetail },
+  { pattern: '/library', navRoute: '/library', render: renderLibrary },
+  { pattern: '/library/card/:cardId', navRoute: '/library', render: renderLibraryCardDetail },
+  { pattern: '/shop', navRoute: '/pull', render: renderTicketShop },
+];
 
-function normalizeRoute() {
-  const route = window.location.hash.replace('#', '') || '/home';
-  return routes[route] ? route : '/home';
+function parseHashRoute() {
+  const rawHash = window.location.hash.replace('#', '') || '/home';
+  const [path, queryString = ''] = rawHash.split('?');
+  const query = Object.fromEntries(new URLSearchParams(queryString));
+
+  return {
+    path: path || '/home',
+    query,
+  };
+}
+
+function matchPattern(path, pattern) {
+  const pathParts = path.split('/').filter(Boolean);
+  const patternParts = pattern.split('/').filter(Boolean);
+
+  if (pathParts.length !== patternParts.length) {
+    return null;
+  }
+
+  return patternParts.reduce((params, patternPart, index) => {
+    if (params === null) {
+      return null;
+    }
+
+    const pathPart = pathParts[index];
+
+    if (patternPart.startsWith(':')) {
+      return {
+        ...params,
+        [patternPart.slice(1)]: decodeURIComponent(pathPart),
+      };
+    }
+
+    return patternPart === pathPart ? params : null;
+  }, {});
+}
+
+function resolveRoute(path) {
+  for (const route of routeDefinitions) {
+    const params = matchPattern(path, route.pattern);
+
+    if (params) {
+      return {
+        ...route,
+        params,
+      };
+    }
+  }
+
+  return null;
 }
 
 function render() {
-  const activeRoute = normalizeRoute();
-  const routeRenderer = routes[activeRoute];
+  const { path, query } = parseHashRoute();
+  const matchedRoute = resolveRoute(path) || resolveRoute('/home');
 
-  if (window.location.hash.replace('#', '') !== activeRoute) {
-    window.history.replaceState(null, '', `#${activeRoute}`);
+  if (!resolveRoute(path)) {
+    window.history.replaceState(null, '', '#/home');
   }
 
   appRoot.innerHTML = renderAppShell({
-    activeRoute,
-    content: routeRenderer(),
+    activeRoute: matchedRoute.navRoute,
+    content: matchedRoute.render({ params: matchedRoute.params, query }),
   });
 }
 

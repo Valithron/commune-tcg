@@ -1,6 +1,6 @@
 # Stitch Design Intake
 
-Phase 1 is based on the two uploaded Stitch ZIP segments for the mobile gacha redesign.
+Phase 1 and Phase 2 are based on the two uploaded Stitch ZIP segments for the mobile gacha redesign.
 
 ## Canonical interpretation
 
@@ -58,16 +58,19 @@ Updated-label screens are preferred over older wording.
 - Centralized reusable card renderer
 - Rarity chips and card glow classes
 
+## Phase 2 extracted patterns
+
+- Pull confirmation before reveal
+- Pull result layout using card grid reveal language
+- Vault detail versus Library detail distinction
+- Static Ticket Shop as the entry point for future ticket economy
+- Shared detail component instead of separate one-off detail markup
+
 ## Deferred screens
 
 The following Stitch screens are intentionally deferred:
 
-- Pull confirmation
-- Pull results
-- Legendary reveal
-- Vault card detail
-- Library card detail
-- Ticket shop
+- Legendary reveal animation
 - Battle hub
 - Encounter selection
 - Squad selection
@@ -75,4 +78,4 @@ The following Stitch screens are intentionally deferred:
 - Submit Card
 - Admin dashboard
 
-These will be implemented in later phases after the Phase 1 component foundation is verified.
+These will be implemented in later phases after the Phase 2 component foundation is verified.

@@ -9,15 +9,17 @@
 | `#/vault` | `src/routes/Vault.js` | Owned card collection |
 | `#/library` | `src/routes/Library.js` | Global card pool preview |
 
-## Planned Phase 2 routes
+## Active Phase 2 routes
 
-| Route | Purpose |
-|---|---|
-| `#/pull/confirm` | Confirm ticket spend before pull |
-| `#/pull/results` | Show cards received from a pull |
-| `#/vault/card/:id` | Owned card detail |
-| `#/library/card/:id` | Global card template detail |
-| `#/shop` | Ticket and currency shop |
+| Route | File | Purpose |
+|---|---|---|
+| `#/pull/confirm?count=1` | `src/routes/PullConfirm.js` | Confirm a 1-pull ticket spend |
+| `#/pull/confirm?count=5` | `src/routes/PullConfirm.js` | Confirm a 5-pull ticket spend |
+| `#/pull/results?count=1` | `src/routes/PullResults.js` | Show deterministic one-card mock result |
+| `#/pull/results?count=5` | `src/routes/PullResults.js` | Show deterministic five-card mock result |
+| `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Owned card detail screen |
+| `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
+| `#/shop` | `src/routes/TicketShop.js` | Static ticket shop layout |
 
 ## Planned Phase 3 routes
 
@@ -37,4 +39,4 @@
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 2 supports dynamic card ids and query values, but route files should still stay thin. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.

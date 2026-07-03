@@ -1,6 +1,6 @@
 /* ============================================================================
    Top Bar Component
-   Phase 1 responsibility: display brand context and mock resource values.
+   Phase 2 responsibility: display brand context and link resource pills to Shop.
    ============================================================================ */
 
 import { mockUser } from '../data/mockUser.js';
@@ -14,8 +14,8 @@ export function renderTopBar() {
         <h1 class="brand-title">Gacha</h1>
       </a>
       <div class="resource-row" aria-label="Player resources">
-        <span class="resource-pill" title="Pull Tickets">🎟 ${formatNumber(mockUser.pullTickets)}</span>
-        <span class="resource-pill" title="Gold">◎ ${formatNumber(mockUser.gold)}</span>
+        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(mockUser.pullTickets)}</a>
+        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(mockUser.gold)}</a>
       </div>
     </header>
   `;

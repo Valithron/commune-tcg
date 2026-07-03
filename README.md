@@ -1,32 +1,46 @@
 # Commune TCG Gacha Prototype
 
-Phase 1 creates a clean mobile-first foundation for the gacha version of Commune TCG. This branch intentionally starts from an empty tree so the new app can grow without inheriting the old patch-stack structure.
+Phase 2 expands the clean mobile-first foundation for the gacha version of Commune TCG.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `1 - static mobile shell`
+- Phase: `2 - static pull loop and detail screens`
 - Data source: local mock data only
 - Backend: not connected yet
 - Deployment target: Cloudflare Pages-compatible static app
 
-## Phase 1 scope
+## Completed scope
 
-This phase implements the minimum clean foundation:
+Phase 1 established the Vite static app shell, bottom navigation, design tokens, reusable card component, and starter Home, Pull, Vault, and Library routes.
 
-- A Vite-powered static single-page app
-- Mobile-first app shell
-- Bottom navigation
-- Shared design tokens from the Stitch design intake
-- Reusable card component
-- Four starter routes:
-  - `#/home`
-  - `#/pull`
-  - `#/vault`
-  - `#/library`
-- Documentation for architecture, route ownership, and Stitch source mapping
+Phase 2 adds:
 
-Phase 1 deliberately does **not** implement real accounts, real pulls, database state, card submissions, battle simulation, or admin tools. Those belong in later phases after the visual and component foundation is stable.
+- Pull confirmation route
+- Pull results route
+- Vault card detail route
+- Library card detail route
+- Ticket Shop route
+- Dynamic hash route params for card details
+- Query-string parsing for mock pull count
+- Shared card detail panel component
+- Documentation for mock pull flow and Cloudflare bindings
+
+## Active routes
+
+```text
+#/home
+#/pull
+#/pull/confirm?count=1
+#/pull/confirm?count=5
+#/pull/results?count=1
+#/pull/results?count=5
+#/vault
+#/vault/card/:cardId
+#/library
+#/library/card/:cardId
+#/shop
+```
 
 ## Commands
 
@@ -41,28 +55,29 @@ npm run preview
 
 ```text
 src/
-  main.js                 App bootstrap and hash router
+  main.js                 App bootstrap, hash router, route params, query parsing
   components/             Reusable UI pieces
-  data/                   Mock data for Phase 1
+  data/                   Mock data for current static flows
   routes/                 Screen-level route renderers
   styles/                 Design tokens, base CSS, components, cards
 docs/
-  architecture.md         Front-end architecture rules
-  design-intake.md        Stitch ZIP interpretation and canonical design choices
-  route-map.md            Route ownership and future route plan
-  phase-1-verification.md Manual verification checklist
+  architecture.md
+  cloudflare-bindings.md
+  design-intake.md
+  phase-1-verification.md
+  phase-2-flow.md
+  phase-2-verification.md
+  route-map.md
 ```
 
 ## Build discipline
 
-Every meaningful patch should preserve these rules:
-
 1. Keep route files thin. Put shared UI in components.
 2. Keep card rendering centralized in `src/components/CardFrame.js`.
-3. Keep colors, spacing, typography, and rarity values in `src/styles/tokens.css`.
+3. Keep design values in `src/styles/tokens.css`.
 4. Update README and docs when behavior, routes, architecture, or phase scope changes.
 5. Prefer mock data until the front-end flow stabilizes.
-6. Do not paste Stitch pages directly into production code. Extract reusable patterns.
+6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
 
 ## Canonical language
 
@@ -79,27 +94,6 @@ Every meaningful patch should preserve these rules:
 
 ## Next phases
 
-### Phase 2
+Phase 3 will cover Battle hub, Encounter selection, Squad builder, and Battle results.
 
-- Pull confirmation screen
-- Pull results screen
-- Vault card detail screen
-- Library card detail screen
-- Ticket shop screen
-
-### Phase 3
-
-- Battle hub
-- Encounter selection
-- Squad builder
-- Battle results
-
-### Phase 4
-
-- Submit card flow
-- Admin dashboard
-- Real data contracts drafted before backend implementation
-
-## Notes
-
-The Stitch files are design references, not production code. They contain repeated HTML, repeated Tailwind configuration, placeholder links, mock click handlers, and externally hosted images. This repo extracts their visual direction into maintainable vanilla JavaScript and CSS modules.
+Phase 4 will cover Submit Card, Admin dashboard, and backend contract drafting.

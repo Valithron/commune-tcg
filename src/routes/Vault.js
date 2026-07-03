@@ -1,7 +1,7 @@
 /* ============================================================================
    Vault Route
-   Phase 1 responsibility: owned-card collection using the canonical card frame.
-   Filtering, sorting, details, and upgrades belong in later phases.
+   Phase 2 responsibility: owned-card collection linking to owned detail screens.
+   Filtering, sorting, upgrades, and backend ownership belong in later phases.
    ============================================================================ */
 
 import { ownedCards } from '../data/mockCards.js';
@@ -12,7 +12,7 @@ export function renderVault() {
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
       <h2 class="hero-title">Your Vault</h2>
-      <p class="hero-copy">The Vault is the player's pulled collection. Phase 1 shows mock ownership, levels, and copy counts only.</p>
+      <p class="hero-copy">The Vault is the player's pulled collection. Tap a card to inspect its Phase 2 detail screen.</p>
     </section>
 
     <section>
@@ -24,7 +24,7 @@ export function renderVault() {
         <span class="status-pill">${ownedCards.length} owned</span>
       </div>
       <div class="card-grid">
-        ${ownedCards.map((card) => renderCardFrame(card)).join('')}
+        ${ownedCards.map((card) => renderCardFrame(card, { href: `#/vault/card/${card.id}` })).join('')}
       </div>
     </section>
   `;

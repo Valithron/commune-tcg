@@ -1,6 +1,6 @@
 /* ============================================================================
    Mock Card Data
-   Phase 1 responsibility: seed all starter views with stable placeholder cards.
+   Phase 2 responsibility: seed starter views, detail screens, and mock pulls.
    Real cards should later come from the global Library and user Vault contracts.
    ============================================================================ */
 
@@ -15,6 +15,7 @@ export const mockCards = [
     owned: true,
     level: 12,
     copies: 1,
+    flavor: 'A steady hand at the anvil turns raw material into weapons, tools, and inheritance.',
   },
   {
     id: 'cydney-hearthwarden',
@@ -26,6 +27,7 @@ export const mockCards = [
     owned: true,
     level: 14,
     copies: 1,
+    flavor: 'The hearth does not merely warm the house. It orders the whole kingdom inside it.',
   },
   {
     id: 'ryan-sky-rider',
@@ -37,6 +39,7 @@ export const mockCards = [
     owned: true,
     level: 8,
     copies: 2,
+    flavor: 'Speed, height, and nerve make a rider dangerous before the first strike lands.',
   },
   {
     id: 'gabi-threadkeeper',
@@ -48,6 +51,7 @@ export const mockCards = [
     owned: true,
     level: 6,
     copies: 3,
+    flavor: 'Small repairs prevent great unravelings.',
   },
   {
     id: 'cooper-arcane-aide',
@@ -59,6 +63,7 @@ export const mockCards = [
     owned: false,
     level: 1,
     copies: 0,
+    flavor: 'The apprentice who keeps the books close often learns where the real doors are hidden.',
   },
   {
     id: 'kenly-potion-spark',
@@ -70,6 +75,7 @@ export const mockCards = [
     owned: false,
     level: 1,
     copies: 0,
+    flavor: 'A small bottle can carry a very large consequence.',
   },
   {
     id: 'ashley-dragon-trainer',
@@ -81,6 +87,7 @@ export const mockCards = [
     owned: true,
     level: 10,
     copies: 1,
+    flavor: 'A good trainer does not beg the dragon to obey. She convinces it winning is more fun together.',
   },
   {
     id: 'common-field-squire',
@@ -92,8 +99,13 @@ export const mockCards = [
     owned: true,
     level: 3,
     copies: 6,
+    flavor: 'Every champion starts by carrying something heavier than expected.',
   },
 ];
 
 export const ownedCards = mockCards.filter((card) => card.owned);
 export const featuredCards = mockCards.filter((card) => ['legendary', 'mythic'].includes(card.rarity));
+
+export function findCardById(cardId) {
+  return mockCards.find((card) => card.id === cardId) || null;
+}

@@ -1,6 +1,6 @@
 /* ============================================================================
    Card Frame Component
-   Phase 1 responsibility: single canonical card renderer for all card grids.
+   Phase 2 responsibility: single canonical card renderer with optional links.
    Do not create route-specific card markup unless a future design doc approves it.
    ============================================================================ */
 
@@ -21,12 +21,16 @@ function renderStats(stats) {
 
 export function renderCardFrame(card, options = {}) {
   const {
+    href = '',
     showOwnership = true,
     showStats = true,
   } = options;
 
+  const tagName = href ? 'a' : 'article';
+  const hrefAttribute = href ? ` href="${escapeHtml(href)}"` : '';
+
   return `
-    <article class="tcg-card" data-rarity="${escapeHtml(card.rarity)}" aria-label="${escapeHtml(card.name)} card">
+    <${tagName} class="tcg-card" data-rarity="${escapeHtml(card.rarity)}"${hrefAttribute} aria-label="${escapeHtml(card.name)} card">
       <div class="card-meta-row">
         <span class="rarity-chip">${escapeHtml(titleCase(card.rarity))}</span>
         ${showOwnership ? `<span class="status-pill">${card.owned ? `Lv ${card.level}` : 'Locked'}</span>` : ''}
@@ -39,6 +43,6 @@ export function renderCardFrame(card, options = {}) {
         <span class="card-subtitle">${escapeHtml(card.category)}</span>
       </div>
       ${showStats ? `<div class="card-stat-row">${renderStats(card.stats)}</div>` : ''}
-    </article>
+    </${tagName}>
   `;
 }

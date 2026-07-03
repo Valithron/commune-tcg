@@ -1,6 +1,6 @@
 /* ============================================================================
    Library Route
-   Phase 1 responsibility: global card pool preview using the canonical card frame.
+   Phase 2 responsibility: global card pool preview linking to template details.
    Real submission, approval, and discovery status belong in later phases.
    ============================================================================ */
 
@@ -12,7 +12,7 @@ export function renderLibrary() {
     <section class="hero-panel">
       <span class="section-kicker">Global Pool</span>
       <h2 class="hero-title">The Library</h2>
-      <p class="hero-copy">The Library represents every approved card template that can enter the pull pool. Phase 1 uses curated mock cards.</p>
+      <p class="hero-copy">The Library represents every approved card template that can enter the pull pool. Tap a card to inspect its template detail.</p>
     </section>
 
     <section>
@@ -24,7 +24,7 @@ export function renderLibrary() {
         <span class="status-pill">${mockCards.length} cards</span>
       </div>
       <div class="card-grid">
-        ${mockCards.map((card) => renderCardFrame(card)).join('')}
+        ${mockCards.map((card) => renderCardFrame(card, { href: `#/library/card/${card.id}` })).join('')}
       </div>
     </section>
   `;

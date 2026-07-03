@@ -18,6 +18,11 @@
     linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015)),
     #181a22;
   box-shadow: 0 0 0.95rem rgba(0, 0, 0, 0.22);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tcg-card[href]:active {
+  transform: scale(0.985);
 }
 
 .tcg-card::before {

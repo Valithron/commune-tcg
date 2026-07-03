@@ -19,3 +19,7 @@ export function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
+
+export function clampPullCount(value) {
+  return String(value) === '5' ? 5 : 1;
+}
