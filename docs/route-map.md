@@ -30,13 +30,13 @@
 | `#/battle/squad?encounter=:encounterId` | `src/routes/SquadBuilder.js` | Review selected squad before battle |
 | `#/battle/results?encounter=:encounterId` | `src/routes/BattleResults.js` | Show deterministic battle result and rewards |
 
-## Planned Phase 4 routes
+## Active Phase 4 routes
 
-| Route | Purpose |
-|---|---|
-| `#/submit` | Submit a card to the global pool |
-| `#/admin` | Admin dashboard |
+| Route | File | Purpose |
+|---|---|---|
+| `#/submit` | `src/routes/SubmitCard.js` | Static card submission form shape |
+| `#/admin` | `src/routes/AdminDashboard.js` | Static moderation/admin dashboard |
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 3 supports battle subroutes and encounter query values, but route files should still stay thin. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 4 completes the static route foundation and documents backend contracts, but it still performs no D1/R2 writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
