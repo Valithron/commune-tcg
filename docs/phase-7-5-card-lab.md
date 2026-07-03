@@ -46,11 +46,14 @@ This tests how card metadata will appear without cluttering the card face itself
 
 Unknown or not-yet-exposed fields display as `Not mapped yet`.
 
-## Frame tuner
+## Frame tuners
 
-The detail preview card is also the Card Frame Tuner.
+Card Lab has two editable card makers:
 
-The tuner provides draggable and resizable boxes for:
+- large/detail card tuner
+- standard-size card tuner
+
+Each tuner provides draggable and resizable boxes for:
 
 - art
 - nameplate
@@ -69,7 +72,9 @@ The tuner adds:
 
 The pixel numbers are only visual aids. The final implementation should use the percentage ratios emitted by the tuner.
 
-The tuner writes no backend data. It stores the current local preview values in browser `localStorage` and displays copyable CSS variables plus JSON for later promotion into the canonical card CSS.
+The tuners write no backend data. Each tuner stores its own local preview values in browser `localStorage` and displays copyable CSS variables plus JSON for later promotion into the canonical card CSS.
+
+Thumbnail cards are intentionally not editable here because the current thumbnail size is approved.
 
 ## Sample selection
 
@@ -113,12 +118,14 @@ After deployment:
 - Open `#/card-lab`.
 - Confirm the detail/stat sheet preview appears before all card rows.
 - Confirm the large detail card has draggable/resizable boxes for art, nameplate, pill row, and stat row.
-- Confirm the pill row moves independently from the nameplate.
+- Confirm the standard-size card maker appears below the detail preview.
+- Confirm the standard-size card maker has its own controls and output.
+- Confirm the pill row moves independently from the nameplate in both tuners.
 - Confirm each editable box displays pixel width and height.
-- Confirm the control panel displays card, art, nameplate, pill, and stat dimensions.
+- Confirm each control panel displays card, art, nameplate, pill, and stat dimensions.
 - Confirm center guide lines render.
-- Confirm the tuner output updates as boxes move.
-- Confirm reset, copy CSS, and copy JSON controls work.
+- Confirm each tuner output updates as boxes move.
+- Confirm reset, copy CSS, and copy JSON controls work for both tuners.
 - Confirm the stat sheet includes identity, creator, art, gameplay, economy, progression, lore, moderation, and debug groups.
 - Confirm unknown fields display as `Not mapped yet`.
 - Confirm each density has a title-length row and a rarity row.
