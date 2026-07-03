@@ -1,7 +1,7 @@
 /* ============================================================================
    Card Lab Route
-   Phase 7.5 responsibility: live card-frame inspection using real Library data
-   and title-length samples. No backend writes or gameplay systems.
+   Phase 7.5 responsibility: live card-frame inspection using real Library data,
+   title-length samples, and rarity samples. No backend writes or gameplay systems.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -16,11 +16,13 @@ const sampleDefinitions = [
   { key: 'longest', label: 'Longest', percentile: 1 },
 ];
 
+const rarityDefinitions = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
+
 const densityRows = [
   {
     density: 'showcase',
     title: 'Showcase Size',
-    note: 'Large desktop inspection size for shape, crop, title, and footer checks.',
+    note: 'Large desktop inspection size for shape, crop, title, rarity, and footer checks.',
   },
   {
     density: 'standard',
@@ -36,6 +38,24 @@ const densityRows = [
 
 function titleLength(card) {
   return String(card.name || '').length;
+}
+
+function normalizeRarity(rarity) {
+  const value = String(rarity || 'common').toLowerCase();
+  return rarityDefinitions.includes(value) ? value : 'common';
+}
+
+function withLabRarity(card, rarity, note) {
+  if (!card) {
+    return null;
+  }
+
+  return {
+    ...card,
+    id: `${card.id || card.name}-lab-${rarity}`,
+    rarity,
+    labRarityNote: note,
+  };
 }
 
 function selectTitleSamples(cards) {
@@ -59,6 +79,51 @@ function selectTitleSamples(cards) {
       ...definition,
       card: match.card,
       index: match.index,
+      metaLine: `${titleLength(match.card)} chars · ${titleCase(normalizeRarity(match.card.rarity))}`,
+    };
+  });
+}
+
+function selectRaritySamples(cards) {
+  const usedIds = new Set();
+  const actualByRarity = new Map(rarityDefinitions.map((rarity) => [rarity, []]));
+
+  cards.forEach((card) => {
+    actualByRarity.get(normalizeRarity(card.rarity)).push(card);
+  });
+
+  const findUnused = (candidates) => candidates.find((card) => !usedIds.has(String(card.id))) || candidates[0] || null;
+  const fallbackCards = cards.length ? cards : [];
+
+  return rarityDefinitions.map((rarity) => {
+    const actualCard = findUnused(actualByRarity.get(rarity) || []);
+
+    if (actualCard) {
+      usedIds.add(String(actualCard.id));
+      return {
+        key: rarity,
+        label: titleCase(rarity),
+        card: actualCard,
+        metaLine: `${titleLength(actualCard)} chars · live ${titleCase(rarity)}`,
+      };
+    }
+
+    const fallbackSource = rarity === 'mythic'
+      ? findUnused(actualByRarity.get('legendary') || []) || findUnused(fallbackCards)
+      : findUnused(fallbackCards);
+    const fallbackCard = withLabRarity(fallbackSource, rarity, rarity === 'mythic' ? 'Legendary rendered as Mythic' : 'Lab rarity override');
+
+    if (fallbackSource) {
+      usedIds.add(String(fallbackSource.id));
+    }
+
+    return {
+      key: rarity,
+      label: titleCase(rarity),
+      card: fallbackCard,
+      metaLine: fallbackCard
+        ? `${titleLength(fallbackCard)} chars · ${fallbackCard.labRarityNote}`
+        : `No ${titleCase(rarity)} sample`,
     };
   });
 }
@@ -71,7 +136,7 @@ function renderSampleMeta(sample) {
   return `
     <div class="card-lab-meta">
       <strong>${escapeHtml(sample.label)}</strong>
-      <span>${escapeHtml(String(titleLength(sample.card)))} chars · ${escapeHtml(titleCase(sample.card.rarity || 'common'))}</span>
+      <span>${escapeHtml(sample.metaLine || `${titleLength(sample.card)} chars · ${titleCase(normalizeRarity(sample.card.rarity))}`)}</span>
     </div>
   `;
 }
@@ -97,7 +162,25 @@ function renderCardCell(sample, density) {
   `;
 }
 
-function renderDensityRow(row, samples) {
+function renderSampleRow({ density, rowLabel, rowTitle, rowNote, samples }) {
+  return `
+    <div class="card-lab-subsection">
+      <div class="card-lab-subheading">
+        <div>
+          <span class="section-kicker">${escapeHtml(rowLabel)}</span>
+          <h3 class="card-lab-row-title">${escapeHtml(rowTitle)}</h3>
+        </div>
+        <span class="status-pill">5 cards</span>
+      </div>
+      <p class="body-copy card-lab-note">${escapeHtml(rowNote)}</p>
+      <div class="card-lab-row card-lab-row--${escapeHtml(density)}">
+        ${samples.map((sample) => renderCardCell(sample, density)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderDensitySection(row, titleSamples, raritySamples) {
   return `
     <section class="card-lab-section">
       <div class="section-heading card-lab-section-heading">
@@ -105,19 +188,30 @@ function renderDensityRow(row, samples) {
           <span class="section-kicker">${escapeHtml(row.density)}</span>
           <h2 class="section-title">${escapeHtml(row.title)}</h2>
         </div>
-        <span class="status-pill">5 samples</span>
       </div>
       <p class="body-copy card-lab-note">${escapeHtml(row.note)}</p>
-      <div class="card-lab-row card-lab-row--${escapeHtml(row.density)}">
-        ${samples.map((sample) => renderCardCell(sample, row.density)).join('')}
-      </div>
+      ${renderSampleRow({
+        density: row.density,
+        rowLabel: 'Title length',
+        rowTitle: `${row.title} Title Samples`,
+        rowNote: 'Shortest, 25th percentile, median, 80th percentile, and longest title strings.',
+        samples: titleSamples,
+      })}
+      ${renderSampleRow({
+        density: row.density,
+        rowLabel: 'Rarity spread',
+        rowTitle: `${row.title} Rarity Samples`,
+        rowNote: 'Common, Uncommon, Rare, Legendary, and Mythic frames. Missing rarities are rendered as lab-only overrides.',
+        samples: raritySamples,
+      })}
     </section>
   `;
 }
 
 export async function renderCardLab() {
   const library = await loadLibraryCards();
-  const samples = selectTitleSamples(library.cards);
+  const titleSamples = selectTitleSamples(library.cards);
+  const raritySamples = selectRaritySamples(library.cards);
   const sourceLabel = library.source === 'backend'
     ? `Live D1${library.table ? ` · ${library.table}` : ''}`
     : 'Mock fallback';
@@ -126,7 +220,7 @@ export async function renderCardLab() {
     <section class="hero-panel card-lab-hero">
       <span class="section-kicker">Card Lab</span>
       <h2 class="hero-title">Stress the frame.</h2>
-      <p class="hero-copy">Live title-length samples from the Library render at showcase, standard, and thumbnail sizes before we lock the production overlay shape.</p>
+      <p class="hero-copy">Live title-length and rarity samples from the Library render at showcase, standard, and thumbnail sizes before we lock the production overlay shape.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/library">Back to Library</a>
         <a class="button button-secondary" href="#/inventory">Inventory</a>
@@ -143,7 +237,7 @@ export async function renderCardLab() {
     </section>
 
     <div class="card-lab">
-      ${densityRows.map((row) => renderDensityRow(row, samples)).join('')}
+      ${densityRows.map((row) => renderDensitySection(row, titleSamples, raritySamples)).join('')}
     </div>
   `;
 }
