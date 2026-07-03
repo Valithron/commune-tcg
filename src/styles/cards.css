@@ -1,14 +1,22 @@
 /* ============================================================================
    Card Component Styles
-   Purpose: one visual grammar for cards across Vault, Library, Pull, and Battle.
-   Keep card-specific styling here instead of scattering it through route CSS.
+   Purpose: one visual grammar for cards across Vault, Library, Pull, Battle,
+   and the Card Lab. Keep card-specific styling centralized here.
    ============================================================================ */
 
 .tcg-card {
   --rarity-color: var(--rarity-common);
+  --card-title-size: clamp(0.78rem, 3.2vw, 0.96rem);
+  --card-subtitle-size: 0.66rem;
+  --card-stat-value-size: 0.88rem;
+  --card-stat-label-size: 0.46rem;
+  --card-title-lines: 2;
+  --card-title-min-height: calc(var(--card-title-size) * 2.35);
   position: relative;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 0.45rem;
+  width: 100%;
   aspect-ratio: 2 / 3;
   padding: 0.55rem;
   overflow: hidden;
@@ -19,6 +27,25 @@
     #181a22;
   box-shadow: 0 0 0.95rem rgba(0, 0, 0, 0.22);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tcg-card--showcase {
+  --card-title-size: clamp(1.05rem, 2.1vw, 1.35rem);
+  --card-subtitle-size: 0.86rem;
+  --card-stat-value-size: 1.25rem;
+  --card-stat-label-size: 0.64rem;
+  padding: 0.75rem;
+  gap: 0.6rem;
+}
+
+.tcg-card--thumbnail {
+  --card-title-size: 0.62rem;
+  --card-subtitle-size: 0.5rem;
+  --card-stat-value-size: 0.64rem;
+  --card-stat-label-size: 0.38rem;
+  padding: 0.38rem;
+  gap: 0.28rem;
+  border-radius: var(--radius-md);
 }
 
 .tcg-card[href]:active {
@@ -43,6 +70,12 @@
 .tcg-card[data-rarity='rare'] { --rarity-color: var(--rarity-rare); }
 .tcg-card[data-rarity='legendary'] { --rarity-color: var(--rarity-legendary); }
 .tcg-card[data-rarity='mythic'] { --rarity-color: var(--rarity-mythic); }
+
+.tcg-card[data-rarity='uncommon'] {
+  box-shadow:
+    inset 0 0 0.85rem color-mix(in srgb, var(--rarity-color) 20%, transparent),
+    0 0 0.95rem rgba(0, 0, 0, 0.22);
+}
 
 .tcg-card[data-rarity='rare'],
 .tcg-card[data-rarity='legendary'],
@@ -79,30 +112,44 @@
 
 .card-nameplate {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.45rem 0.5rem;
+  gap: 0.12rem;
+  min-height: calc(var(--card-title-min-height) + 1.1rem);
+  padding: 0.42rem 0.5rem;
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(0, 0, 0, 0.38);
   border-bottom: 2px solid var(--rarity-color);
+  backdrop-filter: blur(12px);
+}
+
+.tcg-card--thumbnail .card-nameplate {
+  min-height: calc(var(--card-title-min-height) + 0.72rem);
+  padding: 0.24rem 0.28rem;
 }
 
 .card-title {
+  display: -webkit-box;
+  min-height: var(--card-title-min-height);
   margin: 0;
   overflow: hidden;
   color: var(--color-text);
   font-family: var(--font-heading);
-  font-size: clamp(0.82rem, 3.8vw, 1rem);
+  font-size: var(--card-title-size);
   font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  letter-spacing: 0.02em;
+  line-height: 1.12;
+  text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--card-title-lines);
 }
 
 .card-subtitle {
   color: var(--color-text-muted);
-  font-size: 0.68rem;
+  font-size: var(--card-subtitle-size);
   line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .card-stat-row {
@@ -120,12 +167,17 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.24);
+  box-shadow: inset 0 0.12rem 0.35rem rgba(0, 0, 0, 0.38);
+}
+
+.tcg-card--thumbnail .card-stat {
+  min-height: 1.45rem;
 }
 
 .card-stat-label {
   color: var(--color-text-faint);
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: var(--card-stat-label-size);
   font-weight: 800;
   line-height: 1;
 }
@@ -133,7 +185,7 @@
 .card-stat-value {
   color: var(--color-text);
   font-family: var(--font-heading);
-  font-size: 0.9rem;
+  font-size: var(--card-stat-value-size);
   font-weight: 800;
   line-height: 1;
 }
@@ -150,6 +202,7 @@
   color: #101014;
   background: var(--rarity-color);
   border: 0;
+  border-radius: var(--radius-sm);
   font-size: 0.58rem;
 }
 
@@ -157,4 +210,11 @@
   min-height: 1.45rem;
   padding: 0.2rem 0.45rem;
   font-size: 0.58rem;
+}
+
+.tcg-card--thumbnail .rarity-chip,
+.tcg-card--thumbnail .status-pill {
+  min-height: 1.05rem;
+  padding: 0.12rem 0.28rem;
+  font-size: 0.44rem;
 }
