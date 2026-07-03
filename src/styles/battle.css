@@ -1,0 +1,85 @@
+/* ============================================================================
+   Battle Styles
+   Phase 3 responsibility: encounter, squad, and result screen presentation.
+   Keep battle-specific layout here instead of bloating shared component styles.
+   ============================================================================ */
+
+.encounter-grid,
+.bench-list,
+.battle-log {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.encounter-card,
+.battle-summary-panel,
+.bench-row,
+.battle-log div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
+}
+
+.encounter-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.encounter-card h3,
+.encounter-card p {
+  margin: 0;
+}
+
+.encounter-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+}
+
+.encounter-card p {
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.battle-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.battle-meta-row span,
+.bench-row strong {
+  color: var(--color-functional);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.battle-summary-panel {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.bench-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.bench-row span {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.battle-log div {
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-functional);
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
