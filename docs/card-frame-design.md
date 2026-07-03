@@ -65,12 +65,12 @@ Ability uses a placeholder icon until the ability system is defined.
 
 No card title ellipsis is allowed.
 
-Titles should use a fixed size per density, not dynamic per card. Each title-bearing density reserves enough title space for the accepted title length.
+Titles should render on one line at title-bearing densities. The one-time title fitter may shrink showcase and standard titles after render to preserve a single line.
 
 Current minting target:
 
 ```text
-28 characters, including spaces
+25 characters, including spaces
 ```
 
 This limit should be enforced when the real submission/minting pipeline is implemented.
@@ -120,7 +120,6 @@ The same five cards render at showcase, standard, and thumbnail sizes.
 
 - Do not create route-specific card markup.
 - Do not add one-off badge overlays in route files.
-- Do not use per-card dynamic title shrinking.
 - Do not use title ellipsis.
 - Do not show route/source labels on the card face.
 - Keep card styling centralized in `src/styles/cards.css`.
