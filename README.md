@@ -1,12 +1,12 @@
 # Commune TCG Gacha Prototype
 
-Phase 7 adds the first read-only real Library model for the gacha version of Commune TCG.
+Phase 7.5 adds the Card Lab for real-data frame stabilization before Vault wiring.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `7 - real Library read model`
-- Data source: Library prefers read-only backend data with mock fallback; other gameplay screens remain mock data
+- Phase: `7.5 - Card Lab and frame stabilization`
+- Data source: Library and Card Lab prefer read-only backend data with mock fallback; other gameplay screens remain mock data
 - Backend: read-only Library endpoint added, real game writes not connected yet
 - Deployment target: Cloudflare Pages-compatible app with Pages Functions
 
@@ -24,15 +24,17 @@ Phase 5 added Cloudflare Pages Function diagnostics for health, D1 table list, a
 
 Phase 6 added resource inventory endpoints and documentation.
 
-Phase 7 adds:
+Phase 7 added the read-only Library card endpoint, R2 image serving, async routes, and real cards from `cards.card_json`.
 
-- `/api/cards` read-only Library card endpoint
-- `/api/card-image` read-only R2 image serving endpoint
-- Library data source with backend preference and mock fallback
-- Async route rendering support
-- Library and Library Detail routes using the new read model
-- CardFrame support for real card art images
-- Phase 7 flow and verification docs
+Phase 7.5 adds:
+
+- `#/card-lab` frame inspection route
+- live title-length sampling from real Library cards
+- showcase, standard, and thumbnail CardFrame densities
+- no-ellipsis title handling with fixed title sizing per density
+- Library cards rendered without Locked badges
+- CardFrame context variants for future Vault, Pull, and Battle state
+- Card-frame design docs
 
 ## Active routes
 
@@ -51,6 +53,7 @@ Phase 7 adds:
 #/vault/card/:cardId
 #/library
 #/library/card/:cardId
+#/card-lab
 #/submit
 #/admin
 #/backend
@@ -87,14 +90,15 @@ functions/
   api/                    Read-only diagnostic, inventory, and Library endpoints
 src/
   main.js                 App bootstrap, hash router, route params, async route rendering
-  components/             Reusable UI pieces
+  components/             Reusable UI pieces, including canonical CardFrame
   data/                   Mock data and Library data source
-  routes/                 Screen-level route renderers
+  routes/                 Screen-level route renderers, including Card Lab
   services/               Front-end API helper shell
-  styles/                 Design tokens, base CSS, components, cards, battle, phase4
+  styles/                 Design tokens, base CSS, components, cards, battle, phase4, card-lab
 docs/
   architecture.md
   backend-contracts.md
+  card-frame-design.md
   cloudflare-bindings.md
   cloudflare-resource-inventory.md
   design-intake.md
@@ -111,6 +115,7 @@ docs/
   phase-6-verification.md
   phase-7-flow.md
   phase-7-verification.md
+  phase-7-5-card-lab.md
   route-map.md
 ```
 
@@ -124,6 +129,7 @@ docs/
 6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
 7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
 8. Keep diagnostic, inventory, and Library read endpoints non-mutating until schema mapping is complete.
+9. Use `#/card-lab` before broad card-frame production changes.
 
 ## Canonical language
 
