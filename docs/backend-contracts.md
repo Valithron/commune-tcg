@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a planning draft. Phase 6 adds read-only resource inventory endpoints only.
+This document is a planning draft. Phase 7 adds the first read-only Library read model.
 
 ## Existing Cloudflare bindings
 
@@ -9,7 +9,7 @@ This document is a planning draft. Phase 6 adds read-only resource inventory end
 | `env.DB` | D1 database | `com-tcg-db` |
 | `env.CARD_IMAGES` | R2 bucket | `com-tcg-images` |
 
-## Read-only diagnostic and inventory endpoints
+## Implemented read-only endpoints
 
 These endpoints are implemented as Cloudflare Pages Functions and are intentionally read-only.
 
@@ -20,6 +20,8 @@ These endpoints are implemented as Cloudflare Pages Functions and are intentiona
 | `GET` | `/api/schema-details` | List D1 table columns and indexes using PRAGMA metadata |
 | `GET` | `/api/images` | List a small sample of R2 object metadata |
 | `GET` | `/api/images-summary` | Summarize sampled R2 key prefixes and file extensions |
+| `GET` | `/api/cards` | Read and normalize Library card rows from D1 |
+| `GET` | `/api/card-image?key=...` | Read one R2 card-art object by key |
 
 ## Core tables to confirm before implementation
 
@@ -113,7 +115,6 @@ These are route contracts to design before coding real writes.
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/api/cards` | Read approved Library cards |
 | `GET` | `/api/vault` | Read current user's Vault |
 | `POST` | `/api/pulls` | Spend tickets and resolve pull results |
 | `POST` | `/api/submissions` | Create a card submission and store image metadata |
@@ -129,5 +130,5 @@ These are route contracts to design before coding real writes.
 - Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
 - R2 image keys should be stored in D1, not raw public URLs.
 - Admin routes need authentication and authorization before any real writes exist.
-- Diagnostic and inventory endpoints must stay read-only until schema and auth are explicit.
-- Phase 7 should not start until `docs/cloudflare-resource-inventory.md` contains deployed endpoint findings.
+- Diagnostic, inventory, and Library read endpoints must stay read-only until schema and auth are explicit.
+- Phase 8 should not start until ownership/user table findings are documented.
