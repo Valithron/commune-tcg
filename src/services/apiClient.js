@@ -1,13 +1,15 @@
 /* ============================================================================
    API Client Shell
-   Phase 5 responsibility: centralize future API fetches without coupling routes
-   directly to endpoint strings. Static routes can link to endpoints for now.
+   Phase 6 responsibility: centralize API endpoint strings for diagnostics and
+   inventory links without coupling routes directly to backend paths.
    ============================================================================ */
 
 const apiRoutes = {
   health: '/api/health',
   schema: '/api/schema',
+  schemaDetails: '/api/schema-details',
   images: '/api/images',
+  imagesSummary: '/api/images-summary',
 };
 
 export function getApiRoutes() {
