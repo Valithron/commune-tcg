@@ -126,8 +126,8 @@
 }
 
 .tcg-card--thumbnail .card-nameplate {
-  min-height: calc(var(--card-title-min-height) + 0.86rem);
-  padding: 0.24rem 0.28rem;
+  min-height: auto;
+  padding: 0.2rem 0.24rem;
 }
 
 .card-title {
@@ -146,6 +146,10 @@
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: var(--card-title-lines);
+}
+
+.tcg-card--thumbnail .card-title {
+  display: none;
 }
 
 .card-stat-row {
