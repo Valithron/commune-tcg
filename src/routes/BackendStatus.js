@@ -1,7 +1,7 @@
 /* ============================================================================
    Backend Status Route
-   Phase 6 responsibility: expose safe endpoint links and integration status.
-   This route does not perform automatic API calls during render.
+   Phase 7 repair responsibility: expose safe endpoint links without raw
+   backticks inside route template strings.
    ============================================================================ */
 
 import { getApiRoutes } from '../services/apiClient.js';
@@ -38,7 +38,7 @@ export function renderBackendStatus() {
       <div class="admin-checklist">
         <div>No endpoint spends tickets, grants rewards, approves cards, uploads files, or deletes objects.</div>
         <div>Schema inventory reads D1 metadata and table pragma information only.</div>
-        <div>Image inventory lists sampled object metadata from `CARD_IMAGES` only.</div>
+        <div>Image inventory lists sampled object metadata from CARD_IMAGES only.</div>
         <div>Real gameplay endpoints still require authentication and server-owned validation.</div>
       </div>
     </section>
