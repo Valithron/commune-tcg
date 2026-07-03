@@ -1,7 +1,7 @@
 /* ============================================================================
    API Client Shell
-   Phase 6 responsibility: centralize API endpoint strings for diagnostics and
-   inventory links without coupling routes directly to backend paths.
+   Phase 7 responsibility: centralize API endpoint strings for diagnostics,
+   inventory links, and read-only Library data.
    ============================================================================ */
 
 const apiRoutes = {
@@ -10,6 +10,7 @@ const apiRoutes = {
   schemaDetails: '/api/schema-details',
   images: '/api/images',
   imagesSummary: '/api/images-summary',
+  cards: '/api/cards',
 };
 
 export function getApiRoutes() {
