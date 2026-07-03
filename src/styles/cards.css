@@ -152,6 +152,85 @@
   display: none;
 }
 
+.card-identity-line {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, auto) 1fr auto;
+  align-items: center;
+  gap: 0.24rem;
+}
+
+.card-face-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.35rem;
+  padding: 0.18rem 0.48rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: #101014;
+  background: var(--rarity-color);
+  font-family: var(--font-mono);
+  font-size: var(--card-rarity-size);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.card-face-pill--circle {
+  width: 1.35rem;
+  min-width: 1.35rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.card-character-chip {
+  background: var(--character-color, #9da2b7);
+}
+
+.card-type-chip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--font-heading);
+  letter-spacing: 0.01em;
+}
+
+.card-ability-chip {
+  grid-column: 5;
+  justify-self: end;
+}
+
+.tcg-card--showcase .card-face-pill {
+  min-height: 1.62rem;
+  padding-inline: 0.58rem;
+}
+
+.tcg-card--showcase .card-face-pill--circle {
+  width: 1.62rem;
+  min-width: 1.62rem;
+  padding: 0;
+}
+
+.tcg-card--thumbnail .card-identity-line {
+  gap: 0.12rem;
+}
+
+.tcg-card--thumbnail .card-face-pill {
+  min-height: 0.9rem;
+  padding: 0.08rem 0.22rem;
+  font-size: var(--card-rarity-size);
+}
+
+.tcg-card--thumbnail .card-face-pill--circle {
+  width: 0.9rem;
+  min-width: 0.9rem;
+  padding: 0;
+}
+
+.tcg-card--thumbnail .card-type-chip {
+  display: none;
+}
+
 .card-stat-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -199,38 +278,14 @@
   gap: 0.35rem;
 }
 
-.rarity-chip {
-  min-height: 1.45rem;
-  padding: 0.2rem 0.45rem;
-  color: #101014;
-  background: var(--rarity-color);
-  border: 0;
-  border-radius: var(--radius-sm);
-  font-size: 0.58rem;
-}
-
-.card-rarity-chip {
-  justify-self: start;
-  min-height: 1.15rem;
-  padding: 0.16rem 0.42rem;
-  font-size: var(--card-rarity-size);
-}
-
 .status-pill {
   min-height: 1.45rem;
   padding: 0.2rem 0.45rem;
   font-size: 0.58rem;
 }
 
-.tcg-card--thumbnail .rarity-chip,
 .tcg-card--thumbnail .status-pill {
   min-height: 1.05rem;
   padding: 0.12rem 0.28rem;
   font-size: 0.44rem;
-}
-
-.tcg-card--thumbnail .card-rarity-chip {
-  min-height: 0.82rem;
-  padding: 0.08rem 0.22rem;
-  font-size: var(--card-rarity-size);
 }
