@@ -1,8 +1,21 @@
 # Card Frame Geometry
 
-## Current tuned geometry
+## Density stylesheet structure
 
-This geometry was promoted from Card Lab tuner output and rounded for centered production use.
+Card geometry now has one shared foundation plus one explicit density stylesheet per size:
+
+```text
+src/styles/cards.css              shared card foundation
+src/styles/card-showcase.css      large/showcase overrides
+src/styles/card-standard.css      standard overrides
+src/styles/card-thumbnail.css     thumbnail overrides
+```
+
+`src/styles/card-geometry-test.css` was removed to avoid ambiguous override behavior.
+
+## Shared tuned geometry
+
+The shared fallback geometry in `cards.css` is:
 
 ```text
 art:       x 3,  y 2,  w 94, h 92
@@ -11,7 +24,7 @@ pills:     x 5,  y 88, w 90, h 5
 stats:     x 25, y 75, w 50, h 7
 ```
 
-Equivalent CSS variables:
+Equivalent shared CSS variables:
 
 ```css
 --card-art-x: 3%;
@@ -32,18 +45,41 @@ Equivalent CSS variables:
 --card-stats-h: 7%;
 ```
 
-## Standard card override
+## Standard card geometry
 
-`src/styles/card-geometry-test.css` currently raises the standard card lower block only:
+The current standard geometry is promoted from the standard Card Lab tuner and lives in `src/styles/card-standard.css`.
+
+Rounded and centered values:
+
+```text
+art:       x 3,  y 2,  w 94, h 92
+nameplate: x 3,  y 78, w 94, h 16
+pills:     x 5,  y 85, w 90, h 5
+stats:     x 25, y 71, w 50, h 7
+```
+
+Equivalent standard CSS variables:
 
 ```css
 .tcg-card--standard {
-  --card-nameplate-y: 77%;
-  --card-pills-y: 83%;
+  --card-art-x: 3%;
+  --card-art-y: 2%;
+  --card-art-w: 94%;
+  --card-art-h: 92%;
+  --card-nameplate-x: 3%;
+  --card-nameplate-y: 78%;
+  --card-nameplate-w: 94%;
+  --card-nameplate-h: 16%;
+  --card-pills-x: 5%;
+  --card-pills-y: 85%;
+  --card-pills-w: 90%;
+  --card-pills-h: 5%;
+  --card-stats-x: 25%;
+  --card-stats-y: 71%;
+  --card-stats-w: 50%;
+  --card-stats-h: 7%;
 }
 ```
-
-This is intentionally reversible. Remove the import for `card-geometry-test.css` in `src/main.js` to return standard cards to the shared tuned geometry.
 
 ## Title fitting
 
@@ -63,7 +99,7 @@ Thumbnail cards do not show titles and are skipped by the fitter.
 
 ## Source tuner values
 
-User-provided source values before rounding:
+Original large-card source values before rounding:
 
 ```json
 {
@@ -74,9 +110,20 @@ User-provided source values before rounding:
 }
 ```
 
+Standard-card source values before rounding:
+
+```json
+{
+  "art": { "x": 3, "y": 2, "w": 94, "h": 92 },
+  "nameplate": { "x": 2.8, "y": 78.3, "w": 94.3, "h": 16 },
+  "pills": { "x": 5.6, "y": 85.2, "w": 90, "h": 5 },
+  "stats": { "x": 25, "y": 70.9, "w": 50, "h": 7 }
+}
+```
+
 ## Previous layout
 
-Before this pass, cards used the natural flow layout in `src/styles/cards.css`:
+Before percentage geometry, cards used the natural flow layout in `src/styles/cards.css`:
 
 ```text
 art block
@@ -85,11 +132,10 @@ pill row block
 centered stat footer at 50% width
 ```
 
-The previous layout did not have production percentage geometry for art, nameplate, pill row, or stat row. To reverse the tuned pass, revert the commit that introduced this file and the matching `src/styles/cards.css` geometry changes.
-
 ## Guardrails
 
-- Geometry values are percentages so they can scale across showcase, standard, and thumbnail densities.
+- Geometry values are percentages so they can scale across densities.
 - Pixel measurements in the tuner are visual aids only.
 - The Card Lab tuner remains the place to adjust geometry before promoting values to production CSS.
 - Title fitting is post-render and one-time per route render, plus one post-font-ready pass.
+- Density-specific production changes should go in the relevant density stylesheet, not in `card-lab.css`.
