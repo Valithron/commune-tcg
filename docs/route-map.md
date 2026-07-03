@@ -43,14 +43,22 @@
 |---|---|---|
 | `#/backend` | `src/routes/BackendStatus.js` | Read-only backend status and diagnostic endpoint links |
 
-## Active Phase 5 API endpoints
+## Active Phase 6 routes
+
+| Route | File | Purpose |
+|---|---|---|
+| `#/inventory` | `src/routes/ResourceInventory.js` | Resource inventory hub before real backend reads |
+
+## Active API endpoints
 
 | Endpoint | File | Purpose |
 |---|---|---|
 | `/api/health` | `functions/api/health.js` | Confirm function runtime and binding availability |
 | `/api/schema` | `functions/api/schema.js` | Read D1 table names from `sqlite_master` |
+| `/api/schema-details` | `functions/api/schema-details.js` | Read D1 columns and indexes using PRAGMA metadata |
 | `/api/images` | `functions/api/images.js` | Read a small R2 object sample |
+| `/api/images-summary` | `functions/api/images-summary.js` | Summarize sampled R2 key patterns |
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 5 adds read-only backend diagnostics, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 6 adds read-only resource inventory, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
