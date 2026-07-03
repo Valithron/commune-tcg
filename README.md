@@ -1,13 +1,13 @@
 # Commune TCG Gacha Prototype
 
-Phase 3 expands the clean mobile-first foundation for the gacha version of Commune TCG.
+Phase 4 completes the static front-end foundation for the gacha version of Commune TCG.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `3 - static battle loop`
+- Phase: `4 - static submit and admin flows`
 - Data source: local mock data only
-- Backend: not connected yet
+- Backend: contracts drafted, not connected yet
 - Deployment target: Cloudflare Pages-compatible static app
 
 ## Completed scope
@@ -16,16 +16,17 @@ Phase 1 established the Vite static app shell, bottom navigation, design tokens,
 
 Phase 2 added pull confirmation, pull results, Vault card detail, Library card detail, Ticket Shop, route params, query-string parsing, and shared detail panels.
 
-Phase 3 adds:
+Phase 3 added Battle hub, Encounter selection, Squad builder, Battle results, mock encounter data, and scoped battle styles.
 
-- Battle hub route
-- Encounter selection route
-- Squad builder route
-- Battle results route
-- Mock encounter and battle outcome data
-- Scoped battle CSS
-- Battle tab in bottom navigation
-- Documentation for the static battle loop
+Phase 4 adds:
+
+- Submit Card route
+- Admin Dashboard route
+- Mock admin and moderation data
+- Scoped Submit/Admin CSS
+- Home and Library entry points for Phase 4 routes
+- Backend contract draft for future D1/R2 implementation
+- Phase 4 flow and verification docs
 
 ## Active routes
 
@@ -44,6 +45,8 @@ Phase 3 adds:
 #/vault/card/:cardId
 #/library
 #/library/card/:cardId
+#/submit
+#/admin
 #/shop
 ```
 
@@ -64,9 +67,10 @@ src/
   components/             Reusable UI pieces
   data/                   Mock data for current static flows
   routes/                 Screen-level route renderers
-  styles/                 Design tokens, base CSS, components, cards, battle
+  styles/                 Design tokens, base CSS, components, cards, battle, phase4
 docs/
   architecture.md
+  backend-contracts.md
   cloudflare-bindings.md
   design-intake.md
   phase-1-verification.md
@@ -74,6 +78,8 @@ docs/
   phase-2-verification.md
   phase-3-flow.md
   phase-3-verification.md
+  phase-4-flow.md
+  phase-4-verification.md
   route-map.md
 ```
 
@@ -85,6 +91,7 @@ docs/
 4. Update README and docs when behavior, routes, architecture, or phase scope changes.
 5. Prefer mock data until the front-end flow stabilizes.
 6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
+7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
 
 ## Canonical language
 
@@ -99,6 +106,13 @@ docs/
 | Card creation flow | Submit Card |
 | Staff tools | Admin |
 
-## Next phase
+## Backend note
 
-Phase 4 will cover Submit Card, Admin dashboard, and backend contract drafting.
+Cloudflare bindings are documented but unused in the static prototype:
+
+```text
+env.DB
+env.CARD_IMAGES
+```
+
+Real backend implementation should begin from `docs/backend-contracts.md`.
