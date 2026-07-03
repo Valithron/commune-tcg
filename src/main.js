@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 7 responsibility: wire static and async read-model routes.
+   Phase 7.5 responsibility: wire static, async read-model, and card-lab routes.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -10,6 +10,7 @@ import './styles/components.css';
 import './styles/cards.css';
 import './styles/battle.css';
 import './styles/phase4.css';
+import './styles/card-lab.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderHome } from './routes/Home.js';
@@ -29,6 +30,7 @@ import { renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
+import { renderCardLab } from './routes/CardLab.js';
 
 const appRoot = document.querySelector('#app');
 let renderToken = 0;
@@ -51,6 +53,7 @@ const routeDefinitions = [
   { pattern: '/admin', navRoute: '/home', render: renderAdminDashboard },
   { pattern: '/backend', navRoute: '/home', render: renderBackendStatus },
   { pattern: '/inventory', navRoute: '/home', render: renderResourceInventory },
+  { pattern: '/card-lab', navRoute: '/library', render: renderCardLab },
 ];
 
 function parseHashRoute() {
