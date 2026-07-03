@@ -1,12 +1,22 @@
 /* ============================================================================
    API Cards Endpoint
-   Phase 7 responsibility: read approved/global card rows from D1 and normalize
-   them for the front-end CardFrame contract. Performs no writes.
+   Phase 7 repair responsibility: read candidate card tables directly instead
+   of using SQLite internal schema tables, which D1 may reject.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 
-const preferredTables = ['card_templates', 'cards', 'library_cards', 'card_pool', 'approved_cards'];
+const candidateTables = [
+  'card_templates',
+  'cards',
+  'library_cards',
+  'card_pool',
+  'approved_cards',
+  'player_cards',
+  'generated_cards',
+  'submissions',
+];
+
 const idColumns = ['id', 'card_id', 'uuid', 'slug'];
 const nameColumns = ['name', 'card_name', 'title'];
 const categoryColumns = ['category', 'type', 'class', 'faction'];
@@ -32,9 +42,8 @@ function slugify(value) {
 
 function findColumn(columns, candidates) {
   const lowerMap = new Map(columns.map((column) => [column.toLowerCase(), column]));
-  return candidates.find((candidate) => lowerMap.has(candidate.toLowerCase()))
-    ? lowerMap.get(candidates.find((candidate) => lowerMap.has(candidate.toLowerCase())).toLowerCase())
-    : null;
+  const match = candidates.find((candidate) => lowerMap.has(candidate.toLowerCase()));
+  return match ? lowerMap.get(match.toLowerCase()) : null;
 }
 
 function readValue(row, column, fallback = '') {
@@ -73,27 +82,16 @@ function isApprovedRow(row, statusColumn) {
   return ['', 'approved', 'active', 'published', 'live', 'ready', '1', 'true'].includes(value);
 }
 
-function chooseTable(inventories) {
-  const withName = inventories.filter((table) => findColumn(table.columns, nameColumns));
-
-  for (const preferredName of preferredTables) {
-    const exact = withName.find((table) => table.name.toLowerCase() === preferredName);
-    if (exact) return exact;
-  }
-
-  return withName.find((table) => findColumn(table.columns, rarityColumns) || findColumn(table.columns, imageColumns)) || null;
-}
-
-function normalizeRow(row, table) {
-  const idColumn = findColumn(table.columns, idColumns);
-  const nameColumn = findColumn(table.columns, nameColumns);
-  const categoryColumn = findColumn(table.columns, categoryColumns);
-  const rarityColumn = findColumn(table.columns, rarityColumns);
-  const powColumn = findColumn(table.columns, powColumns);
-  const defColumn = findColumn(table.columns, defColumns);
-  const spdColumn = findColumn(table.columns, spdColumns);
-  const flavorColumn = findColumn(table.columns, flavorColumns);
-  const imageColumn = findColumn(table.columns, imageColumns);
+function normalizeRow(row, columns) {
+  const idColumn = findColumn(columns, idColumns);
+  const nameColumn = findColumn(columns, nameColumns);
+  const categoryColumn = findColumn(columns, categoryColumns);
+  const rarityColumn = findColumn(columns, rarityColumns);
+  const powColumn = findColumn(columns, powColumns);
+  const defColumn = findColumn(columns, defColumns);
+  const spdColumn = findColumn(columns, spdColumns);
+  const flavorColumn = findColumn(columns, flavorColumns);
+  const imageColumn = findColumn(columns, imageColumns);
 
   const name = String(readValue(row, nameColumn, 'Unnamed Card'));
   const id = String(readValue(row, idColumn, slugify(name)));
@@ -119,53 +117,69 @@ function normalizeRow(row, table) {
   };
 }
 
+async function tryReadTable(env, tableName) {
+  try {
+    const result = await env.DB.prepare(`SELECT * FROM ${quoteIdentifier(tableName)} LIMIT 200`).all();
+    const rows = result.results || [];
+    const columns = rows[0] ? Object.keys(rows[0]) : [];
+    const nameColumn = findColumn(columns, nameColumns);
+
+    return {
+      table: tableName,
+      rows,
+      columns,
+      usable: Boolean(nameColumn && rows.length),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      table: tableName,
+      rows: [],
+      columns: [],
+      usable: false,
+      error: error.message,
+    };
+  }
+}
+
 export async function onRequestGet({ env }) {
   if (!env.DB) {
     return errorResponse('D1 binding DB is not available.', 503);
   }
 
-  try {
-    const tablesResult = await env.DB.prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
-    ).all();
+  const attempts = [];
 
-    const inventories = [];
+  for (const tableName of candidateTables) {
+    const attempt = await tryReadTable(env, tableName);
+    attempts.push({ table: attempt.table, rowCount: attempt.rows.length, columns: attempt.columns, error: attempt.error });
 
-    for (const row of tablesResult.results || []) {
-      const columnsResult = await env.DB.prepare(`PRAGMA table_info(${quoteIdentifier(row.name)})`).all();
-      inventories.push({
-        name: row.name,
-        columns: (columnsResult.results || []).map((column) => column.name),
-      });
+    if (!attempt.usable) {
+      continue;
     }
 
-    const selectedTable = chooseTable(inventories);
-
-    if (!selectedTable) {
-      return jsonResponse({
-        ok: true,
-        source: 'D1',
-        table: null,
-        cards: [],
-        warnings: ['No table with a recognizable card name column was found.'],
-      });
-    }
-
-    const rowsResult = await env.DB.prepare(`SELECT * FROM ${quoteIdentifier(selectedTable.name)} LIMIT 200`).all();
-    const statusColumn = findColumn(selectedTable.columns, statusColumns);
-    const cards = (rowsResult.results || [])
+    const statusColumn = findColumn(attempt.columns, statusColumns);
+    const cards = attempt.rows
       .filter((row) => isApprovedRow(row, statusColumn))
-      .map((row) => normalizeRow(row, selectedTable));
+      .map((row) => normalizeRow(row, attempt.columns));
 
     return jsonResponse({
       ok: true,
       source: 'D1',
-      table: selectedTable.name,
+      table: attempt.table,
       cards,
-      columns: selectedTable.columns,
+      columns: attempt.columns,
+      attempts,
       warnings: statusColumn ? [] : ['No approval/status column detected; returned rows were treated as Library cards.'],
     });
-  } catch (error) {
-    return errorResponse('Failed to read Library cards.', 500, error.message);
   }
+
+  return jsonResponse({
+    ok: true,
+    source: 'D1',
+    table: null,
+    cards: [],
+    columns: [],
+    attempts,
+    warnings: ['No candidate card table returned rows with a recognizable name column.'],
+  });
 }
