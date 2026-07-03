@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 4 responsibility: wire static routes, route params, and query values.
+   Phase 5 responsibility: wire static routes, route params, and query values.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -27,6 +27,7 @@ import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
 import { renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
+import { renderBackendStatus } from './routes/BackendStatus.js';
 
 const appRoot = document.querySelector('#app');
 
@@ -46,6 +47,7 @@ const routeDefinitions = [
   { pattern: '/battle/results', navRoute: '/battle', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/home', render: renderAdminDashboard },
+  { pattern: '/backend', navRoute: '/home', render: renderBackendStatus },
 ];
 
 function parseHashRoute() {
