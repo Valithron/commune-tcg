@@ -8,6 +8,7 @@ import { loadLibraryCards } from '../data/libraryData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
 import { escapeHtml, titleCase } from '../components/format.js';
 
+const titleLimit = 25;
 const sampleDefinitions = [
   { key: 'shortest', label: 'Shortest', percentile: 0 },
   { key: 'p25', label: '25th Percentile', percentile: 0.25 },
@@ -201,7 +202,7 @@ function getDetailGroups(card, library, sourceLabel, artStatus) {
         ['Faction', readCardValue(card, ['faction', 'team', 'affinity'])],
         ['Set / Collection', readCardValue(card, ['set', 'setName', 'collection'])],
         ['Card ID', card.id],
-        ['Title Length', `${titleLength(card)} / 28 characters`],
+        ['Title Length', `${titleLength(card)} / ${titleLimit} characters`],
       ],
     },
     {
@@ -448,8 +449,8 @@ export async function renderCardLab() {
       <div class="detail-list">
         <div class="detail-row"><span>Source</span><strong>${escapeHtml(sourceLabel)}</strong></div>
         <div class="detail-row"><span>Total Cards</span><strong>${escapeHtml(String(library.cards.length))}</strong></div>
-        <div class="detail-row"><span>Title Limit Target</span><strong>28 characters</strong></div>
-        <div class="detail-row"><span>Title Rule</span><strong>No ellipsis, fixed size per density</strong></div>
+        <div class="detail-row"><span>Title Limit Target</span><strong>${titleLimit} characters</strong></div>
+        <div class="detail-row"><span>Title Rule</span><strong>One line, no ellipsis</strong></div>
       </div>
     </section>
 
