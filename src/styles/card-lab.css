@@ -109,10 +109,10 @@
   --tuner-nameplate-y: 70%;
   --tuner-nameplate-w: 92%;
   --tuner-nameplate-h: 17%;
-  --tuner-pills-x: 3%;
-  --tuner-pills-y: 68%;
-  --tuner-pills-w: 94%;
-  --tuner-pills-h: 24%;
+  --tuner-pills-x: 6%;
+  --tuner-pills-y: 82%;
+  --tuner-pills-w: 88%;
+  --tuner-pills-h: 5.8%;
   --tuner-stats-x: 25%;
   --tuner-stats-y: 91%;
   --tuner-stats-w: 50%;
@@ -128,6 +128,7 @@
 
 .card-frame-tuner .card-art,
 .card-frame-tuner .card-nameplate,
+.card-frame-tuner .card-identity-line,
 .card-frame-tuner .card-stat-row {
   position: absolute;
   box-sizing: border-box;
@@ -155,21 +156,31 @@
 }
 
 .card-frame-tuner .card-identity-line {
-  position: absolute;
   left: var(--tuner-pills-x);
   top: var(--tuner-pills-y);
   width: var(--tuner-pills-w);
   height: var(--tuner-pills-h);
+  min-height: 1.35rem;
+  overflow: visible;
 }
 
 .card-frame-tuner .card-face-pill {
-  height: 100%;
-  min-height: 0;
+  height: clamp(1.15rem, 100%, 1.65rem);
+  min-height: 1.15rem;
+  flex: 0 0 auto;
 }
 
 .card-frame-tuner .card-face-pill--circle {
-  width: var(--tuner-pills-h);
-  min-width: var(--tuner-pills-h);
+  width: clamp(1.15rem, 100%, 1.65rem);
+  min-width: 1.15rem;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+}
+
+.card-frame-tuner .card-ability-chip {
+  width: clamp(1.15rem, 100%, 1.65rem);
+  min-width: 1.15rem;
+  padding: 0;
 }
 
 .card-frame-tuner .card-stat-row {
@@ -184,6 +195,7 @@
 .card-frame-tuner .card-stat {
   min-height: 0;
   height: 100%;
+  background: rgba(0, 0, 0, 0.48);
 }
 
 .frame-tuner-overlay {
@@ -193,8 +205,46 @@
   pointer-events: none;
 }
 
+.frame-tuner-center-line {
+  position: absolute;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+.frame-tuner-center-line--x {
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+
+.frame-tuner-center-line--y {
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+}
+
+.frame-tuner-card-flag {
+  position: absolute;
+  left: 0.4rem;
+  top: 0.4rem;
+  z-index: 3;
+  padding: 0.16rem 0.35rem;
+  border-radius: 0.35rem;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .frame-tuner-box {
   position: absolute;
+  z-index: 2;
   display: grid;
   place-items: start;
   min-width: 2.2rem;
@@ -209,18 +259,22 @@
 }
 
 .frame-tuner-box span {
+  max-width: calc(100% - 0.5rem);
   padding: 0.12rem 0.28rem;
   border-radius: 0 0 0.35rem 0;
-  background: rgba(0, 0, 0, 0.66);
+  background: rgba(0, 0, 0, 0.72);
   color: var(--color-text);
   font-family: var(--font-mono);
   font-size: 0.55rem;
   font-weight: 900;
   letter-spacing: 0.04em;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
-.frame-tuner-box.is-dragging {
+.frame-tuner-box.is-dragging,
+.frame-tuner-box.is-centered-x,
+.frame-tuner-box.is-centered-y {
   border-style: solid;
   border-color: var(--color-primary);
   background: rgba(255, 255, 255, 0.08);
@@ -263,10 +317,11 @@
 }
 
 .frame-tuner-box--pills {
-  left: var(--tuner-nameplate-x);
-  top: calc(var(--tuner-nameplate-y) + 11%);
-  width: calc(var(--tuner-nameplate-w) * 0.94);
-  height: 8%;
+  left: var(--tuner-pills-x);
+  top: var(--tuner-pills-y);
+  width: var(--tuner-pills-w);
+  height: var(--tuner-pills-h);
+  min-height: 1.35rem;
 }
 
 .frame-tuner-box--stats {
@@ -289,6 +344,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.card-frame-tuner-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.card-frame-tuner-readout span {
+  padding: 0.22rem 0.44rem;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
 }
 
 .card-frame-tuner-output {
