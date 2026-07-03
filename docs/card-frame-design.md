@@ -10,7 +10,7 @@ The current target is the Stitch card chassis:
 - art-forward card body
 - compact title bar
 - fixed stat footer
-- rarity chip inside the lower nameplate
+- identity pill row inside the lower nameplate
 - rarity-specific border and glow treatment
 - one canonical renderer in `src/components/CardFrame.js`
 
@@ -20,13 +20,46 @@ The card face should show only card-relevant information:
 
 - art
 - title at showcase and standard densities
-- rarity
+- rarity initial
+- character abbreviation
+- type
+- ability icon placeholder
 - stats when enabled
 - future ownership/progression state only in owned-card contexts
 
 The card face should not show route/source labels such as Library, Vault, database table names, or other location metadata.
 
 Thumbnail density intentionally hides titles to avoid visual overload.
+
+## Identity pill row
+
+The lower nameplate identity row is:
+
+```text
+[rarity initial] [character abbreviation] [type] [ability icon]
+```
+
+Rarity uses one initial only:
+
+```text
+C U R L M
+```
+
+Character abbreviation colors use the original app assignments:
+
+| Character | Abbreviation | Color |
+|---|---:|---|
+| Cydney | CY | `#f3c93f` |
+| Sterling | ST | `#c4c5db` |
+| Ryan | RY | `#a98cff` |
+| Gabi | GA | `#8ccdff` |
+| Cooper | CO | `#ff8f70` |
+| Kenly | KE | `#73e1c2` |
+| Ashley | AS | `#ff9ccf` |
+
+Type currently uses the card rarity color until type-specific colors are designed.
+
+Ability uses a placeholder icon until the ability system is defined.
 
 ## Title rules
 
