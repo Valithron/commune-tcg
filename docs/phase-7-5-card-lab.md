@@ -25,6 +25,17 @@ GET /api/cards
 
 If backend data fails, it uses the existing mock fallback.
 
+## Detail preview
+
+Before the density rows, Card Lab renders a detail/stat sheet preview:
+
+- one showcase-size card
+- title and flavor/description copy outside the card face
+- expanded POW / DEF / SPD panels
+- rarity, title length, art status, data source, card id, and ownership context
+
+This tests how card metadata will appear without cluttering the card face itself.
+
 ## Sample selection
 
 The Card Lab now builds two sample groups.
@@ -65,6 +76,7 @@ Densities:
 After deployment:
 
 - Open `#/card-lab`.
+- Confirm the detail/stat sheet preview appears before all card rows.
 - Confirm each density has a title-length row and a rarity row.
 - Confirm title text does not use ellipsis.
 - Confirm Common, Uncommon, Rare, Legendary, and Mythic frame treatments render.
