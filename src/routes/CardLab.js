@@ -1,7 +1,7 @@
 /* ============================================================================
    Card Lab Route
    Phase 7.5 responsibility: live card-frame inspection using real Library data,
-   title-length samples, rarity samples, and detail-sheet preview. No backend writes.
+   title-length samples, rarity samples, and full detail-sheet preview. No writes.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -17,6 +17,7 @@ const sampleDefinitions = [
 ];
 
 const rarityDefinitions = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
+const unknownValue = 'Not mapped yet';
 
 const densityRows = [
   {
@@ -43,6 +44,34 @@ function titleLength(card) {
 function normalizeRarity(rarity) {
   const value = String(rarity || 'common').toLowerCase();
   return rarityDefinitions.includes(value) ? value : 'common';
+}
+
+function readCardValue(card, keys, fallback = unknownValue) {
+  for (const key of keys) {
+    const value = card?.[key];
+
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        return value.length ? value.join(', ') : fallback;
+      }
+
+      return value;
+    }
+  }
+
+  return fallback;
+}
+
+function formatBoolean(value, fallback = unknownValue) {
+  if (value === true) {
+    return 'Yes';
+  }
+
+  if (value === false) {
+    return 'No';
+  }
+
+  return fallback;
 }
 
 function withLabRarity(card, rarity, note) {
@@ -139,9 +168,132 @@ function renderDetailRow(label, value) {
   return `
     <div class="detail-row">
       <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(String(value || 'None'))}</strong>
+      <strong>${escapeHtml(String(value || unknownValue))}</strong>
     </div>
   `;
+}
+
+function renderDetailGroup(title, rows) {
+  return `
+    <section class="card-lab-detail-group">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="detail-list">
+        ${rows.map(([label, value]) => renderDetailRow(label, value)).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function getDetailGroups(card, library, sourceLabel, artStatus) {
+  const stats = card.stats || {};
+  const owned = card.owned ?? false;
+  const imageKey = card.imageKey || readCardValue(card, ['image_key', 'imagePath', 'image_path', 'art_key'], unknownValue);
+  const imageUrl = card.imageUrl ? 'Proxy URL mapped' : readCardValue(card, ['image_url', 'art_url'], unknownValue);
+
+  return [
+    {
+      title: 'Identity',
+      rows: [
+        ['Name', card.name],
+        ['Rarity', titleCase(normalizeRarity(card.rarity))],
+        ['Type', readCardValue(card, ['type', 'cardType', 'card_type'])],
+        ['Category', readCardValue(card, ['category', 'class', 'archetype'])],
+        ['Faction', readCardValue(card, ['faction', 'team', 'affinity'])],
+        ['Set / Collection', readCardValue(card, ['set', 'setName', 'collection'])],
+        ['Card ID', card.id],
+        ['Title Length', `${titleLength(card)} / 28 characters`],
+      ],
+    },
+    {
+      title: 'Creator and Provenance',
+      rows: [
+        ['Card Creator', readCardValue(card, ['creator', 'createdBy', 'creator_name', 'author'])],
+        ['Submitted By', readCardValue(card, ['submittedBy', 'submitted_by', 'submitter'])],
+        ['Approved By', readCardValue(card, ['approvedBy', 'approved_by', 'moderator'])],
+        ['Minted Date', readCardValue(card, ['mintedAt', 'minted_at', 'created_at'])],
+        ['Source Pool', readCardValue(card, ['sourcePool', 'source_pool', 'pool'])],
+        ['Prompt / Source Note', readCardValue(card, ['prompt', 'sourceNote', 'source_note'])],
+      ],
+    },
+    {
+      title: 'Art',
+      rows: [
+        ['Art Status', artStatus],
+        ['Image Key', imageKey],
+        ['Image URL', imageUrl],
+        ['Artist Credit', readCardValue(card, ['artist', 'artistCredit', 'artist_credit'])],
+        ['Crop Metadata', readCardValue(card, ['crop', 'cropData', 'crop_data', 'objectPosition'])],
+      ],
+    },
+    {
+      title: 'Gameplay',
+      rows: [
+        ['POW', stats.pow ?? 1],
+        ['DEF', stats.def ?? 1],
+        ['SPD', stats.spd ?? 1],
+        ['Ability', readCardValue(card, ['ability', 'abilityText', 'ability_text'])],
+        ['Ability Type', readCardValue(card, ['abilityType', 'ability_type'])],
+        ['Ability Trigger', readCardValue(card, ['trigger', 'abilityTrigger', 'ability_trigger'])],
+        ['Cooldown', readCardValue(card, ['cooldown', 'abilityCooldown', 'ability_cooldown'])],
+        ['Passive Effect', readCardValue(card, ['passive', 'passiveEffect', 'passive_effect'])],
+        ['Battle Role', readCardValue(card, ['role', 'battleRole', 'battle_role'])],
+        ['Targeting Rule', readCardValue(card, ['targeting', 'targetRule', 'target_rule'])],
+        ['Synergy Tags', readCardValue(card, ['tags', 'synergyTags', 'synergy_tags'])],
+      ],
+    },
+    {
+      title: 'Economy',
+      rows: [
+        ['Passive Income', readCardValue(card, ['passiveIncome', 'passive_income', 'income'])],
+        ['Income Interval', readCardValue(card, ['incomeInterval', 'income_interval'])],
+        ['Gold Value', readCardValue(card, ['goldValue', 'gold_value', 'value'])],
+        ['Shard / Dust Value', readCardValue(card, ['dustValue', 'dust_value', 'shardValue', 'shard_value'])],
+        ['Pull Weight', readCardValue(card, ['pullWeight', 'pull_weight', 'weight'])],
+        ['Duplicate Conversion', readCardValue(card, ['duplicateValue', 'duplicate_value', 'dupeValue'])],
+      ],
+    },
+    {
+      title: 'Ownership and Progression',
+      rows: [
+        ['Ownership Context', 'Not shown in Library'],
+        ['Owned', formatBoolean(owned)],
+        ['Owned Copies', card.copies ?? 0],
+        ['Level', card.level ?? 1],
+        ['XP', readCardValue(card, ['xp', 'experience'], '0')],
+        ['XP To Next Level', readCardValue(card, ['xpToNext', 'xp_to_next', 'nextLevelXp'])],
+        ['Ascension State', readCardValue(card, ['ascension', 'ascensionState', 'ascension_state'])],
+        ['Equipped State', readCardValue(card, ['equipped', 'equippedState', 'equipped_state'])],
+        ['Locked State', readCardValue(card, ['locked', 'lockedState', 'locked_state'])],
+      ],
+    },
+    {
+      title: 'Text and Lore',
+      rows: [
+        ['Flavor Text', card.flavor || unknownValue],
+        ['Lore Note', readCardValue(card, ['lore', 'loreNote', 'lore_note'])],
+        ['Admin Notes', readCardValue(card, ['adminNotes', 'admin_notes', 'notes'])],
+      ],
+    },
+    {
+      title: 'Moderation and Visibility',
+      rows: [
+        ['Approval Status', readCardValue(card, ['status', 'approvalStatus', 'approval_status'])],
+        ['Visibility', readCardValue(card, ['visibility', 'publicState', 'public_state'])],
+        ['Flags', readCardValue(card, ['flags', 'moderationFlags', 'moderation_flags'])],
+        ['Last Updated', readCardValue(card, ['updatedAt', 'updated_at'])],
+      ],
+    },
+    {
+      title: 'Data and Debug',
+      rows: [
+        ['Data Source', sourceLabel],
+        ['Source Table', library.table || unknownValue],
+        ['Raw Rarity Mapping', card.rarity || unknownValue],
+        ['Stats Mapping Status', stats.pow || stats.def || stats.spd ? 'Mapped' : 'Defaulted'],
+        ['Missing Fields Note', 'Unknown fields display as Not mapped yet'],
+      ],
+    },
+  ];
 }
 
 function renderDetailPreview(card, library) {
@@ -154,13 +306,14 @@ function renderDetailPreview(card, library) {
     ? `Live D1${library.table ? ` · ${library.table}` : ''}`
     : 'Mock fallback';
   const artStatus = card.imageUrl || card.imageKey ? 'Image mapped' : 'No image mapped';
+  const detailGroups = getDetailGroups(card, library, sourceLabel, artStatus);
 
   return `
     <section class="glass-panel card-lab-detail-preview">
       <div class="card-lab-detail-copy">
         <span class="section-kicker">Detail Preview</span>
         <h2 class="section-title">Stats Screen Layout</h2>
-        <p class="body-copy">This preview keeps the collectible card face clean while moving source, ownership, description, and expanded metadata into the surrounding stat sheet.</p>
+        <p class="body-copy">This preview keeps the collectible card face clean while moving creator, gameplay, economy, progression, source, moderation, and debug metadata into the surrounding stat sheet.</p>
       </div>
       <div class="card-lab-detail-layout">
         <div class="card-lab-detail-card-stage">
@@ -182,13 +335,8 @@ function renderDetailPreview(card, library) {
             <div class="stat-panel"><span class="stat-label">DEF</span><strong class="stat-value">${escapeHtml(String(stats.def ?? 1))}</strong></div>
             <div class="stat-panel"><span class="stat-label">SPD</span><strong class="stat-value">${escapeHtml(String(stats.spd ?? 1))}</strong></div>
           </div>
-          <div class="detail-list">
-            ${renderDetailRow('Rarity', titleCase(normalizeRarity(card.rarity)))}
-            ${renderDetailRow('Title Length', `${titleLength(card)} / 28 characters`)}
-            ${renderDetailRow('Art Status', artStatus)}
-            ${renderDetailRow('Data Source', sourceLabel)}
-            ${renderDetailRow('Card ID', card.id)}
-            ${renderDetailRow('Ownership Context', 'Not shown in Library')}
+          <div class="card-lab-detail-groups">
+            ${detailGroups.map((group) => renderDetailGroup(group.title, group.rows)).join('')}
           </div>
         </div>
       </div>
