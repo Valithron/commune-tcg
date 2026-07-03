@@ -1,7 +1,7 @@
 /* ============================================================================
    Card Lab Route
    Phase 7.5 responsibility: live card-frame inspection using real Library data,
-   title-length samples, and rarity samples. No backend writes or gameplay systems.
+   title-length samples, rarity samples, and detail-sheet preview. No backend writes.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -128,6 +128,74 @@ function selectRaritySamples(cards) {
   });
 }
 
+function getDetailCard(titleSamples, cards) {
+  return titleSamples.find((sample) => sample.key === 'longest')?.card
+    || titleSamples.find((sample) => sample.card)?.card
+    || cards[0]
+    || null;
+}
+
+function renderDetailRow(label, value) {
+  return `
+    <div class="detail-row">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(value || 'None'))}</strong>
+    </div>
+  `;
+}
+
+function renderDetailPreview(card, library) {
+  if (!card) {
+    return '<section class="glass-panel card-lab-detail-preview"><div class="empty-note">No card available for detail preview.</div></section>';
+  }
+
+  const stats = card.stats || {};
+  const sourceLabel = library.source === 'backend'
+    ? `Live D1${library.table ? ` · ${library.table}` : ''}`
+    : 'Mock fallback';
+  const artStatus = card.imageUrl || card.imageKey ? 'Image mapped' : 'No image mapped';
+
+  return `
+    <section class="glass-panel card-lab-detail-preview">
+      <div class="card-lab-detail-copy">
+        <span class="section-kicker">Detail Preview</span>
+        <h2 class="section-title">Stats Screen Layout</h2>
+        <p class="body-copy">This preview keeps the collectible card face clean while moving source, ownership, description, and expanded metadata into the surrounding stat sheet.</p>
+      </div>
+      <div class="card-lab-detail-layout">
+        <div class="card-lab-detail-card-stage">
+          ${renderCardFrame(card, {
+            density: 'showcase',
+            context: 'library',
+            showOwnership: false,
+            showStats: true,
+          })}
+        </div>
+        <div class="card-lab-detail-sheet">
+          <div>
+            <span class="section-kicker">Selected Card</span>
+            <h3 class="detail-title">${escapeHtml(card.name)}</h3>
+            <p class="body-copy">${escapeHtml(card.flavor || 'No flavor text is mapped for this card yet.')}</p>
+          </div>
+          <div class="stat-grid card-lab-detail-stat-grid">
+            <div class="stat-panel"><span class="stat-label">POW</span><strong class="stat-value">${escapeHtml(String(stats.pow ?? 1))}</strong></div>
+            <div class="stat-panel"><span class="stat-label">DEF</span><strong class="stat-value">${escapeHtml(String(stats.def ?? 1))}</strong></div>
+            <div class="stat-panel"><span class="stat-label">SPD</span><strong class="stat-value">${escapeHtml(String(stats.spd ?? 1))}</strong></div>
+          </div>
+          <div class="detail-list">
+            ${renderDetailRow('Rarity', titleCase(normalizeRarity(card.rarity)))}
+            ${renderDetailRow('Title Length', `${titleLength(card)} / 28 characters`)}
+            ${renderDetailRow('Art Status', artStatus)}
+            ${renderDetailRow('Data Source', sourceLabel)}
+            ${renderDetailRow('Card ID', card.id)}
+            ${renderDetailRow('Ownership Context', 'Not shown in Library')}
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderSampleMeta(sample) {
   if (!sample.card) {
     return '<div class="card-lab-meta"><strong>No card</strong><span>No Library cards loaded.</span></div>';
@@ -212,6 +280,7 @@ export async function renderCardLab() {
   const library = await loadLibraryCards();
   const titleSamples = selectTitleSamples(library.cards);
   const raritySamples = selectRaritySamples(library.cards);
+  const detailCard = getDetailCard(titleSamples, library.cards);
   const sourceLabel = library.source === 'backend'
     ? `Live D1${library.table ? ` · ${library.table}` : ''}`
     : 'Mock fallback';
@@ -220,7 +289,7 @@ export async function renderCardLab() {
     <section class="hero-panel card-lab-hero">
       <span class="section-kicker">Card Lab</span>
       <h2 class="hero-title">Stress the frame.</h2>
-      <p class="hero-copy">Live title-length and rarity samples from the Library render at showcase, standard, and thumbnail sizes before we lock the production overlay shape.</p>
+      <p class="hero-copy">Live detail, title-length, and rarity samples from the Library render before we lock the production overlay shape.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/library">Back to Library</a>
         <a class="button button-secondary" href="#/inventory">Inventory</a>
@@ -235,6 +304,8 @@ export async function renderCardLab() {
         <div class="detail-row"><span>Title Rule</span><strong>No ellipsis, fixed size per density</strong></div>
       </div>
     </section>
+
+    ${renderDetailPreview(detailCard, library)}
 
     <div class="card-lab">
       ${densityRows.map((row) => renderDensitySection(row, titleSamples, raritySamples)).join('')}
