@@ -37,6 +37,20 @@
 | `#/submit` | `src/routes/SubmitCard.js` | Static card submission form shape |
 | `#/admin` | `src/routes/AdminDashboard.js` | Static moderation/admin dashboard |
 
+## Active Phase 5 routes
+
+| Route | File | Purpose |
+|---|---|---|
+| `#/backend` | `src/routes/BackendStatus.js` | Read-only backend status and diagnostic endpoint links |
+
+## Active Phase 5 API endpoints
+
+| Endpoint | File | Purpose |
+|---|---|---|
+| `/api/health` | `functions/api/health.js` | Confirm function runtime and binding availability |
+| `/api/schema` | `functions/api/schema.js` | Read D1 table names from `sqlite_master` |
+| `/api/images` | `functions/api/images.js` | Read a small R2 object sample |
+
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 4 completes the static route foundation and documents backend contracts, but it still performs no D1/R2 writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 5 adds read-only backend diagnostics, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
