@@ -35,12 +35,32 @@
 
 .card-lab-section {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-width: 0;
 }
 
 .card-lab-section-heading {
   margin-bottom: 0;
+}
+
+.card-lab-subsection {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.card-lab-subheading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card-lab-row-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 .card-lab-note {
@@ -150,6 +170,11 @@
 }
 
 @media (max-width: 42rem) {
+  .card-lab-subheading {
+    align-items: start;
+    flex-direction: column;
+  }
+
   .card-lab-row {
     border-radius: var(--radius-lg);
   }
