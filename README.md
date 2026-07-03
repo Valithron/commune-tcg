@@ -1,13 +1,13 @@
 # Commune TCG Gacha Prototype
 
-Phase 5 adds the first safe backend bridge for the gacha version of Commune TCG.
+Phase 6 adds a read-only Cloudflare resource inventory layer for the gacha version of Commune TCG.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `5 - read-only backend diagnostics`
+- Phase: `6 - Cloudflare resource inventory`
 - Data source: local mock data for gameplay screens
-- Backend: read-only diagnostic endpoints added, real game writes not connected yet
+- Backend: read-only diagnostic and inventory endpoints added, real game writes not connected yet
 - Deployment target: Cloudflare Pages-compatible app with Pages Functions
 
 ## Completed scope
@@ -20,16 +20,16 @@ Phase 3 added Battle hub, Encounter selection, Squad builder, Battle results, mo
 
 Phase 4 added Submit Card, Admin Dashboard, mock admin data, and backend contract docs.
 
-Phase 5 adds:
+Phase 5 added Cloudflare Pages Function diagnostics for health, D1 table list, and R2 object sample.
 
-- Cloudflare Pages Function JSON helper
-- `/api/health` binding check endpoint
-- `/api/schema` read-only D1 schema endpoint
-- `/api/images` read-only R2 object sample endpoint
-- Front-end API client shell
-- Backend Status route
-- Admin link to Backend Status
-- Phase 5 flow and verification docs
+Phase 6 adds:
+
+- `/api/schema-details` read-only D1 table column/index inventory endpoint
+- `/api/images-summary` read-only R2 key-pattern summary endpoint
+- Resource Inventory route
+- Backend Status link to Resource Inventory
+- Cloudflare resource inventory document
+- Phase 6 flow and verification docs
 
 ## Active routes
 
@@ -51,15 +51,18 @@ Phase 5 adds:
 #/submit
 #/admin
 #/backend
+#/inventory
 #/shop
 ```
 
-## Active API diagnostics
+## Active API diagnostics and inventory endpoints
 
 ```text
 /api/health
 /api/schema
+/api/schema-details
 /api/images
+/api/images-summary
 ```
 
 ## Commands
@@ -76,7 +79,7 @@ npm run preview
 ```text
 functions/
   _shared/                Shared Pages Function helpers
-  api/                    Read-only diagnostic endpoints
+  api/                    Read-only diagnostic and inventory endpoints
 src/
   main.js                 App bootstrap, hash router, route params, query parsing
   components/             Reusable UI pieces
@@ -88,6 +91,7 @@ docs/
   architecture.md
   backend-contracts.md
   cloudflare-bindings.md
+  cloudflare-resource-inventory.md
   design-intake.md
   phase-1-verification.md
   phase-2-flow.md
@@ -98,6 +102,8 @@ docs/
   phase-4-verification.md
   phase-5-flow.md
   phase-5-verification.md
+  phase-6-flow.md
+  phase-6-verification.md
   route-map.md
 ```
 
@@ -110,7 +116,7 @@ docs/
 5. Prefer mock data until the front-end flow stabilizes.
 6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
 7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
-8. Keep diagnostic API endpoints read-only until schema mapping is complete.
+8. Keep diagnostic and inventory API endpoints read-only until schema mapping is complete.
 
 ## Canonical language
 
@@ -127,11 +133,11 @@ docs/
 
 ## Backend note
 
-Cloudflare bindings are documented and now exposed through safe diagnostic endpoints:
+Cloudflare bindings are documented and now exposed through safe diagnostic and inventory endpoints:
 
 ```text
 env.DB
 env.CARD_IMAGES
 ```
 
-Real backend implementation should still begin from `docs/backend-contracts.md` after `/api/schema` and `/api/images` confirm the existing resource shapes.
+Before Phase 7, paste deployed endpoint findings into `docs/cloudflare-resource-inventory.md` and reconcile them with `docs/backend-contracts.md`.
