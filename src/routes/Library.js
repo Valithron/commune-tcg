@@ -1,7 +1,7 @@
 /* ============================================================================
    Library Route
-   Phase 7 responsibility: render the global card pool from the read-only
-   backend Library model, with local mock fallback.
+   Phase 7.5 responsibility: render the global card pool from the read-only
+   backend Library model and expose Card Lab for frame checks.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -27,7 +27,10 @@ export async function renderLibrary() {
       <span class="section-kicker">Global Pool</span>
       <h2 class="hero-title">The Library</h2>
       <p class="hero-copy">The Library now prefers the read-only D1 card model. If the deployed schema is unavailable or unmapped, it falls back to local mock cards.</p>
-      <div class="action-row"><a class="button button-secondary" href="#/submit">Submit Card</a></div>
+      <div class="action-row">
+        <a class="button button-secondary" href="#/submit">Submit Card</a>
+        <a class="button button-secondary" href="#/card-lab">Card Lab</a>
+      </div>
     </section>
 
     ${renderSourceNote(library)}
@@ -41,7 +44,7 @@ export async function renderLibrary() {
         <span class="status-pill">${library.cards.length} cards</span>
       </div>
       <div class="card-grid">
-        ${library.cards.map((card) => renderCardFrame(card, { href: `#/library/card/${card.id}` })).join('')}
+        ${library.cards.map((card) => renderCardFrame(card, { href: `#/library/card/${card.id}`, context: 'library', showOwnership: false })).join('')}
       </div>
     </section>
   `;
