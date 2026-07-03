@@ -9,6 +9,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/cards.css';
+import './styles/card-geometry-test.css';
 import './styles/battle.css';
 import './styles/phase4.css';
 import './styles/card-lab.css';
