@@ -1,7 +1,7 @@
 /* ============================================================================
    Card Frame Component
-   Phase 2 responsibility: single canonical card renderer with optional links.
-   Do not create route-specific card markup unless a future design doc approves it.
+   Phase 7 responsibility: single canonical card renderer for mock and backend
+   Library cards, including optional real image URLs.
    ============================================================================ */
 
 import { escapeHtml, titleCase } from './format.js';
@@ -17,6 +17,14 @@ function renderStats(stats) {
       <span class="card-stat-value">${value}</span>
     </span>
   `).join('');
+}
+
+function renderCardArt(card) {
+  if (card.imageUrl) {
+    return `<img class="card-art-image" src="${escapeHtml(card.imageUrl)}" alt="" loading="lazy" />`;
+  }
+
+  return `<span class="card-art-symbol">${escapeHtml(card.symbol || '◆')}</span>`;
 }
 
 export function renderCardFrame(card, options = {}) {
@@ -36,7 +44,7 @@ export function renderCardFrame(card, options = {}) {
         ${showOwnership ? `<span class="status-pill">${card.owned ? `Lv ${card.level}` : 'Locked'}</span>` : ''}
       </div>
       <div class="card-art" aria-hidden="true">
-        <span class="card-art-symbol">${escapeHtml(card.symbol)}</span>
+        ${renderCardArt(card)}
       </div>
       <div class="card-nameplate">
         <h3 class="card-title">${escapeHtml(card.name)}</h3>
