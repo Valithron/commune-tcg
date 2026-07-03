@@ -67,6 +67,39 @@
   max-width: 28rem;
 }
 
+.card-lab-detail-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.card-lab-detail-group {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.card-lab-detail-group h4 {
+  margin: 0;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.card-lab-detail-group .detail-row {
+  padding: var(--space-2);
+}
+
+.card-lab-detail-group .detail-row strong {
+  overflow-wrap: anywhere;
+}
+
 .card-lab-section {
   display: grid;
   gap: var(--space-4);
@@ -203,6 +236,12 @@
 @media (min-width: 80rem) {
   .card-lab-row--showcase .card-lab-cell {
     flex-basis: clamp(18rem, 18vw, 23rem);
+  }
+}
+
+@media (max-width: 64rem) {
+  .card-lab-detail-groups {
+    grid-template-columns: 1fr;
   }
 }
 
