@@ -21,14 +21,14 @@
 | `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
 | `#/shop` | `src/routes/TicketShop.js` | Static ticket shop layout |
 
-## Planned Phase 3 routes
+## Active Phase 3 routes
 
-| Route | Purpose |
-|---|---|
-| `#/battle` | Battle hub |
-| `#/battle/encounters` | Choose enemy encounter |
-| `#/battle/squad` | Build squad from owned cards |
-| `#/battle/results` | Rewards and battle outcome |
+| Route | File | Purpose |
+|---|---|---|
+| `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
+| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
+| `#/battle/squad?encounter=:encounterId` | `src/routes/SquadBuilder.js` | Review selected squad before battle |
+| `#/battle/results?encounter=:encounterId` | `src/routes/BattleResults.js` | Show deterministic battle result and rewards |
 
 ## Planned Phase 4 routes
 
@@ -39,4 +39,4 @@
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 2 supports dynamic card ids and query values, but route files should still stay thin. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 3 supports battle subroutes and encounter query values, but route files should still stay thin. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
