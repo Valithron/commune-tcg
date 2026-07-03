@@ -1,6 +1,6 @@
 /* ============================================================================
    Home Route
-   Phase 1 responsibility: player dashboard, quick actions, and prototype status.
+   Phase 4 responsibility: player dashboard, quick actions, and prototype status.
    ============================================================================ */
 
 import { mockUser } from '../data/mockUser.js';
@@ -12,12 +12,13 @@ export function renderHome() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Phase 1 Prototype</span>
+      <span class="section-kicker">Phase 4 Prototype</span>
       <h2 class="hero-title">Build the Vault. Pull the Commune.</h2>
-      <p class="hero-copy">A clean mobile shell for the gacha version of Commune TCG. Current data is mocked while the design system, routes, and card renderer stabilize.</p>
+      <p class="hero-copy">A clean mobile shell for the gacha version of Commune TCG. Current data is mocked while the route map and component foundation stabilize.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull">Start Pulling</a>
-        <a class="button button-secondary" href="#/vault">View Vault</a>
+        <a class="button button-secondary" href="#/battle">Battle</a>
+        <a class="button button-secondary" href="#/submit">Submit Card</a>
       </div>
     </section>
 
@@ -48,6 +49,8 @@ export function renderHome() {
         <div class="quick-grid">
           <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
           <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
+          <a class="quick-card" href="#/submit"><strong>Submit</strong><span>Mock the future card submission flow.</span></a>
+          <a class="quick-card" href="#/admin"><strong>Admin</strong><span>Review the static moderation dashboard.</span></a>
         </div>
       </div>
     </section>
