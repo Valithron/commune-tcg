@@ -1,8 +1,8 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 7.6 responsibility: wire static, async read-model, card-lab, and
-   Card Lab-only frame tuner routes. Do not put route-specific UI or backend
-   behavior in this file.
+   Phase 7.6 responsibility: wire static, async read-model, card-lab, card title
+   fitting, and Card Lab-only frame tuner routes. Do not put route-specific UI
+   or backend behavior in this file.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -14,6 +14,7 @@ import './styles/phase4.css';
 import './styles/card-lab.css';
 
 import { renderAppShell } from './components/AppShell.js';
+import { fitCardTitles } from './components/cardTitleFit.js';
 import { renderHome } from './routes/Home.js';
 import { renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
@@ -141,6 +142,8 @@ async function render() {
       activeRoute: matchedRoute.navRoute,
       content,
     });
+
+    fitCardTitles(appRoot);
 
     if (matchedRoute.pattern === '/card-lab') {
       initCardFrameTuner(appRoot);
