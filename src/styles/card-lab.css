@@ -1,0 +1,120 @@
+/* ============================================================================
+   Card Lab Styles
+   Purpose: break out of the mobile shell for live card-frame inspection at
+   showcase, standard, and thumbnail densities.
+   ============================================================================ */
+
+.card-lab-hero,
+.card-lab-summary {
+  margin-bottom: var(--space-5);
+}
+
+.card-lab-summary {
+  padding: var(--space-4);
+}
+
+.card-lab {
+  display: grid;
+  gap: var(--space-8);
+  width: min(96vw, 92rem);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.card-lab-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.card-lab-section-heading {
+  margin-bottom: 0;
+}
+
+.card-lab-note {
+  max-width: 42rem;
+}
+
+.card-lab-row {
+  display: flex;
+  align-items: start;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.035);
+  scroll-snap-type: x proximity;
+}
+
+.card-lab-cell {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.card-lab-row--showcase .card-lab-cell {
+  flex: 0 0 min(70vw, 28rem);
+}
+
+.card-lab-row--standard .card-lab-cell {
+  flex: 0 0 12.75rem;
+}
+
+.card-lab-row--thumbnail .card-lab-cell {
+  flex: 0 0 7.25rem;
+}
+
+.card-lab-card-stage {
+  width: 100%;
+}
+
+.card-lab-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 2.75rem;
+}
+
+.card-lab-meta strong {
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+}
+
+.card-lab-meta span,
+.card-lab-title-readout {
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.card-lab-title-readout {
+  min-height: 2.4rem;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.card-lab-row--thumbnail .card-lab-meta strong,
+.card-lab-row--thumbnail .card-lab-meta span,
+.card-lab-row--thumbnail .card-lab-title-readout {
+  font-size: 0.54rem;
+}
+
+@media (max-width: 42rem) {
+  .card-lab {
+    width: calc(100vw - 1rem);
+  }
+
+  .card-lab-row {
+    gap: var(--space-4);
+    padding: var(--space-3);
+  }
+
+  .card-lab-row--showcase .card-lab-cell {
+    flex-basis: min(84vw, 24rem);
+  }
+}
