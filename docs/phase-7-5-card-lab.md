@@ -27,7 +27,9 @@ If backend data fails, it uses the existing mock fallback.
 
 ## Sample selection
 
-The Card Lab sorts loaded cards by title length and chooses five samples:
+The Card Lab now builds two sample groups.
+
+Title-length samples:
 
 - shortest title
 - 25th percentile title length
@@ -35,9 +37,24 @@ The Card Lab sorts loaded cards by title length and chooses five samples:
 - 80th percentile title length
 - longest title
 
+Rarity samples:
+
+- common
+- uncommon
+- rare
+- legendary
+- mythic
+
+Rarity samples prefer real Library cards of each rarity. Missing rarities render as lab-only rarity overrides. If Mythic is missing, the lab first looks for a Legendary card and renders that card as Mythic for frame inspection only.
+
 ## Render sizes
 
-Each sample renders in three densities from the canonical CardFrame renderer:
+Each density renders both sample groups:
+
+- five title-length cards
+- five rarity cards
+
+Densities:
 
 - showcase
 - standard
@@ -48,8 +65,9 @@ Each sample renders in three densities from the canonical CardFrame renderer:
 After deployment:
 
 - Open `#/card-lab`.
-- Confirm five title-length samples load.
-- Confirm all three rows render live cards.
+- Confirm each density has a title-length row and a rarity row.
 - Confirm title text does not use ellipsis.
+- Confirm Common, Uncommon, Rare, Legendary, and Mythic frame treatments render.
+- Confirm lab-only rarity overrides do not write to D1.
 - Confirm Library cards do not show Locked badges.
 - Confirm CardFrame remains the only card renderer.
