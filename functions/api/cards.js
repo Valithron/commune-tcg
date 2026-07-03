@@ -1,14 +1,14 @@
 /* ============================================================================
    API Cards Endpoint
-   Phase 7 repair responsibility: read candidate card tables directly instead
-   of using SQLite internal schema tables, which D1 may reject.
+   Phase 7 repair responsibility: read real rows from the existing cards table,
+   parse card_json payloads, and normalize them for CardFrame. Performs no writes.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 
 const candidateTables = [
-  'card_templates',
   'cards',
+  'card_templates',
   'library_cards',
   'card_pool',
   'approved_cards',
@@ -25,7 +25,7 @@ const powColumns = ['pow', 'power', 'attack', 'atk', 'strength'];
 const defColumns = ['def', 'defense', 'health', 'hp'];
 const spdColumns = ['spd', 'speed', 'agility'];
 const flavorColumns = ['flavor', 'flavor_text', 'description', 'lore'];
-const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'art_key', 'object_key', 'r2_key'];
+const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
 const statusColumns = ['status', 'moderation_status', 'approved', 'is_approved', 'published'];
 
 function quoteIdentifier(name) {
@@ -46,8 +46,16 @@ function findColumn(columns, candidates) {
   return match ? lowerMap.get(match.toLowerCase()) : null;
 }
 
-function readValue(row, column, fallback = '') {
-  return column && row[column] !== undefined && row[column] !== null ? row[column] : fallback;
+function readValue(row, candidates, fallback = '') {
+  const keys = Array.isArray(candidates) ? candidates : [candidates];
+
+  for (const key of keys) {
+    if (key && row[key] !== undefined && row[key] !== null && row[key] !== '') {
+      return row[key];
+    }
+  }
+
+  return fallback;
 }
 
 function toNumber(value, fallback) {
@@ -70,6 +78,61 @@ function normalizeRarity(value) {
   return 'common';
 }
 
+function safeParseJson(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function isLikelyUrl(value) {
+  return /^https?:\/\//i.test(String(value || '')) || String(value || '').startsWith('/');
+}
+
+function imageUrlFromValue(value) {
+  const imageValue = String(value || '').trim();
+
+  if (!imageValue) {
+    return '';
+  }
+
+  if (isLikelyUrl(imageValue)) {
+    return imageValue;
+  }
+
+  return `/api/card-image?key=${encodeURIComponent(imageValue)}`;
+}
+
+function flattenCardPayload(row) {
+  const parsed = safeParseJson(row.card_json);
+  const payload = parsed?.card || parsed?.data || parsed || {};
+  const stats = payload.stats || payload.statBlock || {};
+
+  return {
+    ...row,
+    ...payload,
+    pow: payload.pow ?? payload.power ?? payload.attack ?? payload.atk ?? payload.strength ?? stats.pow ?? stats.power ?? stats.attack ?? stats.atk ?? stats.strength,
+    def: payload.def ?? payload.defense ?? payload.health ?? payload.hp ?? stats.def ?? stats.defense ?? stats.health ?? stats.hp,
+    spd: payload.spd ?? payload.speed ?? payload.agility ?? stats.spd ?? stats.speed ?? stats.agility,
+    image_key: payload.image_key ?? payload.imageKey ?? payload.image_path ?? payload.image ?? payload.image_url ?? payload.art_url ?? payload.art_key ?? payload.object_key ?? payload.r2_key,
+    flavor: payload.flavor ?? payload.flavor_text ?? payload.description ?? payload.lore,
+  };
+}
+
+function hasRecognizableCardData(row, columns) {
+  if (findColumn(columns, nameColumns)) {
+    return true;
+  }
+
+  const flattened = flattenCardPayload(row);
+  return Boolean(readValue(flattened, nameColumns, ''));
+}
+
 function isApprovedRow(row, statusColumn) {
   if (!statusColumn) return true;
 
@@ -83,37 +146,29 @@ function isApprovedRow(row, statusColumn) {
 }
 
 function normalizeRow(row, columns) {
+  const data = flattenCardPayload(row);
   const idColumn = findColumn(columns, idColumns);
-  const nameColumn = findColumn(columns, nameColumns);
-  const categoryColumn = findColumn(columns, categoryColumns);
-  const rarityColumn = findColumn(columns, rarityColumns);
-  const powColumn = findColumn(columns, powColumns);
-  const defColumn = findColumn(columns, defColumns);
-  const spdColumn = findColumn(columns, spdColumns);
-  const flavorColumn = findColumn(columns, flavorColumns);
-  const imageColumn = findColumn(columns, imageColumns);
-
-  const name = String(readValue(row, nameColumn, 'Unnamed Card'));
-  const id = String(readValue(row, idColumn, slugify(name)));
-  const imageKey = imageColumn ? String(readValue(row, imageColumn, '')) : '';
+  const name = String(readValue(data, nameColumns, 'Unnamed Card'));
+  const id = String(readValue(data, [idColumn, 'id', 'card_id', 'uuid', 'slug'], slugify(name)));
+  const imageValue = String(readValue(data, imageColumns, ''));
 
   return {
     id,
     name,
-    category: String(readValue(row, categoryColumn, 'Library')),
-    rarity: normalizeRarity(readValue(row, rarityColumn, 'common')),
-    symbol: '◆',
+    category: String(readValue(data, categoryColumns, 'Library')),
+    rarity: normalizeRarity(readValue(data, rarityColumns, 'common')),
+    symbol: String(readValue(data, ['symbol', 'icon'], '◆')),
     stats: {
-      pow: toNumber(readValue(row, powColumn, 1), 1),
-      def: toNumber(readValue(row, defColumn, 1), 1),
-      spd: toNumber(readValue(row, spdColumn, 1), 1),
+      pow: toNumber(readValue(data, powColumns, 1), 1),
+      def: toNumber(readValue(data, defColumns, 1), 1),
+      spd: toNumber(readValue(data, spdColumns, 1), 1),
     },
     owned: false,
     level: 1,
     copies: 0,
-    flavor: String(readValue(row, flavorColumn, 'A discovered Library card from the connected database.')),
-    imageKey,
-    imageUrl: imageKey ? `/api/card-image?key=${encodeURIComponent(imageKey)}` : '',
+    flavor: String(readValue(data, flavorColumns, 'A discovered Library card from the connected database.')),
+    imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
+    imageUrl: imageUrlFromValue(imageValue),
   };
 }
 
@@ -122,13 +177,13 @@ async function tryReadTable(env, tableName) {
     const result = await env.DB.prepare(`SELECT * FROM ${quoteIdentifier(tableName)} LIMIT 200`).all();
     const rows = result.results || [];
     const columns = rows[0] ? Object.keys(rows[0]) : [];
-    const nameColumn = findColumn(columns, nameColumns);
+    const usable = rows.some((row) => hasRecognizableCardData(row, columns));
 
     return {
       table: tableName,
       rows,
       columns,
-      usable: Boolean(nameColumn && rows.length),
+      usable,
       error: null,
     };
   } catch (error) {
@@ -180,6 +235,6 @@ export async function onRequestGet({ env }) {
     cards: [],
     columns: [],
     attempts,
-    warnings: ['No candidate card table returned rows with a recognizable name column.'],
+    warnings: ['No candidate card table returned rows with recognizable card data.'],
   });
 }
