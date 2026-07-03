@@ -1,2 +1,0 @@
-import{USERS,ensureGameSchema,json}from'../../_shared/game.js';
-export async function onRequestGet({env}){try{await ensureGameSchema(env);let r=await env.DB.prepare('SELECT id,pin_hash FROM users').all();let m=new Map((r.results||[]).map(x=>[x.id,!!x.pin_hash]));return json({users:USERS.map(u=>({...u,pinSet:m.get(u.id)||false}))})}catch(e){return json({error:e.message||'Failed to load accounts'},500)}}

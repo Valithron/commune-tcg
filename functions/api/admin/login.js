@@ -1,3 +1,0 @@
-import{createAdminSession,ensureAdminSchema}from'../../_shared/admin.js';
-import{json}from'../../_shared/game.js';
-export async function onRequestPost({request,env}){try{await ensureAdminSchema(env);if(!env.ADMIN_PASSWORD)return json({error:'ADMIN_PASSWORD is not configured in Cloudflare'},500);let body=await request.json().catch(()=>({}));let password=String(body.password||'');if(password!==env.ADMIN_PASSWORD)return json({error:'Incorrect admin password'},401);let s=await createAdminSession(env);return json({ok:true},200,{'set-cookie':s.cookie})}catch(e){return json({error:e.message||'Admin login failed'},500)}}

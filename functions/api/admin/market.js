@@ -1,4 +1,0 @@
-import{adminOnly}from'../../_shared/admin.js';
-import{CHARACTER_IDS,json}from'../../_shared/game.js';
-const defaults={cydney:13.4,sterling:12.3,ryan:11.2,gabi:10.1,cooper:9,kenly:7.9,ashley:6.8};
-export async function onRequestPost({request,env}){try{let block=await adminOnly(request,env);if(block)return block;let b=await request.json(),jobs=[];if(b.reset){for(let id of CHARACTER_IDS)jobs.push(env.DB.prepare("UPDATE market_prices SET price=?,updated_at=datetime('now') WHERE token_type=?").bind(defaults[id],id))}else if(b.prices&&typeof b.prices==='object'){for(let id of CHARACTER_IDS){let n=Number(b.prices[id]);if(Number.isFinite(n)&&n>=0)jobs.push(env.DB.prepare("UPDATE market_prices SET price=?,updated_at=datetime('now') WHERE token_type=?").bind(n,id))}}if(jobs.length)await env.DB.batch(jobs);return json({ok:true})}catch(e){return json({error:e.message||'Failed to update market'},500)}}
