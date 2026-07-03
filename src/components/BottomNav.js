@@ -1,12 +1,13 @@
 /* ============================================================================
    Bottom Navigation Component
-   Phase 1 responsibility: canonical mobile nav for the four starter routes.
-   Add future primary routes here only after route ownership is documented.
+   Phase 3 responsibility: canonical mobile nav for primary prototype loops.
+   Keep this list aligned with docs/route-map.md.
    ============================================================================ */
 
 const navItems = [
   { href: '#/home', route: '/home', icon: '⌂', label: 'Home' },
   { href: '#/pull', route: '/pull', icon: '✦', label: 'Pull' },
+  { href: '#/battle', route: '/battle', icon: '⚔', label: 'Battle' },
   { href: '#/vault', route: '/vault', icon: '▣', label: 'Vault' },
   { href: '#/library', route: '/library', icon: '◇', label: 'Library' },
 ];
