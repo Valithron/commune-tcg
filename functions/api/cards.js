@@ -1,6 +1,6 @@
 /* ============================================================================
    API Cards Endpoint
-   Phase 7 repair responsibility: read real rows from the existing cards table,
+   Phase 7.5 responsibility: read real rows from the existing cards table,
    parse card_json payloads, and normalize them for CardFrame. Performs no writes.
    ============================================================================ */
 
@@ -19,7 +19,11 @@ const candidateTables = [
 
 const idColumns = ['id', 'card_id', 'uuid', 'slug'];
 const nameColumns = ['name', 'card_name', 'title'];
-const categoryColumns = ['category', 'type', 'class', 'faction'];
+const characterColumns = ['character', 'character_id', 'characterId', 'cid', 'person', 'commune_member'];
+const typeColumns = ['type', 'card_type', 'cardType', 'role', 'battle_role', 'battleRole', 'faction', 'class'];
+const categoryColumns = ['category', 'class', 'faction'];
+const abilityColumns = ['ability', 'ability_text', 'abilityText', 'effect', 'mechanic'];
+const abilityIconColumns = ['ability_icon', 'abilityIcon', 'icon', 'symbol'];
 const rarityColumns = ['rarity', 'tier'];
 const powColumns = ['pow', 'power', 'attack', 'atk', 'strength'];
 const defColumns = ['def', 'defense', 'health', 'hp'];
@@ -72,8 +76,8 @@ function normalizeRarity(value) {
 
   if (rarity.includes('myth')) return 'mythic';
   if (rarity.includes('legend')) return 'legendary';
-  if (rarity.includes('rare')) return 'rare';
   if (rarity.includes('uncommon')) return 'uncommon';
+  if (rarity.includes('rare')) return 'rare';
 
   return 'common';
 }
@@ -121,6 +125,10 @@ function flattenCardPayload(row) {
     spd: payload.spd ?? payload.speed ?? payload.agility ?? stats.spd ?? stats.speed ?? stats.agility,
     image_key: payload.image_key ?? payload.imageKey ?? payload.image_path ?? payload.image ?? payload.image_url ?? payload.art_url ?? payload.art_key ?? payload.object_key ?? payload.r2_key,
     flavor: payload.flavor ?? payload.flavor_text ?? payload.description ?? payload.lore,
+    character: payload.character ?? payload.character_id ?? payload.characterId ?? payload.cid,
+    type: payload.type ?? payload.card_type ?? payload.cardType ?? payload.role ?? payload.battle_role ?? payload.battleRole ?? payload.faction ?? payload.class,
+    ability: payload.ability ?? payload.ability_text ?? payload.abilityText ?? payload.effect ?? payload.mechanic,
+    abilityIcon: payload.abilityIcon ?? payload.ability_icon ?? payload.icon,
   };
 }
 
@@ -155,6 +163,10 @@ function normalizeRow(row, columns) {
   return {
     id,
     name,
+    character: String(readValue(data, characterColumns, '')),
+    type: String(readValue(data, typeColumns, 'Type')),
+    ability: String(readValue(data, abilityColumns, '')),
+    abilityIcon: String(readValue(data, abilityIconColumns, '✦')),
     category: String(readValue(data, categoryColumns, 'Library')),
     rarity: normalizeRarity(readValue(data, rarityColumns, 'common')),
     symbol: String(readValue(data, ['symbol', 'icon'], '◆')),
