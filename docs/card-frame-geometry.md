@@ -32,13 +32,32 @@ Equivalent CSS variables:
 --card-stats-h: 7%;
 ```
 
+## Standard card override
+
+`src/styles/card-geometry-test.css` currently raises the standard card lower block only:
+
+```css
+.tcg-card--standard {
+  --card-nameplate-y: 77%;
+  --card-pills-y: 83%;
+}
+```
+
+This is intentionally reversible. Remove the import for `card-geometry-test.css` in `src/main.js` to return standard cards to the shared tuned geometry.
+
 ## Title fitting
 
 Card titles are constrained to one line for title-bearing densities.
 
-`src/components/cardTitleFit.js` runs once after each route render. It measures each non-thumbnail title and sets `--card-title-fit-size` only when the title needs to shrink to fit the available width.
+The current global title target is:
 
-It does not use a polling loop or a persistent observer.
+```text
+25 characters, including spaces
+```
+
+`src/components/cardTitleFit.js` runs after each route render. It measures each non-thumbnail title and sets `--card-title-fit-size` only when the title needs to shrink to fit the available width.
+
+It does not use a polling loop or a persistent observer. It also reruns once after web fonts are ready so title width is measured against the final font.
 
 Thumbnail cards do not show titles and are skipped by the fitter.
 
@@ -73,4 +92,4 @@ The previous layout did not have production percentage geometry for art, namepla
 - Geometry values are percentages so they can scale across showcase, standard, and thumbnail densities.
 - Pixel measurements in the tuner are visual aids only.
 - The Card Lab tuner remains the place to adjust geometry before promoting values to production CSS.
-- Title fitting is post-render and one-time per route render.
+- Title fitting is post-render and one-time per route render, plus one post-font-ready pass.
