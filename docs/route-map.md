@@ -58,7 +58,9 @@
 | `/api/schema-details` | `functions/api/schema-details.js` | Read D1 columns and indexes using PRAGMA metadata |
 | `/api/images` | `functions/api/images.js` | Read a small R2 object sample |
 | `/api/images-summary` | `functions/api/images-summary.js` | Summarize sampled R2 key patterns |
+| `/api/cards` | `functions/api/cards.js` | Read and normalize Library cards from D1 |
+| `/api/card-image?key=...` | `functions/api/card-image.js` | Read a single R2 card-art object by key |
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 6 adds read-only resource inventory, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 7 adds the first real read model for Library cards, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
