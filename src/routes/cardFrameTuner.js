@@ -4,7 +4,7 @@
    detail card. Produces CSS/JSON output only. No backend writes.
    ============================================================================ */
 
-const storageKey = 'commune-tcg-card-frame-tuner-v1';
+const storageKey = 'commune-tcg-card-frame-tuner-v2';
 
 const defaults = {
   art: { label: 'Art', x: 4, y: 3, w: 92, h: 66, minW: 34, minH: 24 },
@@ -133,6 +133,12 @@ function updateBoxLabels(stage, state) {
   const stageRect = stage.getBoundingClientRect();
   const card = stage.querySelector('.tcg-card');
   const cardRect = card?.getBoundingClientRect() || stageRect;
+
+  const cardFlag = stage.querySelector('[data-tuner-card-flag]');
+
+  if (cardFlag) {
+    cardFlag.textContent = `Card ${px(cardRect.width)} × ${px(cardRect.height)}`;
+  }
 
   Object.entries(state).forEach(([key, value]) => {
     const box = stage.querySelector(`[data-tuner-box="${key}"]`);
