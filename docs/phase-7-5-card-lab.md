@@ -46,6 +46,19 @@ This tests how card metadata will appear without cluttering the card face itself
 
 Unknown or not-yet-exposed fields display as `Not mapped yet`.
 
+## Frame tuner
+
+The detail preview card is also the Card Frame Tuner.
+
+The tuner provides draggable and resizable boxes for:
+
+- art
+- nameplate
+- pill row
+- stat row
+
+The tuner writes no backend data. It stores the current local preview values in browser `localStorage` and displays copyable CSS variables plus JSON for later promotion into the canonical card CSS.
+
 ## Sample selection
 
 The Card Lab now builds two sample groups.
@@ -87,6 +100,9 @@ After deployment:
 
 - Open `#/card-lab`.
 - Confirm the detail/stat sheet preview appears before all card rows.
+- Confirm the large detail card has draggable/resizable boxes for art, nameplate, pill row, and stat row.
+- Confirm the tuner output updates as boxes move.
+- Confirm reset, copy CSS, and copy JSON controls work.
 - Confirm the stat sheet includes identity, creator, art, gameplay, economy, progression, lore, moderation, and debug groups.
 - Confirm unknown fields display as `Not mapped yet`.
 - Confirm each density has a title-length row and a rarity row.
