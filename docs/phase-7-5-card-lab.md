@@ -32,9 +32,19 @@ Before the density rows, Card Lab renders a detail/stat sheet preview:
 - one showcase-size card
 - title and flavor/description copy outside the card face
 - expanded POW / DEF / SPD panels
-- rarity, title length, art status, data source, card id, and ownership context
+- identity fields
+- creator and provenance fields
+- art fields
+- gameplay fields
+- economy fields
+- ownership and progression fields
+- text and lore fields
+- moderation and visibility fields
+- data and debug fields
 
 This tests how card metadata will appear without cluttering the card face itself.
+
+Unknown or not-yet-exposed fields display as `Not mapped yet`.
 
 ## Sample selection
 
@@ -77,6 +87,8 @@ After deployment:
 
 - Open `#/card-lab`.
 - Confirm the detail/stat sheet preview appears before all card rows.
+- Confirm the stat sheet includes identity, creator, art, gameplay, economy, progression, lore, moderation, and debug groups.
+- Confirm unknown fields display as `Not mapped yet`.
 - Confirm each density has a title-length row and a rarity row.
 - Confirm title text does not use ellipsis.
 - Confirm Common, Uncommon, Rare, Legendary, and Mythic frame treatments render.
