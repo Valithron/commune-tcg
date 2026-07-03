@@ -4,13 +4,13 @@
    detail card. Produces CSS/JSON output only. No backend writes.
    ============================================================================ */
 
-const storageKey = 'commune-tcg-card-frame-tuner-v2';
+const storageKey = 'commune-tcg-card-frame-tuner-v3';
 
 const defaults = {
-  art: { label: 'Art', x: 4, y: 3, w: 92, h: 66, minW: 34, minH: 24 },
-  nameplate: { label: 'Nameplate', x: 4, y: 70, w: 92, h: 17, minW: 42, minH: 10 },
-  pills: { label: 'Pill row', x: 6, y: 82, w: 88, h: 5.8, minW: 42, minH: 4.8 },
-  stats: { label: 'Stats', x: 25, y: 91, w: 50, h: 7, minW: 28, minH: 5 },
+  art: { label: 'Art', x: 3, y: 2, w: 94, h: 92, minW: 34, minH: 24 },
+  nameplate: { label: 'Nameplate', x: 2, y: 82, w: 96, h: 16, minW: 42, minH: 10 },
+  pills: { label: 'Pill row', x: 5, y: 88, w: 90, h: 5, minW: 42, minH: 4.8 },
+  stats: { label: 'Stats', x: 25, y: 75, w: 50, h: 7, minW: 28, minH: 5 },
 };
 
 function cloneDefaults() {
