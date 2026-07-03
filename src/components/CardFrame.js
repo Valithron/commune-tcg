@@ -129,8 +129,8 @@ export function renderCardFrame(card, options = {}) {
       </div>
       <div class="card-nameplate">
         <h3 class="card-title">${escapeHtml(card.name)}</h3>
-        ${renderIdentityLine(card, rarity)}
       </div>
+      ${renderIdentityLine(card, rarity)}
       ${showStats ? `<div class="card-stat-row">${renderStats(card.stats)}</div>` : ''}
     </${tagName}>
   `;
