@@ -1,0 +1,65 @@
+# Card Frame Geometry
+
+## Current tuned geometry
+
+This geometry was promoted from Card Lab tuner output and rounded for centered production use.
+
+```text
+art:       x 3,  y 2,  w 94, h 92
+nameplate: x 2,  y 82, w 96, h 16
+pills:     x 5,  y 88, w 90, h 5
+stats:     x 25, y 75, w 50, h 7
+```
+
+Equivalent CSS variables:
+
+```css
+--card-art-x: 3%;
+--card-art-y: 2%;
+--card-art-w: 94%;
+--card-art-h: 92%;
+--card-nameplate-x: 2%;
+--card-nameplate-y: 82%;
+--card-nameplate-w: 96%;
+--card-nameplate-h: 16%;
+--card-pills-x: 5%;
+--card-pills-y: 88%;
+--card-pills-w: 90%;
+--card-pills-h: 5%;
+--card-stats-x: 25%;
+--card-stats-y: 75%;
+--card-stats-w: 50%;
+--card-stats-h: 7%;
+```
+
+## Source tuner values
+
+User-provided source values before rounding:
+
+```json
+{
+  "art": { "x": 2.9, "y": 1.6, "w": 94.9, "h": 92.4 },
+  "nameplate": { "x": 2.1, "y": 81.6, "w": 96.9, "h": 16.4 },
+  "pills": { "x": 5.5, "y": 87.6, "w": 90.1, "h": 4.8 },
+  "stats": { "x": 24.7, "y": 74.7, "w": 50, "h": 7 }
+}
+```
+
+## Previous layout
+
+Before this pass, cards used the natural flow layout in `src/styles/cards.css`:
+
+```text
+art block
+nameplate block
+pill row block
+centered stat footer at 50% width
+```
+
+The previous layout did not have production percentage geometry for art, nameplate, pill row, or stat row. To reverse the tuned pass, revert the commit that introduced this file and the matching `src/styles/cards.css` geometry changes.
+
+## Guardrails
+
+- Geometry values are percentages so they can scale across showcase, standard, and thumbnail densities.
+- Pixel measurements in the tuner are visual aids only.
+- The Card Lab tuner remains the place to adjust geometry before promoting values to production CSS.
