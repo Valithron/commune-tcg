@@ -7,34 +7,34 @@
 :root {
   color-scheme: dark;
 
-  --color-background: #092547;
-  --color-surface-lowest: #06182e;
-  --color-surface-low: #0b1f3b;
-  --color-surface: #102a4a;
-  --color-surface-high: #17375d;
-  --color-surface-highest: #23476f;
-  --color-surface-glass: rgba(7, 24, 46, 0.78);
+  --color-background: #1A1C2C;
+  --color-surface-lowest: #121421;
+  --color-surface-low: #1A1C2C;
+  --color-surface: #24273A;
+  --color-surface-high: #2E3148;
+  --color-surface-highest: #383C58;
+  --color-surface-glass: rgba(36, 39, 58, 0.78);
 
-  --color-text: #e5e1e3;
-  --color-text-muted: #c7c5cd;
-  --color-text-faint: #9aa4b3;
-  --color-outline: #45617f;
-  --color-outline-strong: #8da4bc;
+  --color-text: #E0E0F2;
+  --color-text-muted: #BFC0D8;
+  --color-text-faint: #8C8EA8;
+  --color-outline: #484C68;
+  --color-outline-strong: #8C8EA8;
 
-  --color-primary: #e9c349;
-  --color-primary-strong: #d4af37;
-  --color-primary-dark: #3c2f00;
-  --color-primary-glow: rgba(233, 195, 73, 0.35);
+  --color-primary: #D4AF37;
+  --color-primary-strong: #D4AF37;
+  --color-primary-dark: #2B2100;
+  --color-primary-glow: rgba(212, 175, 55, 0.35);
 
-  --color-functional: #8ccdff;
-  --color-functional-strong: #2d9cdb;
+  --color-functional: #2D9CDB;
+  --color-functional-strong: #2D9CDB;
   --color-danger: #ffb4ab;
   --color-success: #7ee0a1;
 
   --rarity-common: #b8bcc7;
   --rarity-uncommon: #60d394;
-  --rarity-rare: #5bbcff;
-  --rarity-legendary: #e9c349;
+  --rarity-rare: #2D9CDB;
+  --rarity-legendary: #D4AF37;
   --rarity-mythic: #b56cff;
 
   --font-display: 'Libre Caslon Text', Georgia, serif;

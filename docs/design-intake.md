@@ -36,6 +36,18 @@ Key traits:
 - Strict 2:3 card aspect ratio
 - Rarity glow based on card tier
 
+## Canonical palette
+
+The app palette is anchored to the Stitch color system:
+
+| Role | Hex | Use |
+|---|---|---|
+| Deep nocturnal navy | `#1A1C2C` | Primary app background |
+| Neutral surface | `#24273A` | Panels, cards, and hierarchy within the dark environment |
+| Secondary gold | `#D4AF37` | High-value actions, Legendary frames, and currency emphasis |
+| Tertiary blue | `#2D9CDB` | Active navigation, functional feedback, stats, and links |
+| Lavender-white text | `#E0E0F2` | Primary text, avoiding pure white eye strain |
+
 ## Canonical labels
 
 Updated-label screens are preferred over older wording.

@@ -101,7 +101,7 @@
   width: 14rem;
   height: 14rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(233, 195, 73, 0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.22), transparent 70%);
   pointer-events: none;
 }
 
@@ -152,14 +152,14 @@
 }
 
 .button-primary {
-  background: linear-gradient(135deg, #ffe088 0%, var(--color-primary) 45%, #b8962e 100%);
+  background: linear-gradient(135deg, #f1d36d 0%, var(--color-primary) 45%, #9f7f22 100%);
   color: var(--color-primary-dark);
   box-shadow: 0 0 1.5rem var(--color-primary-glow);
 }
 
 .button-secondary {
-  border-color: rgba(140, 205, 255, 0.35);
-  background: rgba(140, 205, 255, 0.08);
+  border-color: rgba(45, 156, 219, 0.35);
+  background: rgba(45, 156, 219, 0.08);
   color: var(--color-functional);
 }
 
@@ -246,7 +246,7 @@
   width: min(100%, var(--app-max-width));
   padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(6, 24, 46, 0.94);
+  background: rgba(18, 20, 33, 0.94);
   box-shadow: 0 -1rem 3rem rgba(0, 0, 0, 0.35);
   transform: translateX(-50%);
   backdrop-filter: blur(18px);
@@ -264,7 +264,7 @@
 }
 
 .bottom-nav-link[aria-current='page'] {
-  background: rgba(140, 205, 255, 0.1);
+  background: rgba(45, 156, 219, 0.1);
   color: var(--color-functional);
 }
 
@@ -278,7 +278,7 @@
   min-height: 18rem;
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(circle, rgba(233, 195, 73, 0.22), transparent 35%),
+    radial-gradient(circle, rgba(212, 175, 55, 0.22), transparent 35%),
     radial-gradient(circle at 60% 30%, rgba(181, 108, 255, 0.18), transparent 32%),
     linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
 }
@@ -288,11 +288,11 @@
   place-items: center;
   width: 11rem;
   height: 11rem;
-  border: 1px solid rgba(233, 195, 73, 0.45);
+  border: 1px solid rgba(212, 175, 55, 0.45);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 25%, #fff4bc, var(--color-primary) 30%, rgba(233, 195, 73, 0.08) 68%, transparent 72%);
+  background: radial-gradient(circle at 35% 25%, #f1d36d, var(--color-primary) 30%, rgba(212, 175, 55, 0.08) 68%, transparent 72%);
   color: var(--color-primary-dark);
-  box-shadow: 0 0 3rem rgba(233, 195, 73, 0.25);
+  box-shadow: 0 0 3rem rgba(212, 175, 55, 0.25);
   font-family: var(--font-heading);
   font-weight: 800;
   text-align: center;
