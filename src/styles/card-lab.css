@@ -138,9 +138,12 @@
   overflow-wrap: anywhere;
 }
 
-.card-lab-row--thumbnail .card-lab-meta strong,
-.card-lab-row--thumbnail .card-lab-meta span,
 .card-lab-row--thumbnail .card-lab-title-readout {
+  display: none;
+}
+
+.card-lab-row--thumbnail .card-lab-meta strong,
+.card-lab-row--thumbnail .card-lab-meta span {
   font-size: 0.54rem;
 }
 
