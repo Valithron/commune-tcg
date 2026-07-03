@@ -1,6 +1,6 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 4 responsibility: static admin overview and moderation queue shape.
+   Phase 5 responsibility: static admin overview and backend-readiness links.
    Real permissions, D1 mutations, and image moderation are deferred.
    ============================================================================ */
 
@@ -11,9 +11,10 @@ export function renderAdminDashboard() {
     <section class="hero-panel">
       <span class="section-kicker">Admin</span>
       <h2 class="hero-title">Control the pool.</h2>
-      <p class="hero-copy">This Phase 4 admin screen is static. It documents the future moderation workflow without touching live data.</p>
+      <p class="hero-copy">This admin screen is static. Phase 5 adds read-only backend status links without touching live game data.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Open Submit Flow</a>
+        <a class="button button-secondary" href="#/backend">Backend Status</a>
         <a class="button button-secondary" href="#/library">Back to Library</a>
       </div>
     </section>
