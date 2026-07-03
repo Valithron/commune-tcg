@@ -1,7 +1,7 @@
 /* ============================================================================
    Card Lab Styles
-   Purpose: break out of the mobile shell for live card-frame inspection at
-   showcase, standard, and thumbnail densities.
+   Purpose: responsive live card-frame inspection at showcase, standard, and
+   thumbnail densities without widening the whole app page.
    ============================================================================ */
 
 .card-lab-hero,
@@ -16,14 +16,17 @@
 .card-lab {
   display: grid;
   gap: var(--space-8);
-  width: min(96vw, 92rem);
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  transform: none;
 }
 
 .card-lab-section {
   display: grid;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .card-lab-section-heading {
@@ -37,32 +40,39 @@
 .card-lab-row {
   display: flex;
   align-items: start;
-  gap: var(--space-5);
-  padding: var(--space-4);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: var(--space-4);
+  padding: var(--space-3);
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.035);
+  scroll-padding: var(--space-3);
   scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card-lab-cell {
   display: grid;
   gap: var(--space-3);
   min-width: 0;
+  max-width: 100%;
   scroll-snap-align: start;
 }
 
 .card-lab-row--showcase .card-lab-cell {
-  flex: 0 0 min(70vw, 28rem);
+  flex: 0 0 clamp(16rem, 82vw, 24rem);
 }
 
 .card-lab-row--standard .card-lab-cell {
-  flex: 0 0 12.75rem;
+  flex: 0 0 clamp(10rem, 52vw, 12.75rem);
 }
 
 .card-lab-row--thumbnail .card-lab-cell {
-  flex: 0 0 7.25rem;
+  flex: 0 0 clamp(6rem, 32vw, 7.25rem);
 }
 
 .card-lab-card-stage {
@@ -104,17 +114,27 @@
   font-size: 0.54rem;
 }
 
-@media (max-width: 42rem) {
-  .card-lab {
-    width: calc(100vw - 1rem);
-  }
-
+@media (min-width: 62rem) {
   .card-lab-row {
-    gap: var(--space-4);
-    padding: var(--space-3);
+    gap: var(--space-5);
+    padding: var(--space-4);
   }
 
   .card-lab-row--showcase .card-lab-cell {
-    flex-basis: min(84vw, 24rem);
+    flex-basis: clamp(18rem, 34vw, 25rem);
+  }
+
+  .card-lab-row--standard .card-lab-cell {
+    flex-basis: 12.75rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .card-lab-row {
+    border-radius: var(--radius-lg);
+  }
+
+  .card-lab-row--showcase .card-lab-cell {
+    flex-basis: clamp(15rem, 78vw, 21rem);
   }
 }
