@@ -1,32 +1,51 @@
 /* ============================================================================
    Card Frame Tuner
-   Phase 7.6 responsibility: Card Lab-only visual tuning tool for the large
-   detail card. Produces CSS/JSON output only. No backend writes.
+   Phase 7.6 responsibility: Card Lab-only visual tuning tool for card frames.
+   Produces CSS/JSON output only. No backend writes.
    ============================================================================ */
 
-const storageKey = 'commune-tcg-card-frame-tuner-v3';
+const storageKeyPrefix = 'commune-tcg-card-frame-tuner';
 
-const defaults = {
+const baseDefaults = {
   art: { label: 'Art', x: 3, y: 2, w: 94, h: 92, minW: 34, minH: 24 },
   nameplate: { label: 'Nameplate', x: 2, y: 82, w: 96, h: 16, minW: 42, minH: 10 },
   pills: { label: 'Pill row', x: 5, y: 88, w: 90, h: 5, minW: 42, minH: 4.8 },
   stats: { label: 'Stats', x: 25, y: 75, w: 50, h: 7, minW: 28, minH: 5 },
 };
 
-function cloneDefaults() {
-  return JSON.parse(JSON.stringify(defaults));
+const stageDefaults = {
+  showcase: baseDefaults,
+  standard: {
+    ...baseDefaults,
+    nameplate: { ...baseDefaults.nameplate, y: 77 },
+    pills: { ...baseDefaults.pills, y: 83 },
+  },
+};
+
+function getDefaults(stageId) {
+  return stageDefaults[stageId] || baseDefaults;
+}
+
+function getStorageKey(stageId) {
+  return `${storageKeyPrefix}-${stageId || 'default'}-v1`;
+}
+
+function cloneDefaults(stageId) {
+  return JSON.parse(JSON.stringify(getDefaults(stageId)));
 }
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function loadState() {
+function loadState(stageId) {
+  const defaults = getDefaults(stageId);
+
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    const saved = JSON.parse(localStorage.getItem(getStorageKey(stageId)) || 'null');
 
     if (!saved || typeof saved !== 'object') {
-      return cloneDefaults();
+      return cloneDefaults(stageId);
     }
 
     return Object.fromEntries(Object.entries(defaults).map(([key, fallback]) => [
@@ -34,13 +53,13 @@ function loadState() {
       { ...fallback, ...(saved[key] || {}) },
     ]));
   } catch {
-    return cloneDefaults();
+    return cloneDefaults(stageId);
   }
 }
 
-function saveState(state) {
+function saveState(stageId, state) {
   try {
-    localStorage.setItem(storageKey, JSON.stringify(state));
+    localStorage.setItem(getStorageKey(stageId), JSON.stringify(state));
   } catch {
     // Local tuning persistence is optional.
   }
@@ -79,12 +98,18 @@ function centeredFlags(value) {
   return flags;
 }
 
-function toCssVars(state) {
+function cssVarPrefix(stageId) {
+  return stageId === 'standard' ? 'standard-card' : 'showcase-card';
+}
+
+function toCssVars(state, stageId) {
+  const prefix = cssVarPrefix(stageId);
+
   return Object.entries(state).flatMap(([key, value]) => [
-    `--tuner-${key}-x: ${round(value.x)}%;`,
-    `--tuner-${key}-y: ${round(value.y)}%;`,
-    `--tuner-${key}-w: ${round(value.w)}%;`,
-    `--tuner-${key}-h: ${round(value.h)}%;`,
+    `--${prefix}-${key}-x: ${round(value.x)}%;`,
+    `--${prefix}-${key}-y: ${round(value.y)}%;`,
+    `--${prefix}-${key}-w: ${round(value.w)}%;`,
+    `--${prefix}-${key}-h: ${round(value.h)}%;`,
   ]).join('\n');
 }
 
@@ -110,12 +135,12 @@ function renderBox(key, label) {
   `;
 }
 
-function renderPanel() {
+function renderPanel(title) {
   return `
     <section class="card-frame-tuner-panel" data-card-frame-tuner-panel>
       <div>
         <span class="section-kicker">Card Maker</span>
-        <h3 class="card-lab-row-title">Drag the boxes.</h3>
+        <h3 class="card-lab-row-title">${title}</h3>
         <p class="body-copy">Move or resize the art, nameplate, pill row, and stat row. Pixel labels are only for visual feedback; final implementation should use the percentage ratios.</p>
       </div>
       <div class="card-frame-tuner-actions">
@@ -129,7 +154,7 @@ function renderPanel() {
   `;
 }
 
-function updateBoxLabels(stage, state) {
+function updateBoxLabels(stage, panel, state, defaults) {
   const stageRect = stage.getBoundingClientRect();
   const card = stage.querySelector('.tcg-card');
   const cardRect = card?.getBoundingClientRect() || stageRect;
@@ -154,7 +179,7 @@ function updateBoxLabels(stage, state) {
     box?.classList.toggle('is-centered-y', flags.includes('center Y'));
   });
 
-  const readout = document.querySelector('[data-tuner-readout]');
+  const readout = panel.querySelector('[data-tuner-readout]');
 
   if (readout) {
     const artDims = dimensionsFor(cardRect, state.art);
@@ -172,7 +197,7 @@ function updateBoxLabels(stage, state) {
   }
 }
 
-function applyState(stage, state) {
+function applyState(stage, panel, state, stageId, defaults) {
   Object.entries(state).forEach(([key, value]) => {
     stage.style.setProperty(`--tuner-${key}-x`, `${round(value.x)}%`);
     stage.style.setProperty(`--tuner-${key}-y`, `${round(value.y)}%`);
@@ -180,20 +205,20 @@ function applyState(stage, state) {
     stage.style.setProperty(`--tuner-${key}-h`, `${round(value.h)}%`);
   });
 
-  updateBoxLabels(stage, state);
+  updateBoxLabels(stage, panel, state, defaults);
 
-  const output = document.querySelector('[data-tuner-output]');
+  const output = panel.querySelector('[data-tuner-output]');
 
   if (output) {
-    output.textContent = `${toCssVars(state)}\n\n${toJson(state)}`;
+    output.textContent = `${toCssVars(state, stageId)}\n\n${toJson(state)}`;
   }
 }
 
-function bindCopyButtons(state) {
-  document.querySelectorAll('[data-tuner-copy]').forEach((button) => {
+function bindCopyButtons(panel, state, stageId) {
+  panel.querySelectorAll('[data-tuner-copy]').forEach((button) => {
     button.addEventListener('click', async () => {
       const mode = button.getAttribute('data-tuner-copy');
-      const text = mode === 'json' ? toJson(state) : toCssVars(state);
+      const text = mode === 'json' ? toJson(state) : toCssVars(state, stageId);
 
       try {
         await navigator.clipboard.writeText(text);
@@ -203,36 +228,36 @@ function bindCopyButtons(state) {
           button.textContent = original;
         }, 900);
       } catch {
-        const output = document.querySelector('[data-tuner-output]');
+        const output = panel.querySelector('[data-tuner-output]');
         output?.focus();
       }
     });
   });
 }
 
-function bindReset(stage, state) {
-  const button = document.querySelector('[data-tuner-reset]');
+function bindReset(stage, panel, state, stageId, defaults) {
+  const button = panel.querySelector('[data-tuner-reset]');
 
   button?.addEventListener('click', () => {
-    const resetState = cloneDefaults();
+    const resetState = cloneDefaults(stageId);
     Object.keys(state).forEach((key) => {
       state[key] = resetState[key];
     });
-    saveState(state);
-    applyState(stage, state);
+    saveState(stageId, state);
+    applyState(stage, panel, state, stageId, defaults);
   });
 }
 
-function bindResizeObserver(stage, state) {
+function bindResizeObserver(stage, panel, state, defaults) {
   if (!window.ResizeObserver) {
     return;
   }
 
-  const observer = new ResizeObserver(() => updateBoxLabels(stage, state));
+  const observer = new ResizeObserver(() => updateBoxLabels(stage, panel, state, defaults));
   observer.observe(stage);
 }
 
-function bindDrag(stage, state) {
+function bindDrag(stage, panel, state, stageId, defaults) {
   stage.addEventListener('pointerdown', (event) => {
     const box = event.target.closest('[data-tuner-box]');
 
@@ -267,12 +292,12 @@ function bindDrag(stage, state) {
       }
 
       state[key] = next;
-      applyState(stage, state);
+      applyState(stage, panel, state, stageId, defaults);
     }
 
     function handleEnd(endEvent) {
       box.classList.remove('is-dragging');
-      saveState(state);
+      saveState(stageId, state);
       stage.releasePointerCapture?.(endEvent.pointerId);
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleEnd);
@@ -285,11 +310,12 @@ function bindDrag(stage, state) {
   });
 }
 
-export function initCardFrameTuner(root = document) {
-  const stage = root.querySelector('.card-lab-detail-card-stage');
-  const detailSheet = root.querySelector('.card-lab-detail-sheet');
+function initStage(stage) {
+  const stageId = stage.dataset.tunerId || 'showcase';
+  const panelHost = document.querySelector(`[data-card-frame-tuner-panel-target="${stageId}"]`);
+  const defaults = getDefaults(stageId);
 
-  if (!stage || !detailSheet || stage.dataset.cardFrameTunerReady === 'true') {
+  if (!panelHost || stage.dataset.cardFrameTunerReady === 'true') {
     return;
   }
 
@@ -303,12 +329,18 @@ export function initCardFrameTuner(root = document) {
       ${Object.entries(defaults).map(([key, value]) => renderBox(key, value.label)).join('')}
     </div>
   `);
-  detailSheet.insertAdjacentHTML('afterbegin', renderPanel());
+  panelHost.insertAdjacentHTML('afterbegin', renderPanel(stage.dataset.tunerTitle || 'Drag the boxes.'));
 
-  const state = loadState();
-  applyState(stage, state);
-  bindDrag(stage, state);
-  bindCopyButtons(state);
-  bindReset(stage, state);
-  bindResizeObserver(stage, state);
+  const panel = panelHost.querySelector('[data-card-frame-tuner-panel]');
+  const state = loadState(stageId);
+
+  applyState(stage, panel, state, stageId, defaults);
+  bindDrag(stage, panel, state, stageId, defaults);
+  bindCopyButtons(panel, state, stageId);
+  bindReset(stage, panel, state, stageId, defaults);
+  bindResizeObserver(stage, panel, state, defaults);
+}
+
+export function initCardFrameTuner(root = document) {
+  root.querySelectorAll('[data-card-frame-tuner-stage]').forEach(initStage);
 }
