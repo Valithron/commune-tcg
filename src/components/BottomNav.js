@@ -14,7 +14,7 @@ const navItems = [
 
 export function renderBottomNav(activeRoute) {
   return `
-    <nav class="bottom-nav" aria-label="Primary navigation">
+    <nav class="bottom-nav" style="grid-template-columns: repeat(${navItems.length}, minmax(0, 1fr));" aria-label="Primary navigation">
       ${navItems.map((item) => `
         <a class="bottom-nav-link" href="${item.href}" ${activeRoute === item.route ? 'aria-current="page"' : ''}>
           <span class="nav-icon" aria-hidden="true">${item.icon}</span>
