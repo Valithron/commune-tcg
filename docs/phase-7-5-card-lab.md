@@ -57,6 +57,18 @@ The tuner provides draggable and resizable boxes for:
 - pill row
 - stat row
 
+The pill row is independent from the nameplate so those regions can be tuned separately.
+
+The tuner adds:
+
+- pixel readout flags on each editable box
+- a whole-card pixel readout
+- card, art, nameplate, pill row, and stat row size chips in the control panel
+- horizontal and vertical center guide lines
+- centered-state labels when a box is aligned near center
+
+The pixel numbers are only visual aids. The final implementation should use the percentage ratios emitted by the tuner.
+
 The tuner writes no backend data. It stores the current local preview values in browser `localStorage` and displays copyable CSS variables plus JSON for later promotion into the canonical card CSS.
 
 ## Sample selection
@@ -101,6 +113,10 @@ After deployment:
 - Open `#/card-lab`.
 - Confirm the detail/stat sheet preview appears before all card rows.
 - Confirm the large detail card has draggable/resizable boxes for art, nameplate, pill row, and stat row.
+- Confirm the pill row moves independently from the nameplate.
+- Confirm each editable box displays pixel width and height.
+- Confirm the control panel displays card, art, nameplate, pill, and stat dimensions.
+- Confirm center guide lines render.
 - Confirm the tuner output updates as boxes move.
 - Confirm reset, copy CSS, and copy JSON controls work.
 - Confirm the stat sheet includes identity, creator, art, gameplay, economy, progression, lore, moderation, and debug groups.
