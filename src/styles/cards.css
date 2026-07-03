@@ -64,6 +64,13 @@
     linear-gradient(145deg, #202638, #11131a 68%);
 }
 
+.card-art-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .card-art-symbol {
   color: color-mix(in srgb, var(--rarity-color) 82%, white 18%);
   font-size: clamp(2.2rem, 14vw, 4rem);
