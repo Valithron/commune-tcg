@@ -1,14 +1,14 @@
 # Commune TCG Gacha Prototype
 
-Phase 4 completes the static front-end foundation for the gacha version of Commune TCG.
+Phase 5 adds the first safe backend bridge for the gacha version of Commune TCG.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `4 - static submit and admin flows`
-- Data source: local mock data only
-- Backend: contracts drafted, not connected yet
-- Deployment target: Cloudflare Pages-compatible static app
+- Phase: `5 - read-only backend diagnostics`
+- Data source: local mock data for gameplay screens
+- Backend: read-only diagnostic endpoints added, real game writes not connected yet
+- Deployment target: Cloudflare Pages-compatible app with Pages Functions
 
 ## Completed scope
 
@@ -18,15 +18,18 @@ Phase 2 added pull confirmation, pull results, Vault card detail, Library card d
 
 Phase 3 added Battle hub, Encounter selection, Squad builder, Battle results, mock encounter data, and scoped battle styles.
 
-Phase 4 adds:
+Phase 4 added Submit Card, Admin Dashboard, mock admin data, and backend contract docs.
 
-- Submit Card route
-- Admin Dashboard route
-- Mock admin and moderation data
-- Scoped Submit/Admin CSS
-- Home and Library entry points for Phase 4 routes
-- Backend contract draft for future D1/R2 implementation
-- Phase 4 flow and verification docs
+Phase 5 adds:
+
+- Cloudflare Pages Function JSON helper
+- `/api/health` binding check endpoint
+- `/api/schema` read-only D1 schema endpoint
+- `/api/images` read-only R2 object sample endpoint
+- Front-end API client shell
+- Backend Status route
+- Admin link to Backend Status
+- Phase 5 flow and verification docs
 
 ## Active routes
 
@@ -47,7 +50,16 @@ Phase 4 adds:
 #/library/card/:cardId
 #/submit
 #/admin
+#/backend
 #/shop
+```
+
+## Active API diagnostics
+
+```text
+/api/health
+/api/schema
+/api/images
 ```
 
 ## Commands
@@ -62,11 +74,15 @@ npm run preview
 ## Project structure
 
 ```text
+functions/
+  _shared/                Shared Pages Function helpers
+  api/                    Read-only diagnostic endpoints
 src/
   main.js                 App bootstrap, hash router, route params, query parsing
   components/             Reusable UI pieces
   data/                   Mock data for current static flows
   routes/                 Screen-level route renderers
+  services/               Front-end API helper shell
   styles/                 Design tokens, base CSS, components, cards, battle, phase4
 docs/
   architecture.md
@@ -80,6 +96,8 @@ docs/
   phase-3-verification.md
   phase-4-flow.md
   phase-4-verification.md
+  phase-5-flow.md
+  phase-5-verification.md
   route-map.md
 ```
 
@@ -92,6 +110,7 @@ docs/
 5. Prefer mock data until the front-end flow stabilizes.
 6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
 7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
+8. Keep diagnostic API endpoints read-only until schema mapping is complete.
 
 ## Canonical language
 
@@ -108,11 +127,11 @@ docs/
 
 ## Backend note
 
-Cloudflare bindings are documented but unused in the static prototype:
+Cloudflare bindings are documented and now exposed through safe diagnostic endpoints:
 
 ```text
 env.DB
 env.CARD_IMAGES
 ```
 
-Real backend implementation should begin from `docs/backend-contracts.md`.
+Real backend implementation should still begin from `docs/backend-contracts.md` after `/api/schema` and `/api/images` confirm the existing resource shapes.
