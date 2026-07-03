@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a planning draft. Phase 5 adds read-only diagnostic endpoints only.
+This document is a planning draft. Phase 6 adds read-only resource inventory endpoints only.
 
 ## Existing Cloudflare bindings
 
@@ -9,7 +9,7 @@ This document is a planning draft. Phase 5 adds read-only diagnostic endpoints o
 | `env.DB` | D1 database | `com-tcg-db` |
 | `env.CARD_IMAGES` | R2 bucket | `com-tcg-images` |
 
-## Phase 5 diagnostic endpoints
+## Read-only diagnostic and inventory endpoints
 
 These endpoints are implemented as Cloudflare Pages Functions and are intentionally read-only.
 
@@ -17,7 +17,9 @@ These endpoints are implemented as Cloudflare Pages Functions and are intentiona
 |---|---|---|
 | `GET` | `/api/health` | Confirm Pages Function runtime and binding availability |
 | `GET` | `/api/schema` | List D1 table names from `sqlite_master` |
+| `GET` | `/api/schema-details` | List D1 table columns and indexes using PRAGMA metadata |
 | `GET` | `/api/images` | List a small sample of R2 object metadata |
+| `GET` | `/api/images-summary` | Summarize sampled R2 key prefixes and file extensions |
 
 ## Core tables to confirm before implementation
 
@@ -127,4 +129,5 @@ These are route contracts to design before coding real writes.
 - Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
 - R2 image keys should be stored in D1, not raw public URLs.
 - Admin routes need authentication and authorization before any real writes exist.
-- Diagnostic endpoints must stay read-only until schema and auth are explicit.
+- Diagnostic and inventory endpoints must stay read-only until schema and auth are explicit.
+- Phase 7 should not start until `docs/cloudflare-resource-inventory.md` contains deployed endpoint findings.
