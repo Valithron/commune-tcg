@@ -72,7 +72,8 @@ function findCharacter(card) {
 }
 
 function getCardType(card) {
-  return titleCase(card.type || card.cardType || card.card_type || card.battleRole || card.battle_role || 'Type');
+  const type = card.type || card.cardType || card.card_type || card.battleRole || card.battle_role || card.category || 'Type';
+  return titleCase(type);
 }
 
 function getAbilityIcon(card) {
