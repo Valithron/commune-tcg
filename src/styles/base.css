@@ -18,9 +18,9 @@ body {
   color: var(--color-text);
   font-family: var(--font-body);
   background:
-    radial-gradient(circle at 20% -10%, rgba(140, 205, 255, 0.18), transparent 32rem),
+    radial-gradient(circle at 20% -10%, rgba(140, 205, 255, 0.2), transparent 32rem),
     radial-gradient(circle at 90% 10%, rgba(233, 195, 73, 0.12), transparent 24rem),
-    linear-gradient(180deg, #171723 0%, var(--color-background) 48%, #0f1014 100%);
+    linear-gradient(180deg, #0d2c53 0%, var(--color-background) 48%, #041326 100%);
 }
 
 button,

@@ -7,19 +7,19 @@
 :root {
   color-scheme: dark;
 
-  --color-background: #131314;
-  --color-surface-lowest: #0e0e0f;
-  --color-surface-low: #1c1b1d;
-  --color-surface: #201f21;
-  --color-surface-high: #2a2a2b;
-  --color-surface-highest: #353436;
-  --color-surface-glass: rgba(32, 31, 33, 0.76);
+  --color-background: #092547;
+  --color-surface-lowest: #06182e;
+  --color-surface-low: #0b1f3b;
+  --color-surface: #102a4a;
+  --color-surface-high: #17375d;
+  --color-surface-highest: #23476f;
+  --color-surface-glass: rgba(7, 24, 46, 0.78);
 
   --color-text: #e5e1e3;
   --color-text-muted: #c7c5cd;
-  --color-text-faint: #919097;
-  --color-outline: #46464c;
-  --color-outline-strong: #919097;
+  --color-text-faint: #9aa4b3;
+  --color-outline: #45617f;
+  --color-outline-strong: #8da4bc;
 
   --color-primary: #e9c349;
   --color-primary-strong: #d4af37;
