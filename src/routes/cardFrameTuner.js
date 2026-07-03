@@ -9,7 +9,7 @@ const storageKey = 'commune-tcg-card-frame-tuner-v1';
 const defaults = {
   art: { label: 'Art', x: 4, y: 3, w: 92, h: 66, minW: 34, minH: 24 },
   nameplate: { label: 'Nameplate', x: 4, y: 70, w: 92, h: 17, minW: 42, minH: 10 },
-  pills: { label: 'Pill row', x: 3, y: 68, w: 94, h: 24, minW: 42, minH: 12 },
+  pills: { label: 'Pill row', x: 6, y: 82, w: 88, h: 5.8, minW: 42, minH: 4.8 },
   stats: { label: 'Stats', x: 25, y: 91, w: 50, h: 7, minW: 28, minH: 5 },
 };
 
@@ -50,6 +50,35 @@ function round(value) {
   return Math.round(value * 10) / 10;
 }
 
+function px(value) {
+  return `${Math.round(value)}px`;
+}
+
+function dimensionsFor(stageRect, value) {
+  return {
+    x: (value.x / 100) * stageRect.width,
+    y: (value.y / 100) * stageRect.height,
+    w: (value.w / 100) * stageRect.width,
+    h: (value.h / 100) * stageRect.height,
+  };
+}
+
+function centeredFlags(value) {
+  const centerX = value.x + (value.w / 2);
+  const centerY = value.y + (value.h / 2);
+  const flags = [];
+
+  if (Math.abs(centerX - 50) <= 0.75) {
+    flags.push('center X');
+  }
+
+  if (Math.abs(centerY - 50) <= 0.75) {
+    flags.push('center Y');
+  }
+
+  return flags;
+}
+
 function toCssVars(state) {
   return Object.entries(state).flatMap(([key, value]) => [
     `--tuner-${key}-x: ${round(value.x)}%;`,
@@ -74,7 +103,7 @@ function toJson(state) {
 function renderBox(key, label) {
   return `
     <div class="frame-tuner-box frame-tuner-box--${key}" data-tuner-box="${key}">
-      <span>${label}</span>
+      <span data-tuner-box-label>${label}</span>
       <i class="frame-tuner-anchor frame-tuner-anchor--move" data-tuner-action="move" aria-hidden="true"></i>
       <i class="frame-tuner-anchor frame-tuner-anchor--resize" data-tuner-action="resize" aria-hidden="true"></i>
     </div>
@@ -87,16 +116,54 @@ function renderPanel() {
       <div>
         <span class="section-kicker">Card Maker</span>
         <h3 class="card-lab-row-title">Drag the boxes.</h3>
-        <p class="body-copy">Move or resize the art, nameplate, pill row, and stat row. Values are responsive percentages and only affect this Card Lab preview.</p>
+        <p class="body-copy">Move or resize the art, nameplate, pill row, and stat row. Pixel labels are only for visual feedback; final implementation should use the percentage ratios.</p>
       </div>
       <div class="card-frame-tuner-actions">
         <button class="button button-secondary" type="button" data-tuner-reset>Reset</button>
         <button class="button button-secondary" type="button" data-tuner-copy="css">Copy CSS</button>
         <button class="button button-secondary" type="button" data-tuner-copy="json">Copy JSON</button>
       </div>
+      <div class="card-frame-tuner-readout" data-tuner-readout></div>
       <pre class="card-frame-tuner-output" data-tuner-output></pre>
     </section>
   `;
+}
+
+function updateBoxLabels(stage, state) {
+  const stageRect = stage.getBoundingClientRect();
+  const card = stage.querySelector('.tcg-card');
+  const cardRect = card?.getBoundingClientRect() || stageRect;
+
+  Object.entries(state).forEach(([key, value]) => {
+    const box = stage.querySelector(`[data-tuner-box="${key}"]`);
+    const label = box?.querySelector('[data-tuner-box-label]');
+    const dims = dimensionsFor(cardRect, value);
+    const flags = centeredFlags(value);
+
+    if (label) {
+      label.textContent = `${defaults[key].label} ${px(dims.w)} × ${px(dims.h)}${flags.length ? ` · ${flags.join(' · ')}` : ''}`;
+    }
+
+    box?.classList.toggle('is-centered-x', flags.includes('center X'));
+    box?.classList.toggle('is-centered-y', flags.includes('center Y'));
+  });
+
+  const readout = document.querySelector('[data-tuner-readout]');
+
+  if (readout) {
+    const artDims = dimensionsFor(cardRect, state.art);
+    const nameplateDims = dimensionsFor(cardRect, state.nameplate);
+    const pillsDims = dimensionsFor(cardRect, state.pills);
+    const statsDims = dimensionsFor(cardRect, state.stats);
+
+    readout.innerHTML = `
+      <span>Card ${px(cardRect.width)} × ${px(cardRect.height)}</span>
+      <span>Art ${px(artDims.w)} × ${px(artDims.h)}</span>
+      <span>Nameplate ${px(nameplateDims.w)} × ${px(nameplateDims.h)}</span>
+      <span>Pills ${px(pillsDims.w)} × ${px(pillsDims.h)}</span>
+      <span>Stats ${px(statsDims.w)} × ${px(statsDims.h)}</span>
+    `;
+  }
 }
 
 function applyState(stage, state) {
@@ -106,6 +173,8 @@ function applyState(stage, state) {
     stage.style.setProperty(`--tuner-${key}-w`, `${round(value.w)}%`);
     stage.style.setProperty(`--tuner-${key}-h`, `${round(value.h)}%`);
   });
+
+  updateBoxLabels(stage, state);
 
   const output = document.querySelector('[data-tuner-output]');
 
@@ -146,6 +215,15 @@ function bindReset(stage, state) {
     saveState(state);
     applyState(stage, state);
   });
+}
+
+function bindResizeObserver(stage, state) {
+  if (!window.ResizeObserver) {
+    return;
+  }
+
+  const observer = new ResizeObserver(() => updateBoxLabels(stage, state));
+  observer.observe(stage);
 }
 
 function bindDrag(stage, state) {
@@ -213,6 +291,9 @@ export function initCardFrameTuner(root = document) {
   stage.classList.add('card-frame-tuner');
   stage.insertAdjacentHTML('beforeend', `
     <div class="frame-tuner-overlay" aria-hidden="true">
+      <div class="frame-tuner-card-flag" data-tuner-card-flag>Card</div>
+      <div class="frame-tuner-center-line frame-tuner-center-line--x"></div>
+      <div class="frame-tuner-center-line frame-tuner-center-line--y"></div>
       ${Object.entries(defaults).map(([key, value]) => renderBox(key, value.label)).join('')}
     </div>
   `);
@@ -223,4 +304,5 @@ export function initCardFrameTuner(root = document) {
   bindDrag(stage, state);
   bindCopyButtons(state);
   bindReset(stage, state);
+  bindResizeObserver(stage, state);
 }
