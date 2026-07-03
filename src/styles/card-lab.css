@@ -1,8 +1,18 @@
 /* ============================================================================
    Card Lab Styles
-   Purpose: responsive live card-frame inspection at showcase, standard, and
-   thumbnail densities without widening the whole app page.
+   Purpose: desktop-responsive live card-frame inspection at showcase, standard,
+   and thumbnail densities without changing normal mobile game screens.
    ============================================================================ */
+
+.app-shell:has(.card-lab) {
+  width: min(100%, 88rem);
+}
+
+@media (min-width: 48rem) {
+  .app-shell:has(.card-lab) {
+    padding-inline: var(--space-6);
+  }
+}
 
 .card-lab-hero,
 .card-lab-summary {
@@ -64,7 +74,7 @@
 }
 
 .card-lab-row--showcase .card-lab-cell {
-  flex: 0 0 clamp(16rem, 82vw, 24rem);
+  flex: 0 0 clamp(15rem, 78vw, 24rem);
 }
 
 .card-lab-row--standard .card-lab-cell {
@@ -121,11 +131,21 @@
   }
 
   .card-lab-row--showcase .card-lab-cell {
-    flex-basis: clamp(18rem, 34vw, 25rem);
+    flex-basis: clamp(17rem, 21vw, 22rem);
   }
 
   .card-lab-row--standard .card-lab-cell {
-    flex-basis: 12.75rem;
+    flex-basis: clamp(10.75rem, 13vw, 13.5rem);
+  }
+
+  .card-lab-row--thumbnail .card-lab-cell {
+    flex-basis: clamp(6rem, 7.5vw, 7.5rem);
+  }
+}
+
+@media (min-width: 80rem) {
+  .card-lab-row--showcase .card-lab-cell {
+    flex-basis: clamp(18rem, 18vw, 23rem);
   }
 }
 
