@@ -1,13 +1,13 @@
 # Commune TCG Gacha Prototype
 
-Phase 6 adds a read-only Cloudflare resource inventory layer for the gacha version of Commune TCG.
+Phase 7 adds the first read-only real Library model for the gacha version of Commune TCG.
 
 ## Current status
 
 - Branch: `Gacha`
-- Phase: `6 - Cloudflare resource inventory`
-- Data source: local mock data for gameplay screens
-- Backend: read-only diagnostic and inventory endpoints added, real game writes not connected yet
+- Phase: `7 - real Library read model`
+- Data source: Library prefers read-only backend data with mock fallback; other gameplay screens remain mock data
+- Backend: read-only Library endpoint added, real game writes not connected yet
 - Deployment target: Cloudflare Pages-compatible app with Pages Functions
 
 ## Completed scope
@@ -22,14 +22,17 @@ Phase 4 added Submit Card, Admin Dashboard, mock admin data, and backend contrac
 
 Phase 5 added Cloudflare Pages Function diagnostics for health, D1 table list, and R2 object sample.
 
-Phase 6 adds:
+Phase 6 added resource inventory endpoints and documentation.
 
-- `/api/schema-details` read-only D1 table column/index inventory endpoint
-- `/api/images-summary` read-only R2 key-pattern summary endpoint
-- Resource Inventory route
-- Backend Status link to Resource Inventory
-- Cloudflare resource inventory document
-- Phase 6 flow and verification docs
+Phase 7 adds:
+
+- `/api/cards` read-only Library card endpoint
+- `/api/card-image` read-only R2 image serving endpoint
+- Library data source with backend preference and mock fallback
+- Async route rendering support
+- Library and Library Detail routes using the new read model
+- CardFrame support for real card art images
+- Phase 7 flow and verification docs
 
 ## Active routes
 
@@ -55,7 +58,7 @@ Phase 6 adds:
 #/shop
 ```
 
-## Active API diagnostics and inventory endpoints
+## Active API diagnostics, inventory, and read endpoints
 
 ```text
 /api/health
@@ -63,6 +66,8 @@ Phase 6 adds:
 /api/schema-details
 /api/images
 /api/images-summary
+/api/cards
+/api/card-image?key=<r2-object-key>
 ```
 
 ## Commands
@@ -79,11 +84,11 @@ npm run preview
 ```text
 functions/
   _shared/                Shared Pages Function helpers
-  api/                    Read-only diagnostic and inventory endpoints
+  api/                    Read-only diagnostic, inventory, and Library endpoints
 src/
-  main.js                 App bootstrap, hash router, route params, query parsing
+  main.js                 App bootstrap, hash router, route params, async route rendering
   components/             Reusable UI pieces
-  data/                   Mock data for current static flows
+  data/                   Mock data and Library data source
   routes/                 Screen-level route renderers
   services/               Front-end API helper shell
   styles/                 Design tokens, base CSS, components, cards, battle, phase4
@@ -104,6 +109,8 @@ docs/
   phase-5-verification.md
   phase-6-flow.md
   phase-6-verification.md
+  phase-7-flow.md
+  phase-7-verification.md
   route-map.md
 ```
 
@@ -113,10 +120,10 @@ docs/
 2. Keep card rendering centralized in `src/components/CardFrame.js`.
 3. Keep design values in `src/styles/tokens.css`.
 4. Update README and docs when behavior, routes, architecture, or phase scope changes.
-5. Prefer mock data until the front-end flow stabilizes.
+5. Prefer mock fallbacks until the backend shape is proven.
 6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
 7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
-8. Keep diagnostic and inventory API endpoints read-only until schema mapping is complete.
+8. Keep diagnostic, inventory, and Library read endpoints non-mutating until schema mapping is complete.
 
 ## Canonical language
 
@@ -133,11 +140,11 @@ docs/
 
 ## Backend note
 
-Cloudflare bindings are documented and now exposed through safe diagnostic and inventory endpoints:
+Cloudflare bindings are documented and now used for read-only Library discovery:
 
 ```text
 env.DB
 env.CARD_IMAGES
 ```
 
-Before Phase 7, paste deployed endpoint findings into `docs/cloudflare-resource-inventory.md` and reconcile them with `docs/backend-contracts.md`.
+Before Phase 8, confirm whether real ownership/user tables exist and record the findings in `docs/cloudflare-resource-inventory.md`.
