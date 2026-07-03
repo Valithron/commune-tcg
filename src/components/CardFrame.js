@@ -6,6 +6,16 @@
 
 import { escapeHtml, titleCase } from './format.js';
 
+const characterMap = [
+  { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#f3c93f' },
+  { key: 'sterling', name: 'Sterling', abbr: 'ST', color: '#c4c5db' },
+  { key: 'ryan', name: 'Ryan', abbr: 'RY', color: '#a98cff' },
+  { key: 'gabi', name: 'Gabi', abbr: 'GA', color: '#8ccdff' },
+  { key: 'cooper', name: 'Cooper', abbr: 'CO', color: '#ff8f70' },
+  { key: 'kenly', name: 'Kenly', abbr: 'KE', color: '#73e1c2' },
+  { key: 'ashley', name: 'Ashley', abbr: 'AS', color: '#ff9ccf' },
+];
+
 function renderStats(stats = {}) {
   return [
     ['POW', stats.pow ?? 1],
@@ -27,6 +37,63 @@ function renderCardArt(card) {
   return `<span class="card-art-symbol">${escapeHtml(card.symbol || '◆')}</span>`;
 }
 
+function normalizeRarity(rarity) {
+  const value = String(rarity || 'common').toLowerCase();
+
+  if (['common', 'uncommon', 'rare', 'legendary', 'mythic'].includes(value)) {
+    return value;
+  }
+
+  if (value.includes('myth')) return 'mythic';
+  if (value.includes('legend')) return 'legendary';
+  if (value.includes('uncommon')) return 'uncommon';
+  if (value.includes('rare')) return 'rare';
+
+  return 'common';
+}
+
+function getRarityInitial(rarity) {
+  return normalizeRarity(rarity).charAt(0).toUpperCase();
+}
+
+function findCharacter(card) {
+  const haystack = [
+    card.character,
+    card.characterId,
+    card.character_id,
+    card.cid,
+    card.category,
+    card.name,
+    card.id,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return characterMap.find((character) => haystack.includes(character.key) || haystack.includes(character.abbr.toLowerCase()))
+    || { key: 'unknown', name: 'Unknown', abbr: '??', color: '#9da2b7' };
+}
+
+function getCardType(card) {
+  return titleCase(card.type || card.cardType || card.card_type || card.battleRole || card.battle_role || 'Type');
+}
+
+function getAbilityIcon(card) {
+  return card.abilityIcon || card.ability_icon || card.icon || '✦';
+}
+
+function renderIdentityLine(card, rarity) {
+  const character = findCharacter(card);
+  const type = getCardType(card);
+  const abilityIcon = getAbilityIcon(card);
+
+  return `
+    <div class="card-identity-line">
+      <span class="card-face-pill card-face-pill--circle card-rarity-chip" title="${escapeHtml(titleCase(rarity))}">${escapeHtml(getRarityInitial(rarity))}</span>
+      <span class="card-face-pill card-face-pill--circle card-character-chip" style="--character-color:${escapeHtml(character.color)}" title="${escapeHtml(character.name)}">${escapeHtml(character.abbr)}</span>
+      <span class="card-face-pill card-type-chip">${escapeHtml(type)}</span>
+      <span class="card-face-pill card-face-pill--circle card-ability-chip" title="Ability placeholder">${escapeHtml(abilityIcon)}</span>
+    </div>
+  `;
+}
+
 function renderOwnershipBadge(card, context, showOwnership) {
   if (!showOwnership || context === 'library') {
     return '';
@@ -46,7 +113,7 @@ export function renderCardFrame(card, options = {}) {
 
   const tagName = href ? 'a' : 'article';
   const hrefAttribute = href ? ` href="${escapeHtml(href)}"` : '';
-  const rarity = card.rarity || 'common';
+  const rarity = normalizeRarity(card.rarity || 'common');
   const className = [
     'tcg-card',
     `tcg-card--${escapeHtml(density)}`,
@@ -61,7 +128,7 @@ export function renderCardFrame(card, options = {}) {
       </div>
       <div class="card-nameplate">
         <h3 class="card-title">${escapeHtml(card.name)}</h3>
-        <span class="rarity-chip card-rarity-chip">${escapeHtml(titleCase(rarity))}</span>
+        ${renderIdentityLine(card, rarity)}
       </div>
       ${showStats ? `<div class="card-stat-row">${renderStats(card.stats)}</div>` : ''}
     </${tagName}>
