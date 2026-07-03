@@ -5,8 +5,8 @@
    ============================================================================ */
 
 const minScaleByDensity = {
-  showcase: 0.58,
-  standard: 0.52,
+  showcase: 0.5,
+  standard: 0.44,
 };
 
 function getDensity(card) {
@@ -48,14 +48,20 @@ function fitTitle(title) {
   }
 
   const minSize = naturalSize * (minScaleByDensity[density] || minScaleByDensity.standard);
-  const fittedSize = Math.max(minSize, naturalSize * (availableWidth / requiredWidth) * 0.97);
+  const fittedSize = Math.max(minSize, naturalSize * (availableWidth / requiredWidth) * 0.92);
 
   title.style.setProperty('--card-title-fit-size', `${fittedSize.toFixed(2)}px`);
   title.dataset.cardTitleFit = 'fit';
 }
 
 export function fitCardTitles(root = document) {
-  window.requestAnimationFrame(() => {
+  const runFit = () => {
     root.querySelectorAll('.tcg-card:not(.tcg-card--thumbnail) .card-title').forEach(fitTitle);
-  });
+  };
+
+  window.requestAnimationFrame(runFit);
+
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(() => window.requestAnimationFrame(runFit));
+  }
 }
