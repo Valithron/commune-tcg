@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 2 responsibility: wire static routes, route params, and query values.
+   Phase 3 responsibility: wire static routes, route params, and query values.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -8,6 +8,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/cards.css';
+import './styles/battle.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderHome } from './routes/Home.js';
@@ -19,6 +20,10 @@ import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
 import { renderLibrary } from './routes/Library.js';
 import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
 import { renderTicketShop } from './routes/TicketShop.js';
+import { renderBattleHub } from './routes/BattleHub.js';
+import { renderEncounterSelect } from './routes/EncounterSelect.js';
+import { renderSquadBuilder } from './routes/SquadBuilder.js';
+import { renderBattleResults } from './routes/BattleResults.js';
 
 const appRoot = document.querySelector('#app');
 
@@ -32,6 +37,10 @@ const routeDefinitions = [
   { pattern: '/library', navRoute: '/library', render: renderLibrary },
   { pattern: '/library/card/:cardId', navRoute: '/library', render: renderLibraryCardDetail },
   { pattern: '/shop', navRoute: '/pull', render: renderTicketShop },
+  { pattern: '/battle', navRoute: '/battle', render: renderBattleHub },
+  { pattern: '/battle/encounters', navRoute: '/battle', render: renderEncounterSelect },
+  { pattern: '/battle/squad', navRoute: '/battle', render: renderSquadBuilder },
+  { pattern: '/battle/results', navRoute: '/battle', render: renderBattleResults },
 ];
 
 function parseHashRoute() {
