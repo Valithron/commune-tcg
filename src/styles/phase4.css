@@ -1,0 +1,153 @@
+/* ============================================================================
+   Phase 4 Styles
+   Purpose: Submit Card and Admin Dashboard presentation only.
+   Keep future upload/admin behavior out of CSS and route files.
+   ============================================================================ */
+
+.submit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.submit-form,
+.submit-notes,
+.admin-panel {
+  padding: var(--space-4);
+}
+
+.submit-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.submit-form label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.submit-form label span,
+.submit-notes h3,
+.admin-row span,
+.admin-row em {
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.submit-form input,
+.submit-form select,
+.submit-form textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--color-text);
+  padding: 0.8rem;
+}
+
+.submit-form textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.submit-stat-grid,
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.upload-placeholder {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  min-height: 12rem;
+  padding: var(--space-4);
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.upload-placeholder strong,
+.submit-notes h3,
+.admin-row strong {
+  font-family: var(--font-heading);
+}
+
+.upload-placeholder span,
+.submit-notes p {
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.submit-notes {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.submit-notes h3,
+.submit-notes p {
+  margin: 0;
+}
+
+.admin-table,
+.admin-checklist {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.admin-row,
+.admin-checklist div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.admin-row div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.admin-row em {
+  color: var(--color-functional);
+  font-style: normal;
+  text-align: right;
+}
+
+.admin-checklist div {
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-primary);
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 24rem) {
+  .submit-layout,
+  .submit-stat-grid,
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-row {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .admin-row em {
+    text-align: left;
+  }
+}
