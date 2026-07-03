@@ -1,6 +1,6 @@
 /* ============================================================================
    Library Route
-   Phase 2 responsibility: global card pool preview linking to template details.
+   Phase 4 responsibility: global card pool preview and submit-flow entry.
    Real submission, approval, and discovery status belong in later phases.
    ============================================================================ */
 
@@ -13,6 +13,7 @@ export function renderLibrary() {
       <span class="section-kicker">Global Pool</span>
       <h2 class="hero-title">The Library</h2>
       <p class="hero-copy">The Library represents every approved card template that can enter the pull pool. Tap a card to inspect its template detail.</p>
+      <div class="action-row"><a class="button button-secondary" href="#/submit">Submit Card</a></div>
     </section>
 
     <section>
