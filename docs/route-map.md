@@ -49,6 +49,12 @@
 |---|---|---|
 | `#/inventory` | `src/routes/ResourceInventory.js` | Resource inventory hub before real backend reads |
 
+## Active Phase 7.5 routes
+
+| Route | File | Purpose |
+|---|---|---|
+| `#/card-lab` | `src/routes/CardLab.js` | Live card-frame inspection across title lengths and densities |
+
 ## Active API endpoints
 
 | Endpoint | File | Purpose |
@@ -63,4 +69,4 @@
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 7 adds the first real read model for Library cards, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+Hash routing is temporary and practical for the static prototype. Phase 7.5 adds a Card Lab for frame stabilization, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
