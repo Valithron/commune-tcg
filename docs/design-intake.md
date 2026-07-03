@@ -38,12 +38,15 @@ Key traits:
 
 ## Canonical palette
 
-The app palette is anchored to the Stitch color system:
+The app uses the main branch Commune navy family for the atmospheric shell, with the stronger Stitch accent colors preserved for actions and feedback.
 
 | Role | Hex | Use |
 |---|---|---|
-| Deep nocturnal navy | `#1A1C2C` | Primary app background |
-| Neutral surface | `#24273A` | Panels, cards, and hierarchy within the dark environment |
+| Main background | `#090C1D` | Primary app background |
+| Deep background | `#070A18` | Body canvas and deepest shell |
+| Frame background | `#0F1224` | App shell and mobile browser theme color |
+| Panel surface | `#171A2D` | Cards, panels, and glass surfaces |
+| Raised surface | `#26293C` | Higher-contrast cards and controls |
 | Secondary gold | `#D4AF37` | High-value actions, Legendary frames, and currency emphasis |
 | Tertiary blue | `#2D9CDB` | Active navigation, functional feedback, stats, and links |
 | Lavender-white text | `#E0E0F2` | Primary text, avoiding pure white eye strain |
