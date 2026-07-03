@@ -1,0 +1,48 @@
+/* ============================================================================
+   Standard Card Tuner Styles
+   Purpose: Card Lab-only editable standard-size card copy. This is separate
+   from the large/detail tuner and does not affect thumbnail cards.
+   ============================================================================ */
+
+.card-lab-standard-tuner-preview {
+  display: grid;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+}
+
+.card-lab-standard-tuner-layout {
+  display: grid;
+  grid-template-columns: minmax(10rem, 13.5rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.card-lab-standard-tuner-card-stage {
+  width: min(100%, 12.75rem);
+}
+
+.card-lab-standard-tuner-sheet {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.card-lab-standard-tuner-card-stage .frame-tuner-box span {
+  font-size: 0.48rem;
+}
+
+.card-lab-standard-tuner-card-stage .frame-tuner-card-flag {
+  font-size: 0.5rem;
+}
+
+@media (max-width: 48rem) {
+  .card-lab-standard-tuner-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card-lab-standard-tuner-card-stage {
+    width: min(100%, 12.75rem);
+    margin: 0 auto;
+  }
+}
