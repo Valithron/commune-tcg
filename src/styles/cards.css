@@ -1,0 +1,148 @@
+/* ============================================================================
+   Card Component Styles
+   Purpose: one visual grammar for cards across Vault, Library, Pull, and Battle.
+   Keep card-specific styling here instead of scattering it through route CSS.
+   ============================================================================ */
+
+.tcg-card {
+  --rarity-color: var(--rarity-common);
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+  aspect-ratio: 2 / 3;
+  padding: 0.55rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--rarity-color) 70%, white 5%);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015)),
+    #181a22;
+  box-shadow: 0 0 0.95rem rgba(0, 0, 0, 0.22);
+}
+
+.tcg-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rarity-color) 34%, transparent), transparent 48%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.tcg-card > * {
+  position: relative;
+}
+
+.tcg-card[data-rarity='uncommon'] { --rarity-color: var(--rarity-uncommon); }
+.tcg-card[data-rarity='rare'] { --rarity-color: var(--rarity-rare); }
+.tcg-card[data-rarity='legendary'] { --rarity-color: var(--rarity-legendary); }
+.tcg-card[data-rarity='mythic'] { --rarity-color: var(--rarity-mythic); }
+
+.tcg-card[data-rarity='rare'],
+.tcg-card[data-rarity='legendary'],
+.tcg-card[data-rarity='mythic'] {
+  box-shadow:
+    0 0 1.25rem color-mix(in srgb, var(--rarity-color) 30%, transparent),
+    0 1rem 2rem rgba(0, 0, 0, 0.22);
+}
+
+.card-art {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at 40% 24%, rgba(255, 255, 255, 0.24), transparent 22%),
+    radial-gradient(circle at 75% 55%, color-mix(in srgb, var(--rarity-color) 55%, transparent), transparent 36%),
+    linear-gradient(145deg, #202638, #11131a 68%);
+}
+
+.card-art-symbol {
+  color: color-mix(in srgb, var(--rarity-color) 82%, white 18%);
+  font-size: clamp(2.2rem, 14vw, 4rem);
+  filter: drop-shadow(0 0 1rem color-mix(in srgb, var(--rarity-color) 50%, transparent));
+}
+
+.card-nameplate {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.32);
+  border-bottom: 2px solid var(--rarity-color);
+}
+
+.card-title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: clamp(0.82rem, 3.8vw, 1rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+.card-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.card-stat {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 2.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.card-stat-label {
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card-stat-value {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.rarity-chip {
+  min-height: 1.45rem;
+  padding: 0.2rem 0.45rem;
+  color: #101014;
+  background: var(--rarity-color);
+  border: 0;
+  font-size: 0.58rem;
+}
+
+.status-pill {
+  min-height: 1.45rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.58rem;
+}

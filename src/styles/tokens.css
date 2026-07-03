@@ -1,0 +1,62 @@
+/* ============================================================================
+   Design Tokens
+   Source: Stitch Celestial Archive shell + Commune TCG card design system.
+   Purpose: keep color, typography, spacing, and rarity values centralized.
+   ============================================================================ */
+
+:root {
+  color-scheme: dark;
+
+  --color-background: #131314;
+  --color-surface-lowest: #0e0e0f;
+  --color-surface-low: #1c1b1d;
+  --color-surface: #201f21;
+  --color-surface-high: #2a2a2b;
+  --color-surface-highest: #353436;
+  --color-surface-glass: rgba(32, 31, 33, 0.76);
+
+  --color-text: #e5e1e3;
+  --color-text-muted: #c7c5cd;
+  --color-text-faint: #919097;
+  --color-outline: #46464c;
+  --color-outline-strong: #919097;
+
+  --color-primary: #e9c349;
+  --color-primary-strong: #d4af37;
+  --color-primary-dark: #3c2f00;
+  --color-primary-glow: rgba(233, 195, 73, 0.35);
+
+  --color-functional: #8ccdff;
+  --color-functional-strong: #2d9cdb;
+  --color-danger: #ffb4ab;
+  --color-success: #7ee0a1;
+
+  --rarity-common: #b8bcc7;
+  --rarity-uncommon: #60d394;
+  --rarity-rare: #5bbcff;
+  --rarity-legendary: #e9c349;
+  --rarity-mythic: #b56cff;
+
+  --font-display: 'Libre Caslon Text', Georgia, serif;
+  --font-heading: 'Sora', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --app-max-width: 30rem;
+  --bottom-nav-height: 5.75rem;
+  --shadow-soft: 0 1.5rem 4rem rgba(0, 0, 0, 0.35);
+}
