@@ -120,7 +120,7 @@
   min-height: calc(var(--card-title-min-height) + 1.22rem);
   padding: 0.42rem 0.5rem;
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.38);
+  background: rgba(0, 0, 0, 0.6);
   border-bottom: 2px solid var(--rarity-color);
   backdrop-filter: blur(12px);
 }
@@ -151,7 +151,10 @@
 .card-stat-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.35rem;
+  justify-self: center;
+  width: 50%;
+  max-width: 50%;
+  gap: 0.18rem;
   margin-top: auto;
 }
 
@@ -159,7 +162,7 @@
   display: grid;
   place-items: center;
   min-width: 0;
-  min-height: 2.15rem;
+  min-height: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.24);
@@ -167,7 +170,7 @@
 }
 
 .tcg-card--thumbnail .card-stat {
-  min-height: 1.45rem;
+  min-height: 1.35rem;
 }
 
 .card-stat-label {
