@@ -1,6 +1,6 @@
 /* ============================================================================
    Card Detail Panel Component
-   Phase 2 responsibility: reusable detail layout for Vault and Library cards.
+   Phase 7 responsibility: reusable detail layout for Vault and Library cards.
    The canonical visual card still comes from CardFrame.js.
    ============================================================================ */
 
@@ -17,7 +17,7 @@ function renderDetailRows(card, context) {
     <div class="detail-row"><span>Rarity</span><strong>${escapeHtml(titleCase(card.rarity))}</strong></div>
     <div class="detail-row"><span>Category</span><strong>${escapeHtml(card.category)}</strong></div>
     <div class="detail-row"><span>Ownership</span><strong>${escapeHtml(ownershipText)}</strong></div>
-    <div class="detail-row"><span>Phase 2 Note</span><strong>${escapeHtml(contextText)}</strong></div>
+    <div class="detail-row"><span>Context</span><strong>${escapeHtml(contextText)}</strong></div>
   `;
 }
 
@@ -30,7 +30,7 @@ export function renderCardDetailPanel(card, { context }) {
       <div class="glass-panel detail-panel">
         <span class="section-kicker">${context === 'vault' ? 'Vault Detail' : 'Library Detail'}</span>
         <h2 class="detail-title">${escapeHtml(card.name)}</h2>
-        <p class="body-copy">${escapeHtml(card.flavor)}</p>
+        <p class="body-copy">${escapeHtml(card.flavor || 'No flavor text has been mapped for this card yet.')}</p>
         <div class="detail-list">
           ${renderDetailRows(card, context)}
         </div>
