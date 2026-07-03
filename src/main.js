@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 6 responsibility: wire static routes, route params, and query values.
+   Phase 7 responsibility: wire static and async read-model routes.
    Do not put route-specific UI or backend behavior in this file.
    ============================================================================ */
 
@@ -31,6 +31,7 @@ import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
 
 const appRoot = document.querySelector('#app');
+let renderToken = 0;
 
 const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', render: renderHome },
@@ -104,7 +105,19 @@ function resolveRoute(path) {
   return null;
 }
 
-function render() {
+function renderError(error) {
+  return `
+    <section class="hero-panel">
+      <span class="section-kicker">Route Error</span>
+      <h2 class="hero-title">Something failed.</h2>
+      <p class="hero-copy">${error.message}</p>
+      <div class="action-row"><a class="button button-secondary" href="#/home">Back Home</a></div>
+    </section>
+  `;
+}
+
+async function render() {
+  const currentToken = ++renderToken;
   const { path, query } = parseHashRoute();
   const matchedRoute = resolveRoute(path) || resolveRoute('/home');
 
@@ -112,10 +125,23 @@ function render() {
     window.history.replaceState(null, '', '#/home');
   }
 
-  appRoot.innerHTML = renderAppShell({
-    activeRoute: matchedRoute.navRoute,
-    content: matchedRoute.render({ params: matchedRoute.params, query }),
-  });
+  try {
+    const content = await matchedRoute.render({ params: matchedRoute.params, query });
+
+    if (currentToken !== renderToken) {
+      return;
+    }
+
+    appRoot.innerHTML = renderAppShell({
+      activeRoute: matchedRoute.navRoute,
+      content,
+    });
+  } catch (error) {
+    appRoot.innerHTML = renderAppShell({
+      activeRoute: matchedRoute.navRoute,
+      content: renderError(error),
+    });
+  }
 }
 
 window.addEventListener('hashchange', render);
