@@ -19,18 +19,20 @@ The current target is the Stitch card chassis:
 The card face should show only card-relevant information:
 
 - art
-- title
+- title at showcase and standard densities
 - rarity
 - stats when enabled
 - future ownership/progression state only in owned-card contexts
 
 The card face should not show route/source labels such as Library, Vault, database table names, or other location metadata.
 
+Thumbnail density intentionally hides titles to avoid visual overload.
+
 ## Title rules
 
 No card title ellipsis is allowed.
 
-Titles should use a fixed size per density, not dynamic per card. Each density reserves enough title space for the accepted title length.
+Titles should use a fixed size per density, not dynamic per card. Each title-bearing density reserves enough title space for the accepted title length.
 
 Current minting target:
 
@@ -48,7 +50,7 @@ This limit should be enforced when the real submission/minting pipeline is imple
 |---|---|
 | `showcase` | Large inspection/detail size |
 | `standard` | Normal mobile collection size |
-| `thumbnail` | Small compressed collection/result size |
+| `thumbnail` | Small compressed collection/result size with no visible card title |
 
 ## Contexts
 
