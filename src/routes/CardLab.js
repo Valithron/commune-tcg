@@ -317,7 +317,7 @@ function renderDetailPreview(card, library) {
         <p class="body-copy">This preview keeps the collectible card face clean while moving creator, gameplay, economy, progression, source, moderation, and debug metadata into the surrounding stat sheet.</p>
       </div>
       <div class="card-lab-detail-layout">
-        <div class="card-lab-detail-card-stage">
+        <div class="card-lab-detail-card-stage" data-card-frame-tuner-stage data-tuner-id="showcase" data-tuner-title="Large Card Maker">
           ${renderCardFrame(card, {
             density: 'showcase',
             context: 'library',
@@ -325,7 +325,7 @@ function renderDetailPreview(card, library) {
             showStats: true,
           })}
         </div>
-        <div class="card-lab-detail-sheet">
+        <div class="card-lab-detail-sheet" data-card-frame-tuner-panel-target="showcase">
           <div>
             <span class="section-kicker">Selected Card</span>
             <h3 class="detail-title">${escapeHtml(card.name)}</h3>
@@ -338,6 +338,39 @@ function renderDetailPreview(card, library) {
           </div>
           <div class="card-lab-detail-groups">
             ${detailGroups.map((group) => renderDetailGroup(group.title, group.rows)).join('')}
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderStandardTunerPreview(card) {
+  if (!card) {
+    return '<section class="glass-panel card-lab-standard-tuner-preview"><div class="empty-note">No card available for standard tuner.</div></section>';
+  }
+
+  return `
+    <section class="glass-panel card-lab-standard-tuner-preview">
+      <div class="card-lab-detail-copy">
+        <span class="section-kicker">Standard Card Maker</span>
+        <h2 class="section-title">Edit the standard size.</h2>
+        <p class="body-copy">This is a separate editable standard-size copy. Use this when the large card looks good but the normal collection size needs manual tuning.</p>
+      </div>
+      <div class="card-lab-standard-tuner-layout">
+        <div class="card-lab-standard-tuner-card-stage" data-card-frame-tuner-stage data-tuner-id="standard" data-tuner-title="Standard Card Maker">
+          ${renderCardFrame(card, {
+            density: 'standard',
+            context: 'library',
+            showOwnership: false,
+            showStats: true,
+          })}
+        </div>
+        <div class="card-lab-standard-tuner-sheet" data-card-frame-tuner-panel-target="standard">
+          <div>
+            <span class="section-kicker">Selected Card</span>
+            <h3 class="detail-title">${escapeHtml(card.name)}</h3>
+            <p class="body-copy">Standard tuning is stored separately from the large-card tuner and outputs standard-specific ratios.</p>
           </div>
         </div>
       </div>
@@ -455,6 +488,7 @@ export async function renderCardLab() {
     </section>
 
     ${renderDetailPreview(detailCard, library)}
+    ${renderStandardTunerPreview(detailCard)}
 
     <div class="card-lab">
       ${densityRows.map((row) => renderDensitySection(row, titleSamples, raritySamples)).join('')}
