@@ -10,9 +10,21 @@ The current target is the Stitch card chassis:
 - art-forward card body
 - compact title bar
 - fixed stat footer
-- rarity chip
+- rarity chip inside the lower nameplate
 - rarity-specific border and glow treatment
 - one canonical renderer in `src/components/CardFrame.js`
+
+## Visible card-face data
+
+The card face should show only card-relevant information:
+
+- art
+- title
+- rarity
+- stats when enabled
+- future ownership/progression state only in owned-card contexts
+
+The card face should not show route/source labels such as Library, Vault, database table names, or other location metadata.
 
 ## Title rules
 
@@ -75,5 +87,6 @@ The same five cards render at showcase, standard, and thumbnail sizes.
 - Do not add one-off badge overlays in route files.
 - Do not use per-card dynamic title shrinking.
 - Do not use title ellipsis.
+- Do not show route/source labels on the card face.
 - Keep card styling centralized in `src/styles/cards.css`.
 - Use the Card Lab before broad card-frame production changes.
