@@ -32,7 +32,7 @@ function renderOwnershipBadge(card, context, showOwnership) {
     return '';
   }
 
-  return `<span class="status-pill">${card.owned ? `Lv ${escapeHtml(String(card.level ?? 1))}` : 'Locked'}</span>`;
+  return `<div class="card-meta-row"><span class="status-pill">${card.owned ? `Lv ${escapeHtml(String(card.level ?? 1))}` : 'Locked'}</span></div>`;
 }
 
 export function renderCardFrame(card, options = {}) {
@@ -55,16 +55,13 @@ export function renderCardFrame(card, options = {}) {
 
   return `
     <${tagName} class="${className}" data-rarity="${escapeHtml(rarity)}"${hrefAttribute} aria-label="${escapeHtml(card.name)} card">
-      <div class="card-meta-row">
-        <span class="rarity-chip">${escapeHtml(titleCase(rarity))}</span>
-        ${renderOwnershipBadge(card, context, showOwnership)}
-      </div>
+      ${renderOwnershipBadge(card, context, showOwnership)}
       <div class="card-art" aria-hidden="true">
         ${renderCardArt(card)}
       </div>
       <div class="card-nameplate">
         <h3 class="card-title">${escapeHtml(card.name)}</h3>
-        <span class="card-subtitle">${escapeHtml(card.category || 'Library')}</span>
+        <span class="rarity-chip card-rarity-chip">${escapeHtml(titleCase(rarity))}</span>
       </div>
       ${showStats ? `<div class="card-stat-row">${renderStats(card.stats)}</div>` : ''}
     </${tagName}>
