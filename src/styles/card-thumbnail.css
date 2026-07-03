@@ -1,0 +1,47 @@
+/* ============================================================================
+   Thumbnail Card Density
+   Purpose: small/compressed card overrides. Shared card foundation stays in cards.css.
+   ============================================================================ */
+
+.tcg-card--thumbnail {
+  --card-title-size: 0.62rem;
+  --card-rarity-size: 0.42rem;
+  --card-stat-value-size: 0.64rem;
+  --card-stat-label-size: 0.38rem;
+  padding: 0.38rem;
+  border-radius: var(--radius-md);
+}
+
+.tcg-card--thumbnail .card-nameplate {
+  display: none;
+}
+
+.tcg-card--thumbnail .card-identity-line {
+  gap: 0.12rem;
+  min-height: 1.12rem;
+  padding: 0.12rem 0.24rem;
+}
+
+.tcg-card--thumbnail .card-face-pill {
+  height: 0.9rem;
+  min-height: 0.9rem;
+  padding: 0.08rem 0.22rem;
+  font-size: var(--card-rarity-size);
+}
+
+.tcg-card--thumbnail .card-face-pill--circle,
+.tcg-card--thumbnail .card-ability-chip {
+  width: 0.9rem;
+  min-width: 0.9rem;
+  padding: 0;
+}
+
+.tcg-card--thumbnail .card-type-chip {
+  display: none;
+}
+
+.tcg-card--thumbnail .status-pill {
+  min-height: 1.05rem;
+  padding: 0.12rem 0.28rem;
+  font-size: 0.44rem;
+}
