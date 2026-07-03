@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a Phase 4 planning draft. No backend endpoints are implemented yet.
+This document is a planning draft. Phase 5 adds read-only diagnostic endpoints only.
 
 ## Existing Cloudflare bindings
 
@@ -8,6 +8,16 @@ This document is a Phase 4 planning draft. No backend endpoints are implemented 
 |---|---|---|
 | `env.DB` | D1 database | `com-tcg-db` |
 | `env.CARD_IMAGES` | R2 bucket | `com-tcg-images` |
+
+## Phase 5 diagnostic endpoints
+
+These endpoints are implemented as Cloudflare Pages Functions and are intentionally read-only.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Confirm Pages Function runtime and binding availability |
+| `GET` | `/api/schema` | List D1 table names from `sqlite_master` |
+| `GET` | `/api/images` | List a small sample of R2 object metadata |
 
 ## Core tables to confirm before implementation
 
@@ -95,9 +105,9 @@ Expected fields:
 - `reward_xp`
 - `created_at`
 
-## Endpoint sketch
+## Future endpoint sketch
 
-These are route contracts to design before coding Cloudflare Pages Functions.
+These are route contracts to design before coding real writes.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -117,3 +127,4 @@ These are route contracts to design before coding Cloudflare Pages Functions.
 - Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
 - R2 image keys should be stored in D1, not raw public URLs.
 - Admin routes need authentication and authorization before any real writes exist.
+- Diagnostic endpoints must stay read-only until schema and auth are explicit.
