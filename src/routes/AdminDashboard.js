@@ -1,17 +1,75 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 5 responsibility: static admin overview and backend-readiness links.
-   Real permissions, D1 mutations, and image moderation are deferred.
+   Phase 9.2 responsibility: read the real submission queue from the read-only
+   admin endpoint, with mock fallback. Approval/rejection writes are deferred.
    ============================================================================ */
 
 import { mockAdminStats, mockSubmissions, adminChecklist } from '../data/mockAdmin.js';
+import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 
-export function renderAdminDashboard() {
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatStatus(value) {
+  return String(value || 'pending_review')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function mapBackendSubmission(submission) {
+  return {
+    id: submission.id,
+    name: submission.cardName,
+    submitter: submission.submitterDisplayName,
+    category: submission.cardType,
+    rarity: submission.raritySuggestion,
+    status: formatStatus(submission.moderationStatus),
+  };
+}
+
+async function loadAdminSubmissions() {
+  try {
+    const routes = getApiRoutes();
+    const payload = await fetchJson(routes.adminSubmissions);
+
+    if (!payload?.ok || !Array.isArray(payload.submissions)) {
+      return {
+        submissions: mockSubmissions,
+        source: 'mock',
+        warnings: payload?.warnings || ['No backend submissions were returned.'],
+      };
+    }
+
+    return {
+      submissions: payload.submissions.map(mapBackendSubmission),
+      source: 'backend',
+      warnings: payload.warnings || [],
+    };
+  } catch (error) {
+    return {
+      submissions: mockSubmissions,
+      source: 'mock',
+      warnings: [error.message],
+    };
+  }
+}
+
+export async function renderAdminDashboard() {
+  const queue = await loadAdminSubmissions();
+  const sourceLabel = queue.source === 'backend' ? 'Live Queue' : 'Mock Queue fallback';
+  const pendingCount = queue.source === 'backend' ? queue.submissions.length : mockAdminStats.pendingSubmissions;
+
   return `
     <section class="hero-panel">
       <span class="section-kicker">Admin</span>
       <h2 class="hero-title">Control the pool.</h2>
-      <p class="hero-copy">This admin screen is static. Phase 5 adds read-only backend status links without touching live game data.</p>
+      <p class="hero-copy">The moderation queue now reads submitted cards. Approval, rejection, and Library insertion are still deferred.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Open Submit Flow</a>
         <a class="button button-secondary" href="#/backend">Backend Status</a>
@@ -28,10 +86,12 @@ export function renderAdminDashboard() {
       </div>
       <div class="admin-stat-grid">
         <div class="stat-panel"><span class="stat-label">Cards</span><span class="stat-value">${mockAdminStats.totalCards}</span></div>
-        <div class="stat-panel"><span class="stat-label">Pending</span><span class="stat-value">${mockAdminStats.pendingSubmissions}</span></div>
+        <div class="stat-panel"><span class="stat-label">Pending</span><span class="stat-value">${pendingCount}</span></div>
         <div class="stat-panel"><span class="stat-label">Fights</span><span class="stat-value">${mockAdminStats.encounters}</span></div>
       </div>
     </section>
+
+    <div class="empty-note">Source: ${sourceLabel}</div>
 
     <section>
       <div class="section-heading">
@@ -39,18 +99,18 @@ export function renderAdminDashboard() {
           <span class="section-kicker">Moderation</span>
           <h2 class="section-title">Submission Queue</h2>
         </div>
-        <span class="status-pill">Static</span>
+        <span class="status-pill">${escapeHtml(sourceLabel)}</span>
       </div>
       <div class="admin-table">
-        ${mockSubmissions.map((submission) => `
+        ${queue.submissions.length ? queue.submissions.map((submission) => `
           <article class="admin-row">
             <div>
-              <strong>${submission.name}</strong>
-              <span>${submission.submitter} · ${submission.category} · ${submission.rarity}</span>
+              <strong>${escapeHtml(submission.name)}</strong>
+              <span>${escapeHtml(submission.submitter)} · ${escapeHtml(submission.category)} · ${escapeHtml(submission.rarity)}</span>
             </div>
-            <em>${submission.status}</em>
+            <em>${escapeHtml(submission.status)}</em>
           </article>
-        `).join('')}
+        `).join('') : '<div class="empty-note">No submitted cards yet.</div>'}
       </div>
     </section>
 
@@ -58,15 +118,15 @@ export function renderAdminDashboard() {
       <span class="section-kicker">Approval Checklist</span>
       <h2 class="section-title">Before a card enters pulls</h2>
       <div class="admin-checklist">
-        ${adminChecklist.map((item) => `<div>${item}</div>`).join('')}
+        ${adminChecklist.map((item) => `<div>${escapeHtml(item)}</div>`).join('')}
       </div>
     </section>
 
     <section class="glass-panel admin-panel">
       <span class="section-kicker">Bindings</span>
-      <h2 class="section-title">Future backend targets</h2>
+      <h2 class="section-title">Backend targets</h2>
       <div class="detail-list">
-        <div class="detail-row"><span>D1</span><strong>${mockAdminStats.databaseBinding}</strong></div>
+        <div class="detail-row"><span>D1</span><strong>card_submissions</strong></div>
         <div class="detail-row"><span>R2</span><strong>${mockAdminStats.imageBucket}</strong></div>
       </div>
     </section>
