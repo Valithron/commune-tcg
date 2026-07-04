@@ -48,12 +48,19 @@ async function loadPullResults(count, realPull) {
   try {
     return realPull ? await loadRealPull(count) : await loadSimulatedPull(count);
   } catch (error) {
-    try {
-      const simulation = await loadSimulatedPull(count);
+    if (realPull) {
       return {
-        ...simulation,
+        source: 'failed-real',
+        results: [],
+        fallbackCount: 0,
+        poolSummary: null,
+        ticketsCopy: '',
         warning: error.message,
       };
+    }
+
+    try {
+      return await loadSimulatedPull(count);
     } catch {
       return {
         source: 'mock',
@@ -72,8 +79,9 @@ export async function renderPullResults({ query }) {
   const realPull = query.real === '1';
   const pull = await loadPullResults(count, realPull);
   const results = pull.results;
-  const headline = count === 5 ? 'Five cards appear.' : 'A card appears.';
-  const sourceLabel = pull.source === 'real' ? 'Real Pull' : pull.source === 'simulation' ? 'No-write Simulation' : 'Mock fallback';
+  const pullFailed = pull.source === 'failed-real';
+  const headline = pullFailed ? 'Pull could not resolve.' : count === 5 ? 'Five cards appear.' : 'A card appears.';
+  const sourceLabel = pull.source === 'real' ? 'Real Pull' : pull.source === 'simulation' ? 'No-write Simulation' : pull.source === 'failed-real' ? 'Pull Failed' : 'Mock fallback';
   const poolCopy = pull.poolSummary
     ? `${pull.poolSummary.eligibleCount} eligible · ${pull.poolSummary.approvedSubmissionCount} approved submissions`
     : pull.warning;
@@ -83,7 +91,7 @@ export async function renderPullResults({ query }) {
     <section class="result-banner">
       <span class="section-kicker">Pull Results</span>
       <h2 class="hero-title">${headline}</h2>
-      <p class="hero-copy">Phase 10.3 resolves real pulls when launched from confirmation. Manual result links still fall back safely.</p>
+      <p class="hero-copy">Phase 10.4 shows live pull failures directly so tickets and Vault state stay clear.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull/confirm?count=${count}">Pull Again</a>
         <a class="button button-secondary" href="#/pull">Back to Pull</a>
@@ -91,7 +99,7 @@ export async function renderPullResults({ query }) {
       </div>
     </section>
 
-    <div class="empty-note">Source: ${sourceLabel}${pull.ticketsCopy ? ' · ' + pull.ticketsCopy : ''}${poolCopy ? ' · ' + poolCopy : ''}${pull.fallbackCount ? ' · rarity fallback used ' + pull.fallbackCount + 'x' : ''}${pull.warning ? ' · fallback reason: ' + pull.warning : ''}</div>
+    <div class="empty-note">Source: ${sourceLabel}${pull.ticketsCopy ? ' · ' + pull.ticketsCopy : ''}${poolCopy ? ' · ' + poolCopy : ''}${pull.fallbackCount ? ' · rarity fallback used ' + pull.fallbackCount + 'x' : ''}</div>
 
     <section>
       <div class="section-heading">
@@ -102,7 +110,7 @@ export async function renderPullResults({ query }) {
         <span class="status-pill">${count}-Pull</span>
       </div>
       <div class="card-grid result-grid">
-        ${results.map((card) => renderCardFrame(card, { href: `${cardHrefBase}${card.id}` })).join('')}
+        ${results.length ? results.map((card) => renderCardFrame(card, { href: `${cardHrefBase}${card.id}` })).join('') : '<div class="empty-note">No cards were granted.</div>'}
       </div>
     </section>
   `;
