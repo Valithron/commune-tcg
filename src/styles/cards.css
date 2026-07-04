@@ -1,15 +1,14 @@
 /* ============================================================================
-   Card Component Styles
-   Purpose: one visual grammar for cards across Vault, Library, Pull, Battle,
-   and the Card Lab. Keep card-specific styling centralized here.
+   Card Component Foundation
+   Purpose: shared card shell, art, nameplate, identity, stat, and rarity styles.
+   Density-specific overrides live in card-showcase.css, card-standard.css, and
+   card-thumbnail.css.
    ============================================================================ */
 
 .tcg-card {
   /*
     Tuned absolute geometry from Card Lab, rounded and centered.
-    Reversible note: before this pass, cards used the natural grid flow:
-    art, nameplate, pill row, then a 50% centered stat footer. Revert this
-    commit or remove the geometry block below to return to that layout.
+    Density files can override these percentage variables per size.
   */
   --card-art-x: 3%;
   --card-art-y: 2%;
@@ -45,23 +44,6 @@
     #181a22;
   box-shadow: 0 0 0.95rem rgba(0, 0, 0, 0.22);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.tcg-card--showcase {
-  --card-title-size: clamp(1.05rem, 2.1vw, 1.35rem);
-  --card-rarity-size: 0.72rem;
-  --card-stat-value-size: 1.25rem;
-  --card-stat-label-size: 0.64rem;
-  padding: 0.75rem;
-}
-
-.tcg-card--thumbnail {
-  --card-title-size: 0.62rem;
-  --card-rarity-size: 0.42rem;
-  --card-stat-value-size: 0.64rem;
-  --card-stat-label-size: 0.38rem;
-  padding: 0.38rem;
-  border-radius: var(--radius-md);
 }
 
 .tcg-card[href]:active {
@@ -152,10 +134,6 @@
   backdrop-filter: blur(12px);
 }
 
-.tcg-card--thumbnail .card-nameplate {
-  display: none;
-}
-
 .card-title {
   display: block;
   width: 100%;
@@ -238,30 +216,6 @@
   padding: 0;
 }
 
-.tcg-card--thumbnail .card-identity-line {
-  gap: 0.12rem;
-  min-height: 1.12rem;
-  padding: 0.12rem 0.24rem;
-}
-
-.tcg-card--thumbnail .card-face-pill {
-  height: 0.9rem;
-  min-height: 0.9rem;
-  padding: 0.08rem 0.22rem;
-  font-size: var(--card-rarity-size);
-}
-
-.tcg-card--thumbnail .card-face-pill--circle,
-.tcg-card--thumbnail .card-ability-chip {
-  width: 0.9rem;
-  min-width: 0.9rem;
-  padding: 0;
-}
-
-.tcg-card--thumbnail .card-type-chip {
-  display: none;
-}
-
 .card-stat-row {
   left: var(--card-stats-x);
   top: var(--card-stats-y);
@@ -312,10 +266,4 @@
   min-height: 1.45rem;
   padding: 0.2rem 0.45rem;
   font-size: 0.58rem;
-}
-
-.tcg-card--thumbnail .status-pill {
-  min-height: 1.05rem;
-  padding: 0.12rem 0.28rem;
-  font-size: 0.44rem;
 }
