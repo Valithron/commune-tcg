@@ -18,9 +18,9 @@
   --card-pills-w: 90%;
   --card-pills-h: 5%;
   --card-stats-x: 25%;
-  --card-stats-y: 71%;
+  --card-stats-y: 68%;
   --card-stats-w: 50%;
-  --card-stats-h: 7%;
+  --card-stats-h: 8.5%;
   --card-title-size: clamp(0.78rem, 3.2vw, 0.96rem);
   --card-rarity-size: 0.56rem;
   --card-stat-value-size: 0.88rem;
