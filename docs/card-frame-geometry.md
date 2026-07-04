@@ -55,7 +55,7 @@ Rounded and centered values:
 art:       x 3,  y 2,  w 94, h 92
 nameplate: x 3,  y 78, w 94, h 16
 pills:     x 5,  y 85, w 90, h 5
-stats:     x 25, y 71, w 50, h 7
+stats:     x 25, y 68, w 50, h 8.5
 ```
 
 Equivalent standard CSS variables:
@@ -75,9 +75,9 @@ Equivalent standard CSS variables:
   --card-pills-w: 90%;
   --card-pills-h: 5%;
   --card-stats-x: 25%;
-  --card-stats-y: 71%;
+  --card-stats-y: 68%;
   --card-stats-w: 50%;
-  --card-stats-h: 7%;
+  --card-stats-h: 8.5%;
 }
 ```
 
