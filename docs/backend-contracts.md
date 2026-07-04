@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 10.3 adds the first live pull endpoint for the temporary Sterling owner.
+This document tracks the live backend contracts for the Gacha branch. Phase 10.4 hardens live pulls with resource and history read endpoints.
 
 ## Existing Cloudflare bindings
 
@@ -26,6 +26,8 @@ This document tracks the live backend contracts for the Gacha branch. Phase 10.3
 | `GET` | `/api/submission-review-audit` | Approved submission audit |
 | `GET` | `/api/pull-pool` | Pull pool diagnostics |
 | `GET` | `/api/pull-simulate?count=1` | No-write pull simulation |
+| `GET` | `/api/pull-resources` | Read temporary Sterling tickets and gold |
+| `GET` | `/api/pull-history` | Read temporary Sterling pull history |
 | `POST` | `/api/pulls` | Live pull for temporary Sterling owner |
 | `GET` | `/api/submissions` | Submitted card rows |
 | `POST` | `/api/submissions` | Create pending-review submission |
@@ -84,6 +86,8 @@ Starting pull tickets:
 12
 ```
 
+`GET /api/pull-resources` reads this table if it exists and otherwise reports starter values without creating rows.
+
 ### pull_history
 
 Created by Phase 10.3 on first live pull.
@@ -98,6 +102,8 @@ ticket_cost
 result_json
 created_at
 ```
+
+`GET /api/pull-history` reads this table if it exists and otherwise returns an empty history without creating rows.
 
 ### card_submissions
 
@@ -131,19 +137,23 @@ Pull options:
 
 ## Live pull flow
 
-1. Confirmation links to `#/pull/results?count=COUNT&real=1`.
-2. Pull Results posts to `/api/pulls`.
-3. Server checks Sterling tickets.
-4. Server reads unowned Library cards.
-5. Server rolls rarity.
-6. Server inserts owned card rows into `cards`.
-7. Server decrements tickets.
-8. Server records `pull_history`.
-9. Pull Results renders owned cards with Vault links.
+1. Pull and Confirm read `/api/pull-resources`.
+2. Confirm blocks the live pull link if tickets are too low.
+3. Confirmation links to `#/pull/results?count=COUNT&real=1` when affordable.
+4. Pull Results posts to `/api/pulls`.
+5. Server checks Sterling tickets.
+6. Server reads unowned Library cards.
+7. Server rolls rarity.
+8. Server inserts owned card rows into `cards`.
+9. Server decrements tickets.
+10. Server records `pull_history`.
+11. Pull Results renders owned cards with Vault links.
+12. Failed live pulls render an explicit failure state.
 
 ## Guardrails
 
-- Phase 10.3 uses temporary Sterling ownership.
+- Phase 10.4 uses temporary Sterling ownership.
+- Resource and history read endpoints do not create rows.
 - Battle and rewards are unchanged.
 - Auth is still deferred.
 - Pull odds, tickets, Vault writes, and pull history are server-owned.
