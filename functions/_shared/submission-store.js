@@ -1,7 +1,7 @@
 /* ============================================================================
    Submission Store Helper
-   Phase 9.2 responsibility: shared D1 schema bootstrap and row normalization
-   for write-enabled card submissions. Approval remains deferred.
+   Phase 9.3 responsibility: shared D1 schema bootstrap, row normalization,
+   list reads, and single-submission lookup. Approval remains deferred.
    ============================================================================ */
 
 const createTableSql = `
@@ -152,4 +152,16 @@ export async function listSubmissions(env, { limit = 100, status = '' } = {}) {
   `).bind(safeLimit).all();
 
   return (result.results || []).map(normalizeSubmissionRow);
+}
+
+export async function getSubmissionById(env, submissionId) {
+  await ensureSubmissionSchema(env);
+
+  const row = await env.DB.prepare(`
+    SELECT * FROM card_submissions
+    WHERE id = ?
+    LIMIT 1
+  `).bind(String(submissionId || '')).first();
+
+  return row ? normalizeSubmissionRow(row) : null;
 }
