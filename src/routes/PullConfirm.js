@@ -1,11 +1,29 @@
 import { mockUser } from '../data/mockUser.js';
 import { pullOptions, rarityOdds } from '../data/mockPull.js';
 import { clampPullCount } from '../components/format.js';
+import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 
-export function renderPullConfirm({ query }) {
+async function loadResources() {
+  try {
+    const routes = getApiRoutes();
+    const payload = await fetchJson(routes.pullResources);
+    return {
+      tickets: Number(payload.resources?.pullTickets ?? mockUser.pullTickets),
+      source: payload.resources?.bootstrapped ? 'Live' : 'Starter',
+    };
+  } catch {
+    return {
+      tickets: mockUser.pullTickets,
+      source: 'Mock',
+    };
+  }
+}
+
+export async function renderPullConfirm({ query }) {
   const count = clampPullCount(query.count);
   const option = pullOptions[count];
-  const canAfford = mockUser.pullTickets >= option.ticketCost;
+  const resources = await loadResources();
+  const canAfford = resources.tickets >= option.ticketCost;
 
   return `
     <section class="hero-panel">
@@ -17,11 +35,11 @@ export function renderPullConfirm({ query }) {
     <section class="glass-panel confirm-panel">
       <div class="detail-list">
         <div class="detail-row"><span>Ticket Cost</span><strong>🎟 ${option.ticketCost}</strong></div>
-        <div class="detail-row"><span>Displayed Tickets</span><strong>🎟 ${mockUser.pullTickets}</strong></div>
+        <div class="detail-row"><span>${resources.source} Tickets</span><strong>🎟 ${resources.tickets}</strong></div>
         <div class="detail-row"><span>Status</span><strong>${canAfford ? 'Ready' : 'Need more tickets'}</strong></div>
       </div>
       <div class="action-row">
-        <a class="button button-primary" href="#/pull/results?count=${count}&real=1">Resolve Pull</a>
+        ${canAfford ? `<a class="button button-primary" href="#/pull/results?count=${count}&real=1">Resolve Pull</a>` : '<span class="button button-secondary">Not Enough Tickets</span>'}
         <a class="button button-secondary" href="#/pull">Cancel</a>
       </div>
     </section>
