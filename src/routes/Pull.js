@@ -25,11 +25,11 @@ export async function renderPull() {
     <section class="hero-panel">
       <span class="section-kicker">Pull Chamber</span>
       <h2 class="hero-title">Spend tickets. Reveal cards.</h2>
-      <p class="hero-copy">Phase 10.4 shows live Sterling ticket resources and pull history diagnostics.</p>
+      <p class="hero-copy">Phase 10.5 adds testing top-ups and in-app pull history.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/shop">Open Ticket Shop</a>
+        <a class="button button-secondary" href="#/pull/history">Pull History</a>
         <a class="button button-secondary" href="${routes.pullPool}" target="_blank" rel="noreferrer">Pull Pool Audit</a>
-        <a class="button button-secondary" href="${routes.pullHistory}" target="_blank" rel="noreferrer">Pull History</a>
       </div>
     </section>
 
