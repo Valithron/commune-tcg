@@ -1,8 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 9.3 responsibility: wire static, async read-model, card system styles,
-   card title fitting, Card Lab-only frame tuner routes, Submit form init, and
-   read-only Admin submission detail routing.
+   Phase 9.4 responsibility: initialize route-specific handlers after render.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -38,7 +36,7 @@ import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
-import { renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
+import { initAdminSubmissionDetail, renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
 import { renderCardLab } from './routes/CardLab.js';
@@ -161,6 +159,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/submit') {
       initSubmitCardForm(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/admin/submission/:submissionId') {
+      initAdminSubmissionDetail(appRoot);
     }
   } catch (error) {
     appRoot.innerHTML = renderAppShell({
