@@ -1,7 +1,7 @@
 /* ============================================================================
    Admin Submission Detail Route
-   Phase 9.4 responsibility: show submission review detail and trigger server-
-   owned review actions. Pull eligibility remains deferred.
+   Phase 9.4 patch responsibility: show submission review detail, trigger server-
+   owned review actions, and surface backend error detail during approval tests.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
@@ -27,6 +27,11 @@ function formatBytes(value) {
 
 function isReviewable(submission) {
   return ['pending_review', 'needs_changes'].includes(submission.moderationStatus);
+}
+
+function getPayloadError(payload, response) {
+  const parts = [payload?.error, payload?.detail].filter(Boolean);
+  return parts.join(': ') || `Review action failed with ${response.status}`;
 }
 
 function submissionToPreviewCard(submission) {
@@ -188,7 +193,7 @@ export function initAdminSubmissionDetail(root) {
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.error || `Review action failed with ${response.status}`);
+          throw new Error(getPayloadError(payload, response));
         }
 
         status.textContent = 'Review action applied: ' + action.replaceAll('_', ' ');
