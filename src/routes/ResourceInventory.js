@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Phase 8.1 adds a read-only Vault ownership inventory pass before wiring real owned-card data into the Vault route.</p>
+      <p class="hero-copy">Phase 8.2 adds a read-only Vault endpoint before wiring real owned-card data into the Vault route.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/library">Library</a>
         <a class="button button-secondary" href="#/vault">Vault</a>
@@ -20,6 +20,7 @@ export function renderResourceInventory() {
       <span class="section-kicker">Inventory Endpoints</span>
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
+        <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Vault Cards</span><strong>${routes.vault}</strong></a>
         <a href="${routes.vaultInventory}" target="_blank" rel="noreferrer"><span>Vault Ownership Inventory</span><strong>${routes.vaultInventory}</strong></a>
         <a href="${routes.cards}" target="_blank" rel="noreferrer"><span>Library Cards</span><strong>${routes.cards}</strong></a>
         <a href="${routes.schemaDetails}" target="_blank" rel="noreferrer"><span>Schema Details</span><strong>${routes.schemaDetails}</strong></a>
@@ -31,13 +32,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Document before Phase 8 read model</h2>
+      <h2 class="section-title">Document before Vault route wiring</h2>
       <div class="admin-checklist">
-        <div>Record whether cards.owner_user_id has owned rows and unique owners.</div>
-        <div>Record any populated candidate ownership tables and their visible columns.</div>
-        <div>Check whether owned cards have valid card_json payloads and image keys.</div>
-        <div>Check whether the endpoint says Vault can likely map from cards.owner_user_id.</div>
-        <div>Update docs/cloudflare-resource-inventory.md with findings before wiring real Vault reads.</div>
+        <div>Open /api/vault and confirm owned cards normalize into the CardFrame shape.</div>
+        <div>Record ownerUserIds and decide the temporary owner strategy before wiring #/vault.</div>
+        <div>Check whether progression fields are real or placeholder values.</div>
+        <div>Check whether image keys resolve through /api/card-image.</div>
+        <div>Keep /api/vault read-only until auth and user boundaries are explicit.</div>
       </div>
     </section>
   `;
