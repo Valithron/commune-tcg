@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Phase 10.1 maps the pull pool before real pull results exist.</p>
+      <p class="hero-copy">Phase 10.2 simulates pulls from the pull pool without writes.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/pull">Pull Chamber</a>
         <a class="button button-secondary" href="#/admin">Admin</a>
@@ -19,6 +19,7 @@ export function renderResourceInventory() {
       <span class="section-kicker">Inventory Endpoints</span>
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
+        <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
         <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
         <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
         <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions</span><strong>${routes.submissions}</strong></a>
@@ -36,13 +37,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify pull pool</h2>
+      <h2 class="section-title">Verify pull simulation</h2>
       <div class="admin-checklist">
-        <div>Open the pull pool endpoint.</div>
-        <div>Confirm eligibleCount is greater than zero.</div>
-        <div>Confirm approved submissions are included.</div>
-        <div>Confirm owned Vault cards are excluded.</div>
-        <div>Confirm no pull result writes exist yet.</div>
+        <div>Open the pull simulation endpoint.</div>
+        <div>Confirm writesPerformed is false.</div>
+        <div>Confirm results come from eligible cards.</div>
+        <div>Open Pull Results and confirm simulated cards render.</div>
+        <div>Confirm tickets and Vault are unchanged.</div>
       </div>
     </section>
   `;
