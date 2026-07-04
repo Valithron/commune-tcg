@@ -1,53 +1,21 @@
 /* ============================================================================
    Vault Route
-   Phase 8.3 responsibility: read Sterling's temporary Vault from the read-only
-   backend endpoint, with mock owned-card fallback if the endpoint is unavailable.
+   Phase 8.4 responsibility: render Sterling's temporary Vault using the shared
+   Vault data source, with mock fallback owned by src/data/vaultData.js.
    ============================================================================ */
 
-import { ownedCards } from '../data/mockCards.js';
 import { renderCardFrame } from '../components/CardFrame.js';
-import { fetchJson, getApiRoutes } from '../services/apiClient.js';
-
-const temporaryVaultOwner = 'sterling';
-
-async function loadVaultCards() {
-  try {
-    const routes = getApiRoutes();
-    const payload = await fetchJson(`${routes.vault}?ownerUserId=${encodeURIComponent(temporaryVaultOwner)}`);
-
-    if (!payload?.ok || !Array.isArray(payload.cards)) {
-      return {
-        cards: ownedCards,
-        source: 'mock',
-        warnings: payload?.warnings || ['No backend Vault cards were returned.'],
-      };
-    }
-
-    return {
-      cards: payload.cards,
-      source: 'backend',
-      warnings: payload.warnings || [],
-    };
-  } catch (error) {
-    return {
-      cards: ownedCards,
-      source: 'mock',
-      warnings: [error.message],
-    };
-  }
-}
+import { getVaultSourceLabel, loadVaultCards, temporaryVaultOwner } from '../data/vaultData.js';
 
 export async function renderVault() {
   const vault = await loadVaultCards();
-  const sourceLabel = vault.source === 'backend'
-    ? `Live Vault · ${temporaryVaultOwner}`
-    : 'Mock Vault fallback';
+  const sourceLabel = getVaultSourceLabel(vault);
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
       <h2 class="hero-title">Your Vault</h2>
-      <p class="hero-copy">The Vault is currently mapped to Sterling as the temporary active owner until real authentication exists.</p>
+      <p class="hero-copy">The Vault is currently mapped to ${temporaryVaultOwner} as the temporary active owner until real authentication exists.</p>
     </section>
 
     <div class="empty-note">Source: ${sourceLabel}</div>
