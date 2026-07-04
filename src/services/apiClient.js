@@ -1,7 +1,7 @@
 /* ============================================================================
    API Client Shell
-   Phase 9.4 responsibility: centralize API endpoint strings for diagnostics,
-   submission pipeline endpoints, review detail, and review actions.
+   Phase 9.5 responsibility: centralize API endpoint strings for diagnostics,
+   submission pipeline endpoints, review actions, and review audit checks.
    ============================================================================ */
 
 const apiRoutes = {
@@ -14,6 +14,7 @@ const apiRoutes = {
   vaultInventory: '/api/vault-inventory',
   vault: '/api/vault',
   submissionInventory: '/api/submission-inventory',
+  submissionReviewAudit: '/api/submission-review-audit',
   submissions: '/api/submissions',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
