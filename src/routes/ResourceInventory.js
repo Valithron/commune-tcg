@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Phase 9.2 adds pending-review submission writes while keeping approval and Library insertion deferred.</p>
+      <p class="hero-copy">Phase 9.5 checks the submission review output before Pull engine work begins.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Submit Card</a>
         <a class="button button-secondary" href="#/admin">Admin</a>
@@ -19,6 +19,7 @@ export function renderResourceInventory() {
       <span class="section-kicker">Inventory Endpoints</span>
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
+        <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
         <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions</span><strong>${routes.submissions}</strong></a>
         <a href="${routes.adminSubmissions}" target="_blank" rel="noreferrer"><span>Admin Submissions</span><strong>${routes.adminSubmissions}</strong></a>
         <a href="${routes.submissionInventory}" target="_blank" rel="noreferrer"><span>Submission Inventory</span><strong>${routes.submissionInventory}</strong></a>
@@ -34,13 +35,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify submission pipeline</h2>
+      <h2 class="section-title">Verify review output</h2>
       <div class="admin-checklist">
-        <div>Open /api/submissions and confirm it returns the pending-review queue.</div>
-        <div>Open /api/admin/submissions and confirm Admin reads the same rows.</div>
-        <div>Submit one test card with a small PNG/JPG/WEBP image.</div>
-        <div>Confirm the image key uses submissions/SUBMISSION_ID/original.EXT.</div>
-        <div>Confirm no card appears in Library or pulls until a future approval endpoint exists.</div>
+        <div>Open the submission review audit endpoint.</div>
+        <div>Confirm readiness status is ready-for-pull-planning.</div>
+        <div>Confirm approved rows have matching Library cards.</div>
+        <div>Confirm approved cards have no owner value.</div>
+        <div>Confirm Pull and Vault behavior are unchanged.</div>
       </div>
     </section>
   `;
