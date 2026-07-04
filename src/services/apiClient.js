@@ -1,7 +1,7 @@
 /* ============================================================================
    API Client Shell
-   Phase 9.3 responsibility: centralize API endpoint strings for diagnostics,
-   inventory links, submission pipeline endpoints, and read-only review detail.
+   Phase 9.4 responsibility: centralize API endpoint strings for diagnostics,
+   submission pipeline endpoints, review detail, and review actions.
    ============================================================================ */
 
 const apiRoutes = {
@@ -17,6 +17,7 @@ const apiRoutes = {
   submissions: '/api/submissions',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
+  adminSubmissionAction: '/api/admin/submission-action',
 };
 
 export function getApiRoutes() {
