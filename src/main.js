@@ -1,23 +1,25 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 7.6 responsibility: wire static, async read-model, card-lab, card title
-   fitting, and Card Lab-only frame tuner routes. Do not put route-specific UI
-   or backend behavior in this file.
+   Phase 7.7 responsibility: wire static, async read-model, card system styles,
+   card title fitting, and Card Lab-only frame tuner routes. Do not put
+   route-specific UI or backend behavior in this file.
    ============================================================================ */
 
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+
+// Card system styles: foundation, density overrides, detail layout, then dev tools.
 import './styles/cards.css';
 import './styles/card-showcase.css';
 import './styles/card-standard.css';
 import './styles/card-thumbnail.css';
 import './styles/card-detail.css';
-import './styles/card-detail-stack.css';
-import './styles/battle.css';
-import './styles/phase4.css';
 import './styles/card-lab.css';
 import './styles/card-standard-tuner.css';
+
+import './styles/battle.css';
+import './styles/phase4.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
