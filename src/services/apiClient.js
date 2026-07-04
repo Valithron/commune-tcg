@@ -10,6 +10,7 @@ const apiRoutes = {
   submissionInventory: '/api/submission-inventory',
   submissionReviewAudit: '/api/submission-review-audit',
   pullPool: '/api/pull-pool',
+  pullSimulate: '/api/pull-simulate',
   submissions: '/api/submissions',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
