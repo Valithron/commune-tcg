@@ -1,7 +1,7 @@
 /* ============================================================================
    Pull Engine
-   Phase 10.3 responsibility: server-owned ticket spend, Vault grant, and pull
-   history writes for the temporary Sterling owner.
+   Phase 10.4 responsibility: live pull writes plus read helpers for resources
+   and history hardening around the temporary Sterling owner.
    ============================================================================ */
 
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
@@ -86,6 +86,16 @@ function buildId(prefix) {
   return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8);
 }
 
+async function tableExists(env, tableName) {
+  const row = await env.DB.prepare(`
+    SELECT name FROM sqlite_master
+    WHERE type = 'table' AND name = ?
+    LIMIT 1
+  `).bind(tableName).first();
+
+  return Boolean(row);
+}
+
 async function ensurePullSchema(env, now) {
   await env.DB.prepare(userResourcesSql).run();
   await env.DB.prepare(pullHistorySql).run();
@@ -103,6 +113,91 @@ async function readUserResources(env) {
     WHERE user_id = ?
     LIMIT 1
   `).bind(temporaryPullUserId).first();
+}
+
+export async function readPullResources(env) {
+  const exists = await tableExists(env, 'user_resources');
+
+  if (!exists) {
+    return {
+      userId: temporaryPullUserId,
+      pullTickets: temporaryStartingTickets,
+      gold: 0,
+      bootstrapped: false,
+      tableExists: false,
+      note: 'Live pull resources have not been created yet.',
+    };
+  }
+
+  const resources = await readUserResources(env);
+
+  if (!resources) {
+    return {
+      userId: temporaryPullUserId,
+      pullTickets: temporaryStartingTickets,
+      gold: 0,
+      bootstrapped: false,
+      tableExists: true,
+      note: 'Sterling resources row has not been created yet.',
+    };
+  }
+
+  return {
+    userId: resources.userId,
+    pullTickets: Number(resources.pullTickets),
+    gold: Number(resources.gold || 0),
+    createdAt: resources.createdAt,
+    updatedAt: resources.updatedAt,
+    bootstrapped: true,
+    tableExists: true,
+    note: '',
+  };
+}
+
+export async function readPullHistory(env, { limit = 20 } = {}) {
+  const exists = await tableExists(env, 'pull_history');
+
+  if (!exists) {
+    return {
+      tableExists: false,
+      totalReturned: 0,
+      pulls: [],
+    };
+  }
+
+  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const result = await env.DB.prepare(`
+    SELECT id, user_id AS userId, pull_count AS pullCount, ticket_cost AS ticketCost, result_json AS resultJson, created_at AS createdAt
+    FROM pull_history
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).bind(temporaryPullUserId, safeLimit).all();
+
+  const pulls = (result.results || []).map((row) => {
+    let results = [];
+
+    try {
+      results = JSON.parse(row.resultJson || '[]');
+    } catch {
+      results = [];
+    }
+
+    return {
+      id: row.id,
+      userId: row.userId,
+      pullCount: Number(row.pullCount),
+      ticketCost: Number(row.ticketCost),
+      results,
+      createdAt: row.createdAt,
+    };
+  });
+
+  return {
+    tableExists: true,
+    totalReturned: pulls.length,
+    pulls,
+  };
 }
 
 function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
