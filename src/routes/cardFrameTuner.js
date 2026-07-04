@@ -17,9 +17,9 @@ const stageDefaults = {
   showcase: baseDefaults,
   standard: {
     ...baseDefaults,
-    nameplate: { ...baseDefaults.nameplate, x: 4, y: 75.1, w: 94, h: 16 },
-    pills: { ...baseDefaults.pills, x: 5, y: 85, w: 90, h: 5 },
-    stats: { ...baseDefaults.stats, x: 26, y: 67, w: 50, h: 8.5 },
+    nameplate: { ...baseDefaults.nameplate, x: 3, y: 79.1, w: 94, h: 15 },
+    pills: { ...baseDefaults.pills, x: 3.3, y: 87, w: 93.2, h: 4.8 },
+    stats: { ...baseDefaults.stats, x: 25, y: 71.3, w: 50, h: 8.5 },
   },
 };
 
@@ -28,7 +28,7 @@ function getDefaults(stageId) {
 }
 
 function getStorageKey(stageId) {
-  return `${storageKeyPrefix}-${stageId || 'default'}-v4`;
+  return `${storageKeyPrefix}-${stageId || 'default'}-v5`;
 }
 
 function cloneDefaults(stageId) {
