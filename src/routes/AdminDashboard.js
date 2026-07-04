@@ -1,7 +1,7 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 9.2 responsibility: read the real submission queue from the read-only
-   admin endpoint, with mock fallback. Approval/rejection writes are deferred.
+   Phase 9.3 responsibility: read the real submission queue and link rows to
+   read-only submission detail. Review/rejection writes are deferred.
    ============================================================================ */
 
 import { mockAdminStats, mockSubmissions, adminChecklist } from '../data/mockAdmin.js';
@@ -30,6 +30,14 @@ function mapBackendSubmission(submission) {
     category: submission.cardType,
     rarity: submission.raritySuggestion,
     status: formatStatus(submission.moderationStatus),
+    source: 'backend',
+  };
+}
+
+function mapMockSubmission(submission) {
+  return {
+    ...submission,
+    source: 'mock',
   };
 }
 
@@ -40,7 +48,7 @@ async function loadAdminSubmissions() {
 
     if (!payload?.ok || !Array.isArray(payload.submissions)) {
       return {
-        submissions: mockSubmissions,
+        submissions: mockSubmissions.map(mapMockSubmission),
         source: 'mock',
         warnings: payload?.warnings || ['No backend submissions were returned.'],
       };
@@ -53,11 +61,27 @@ async function loadAdminSubmissions() {
     };
   } catch (error) {
     return {
-      submissions: mockSubmissions,
+      submissions: mockSubmissions.map(mapMockSubmission),
       source: 'mock',
       warnings: [error.message],
     };
   }
+}
+
+function renderSubmissionRow(submission) {
+  const content = `
+    <div>
+      <strong>${escapeHtml(submission.name)}</strong>
+      <span>${escapeHtml(submission.submitter)} · ${escapeHtml(submission.category)} · ${escapeHtml(submission.rarity)}</span>
+    </div>
+    <em>${escapeHtml(submission.status)}</em>
+  `;
+
+  if (submission.source !== 'backend') {
+    return `<article class="admin-row">${content}</article>`;
+  }
+
+  return `<a class="admin-row" href="#/admin/submission/${encodeURIComponent(submission.id)}">${content}</a>`;
 }
 
 export async function renderAdminDashboard() {
@@ -69,7 +93,7 @@ export async function renderAdminDashboard() {
     <section class="hero-panel">
       <span class="section-kicker">Admin</span>
       <h2 class="hero-title">Control the pool.</h2>
-      <p class="hero-copy">The moderation queue now reads submitted cards. Approval, rejection, and Library insertion are still deferred.</p>
+      <p class="hero-copy">The moderation queue now reads submitted cards. Tap a row to inspect its read-only review detail.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Open Submit Flow</a>
         <a class="button button-secondary" href="#/backend">Backend Status</a>
@@ -102,15 +126,7 @@ export async function renderAdminDashboard() {
         <span class="status-pill">${escapeHtml(sourceLabel)}</span>
       </div>
       <div class="admin-table">
-        ${queue.submissions.length ? queue.submissions.map((submission) => `
-          <article class="admin-row">
-            <div>
-              <strong>${escapeHtml(submission.name)}</strong>
-              <span>${escapeHtml(submission.submitter)} · ${escapeHtml(submission.category)} · ${escapeHtml(submission.rarity)}</span>
-            </div>
-            <em>${escapeHtml(submission.status)}</em>
-          </article>
-        `).join('') : '<div class="empty-note">No submitted cards yet.</div>'}
+        ${queue.submissions.length ? queue.submissions.map(renderSubmissionRow).join('') : '<div class="empty-note">No submitted cards yet.</div>'}
       </div>
     </section>
 
