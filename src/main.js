@@ -1,8 +1,8 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 9.2 responsibility: wire static, async read-model, card system styles,
-   card title fitting, Card Lab-only frame tuner routes, and Submit form init.
-   Do not put route-specific UI or backend behavior in this file.
+   Phase 9.3 responsibility: wire static, async read-model, card system styles,
+   card title fitting, Card Lab-only frame tuner routes, Submit form init, and
+   read-only Admin submission detail routing.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -38,6 +38,7 @@ import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
+import { renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
 import { renderCardLab } from './routes/CardLab.js';
@@ -62,6 +63,7 @@ const routeDefinitions = [
   { pattern: '/battle/results', navRoute: '/battle', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/home', render: renderAdminDashboard },
+  { pattern: '/admin/submission/:submissionId', navRoute: '/home', render: renderAdminSubmissionDetail },
   { pattern: '/backend', navRoute: '/home', render: renderBackendStatus },
   { pattern: '/inventory', navRoute: '/home', render: renderResourceInventory },
   { pattern: '/card-lab', navRoute: '/library', render: renderCardLab },
