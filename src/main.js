@@ -1,7 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 10.4 patch responsibility: initialize route-specific handlers after
-   async shell render so the top resource bar can use live ticket data.
+   Phase 10.5 responsibility: initialize ticket shop top-ups and pull history.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -26,11 +25,12 @@ import { renderHome } from './routes/Home.js';
 import { renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
 import { renderPullResults } from './routes/PullResults.js';
+import { renderPullHistory } from './routes/PullHistory.js';
 import { renderVault } from './routes/Vault.js';
 import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
 import { renderLibrary } from './routes/Library.js';
 import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
-import { renderTicketShop } from './routes/TicketShop.js';
+import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
 import { renderSquadBuilder } from './routes/SquadBuilder.js';
@@ -51,6 +51,7 @@ const routeDefinitions = [
   { pattern: '/pull', navRoute: '/pull', render: renderPull },
   { pattern: '/pull/confirm', navRoute: '/pull', render: renderPullConfirm },
   { pattern: '/pull/results', navRoute: '/pull', render: renderPullResults },
+  { pattern: '/pull/history', navRoute: '/pull', render: renderPullHistory },
   { pattern: '/vault', navRoute: '/vault', render: renderVault },
   { pattern: '/vault/card/:cardId', navRoute: '/vault', render: renderVaultCardDetail },
   { pattern: '/library', navRoute: '/library', render: renderLibrary },
@@ -160,6 +161,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/submit') {
       initSubmitCardForm(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/shop') {
+      initTicketShop(appRoot);
     }
 
     if (matchedRoute.pattern === '/admin/submission/:submissionId') {
