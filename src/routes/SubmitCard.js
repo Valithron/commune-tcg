@@ -121,7 +121,7 @@ export function initSubmitCardForm(root) {
         throw new Error(errors || `Submission failed with ${response.status}`);
       }
 
-      status.innerHTML = `Submitted for review: <strong>${payload.submission.cardName}</strong>`;
+      status.textContent = 'Submitted for review: ' + payload.submission.cardName;
       form.reset();
       form.querySelector('[name="crop_json"]').value = '{}';
     } catch (error) {
