@@ -1,12 +1,12 @@
 /* ============================================================================
    Card Detail Layout
-   Purpose: Library and Vault detail pages. Mobile is card-first, full-width,
-   and stacked. Desktop may use a constrained two-column inspection layout.
+   Purpose: Library and Vault detail pages. Detail pages are card-first and
+   stacked so mobile and narrow app shells never fall into a side-by-side view.
    ============================================================================ */
 
 .detail-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr !important;
   gap: var(--space-4);
   align-items: start;
   width: 100%;
@@ -15,7 +15,7 @@
 
 .detail-card-stage {
   width: 100%;
-  max-width: 100%;
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -28,6 +28,7 @@
   gap: var(--space-3);
   width: 100%;
   max-width: 100%;
+  margin-top: var(--space-2);
   padding: var(--space-4);
 }
 
@@ -72,30 +73,4 @@
   line-height: 1.2;
   text-align: right;
   overflow-wrap: anywhere;
-}
-
-@media (min-width: 48rem) {
-  .detail-layout {
-    grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
-    gap: var(--space-5);
-  }
-
-  .detail-card-stage {
-    max-width: 24rem;
-  }
-}
-
-@media (max-width: 47.99rem) {
-  .detail-layout {
-    grid-template-columns: 1fr !important;
-  }
-
-  .detail-card-stage {
-    width: 100%;
-    max-width: none;
-  }
-
-  .detail-panel {
-    margin-top: var(--space-2);
-  }
 }
