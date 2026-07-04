@@ -1,0 +1,2 @@
+/* Force Library/Vault detail pages to stack card above details. */
+.detail-layout{grid-template-columns:1fr!important}.detail-card-stage{width:100%;max-width:none}.detail-card-stage .tcg-card{width:100%}.detail-panel{width:100%;max-width:100%;margin-top:var(--space-2)}
