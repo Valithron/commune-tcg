@@ -14,6 +14,7 @@ const apiRoutes = {
   pulls: '/api/pulls',
   pullResources: '/api/pull-resources',
   pullHistory: '/api/pull-history',
+  pullTopUp: '/api/pull-top-up',
   submissions: '/api/submissions',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
