@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a planning draft. Phase 9.1 defines the submission upload pipeline contract before upload, moderation, or database writes exist.
+This document tracks the live backend contracts for the Gacha branch. Phase 9.2 adds pending-review submission creation while review actions and Library insertion remain deferred.
 
 ## Existing Cloudflare bindings
 
@@ -9,9 +9,7 @@ This document is a planning draft. Phase 9.1 defines the submission upload pipel
 | `env.DB` | D1 database | `com-tcg-db` |
 | `env.CARD_IMAGES` | R2 bucket | `com-tcg-images` |
 
-## Implemented read-only endpoints
-
-These endpoints are implemented as Cloudflare Pages Functions and are intentionally read-only.
+## Implemented endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -25,8 +23,11 @@ These endpoints are implemented as Cloudflare Pages Functions and are intentiona
 | `GET` | `/api/vault-inventory` | Inspect owned-card data candidates for the future Vault read model |
 | `GET` | `/api/vault` | Read and normalize owned card rows from `cards.owner_user_id` |
 | `GET` | `/api/submission-inventory` | Inspect submission-table candidates and R2 image-key readiness |
+| `GET` | `/api/submissions` | Read submitted card rows from `card_submissions` |
+| `POST` | `/api/submissions` | Create a pending-review card submission and upload original art to R2 |
+| `GET` | `/api/admin/submissions` | Read the admin moderation queue from `card_submissions` |
 
-## Core tables to confirm before implementation
+## Core tables
 
 ### cards
 
@@ -53,9 +54,11 @@ Optional query:
 
 ### card_submissions
 
-Canonical planned table for user-created card submissions before approval into Library/pull pool.
+Canonical table for user-created card submissions before review into Library/pull pool.
 
-Planned fields:
+Phase 9.2 bootstraps this table with `CREATE TABLE IF NOT EXISTS` when submission endpoints are used.
+
+Fields:
 
 - `id`
 - `submitter_user_id`
@@ -82,11 +85,14 @@ Planned fields:
 - `reviewed_at`
 - `reviewed_by`
 
-Planned moderation statuses:
+Implemented status in Phase 9.2:
+
+- `pending_review`
+
+Reserved statuses:
 
 - `draft`
 - `uploaded`
-- `pending_review`
 - `needs_changes`
 - `approved`
 - `rejected`
@@ -96,83 +102,36 @@ Planned moderation statuses:
 
 Earlier expected global approved Library cards table. The current live Gacha branch uses `cards` instead.
 
-Expected fields if later introduced:
-
-- `id`
-- `name`
-- `category`
-- `rarity`
-- `pow`
-- `def`
-- `spd`
-- `flavor_text`
-- `image_key`
-- `status`
-- `created_at`
-- `updated_at`
-
 ### user_vault_cards
 
 Earlier expected player-owned card instance table. The current live Gacha branch maps Vault from `cards.owner_user_id` instead.
 
-Expected fields if later introduced:
-
-- `id`
-- `user_id`
-- `card_template_id`
-- `level`
-- `xp`
-- `copies`
-- `equipped`
-- `created_at`
-- `updated_at`
-
 ### pull_history
 
-Auditable record of pull outcomes.
-
-Expected fields:
-
-- `id`
-- `user_id`
-- `pull_count`
-- `ticket_cost`
-- `result_card_ids`
-- `created_at`
+Future auditable record of pull outcomes.
 
 ### battle_history
 
-Resolved battle outcomes.
-
-Expected fields:
-
-- `id`
-- `user_id`
-- `encounter_id`
-- `squad_card_ids`
-- `result`
-- `reward_gold`
-- `reward_xp`
-- `created_at`
+Future resolved battle outcomes.
 
 ## R2 image key strategy
 
-Submission uploads should go into `CARD_IMAGES` using stable, non-user-controlled keys.
+Submission uploads go into `CARD_IMAGES` using stable, server-owned keys.
 
-Planned original upload key:
+Implemented original upload key:
 
 ```text
 submissions/SUBMISSION_ID/original.EXT
 ```
 
-Planned derived/cropped keys:
+Reserved derived/cropped keys:
 
 ```text
 submissions/SUBMISSION_ID/derived/card-art.EXT
 submissions/SUBMISSION_ID/derived/thumb.EXT
 ```
 
-Planned post-approval Library key:
+Reserved post-review Library key:
 
 ```text
 cards/CARD_ID/art.EXT
@@ -180,35 +139,29 @@ cards/CARD_ID/art.EXT
 
 Rules:
 
-- Never trust the browser-provided filename as the object key.
-- Store original filename only as metadata.
-- Validate MIME type and extension server-side.
-- Enforce max size before writing.
-- Keep the D1 submission row as the source of truth for status and image key.
-- Approval should create/update the canonical Library card row only after moderation passes.
+- Browser filenames are metadata only, never object keys.
+- Server creates the final R2 key.
+- MIME type and extension are validated server-side.
+- Image size is capped at 8 MB.
+- D1 stores submission status and image key.
+- Review must happen before a card enters Library or pull results.
 
-## Safe upload flow sketch
+## Implemented submission flow
 
-Phase 9.2 should not jump straight to a broad write endpoint. Use a staged flow:
-
-1. Validate submitter/auth boundary.
-2. Create a D1 `card_submissions` row with `moderation_status = draft` or `pending_review`.
-3. Generate a server-owned R2 key using the submission id.
-4. Upload the original image to R2.
-5. Store `image_key`, MIME type, size, and crop data in D1.
-6. Keep the submission out of Library and Pull results until approved.
-7. Admin approval creates or updates the canonical approved card data.
+1. Submit Card form posts multipart data to `/api/submissions`.
+2. Server validates text fields, stats, rarity, character, type, and image.
+3. Server generates a submission id.
+4. Server writes original image to `CARD_IMAGES`.
+5. Server inserts a `card_submissions` row with `moderation_status = pending_review`.
+6. Admin dashboard reads `/api/admin/submissions`.
 
 ## Future endpoint sketch
 
-These are route contracts to design before coding real writes.
-
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/api/submissions` | Create a card submission and store validated metadata |
-| `POST` | `/api/images/upload-url` | Prepare image upload flow for R2 if direct upload flow is chosen |
-| `GET` | `/api/admin/submissions` | Read moderation queue |
-| `POST` | `/api/admin/submissions/:id/approve` | Approve a submitted card into Library |
+| `POST` | `/api/admin/submissions/:id/approve` | Review a submitted card into Library |
+| `POST` | `/api/admin/submissions/:id/needs-changes` | Mark a submission for edits |
+| `POST` | `/api/admin/submissions/:id/reject` | Close a submission without Library insertion |
 | `POST` | `/api/pulls` | Spend tickets and resolve pull results |
 | `POST` | `/api/battles` | Resolve a battle and write rewards |
 
@@ -217,8 +170,8 @@ These are route contracts to design before coding real writes.
 - Server owns pull odds, ticket spending, and rewards.
 - Server owns battle resolution and reward writes.
 - Server owns submission validation, R2 key generation, and moderation status transitions.
-- Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
-- R2 image keys should be stored in D1, not raw public URLs.
-- Admin routes need authentication and authorization before any real writes exist.
-- Diagnostic, inventory, Library read, Vault inventory, Vault read, and submission inventory endpoints must stay read-only until schema and auth are explicit.
+- Client may preview forms and squads, but cannot be trusted to review cards or grant currency.
+- R2 image keys are stored in D1, not raw public URLs.
+- Admin review routes need authentication and authorization before any review action exists.
+- A pending-review submission does not enter Library, Vault, pulls, battles, or rewards.
 - The Vault route should not present `/api/vault` as a current-user endpoint until owner strategy and auth boundaries are explicit.
