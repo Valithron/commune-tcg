@@ -1,7 +1,7 @@
 /* ============================================================================
    Submission Review Helper
-   Phase 9.4 responsibility: server-owned review transitions for submitted cards.
-   Approval creates an unowned Library card row. Pull engine remains deferred.
+   Phase 9.4 patch responsibility: make approval insertion into cards idempotent
+   and keep approved cards unowned without relying on NULL owner_user_id.
    ============================================================================ */
 
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
@@ -29,7 +29,7 @@ function buildApprovedCardId(submission) {
   return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
-function buildApprovedCardJson(submission) {
+function buildApprovedCardJson(submission, now) {
   return JSON.stringify({
     id: buildApprovedCardId(submission),
     name: submission.cardName,
@@ -53,24 +53,39 @@ function buildApprovedCardJson(submission) {
     source: 'card_submissions',
     source_submission_id: submission.id,
     approved_by: temporaryReviewerId,
-    approved_at: new Date().toISOString(),
+    approved_at: now,
   });
 }
 
-async function insertApprovedLibraryCard(env, submission, now) {
+async function upsertApprovedLibraryCard(env, submission, now) {
   const approvedCardId = buildApprovedCardId(submission);
-  const cardJson = buildApprovedCardJson(submission);
+  const cardJson = buildApprovedCardJson(submission, now);
 
   await env.DB.prepare(`
-    INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
+    INSERT OR IGNORE INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).bind(
     approvedCardId,
-    null,
+    '',
     submission.characterId,
     cardJson,
     now,
     now
+  ).run();
+
+  await env.DB.prepare(`
+    UPDATE cards
+    SET owner_user_id = ?,
+        character_id = ?,
+        card_json = ?,
+        updated_at = ?
+    WHERE id = ?
+  `).bind(
+    '',
+    submission.characterId,
+    cardJson,
+    now,
+    approvedCardId
   ).run();
 
   return approvedCardId;
@@ -136,15 +151,7 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
   let approvedCardId = submission.approvedCardId || '';
 
   if (normalizedAction === 'approve') {
-    approvedCardId = buildApprovedCardId(submission);
-
-    try {
-      await insertApprovedLibraryCard(env, submission, now);
-    } catch (error) {
-      if (!String(error.message || '').toLowerCase().includes('unique')) {
-        throw error;
-      }
-    }
+    approvedCardId = await upsertApprovedLibraryCard(env, submission, now);
   }
 
   await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, now);
