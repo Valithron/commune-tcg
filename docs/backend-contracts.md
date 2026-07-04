@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 10.4 hardens live pulls with resource and history read endpoints.
+This document tracks the live backend contracts for the Gacha branch. Phase 10.5 adds temporary ticket top-ups and in-app pull history.
 
 ## Existing Cloudflare bindings
 
@@ -29,6 +29,7 @@ This document tracks the live backend contracts for the Gacha branch. Phase 10.4
 | `GET` | `/api/pull-resources` | Read temporary Sterling tickets and gold |
 | `GET` | `/api/pull-history` | Read temporary Sterling pull history |
 | `POST` | `/api/pulls` | Live pull for temporary Sterling owner |
+| `POST` | `/api/pull-top-up` | Temporary Sterling ticket top-up for testing |
 | `GET` | `/api/submissions` | Submitted card rows |
 | `POST` | `/api/submissions` | Create pending-review submission |
 | `GET` | `/api/admin/submissions` | Admin submission queue |
@@ -62,7 +63,7 @@ cards.card_json parses cleanly
 
 ### user_resources
 
-Created by Phase 10.3 on first live pull.
+Created by live pull or temporary shop top-up.
 
 Fields:
 
@@ -87,6 +88,16 @@ Starting pull tickets:
 ```
 
 `GET /api/pull-resources` reads this table if it exists and otherwise reports starter values without creating rows.
+
+`POST /api/pull-top-up` creates the row if missing, then adds an allowed amount of tickets.
+
+Allowed test top-ups:
+
+```text
+1
+5
+12
+```
 
 ### pull_history
 
@@ -139,21 +150,22 @@ Pull options:
 
 1. Pull and Confirm read `/api/pull-resources`.
 2. Confirm blocks the live pull link if tickets are too low.
-3. Confirmation links to `#/pull/results?count=COUNT&real=1` when affordable.
-4. Pull Results posts to `/api/pulls`.
-5. Server checks Sterling tickets.
-6. Server reads unowned Library cards.
-7. Server rolls rarity.
-8. Server inserts owned card rows into `cards`.
-9. Server decrements tickets.
-10. Server records `pull_history`.
-11. Pull Results renders owned cards with Vault links.
-12. Failed live pulls render an explicit failure state.
+3. Ticket Shop can add temporary testing tickets through `/api/pull-top-up`.
+4. Confirmation links to `#/pull/results?count=COUNT&real=1` when affordable.
+5. Pull Results posts to `/api/pulls`.
+6. Server checks Sterling tickets.
+7. Server reads unowned Library cards.
+8. Server rolls rarity.
+9. Server inserts owned card rows into `cards`.
+10. Server decrements tickets.
+11. Server records `pull_history`.
+12. Pull Results renders owned cards with Vault links.
+13. Pull History displays recent records from `/api/pull-history`.
 
 ## Guardrails
 
-- Phase 10.4 uses temporary Sterling ownership.
-- Resource and history read endpoints do not create rows.
+- Phase 10.5 uses temporary Sterling ownership.
+- Ticket top-up is a testing tool, not a real purchase flow.
 - Battle and rewards are unchanged.
 - Auth is still deferred.
 - Pull odds, tickets, Vault writes, and pull history are server-owned.
