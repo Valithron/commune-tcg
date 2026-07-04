@@ -1,6 +1,6 @@
 /* ============================================================================
    API Client Shell
-   Phase 8.1 responsibility: centralize API endpoint strings for diagnostics,
+   Phase 8.2 responsibility: centralize API endpoint strings for diagnostics,
    inventory links, and read-only Library/Vault mapping data.
    ============================================================================ */
 
@@ -12,6 +12,7 @@ const apiRoutes = {
   imagesSummary: '/api/images-summary',
   cards: '/api/cards',
   vaultInventory: '/api/vault-inventory',
+  vault: '/api/vault',
 };
 
 export function getApiRoutes() {
