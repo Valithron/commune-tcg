@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 9.3 adds read-only submission review detail while review actions and Library insertion remain deferred.
+This document tracks the live backend contracts for the Gacha branch. Phase 9.4 adds server-owned submission review actions. Pull eligibility remains deferred.
 
 ## Existing Cloudflare bindings
 
@@ -27,6 +27,7 @@ This document tracks the live backend contracts for the Gacha branch. Phase 9.3 
 | `POST` | `/api/submissions` | Create a pending-review card submission and upload original art to R2 |
 | `GET` | `/api/admin/submissions` | Read the admin moderation queue from `card_submissions` |
 | `GET` | `/api/admin/submission?id=SUBMISSION_ID` | Read one submitted card for review detail |
+| `POST` | `/api/admin/submission-action` | Apply approve, needs_changes, or reject review action |
 
 ## Core tables
 
@@ -43,7 +44,13 @@ Observed fields from targeted probing:
 - `created_at`
 - `updated_at`
 
-Phase 8.1 confirmed the Vault can likely be mapped from `owner_user_id` and `card_json` without a separate ownership table.
+Approved submissions create an unowned `cards` row with:
+
+```text
+owner_user_id = null
+character_id = submission.character_id
+card_json = normalized approved card payload
+```
 
 Phase 8.2 exposes `/api/vault` as a read-only normalized endpoint. Because authentication is not defined yet, `/api/vault` is a mapping endpoint, not a final current-user Vault contract.
 
@@ -56,8 +63,6 @@ Optional query:
 ### card_submissions
 
 Canonical table for user-created card submissions before review into Library/pull pool.
-
-Phase 9.2 bootstraps this table with `CREATE TABLE IF NOT EXISTS` when submission endpoints are used.
 
 Fields:
 
@@ -86,17 +91,17 @@ Fields:
 - `reviewed_at`
 - `reviewed_by`
 
-Implemented status:
+Implemented statuses:
 
 - `pending_review`
+- `needs_changes`
+- `approved`
+- `rejected`
 
 Reserved statuses:
 
 - `draft`
 - `uploaded`
-- `needs_changes`
-- `approved`
-- `rejected`
 - `archived`
 
 ### card_templates
@@ -156,15 +161,14 @@ Rules:
 5. Server inserts a `card_submissions` row with `moderation_status = pending_review`.
 6. Admin dashboard reads `/api/admin/submissions`.
 7. Admin queue rows link to `#/admin/submission/:submissionId`.
-8. Submission detail reads `/api/admin/submission?id=SUBMISSION_ID` and renders a read-only card preview.
+8. Submission detail reads `/api/admin/submission?id=SUBMISSION_ID` and renders a card preview.
+9. Review actions post to `/api/admin/submission-action`.
+10. Approve writes an unowned Library card row into `cards` and marks the submission approved.
 
 ## Future endpoint sketch
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/api/admin/submissions/:id/approve` | Review a submitted card into Library |
-| `POST` | `/api/admin/submissions/:id/needs-changes` | Mark a submission for edits |
-| `POST` | `/api/admin/submissions/:id/reject` | Close a submission without Library insertion |
 | `POST` | `/api/pulls` | Spend tickets and resolve pull results |
 | `POST` | `/api/battles` | Resolve a battle and write rewards |
 
@@ -173,8 +177,9 @@ Rules:
 - Server owns pull odds, ticket spending, and rewards.
 - Server owns battle resolution and reward writes.
 - Server owns submission validation, R2 key generation, and moderation status transitions.
-- Client may preview forms and squads, but cannot be trusted to review cards or grant currency.
+- Client may preview forms and squads, but cannot be trusted to grant currency.
 - R2 image keys are stored in D1, not raw public URLs.
-- Admin review routes need authentication and authorization before any review action exists.
-- A pending-review submission does not enter Library, Vault, pulls, battles, or rewards.
+- Admin authorization is still a temporary placeholder.
+- Approved cards enter Library, but do not enter pulls until the pull engine is built.
+- A submitted card does not enter Vault, battles, or rewards through Phase 9.4.
 - The Vault route should not present `/api/vault` as a current-user endpoint until owner strategy and auth boundaries are explicit.
