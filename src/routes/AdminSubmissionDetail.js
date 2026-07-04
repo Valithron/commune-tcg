@@ -1,7 +1,7 @@
 /* ============================================================================
    Admin Submission Detail Route
-   Phase 9.3 responsibility: show read-only submission review detail and card
-   preview. Review actions and Library insertion remain deferred.
+   Phase 9.4 responsibility: show submission review detail and trigger server-
+   owned review actions. Pull eligibility remains deferred.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
@@ -23,6 +23,10 @@ function formatBytes(value) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
 
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function isReviewable(submission) {
+  return ['pending_review', 'needs_changes'].includes(submission.moderationStatus);
 }
 
 function submissionToPreviewCard(submission) {
@@ -51,6 +55,36 @@ function renderDetailRow(label, value) {
   return `<div class="detail-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || 'Not set')}</strong></div>`;
 }
 
+function renderReviewControls(submission) {
+  if (!isReviewable(submission)) {
+    return `
+      <section class="glass-panel admin-panel">
+        <span class="section-kicker">Review Closed</span>
+        <h2 class="section-title">${escapeHtml(formatStatus(submission.moderationStatus))}</h2>
+        <p class="hero-copy">This submission is no longer in a reviewable state.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="glass-panel admin-panel" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
+      <span class="section-kicker">Review Actions</span>
+      <h2 class="section-title">Server-owned review</h2>
+      <p class="hero-copy">Approve creates an unowned Library card row. Needs Changes and Reject update only this submission.</p>
+      <label class="review-notes-label">
+        <span>Review Notes</span>
+        <textarea data-review-notes maxlength="500" placeholder="Optional note for this review action."></textarea>
+      </label>
+      <div class="action-row">
+        <button class="button button-primary" type="button" data-review-action="approve">Approve to Library</button>
+        <button class="button button-secondary" type="button" data-review-action="needs_changes">Needs Changes</button>
+        <button class="button button-secondary" type="button" data-review-action="reject">Reject</button>
+      </div>
+      <div class="empty-note" data-review-status>Ready for review action.</div>
+    </section>
+  `;
+}
+
 async function loadSubmission(submissionId) {
   const routes = getApiRoutes();
   const payload = await fetchJson(routes.adminSubmission + '?id=' + encodeURIComponent(submissionId));
@@ -73,7 +107,7 @@ export async function renderAdminSubmissionDetail({ params }) {
       <section class="hero-panel">
         <span class="section-kicker">Admin Review</span>
         <h2 class="hero-title">Submission Detail</h2>
-        <p class="hero-copy">This is a read-only review screen. Approval, rejection, and Library insertion are still deferred.</p>
+        <p class="hero-copy">Review actions are server-owned. Approved submissions become Library cards, but pull eligibility is still deferred.</p>
         <div class="action-row">
           <a class="button button-secondary" href="#/admin">Back to Admin</a>
           <a class="button button-secondary" href="${escapeHtml(submission.imageUrl)}" target="_blank" rel="noreferrer">Open Image</a>
@@ -86,10 +120,11 @@ export async function renderAdminSubmissionDetail({ params }) {
         </div>
 
         <article class="detail-panel">
-          <span class="section-kicker">Pending Review</span>
+          <span class="section-kicker">${escapeHtml(formatStatus(submission.moderationStatus))}</span>
           <h2 class="detail-title">${escapeHtml(submission.cardName)}</h2>
           <div class="detail-list">
             ${renderDetailRow('Status', formatStatus(submission.moderationStatus))}
+            ${renderDetailRow('Approved Card ID', submission.approvedCardId || 'Not approved')}
             ${renderDetailRow('Submitter', submission.submitterDisplayName)}
             ${renderDetailRow('Character', titleCase(submission.characterId))}
             ${renderDetailRow('Type', titleCase(submission.cardType))}
@@ -99,6 +134,7 @@ export async function renderAdminSubmissionDetail({ params }) {
             ${renderDetailRow('SPD', String(submission.stats?.spd ?? 1))}
             ${renderDetailRow('Flavor', submission.flavorText)}
             ${renderDetailRow('Ability', submission.abilityText || 'None')}
+            ${renderDetailRow('Review Notes', submission.reviewNotes || 'None')}
             ${renderDetailRow('Image Key', submission.imageKey)}
             ${renderDetailRow('Original Filename', submission.imageOriginalName)}
             ${renderDetailRow('Image Type', submission.imageMimeType)}
@@ -108,6 +144,8 @@ export async function renderAdminSubmissionDetail({ params }) {
           </div>
         </article>
       </section>
+
+      ${renderReviewControls(submission)}
     `;
   } catch (error) {
     return `
@@ -119,4 +157,45 @@ export async function renderAdminSubmissionDetail({ params }) {
       </section>
     `;
   }
+}
+
+export function initAdminSubmissionDetail(root) {
+  const panel = root.querySelector('[data-submission-review-panel]');
+
+  if (!panel) {
+    return;
+  }
+
+  const status = panel.querySelector('[data-review-status]');
+  const notes = panel.querySelector('[data-review-notes]');
+
+  panel.querySelectorAll('[data-review-action]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const action = button.getAttribute('data-review-action');
+      status.textContent = 'Applying review action...';
+
+      try {
+        const routes = getApiRoutes();
+        const response = await fetch(routes.adminSubmissionAction, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            id: panel.getAttribute('data-submission-id'),
+            action,
+            reviewNotes: notes.value,
+          }),
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok || !payload?.ok) {
+          throw new Error(payload?.error || `Review action failed with ${response.status}`);
+        }
+
+        status.textContent = 'Review action applied: ' + action.replaceAll('_', ' ');
+        window.setTimeout(() => window.location.reload(), 400);
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+  });
 }
