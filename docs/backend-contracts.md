@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a planning draft. Phase 8.1 adds the first read-only Vault ownership inventory diagnostic before the real Vault read model.
+This document is a planning draft. Phase 8.2 adds the first read-only Vault endpoint before the Vault route is wired to real data.
 
 ## Existing Cloudflare bindings
 
@@ -23,6 +23,7 @@ These endpoints are implemented as Cloudflare Pages Functions and are intentiona
 | `GET` | `/api/cards` | Read and normalize Library card rows from D1 |
 | `GET` | `/api/card-image?key=...` | Read one R2 card-art object by key |
 | `GET` | `/api/vault-inventory` | Inspect owned-card data candidates for the future Vault read model |
+| `GET` | `/api/vault` | Read and normalize owned card rows from `cards.owner_user_id` |
 
 ## Core tables to confirm before implementation
 
@@ -68,7 +69,7 @@ Expected fields:
 
 ### cards
 
-Actual Phase 7 discovered D1 table used by the current Library read model.
+Actual Phase 7 discovered D1 table used by the current Library read model and Phase 8 Vault endpoint.
 
 Observed fields from targeted probing:
 
@@ -79,7 +80,15 @@ Observed fields from targeted probing:
 - `created_at`
 - `updated_at`
 
-Phase 8.1 checks whether `owner_user_id` can safely distinguish player-owned Vault cards from global Library rows.
+Phase 8.1 confirmed the Vault can likely be mapped from `owner_user_id` and `card_json` without a separate ownership table.
+
+Phase 8.2 exposes `/api/vault` as a read-only normalized endpoint. Because authentication is not defined yet, `/api/vault` is a mapping endpoint, not a final current-user Vault contract.
+
+Optional query:
+
+```text
+/api/vault?ownerUserId=<owner_user_id>
+```
 
 ### user_vault_cards
 
@@ -131,7 +140,6 @@ These are route contracts to design before coding real writes.
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/api/vault` | Read current user's Vault |
 | `POST` | `/api/pulls` | Spend tickets and resolve pull results |
 | `POST` | `/api/submissions` | Create a card submission and store image metadata |
 | `POST` | `/api/images/upload-url` | Prepare image upload flow for R2 |
@@ -146,5 +154,5 @@ These are route contracts to design before coding real writes.
 - Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
 - R2 image keys should be stored in D1, not raw public URLs.
 - Admin routes need authentication and authorization before any real writes exist.
-- Diagnostic, inventory, Library read, and Vault inventory endpoints must stay read-only until schema and auth are explicit.
-- Phase 8 real Vault reads should not be wired until ownership/user table findings are documented.
+- Diagnostic, inventory, Library read, Vault inventory, and Vault read endpoints must stay read-only until schema and auth are explicit.
+- The Vault route should not present `/api/vault` as a current-user endpoint until owner strategy and auth boundaries are explicit.
