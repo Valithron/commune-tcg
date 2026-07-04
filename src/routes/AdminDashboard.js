@@ -1,7 +1,7 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 9.3 responsibility: read the real submission queue and link rows to
-   read-only submission detail. Review/rejection writes are deferred.
+   Phase 9.4 responsibility: read the real submission queue and link rows to
+   review detail. Review transitions happen server-side.
    ============================================================================ */
 
 import { mockAdminStats, mockSubmissions, adminChecklist } from '../data/mockAdmin.js';
@@ -22,6 +22,10 @@ function formatStatus(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function isReviewableStatus(value) {
+  return ['pending_review', 'needs_changes'].includes(String(value || '').toLowerCase());
+}
+
 function mapBackendSubmission(submission) {
   return {
     id: submission.id,
@@ -29,6 +33,7 @@ function mapBackendSubmission(submission) {
     submitter: submission.submitterDisplayName,
     category: submission.cardType,
     rarity: submission.raritySuggestion,
+    moderationStatus: submission.moderationStatus,
     status: formatStatus(submission.moderationStatus),
     source: 'backend',
   };
@@ -87,13 +92,15 @@ function renderSubmissionRow(submission) {
 export async function renderAdminDashboard() {
   const queue = await loadAdminSubmissions();
   const sourceLabel = queue.source === 'backend' ? 'Live Queue' : 'Mock Queue fallback';
-  const pendingCount = queue.source === 'backend' ? queue.submissions.length : mockAdminStats.pendingSubmissions;
+  const pendingCount = queue.source === 'backend'
+    ? queue.submissions.filter((submission) => isReviewableStatus(submission.moderationStatus)).length
+    : mockAdminStats.pendingSubmissions;
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Admin</span>
       <h2 class="hero-title">Control the pool.</h2>
-      <p class="hero-copy">The moderation queue now reads submitted cards. Tap a row to inspect its read-only review detail.</p>
+      <p class="hero-copy">The moderation queue reads submitted cards. Tap a row to inspect and review it.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Open Submit Flow</a>
         <a class="button button-secondary" href="#/backend">Backend Status</a>
