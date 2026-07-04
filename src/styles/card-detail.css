@@ -1,12 +1,13 @@
 /* ============================================================================
    Card Detail Layout
-   Purpose: Library and Vault detail pages. Detail pages are card-first and
-   stacked so mobile and narrow app shells never fall into a side-by-side view.
+   Purpose: Library and Vault detail pages. Current app shell is card-first and
+   stacked. Desktop media hooks are prepared for a future wider shell without
+   changing the current mobile/narrow live layout.
    ============================================================================ */
 
 .detail-layout {
   display: grid;
-  grid-template-columns: 1fr !important;
+  grid-template-columns: 1fr;
   gap: var(--space-4);
   align-items: start;
   width: 100%;
@@ -73,4 +74,22 @@
   line-height: 1.2;
   text-align: right;
   overflow-wrap: anywhere;
+}
+
+@media (min-width: 48rem) {
+  .app-shell--desktop .detail-layout,
+  .detail-layout--desktop {
+    grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  .app-shell--desktop .detail-card-stage,
+  .detail-layout--desktop .detail-card-stage {
+    max-width: 24rem;
+  }
+
+  .app-shell--desktop .detail-panel,
+  .detail-layout--desktop .detail-panel {
+    margin-top: 0;
+  }
 }
