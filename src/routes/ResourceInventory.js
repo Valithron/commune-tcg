@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Phase 9.1 adds read-only submission pipeline inventory before any upload or moderation writes exist.</p>
+      <p class="hero-copy">Phase 9.2 adds pending-review submission writes while keeping approval and Library insertion deferred.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Submit Card</a>
         <a class="button button-secondary" href="#/admin">Admin</a>
@@ -19,6 +19,8 @@ export function renderResourceInventory() {
       <span class="section-kicker">Inventory Endpoints</span>
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
+        <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions</span><strong>${routes.submissions}</strong></a>
+        <a href="${routes.adminSubmissions}" target="_blank" rel="noreferrer"><span>Admin Submissions</span><strong>${routes.adminSubmissions}</strong></a>
         <a href="${routes.submissionInventory}" target="_blank" rel="noreferrer"><span>Submission Inventory</span><strong>${routes.submissionInventory}</strong></a>
         <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Vault Cards</span><strong>${routes.vault}</strong></a>
         <a href="${routes.vaultInventory}" target="_blank" rel="noreferrer"><span>Vault Ownership Inventory</span><strong>${routes.vaultInventory}</strong></a>
@@ -32,13 +34,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Document before submission writes</h2>
+      <h2 class="section-title">Verify submission pipeline</h2>
       <div class="admin-checklist">
-        <div>Open /api/submission-inventory and record readiness.status.</div>
-        <div>Record whether any candidate submission table exists or contains rows.</div>
-        <div>Record R2 top prefixes, extensions, and submission-like keys.</div>
-        <div>Confirm the proposed card_submissions fields and moderation statuses.</div>
-        <div>Do not add upload or insert writes until auth and moderation boundaries are explicit.</div>
+        <div>Open /api/submissions and confirm it returns the pending-review queue.</div>
+        <div>Open /api/admin/submissions and confirm Admin reads the same rows.</div>
+        <div>Submit one test card with a small PNG/JPG/WEBP image.</div>
+        <div>Confirm the image key uses submissions/SUBMISSION_ID/original.EXT.</div>
+        <div>Confirm no card appears in Library or pulls until a future approval endpoint exists.</div>
       </div>
     </section>
   `;
