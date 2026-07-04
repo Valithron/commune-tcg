@@ -1,19 +1,17 @@
-/* ============================================================================
-   Pull Route
-   Phase 2 responsibility: static gacha entry screen and links to confirmation.
-   Real odds, ticket spend, and inventory writes belong in later phases.
-   ============================================================================ */
-
 import { mockUser } from '../data/mockUser.js';
+import { getApiRoutes } from '../services/apiClient.js';
 
 export function renderPull() {
+  const routes = getApiRoutes();
+
   return `
     <section class="hero-panel">
       <span class="section-kicker">Pull Chamber</span>
       <h2 class="hero-title">Spend tickets. Reveal cards.</h2>
-      <p class="hero-copy">Choose a pull size, review the mock confirmation, then reveal deterministic Phase 2 results.</p>
+      <p class="hero-copy">Phase 10.1 maps the pull pool before real pull results exist.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/shop">Open Ticket Shop</a>
+        <a class="button button-secondary" href="${routes.pullPool}" target="_blank" rel="noreferrer">Pull Pool Audit</a>
       </div>
     </section>
 
@@ -30,8 +28,8 @@ export function renderPull() {
         <span class="resource-pill">🎟 ${mockUser.pullTickets}</span>
       </div>
       <div class="quick-grid">
-        <a class="quick-card" href="#/pull/confirm?count=1"><strong>1-Pull</strong><span>Costs 1 ticket. Confirm before reveal.</span></a>
-        <a class="quick-card" href="#/pull/confirm?count=5"><strong>5-Pull</strong><span>Costs 5 tickets. Shows a batch result screen.</span></a>
+        <a class="quick-card" href="#/pull/confirm?count=1"><strong>1-Pull</strong><span>Costs 1 ticket. This is still mock behavior.</span></a>
+        <a class="quick-card" href="#/pull/confirm?count=5"><strong>5-Pull</strong><span>Costs 5 tickets. This is still mock behavior.</span></a>
       </div>
     </section>
   `;
