@@ -13,6 +13,7 @@ import './styles/card-showcase.css';
 import './styles/card-standard.css';
 import './styles/card-thumbnail.css';
 import './styles/card-detail.css';
+import './styles/card-detail-stack.css';
 import './styles/battle.css';
 import './styles/phase4.css';
 import './styles/card-lab.css';
