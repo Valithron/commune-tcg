@@ -1,9 +1,3 @@
-/* ============================================================================
-   Backend Status Route
-   Phase 9.5 responsibility: expose submission review hardening checks before
-   Pull engine work begins.
-   ============================================================================ */
-
 import { getApiRoutes } from '../services/apiClient.js';
 
 export function renderBackendStatus() {
@@ -13,7 +7,7 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Backend Status</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Phase 9.5 adds read-only audit checks for approved submission output before pulls are built.</p>
+      <p class="hero-copy">Phase 10.1 adds read-only pull pool diagnostics.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/inventory">Resource Inventory</a>
         <a class="button button-secondary" href="#/admin">Back to Admin</a>
@@ -22,9 +16,10 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">API Endpoints</span>
-      <h2 class="section-title">Checks and submission endpoints</h2>
+      <h2 class="section-title">Checks and endpoint links</h2>
       <div class="backend-endpoint-list">
         <a href="${routes.health}" target="_blank" rel="noreferrer"><span>Health</span><strong>${routes.health}</strong></a>
+        <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
         <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
         <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions</span><strong>${routes.submissions}</strong></a>
         <a href="${routes.adminSubmissions}" target="_blank" rel="noreferrer"><span>Admin Submissions</span><strong>${routes.adminSubmissions}</strong></a>
@@ -42,12 +37,12 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Phase 9.5 guardrails</h2>
+      <h2 class="section-title">Phase 10.1 guardrails</h2>
       <div class="admin-checklist">
-        <div>Review audit performs no writes.</div>
-        <div>Approved submissions should have matching unowned Library rows.</div>
-        <div>No submitted card enters pulls, Vault, battles, or rewards yet.</div>
-        <div>Real authentication and admin authorization are still deferred.</div>
+        <div>Pull Pool performs no writes.</div>
+        <div>Eligible cards are unowned Library cards only.</div>
+        <div>No tickets are spent and no cards are granted yet.</div>
+        <div>Vault, battle, rewards, and auth are unchanged.</div>
       </div>
     </section>
   `;
