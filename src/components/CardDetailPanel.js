@@ -23,9 +23,14 @@ function renderDetailRows(card, context) {
 
 export function renderCardDetailPanel(card, { context }) {
   return `
-    <section class="detail-layout">
+    <section class="detail-layout detail-layout--${escapeHtml(context)}">
       <div class="detail-card-stage">
-        ${renderCardFrame(card)}
+        ${renderCardFrame(card, {
+          density: 'showcase',
+          context,
+          showOwnership: context !== 'library',
+          showStats: true,
+        })}
       </div>
       <div class="glass-panel detail-panel">
         <span class="section-kicker">${context === 'vault' ? 'Vault Detail' : 'Library Detail'}</span>
