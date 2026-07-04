@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 9.2 adds pending-review submission creation while review actions and Library insertion remain deferred.
+This document tracks the live backend contracts for the Gacha branch. Phase 9.3 adds read-only submission review detail while review actions and Library insertion remain deferred.
 
 ## Existing Cloudflare bindings
 
@@ -26,6 +26,7 @@ This document tracks the live backend contracts for the Gacha branch. Phase 9.2 
 | `GET` | `/api/submissions` | Read submitted card rows from `card_submissions` |
 | `POST` | `/api/submissions` | Create a pending-review card submission and upload original art to R2 |
 | `GET` | `/api/admin/submissions` | Read the admin moderation queue from `card_submissions` |
+| `GET` | `/api/admin/submission?id=SUBMISSION_ID` | Read one submitted card for review detail |
 
 ## Core tables
 
@@ -85,7 +86,7 @@ Fields:
 - `reviewed_at`
 - `reviewed_by`
 
-Implemented status in Phase 9.2:
+Implemented status:
 
 - `pending_review`
 
@@ -154,6 +155,8 @@ Rules:
 4. Server writes original image to `CARD_IMAGES`.
 5. Server inserts a `card_submissions` row with `moderation_status = pending_review`.
 6. Admin dashboard reads `/api/admin/submissions`.
+7. Admin queue rows link to `#/admin/submission/:submissionId`.
+8. Submission detail reads `/api/admin/submission?id=SUBMISSION_ID` and renders a read-only card preview.
 
 ## Future endpoint sketch
 
