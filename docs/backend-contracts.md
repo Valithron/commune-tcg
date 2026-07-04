@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 9.4 adds server-owned submission review actions. Pull eligibility remains deferred.
+This document tracks the live backend contracts for the Gacha branch. Phase 9.5 adds read-only submission review audit checks before Pull engine work begins.
 
 ## Existing Cloudflare bindings
 
@@ -23,6 +23,7 @@ This document tracks the live backend contracts for the Gacha branch. Phase 9.4 
 | `GET` | `/api/vault-inventory` | Inspect owned-card data candidates for the future Vault read model |
 | `GET` | `/api/vault` | Read and normalize owned card rows from `cards.owner_user_id` |
 | `GET` | `/api/submission-inventory` | Inspect submission-table candidates and R2 image-key readiness |
+| `GET` | `/api/submission-review-audit` | Audit approved submissions against unowned Library card rows |
 | `GET` | `/api/submissions` | Read submitted card rows from `card_submissions` |
 | `POST` | `/api/submissions` | Create a pending-review card submission and upload original art to R2 |
 | `GET` | `/api/admin/submissions` | Read the admin moderation queue from `card_submissions` |
@@ -47,10 +48,12 @@ Observed fields from targeted probing:
 Approved submissions create an unowned `cards` row with:
 
 ```text
-owner_user_id = null
+owner_user_id = empty string
 character_id = submission.character_id
 card_json = normalized approved card payload
 ```
+
+The empty owner value keeps approved Library cards out of the current Vault read model.
 
 Phase 8.2 exposes `/api/vault` as a read-only normalized endpoint. Because authentication is not defined yet, `/api/vault` is a mapping endpoint, not a final current-user Vault contract.
 
@@ -163,7 +166,8 @@ Rules:
 7. Admin queue rows link to `#/admin/submission/:submissionId`.
 8. Submission detail reads `/api/admin/submission?id=SUBMISSION_ID` and renders a card preview.
 9. Review actions post to `/api/admin/submission-action`.
-10. Approve writes an unowned Library card row into `cards` and marks the submission approved.
+10. Approve writes or updates an unowned Library card row into `cards` and marks the submission approved.
+11. Submission review audit verifies approved submission output before Pull engine work.
 
 ## Future endpoint sketch
 
@@ -181,5 +185,5 @@ Rules:
 - R2 image keys are stored in D1, not raw public URLs.
 - Admin authorization is still a temporary placeholder.
 - Approved cards enter Library, but do not enter pulls until the pull engine is built.
-- A submitted card does not enter Vault, battles, or rewards through Phase 9.4.
+- A submitted card does not enter Vault, battles, or rewards through Phase 9.5.
 - The Vault route should not present `/api/vault` as a current-user endpoint until owner strategy and auth boundaries are explicit.
