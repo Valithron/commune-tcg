@@ -7,7 +7,7 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Backend Status</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Phase 10.3 adds live Sterling pulls.</p>
+      <p class="hero-copy">Phase 10.4 adds live ticket and history diagnostics.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/inventory">Resource Inventory</a>
         <a class="button button-secondary" href="#/pull">Pull Chamber</a>
@@ -19,6 +19,8 @@ export function renderBackendStatus() {
       <h2 class="section-title">Checks and endpoint links</h2>
       <div class="backend-endpoint-list">
         <a href="${routes.health}" target="_blank" rel="noreferrer"><span>Health</span><strong>${routes.health}</strong></a>
+        <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
+        <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
         <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
         <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault</span><strong>${routes.vault}</strong></a>
@@ -33,11 +35,11 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Phase 10.3 guardrails</h2>
+      <h2 class="section-title">Phase 10.4 guardrails</h2>
       <div class="admin-checklist">
-        <div>Live pulls use the temporary Sterling owner.</div>
-        <div>Owned rows appear in Sterling Vault.</div>
-        <div>Pull history is recorded.</div>
+        <div>Resource and history endpoints are read-only.</div>
+        <div>Confirm blocks pulls when tickets are too low.</div>
+        <div>Failed live pulls show a failure state.</div>
         <div>Battle, rewards, and auth are unchanged.</div>
       </div>
     </section>
