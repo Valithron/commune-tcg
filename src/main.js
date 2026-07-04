@@ -1,6 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 9.4 responsibility: initialize route-specific handlers after render.
+   Phase 10.4 patch responsibility: initialize route-specific handlers after
+   async shell render so the top resource bar can use live ticket data.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -146,7 +147,7 @@ async function render() {
       return;
     }
 
-    appRoot.innerHTML = renderAppShell({
+    appRoot.innerHTML = await renderAppShell({
       activeRoute: matchedRoute.navRoute,
       content,
     });
@@ -165,7 +166,7 @@ async function render() {
       initAdminSubmissionDetail(appRoot);
     }
   } catch (error) {
-    appRoot.innerHTML = renderAppShell({
+    appRoot.innerHTML = await renderAppShell({
       activeRoute: matchedRoute.navRoute,
       content: renderError(error),
     });
