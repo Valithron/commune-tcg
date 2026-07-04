@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 9.5 adds read-only submission review audit checks before Pull engine work begins.
+This document tracks the live backend contracts for the Gacha branch. Phase 10.1 adds read-only pull-pool diagnostics before ticket spend, card grants, or pull history writes exist.
 
 ## Existing Cloudflare bindings
 
@@ -24,6 +24,7 @@ This document tracks the live backend contracts for the Gacha branch. Phase 9.5 
 | `GET` | `/api/vault` | Read and normalize owned card rows from `cards.owner_user_id` |
 | `GET` | `/api/submission-inventory` | Inspect submission-table candidates and R2 image-key readiness |
 | `GET` | `/api/submission-review-audit` | Audit approved submissions against unowned Library card rows |
+| `GET` | `/api/pull-pool` | Read pull-eligible unowned Library cards and odds contract |
 | `GET` | `/api/submissions` | Read submitted card rows from `card_submissions` |
 | `POST` | `/api/submissions` | Create a pending-review card submission and upload original art to R2 |
 | `GET` | `/api/admin/submissions` | Read the admin moderation queue from `card_submissions` |
@@ -55,9 +56,14 @@ card_json = normalized approved card payload
 
 The empty owner value keeps approved Library cards out of the current Vault read model.
 
-Phase 8.2 exposes `/api/vault` as a read-only normalized endpoint. Because authentication is not defined yet, `/api/vault` is a mapping endpoint, not a final current-user Vault contract.
+Phase 10.1 defines pull eligibility as:
 
-Optional query:
+```text
+cards.owner_user_id is empty
+cards.card_json parses cleanly
+```
+
+Optional Vault query:
 
 ```text
 /api/vault?ownerUserId=OWNER_ID
@@ -117,11 +123,32 @@ Earlier expected player-owned card instance table. The current live Gacha branch
 
 ### pull_history
 
-Future auditable record of pull outcomes.
+Future auditable record of pull outcomes. No pull history writes exist in Phase 10.1.
 
 ### battle_history
 
 Future resolved battle outcomes.
+
+## Pull odds contract
+
+Phase 10.1 defines the first backend odds contract:
+
+| Rarity | Weight | Percent |
+|---|---:|---:|
+| Common | 55 | 55% |
+| Uncommon | 25 | 25% |
+| Rare | 14 | 14% |
+| Legendary | 5 | 5% |
+| Mythic | 1 | 1% |
+
+Pull options:
+
+| Pull | Ticket Cost |
+|---|---:|
+| 1-Pull | 1 |
+| 5-Pull | 5 |
+
+Phase 10.1 only reports the pool and contract. It does not randomize, spend tickets, grant cards, or write history.
 
 ## R2 image key strategy
 
@@ -168,11 +195,13 @@ Rules:
 9. Review actions post to `/api/admin/submission-action`.
 10. Approve writes or updates an unowned Library card row into `cards` and marks the submission approved.
 11. Submission review audit verifies approved submission output before Pull engine work.
+12. Pull pool diagnostics read unowned Library cards from `cards`.
 
 ## Future endpoint sketch
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/api/pull-simulate?count=1` | Resolve a no-write pull simulation |
 | `POST` | `/api/pulls` | Spend tickets and resolve pull results |
 | `POST` | `/api/battles` | Resolve a battle and write rewards |
 
@@ -184,6 +213,6 @@ Rules:
 - Client may preview forms and squads, but cannot be trusted to grant currency.
 - R2 image keys are stored in D1, not raw public URLs.
 - Admin authorization is still a temporary placeholder.
-- Approved cards enter Library, but do not enter pulls until the pull engine is built.
-- A submitted card does not enter Vault, battles, or rewards through Phase 9.5.
+- Phase 10.1 does not spend tickets, grant cards, or write pull history.
+- A submitted card does not enter Vault, battles, or rewards through Phase 10.1.
 - The Vault route should not present `/api/vault` as a current-user endpoint until owner strategy and auth boundaries are explicit.
