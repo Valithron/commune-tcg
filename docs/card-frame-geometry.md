@@ -52,10 +52,10 @@ The current standard geometry is promoted from the standard Card Lab tuner and l
 Current values:
 
 ```text
-art:       x 3,  y 2,    w 94, h 92
-nameplate: x 4,  y 75.1, w 94, h 16
-pills:     x 5,  y 85,   w 90, h 5
-stats:     x 26, y 67,   w 50, h 8.5
+art:       x 3,   y 2,    w 94,   h 92
+nameplate: x 3,   y 79.1, w 94,   h 15
+pills:     x 3.3, y 87,   w 93.2, h 4.8
+stats:     x 25,  y 71.3, w 50,   h 8.5
 ```
 
 Equivalent standard CSS variables:
@@ -66,16 +66,16 @@ Equivalent standard CSS variables:
   --card-art-y: 2%;
   --card-art-w: 94%;
   --card-art-h: 92%;
-  --card-nameplate-x: 4%;
-  --card-nameplate-y: 75.1%;
+  --card-nameplate-x: 3%;
+  --card-nameplate-y: 79.1%;
   --card-nameplate-w: 94%;
-  --card-nameplate-h: 16%;
-  --card-pills-x: 5%;
-  --card-pills-y: 85%;
-  --card-pills-w: 90%;
-  --card-pills-h: 5%;
-  --card-stats-x: 26%;
-  --card-stats-y: 67%;
+  --card-nameplate-h: 15%;
+  --card-pills-x: 3.3%;
+  --card-pills-y: 87%;
+  --card-pills-w: 93.2%;
+  --card-pills-h: 4.8%;
+  --card-stats-x: 25%;
+  --card-stats-y: 71.3%;
   --card-stats-w: 50%;
   --card-stats-h: 8.5%;
 }
@@ -115,9 +115,9 @@ Standard-card source values before latest promotion:
 ```json
 {
   "art": { "x": 3, "y": 2, "w": 94, "h": 92 },
-  "nameplate": { "x": 4, "y": 75.1, "w": 94, "h": 16 },
-  "pills": { "x": 5, "y": 85, "w": 90, "h": 5 },
-  "stats": { "x": 26, "y": 67, "w": 50, "h": 8.5 }
+  "nameplate": { "x": 3, "y": 79.1, "w": 94, "h": 15 },
+  "pills": { "x": 3.3, "y": 87, "w": 93.2, "h": 4.8 },
+  "stats": { "x": 25, "y": 71.3, "w": 50, "h": 8.5 }
 }
 ```
 
