@@ -19,6 +19,12 @@ function titleCase(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function statusFromAction(action) {
+  if (action === 'approve') return 'approved';
+  if (action === 'reject') return 'rejected';
+  return action;
+}
+
 function buildApprovedCardId(submission) {
   return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
@@ -71,7 +77,7 @@ async function insertApprovedLibraryCard(env, submission, now) {
 }
 
 async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, now) {
-  const nextStatus = action === 'approve' ? 'approved' : action;
+  const nextStatus = statusFromAction(action);
 
   await env.DB.prepare(`
     UPDATE card_submissions
