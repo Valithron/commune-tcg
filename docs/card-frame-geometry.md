@@ -49,13 +49,13 @@ Equivalent shared CSS variables:
 
 The current standard geometry is promoted from the standard Card Lab tuner and lives in `src/styles/card-standard.css`.
 
-Rounded and centered values:
+Current values:
 
 ```text
-art:       x 3,  y 2,  w 94, h 92
-nameplate: x 3,  y 78, w 94, h 16
-pills:     x 5,  y 85, w 90, h 5
-stats:     x 25, y 68, w 50, h 8.5
+art:       x 3,  y 2,    w 94, h 92
+nameplate: x 4,  y 75.1, w 94, h 16
+pills:     x 5,  y 85,   w 90, h 5
+stats:     x 26, y 67,   w 50, h 8.5
 ```
 
 Equivalent standard CSS variables:
@@ -66,16 +66,16 @@ Equivalent standard CSS variables:
   --card-art-y: 2%;
   --card-art-w: 94%;
   --card-art-h: 92%;
-  --card-nameplate-x: 3%;
-  --card-nameplate-y: 78%;
+  --card-nameplate-x: 4%;
+  --card-nameplate-y: 75.1%;
   --card-nameplate-w: 94%;
   --card-nameplate-h: 16%;
   --card-pills-x: 5%;
   --card-pills-y: 85%;
   --card-pills-w: 90%;
   --card-pills-h: 5%;
-  --card-stats-x: 25%;
-  --card-stats-y: 68%;
+  --card-stats-x: 26%;
+  --card-stats-y: 67%;
   --card-stats-w: 50%;
   --card-stats-h: 8.5%;
 }
@@ -110,14 +110,14 @@ Original large-card source values before rounding:
 }
 ```
 
-Standard-card source values before rounding:
+Standard-card source values before latest promotion:
 
 ```json
 {
   "art": { "x": 3, "y": 2, "w": 94, "h": 92 },
-  "nameplate": { "x": 2.8, "y": 78.3, "w": 94.3, "h": 16 },
-  "pills": { "x": 5.6, "y": 85.2, "w": 90, "h": 5 },
-  "stats": { "x": 25, "y": 70.9, "w": 50, "h": 7 }
+  "nameplate": { "x": 4, "y": 75.1, "w": 94, "h": 16 },
+  "pills": { "x": 5, "y": 85, "w": 90, "h": 5 },
+  "stats": { "x": 26, "y": 67, "w": 50, "h": 8.5 }
 }
 ```
 
