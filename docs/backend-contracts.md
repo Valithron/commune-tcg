@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document is a planning draft. Phase 7 adds the first read-only Library read model.
+This document is a planning draft. Phase 8.1 adds the first read-only Vault ownership inventory diagnostic before the real Vault read model.
 
 ## Existing Cloudflare bindings
 
@@ -22,6 +22,7 @@ These endpoints are implemented as Cloudflare Pages Functions and are intentiona
 | `GET` | `/api/images-summary` | Summarize sampled R2 key prefixes and file extensions |
 | `GET` | `/api/cards` | Read and normalize Library card rows from D1 |
 | `GET` | `/api/card-image?key=...` | Read one R2 card-art object by key |
+| `GET` | `/api/vault-inventory` | Inspect owned-card data candidates for the future Vault read model |
 
 ## Core tables to confirm before implementation
 
@@ -64,6 +65,21 @@ Expected fields:
 - `review_notes`
 - `created_at`
 - `updated_at`
+
+### cards
+
+Actual Phase 7 discovered D1 table used by the current Library read model.
+
+Observed fields from targeted probing:
+
+- `id`
+- `owner_user_id`
+- `character_id`
+- `card_json`
+- `created_at`
+- `updated_at`
+
+Phase 8.1 checks whether `owner_user_id` can safely distinguish player-owned Vault cards from global Library rows.
 
 ### user_vault_cards
 
@@ -130,5 +146,5 @@ These are route contracts to design before coding real writes.
 - Client may preview forms and squads, but cannot be trusted to approve cards or grant currency.
 - R2 image keys should be stored in D1, not raw public URLs.
 - Admin routes need authentication and authorization before any real writes exist.
-- Diagnostic, inventory, and Library read endpoints must stay read-only until schema and auth are explicit.
-- Phase 8 should not start until ownership/user table findings are documented.
+- Diagnostic, inventory, Library read, and Vault inventory endpoints must stay read-only until schema and auth are explicit.
+- Phase 8 real Vault reads should not be wired until ownership/user table findings are documented.
