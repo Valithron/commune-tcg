@@ -1,6 +1,6 @@
 /* ============================================================================
    API Battle Reward Contract Endpoint
-   Battle Phase 4 responsibility: expose reward and XP contract diagnostics.
+   Battle Phase 5 responsibility: expose reward and XP contract diagnostics.
    Performs no writes.
    ============================================================================ */
 
@@ -15,8 +15,8 @@ export async function onRequestGet() {
     ...buildRewardContractSummary(mockBattleEncounters),
     notes: [
       'This endpoint performs no writes.',
-      'Battle Phase 4 defines reward and XP rules only.',
-      'Battle Phase 5 should apply the contract after the rules are verified.',
+      'Battle Phase 5 applies this contract only through POST /api/battles after validation.',
+      'Pull tickets, drops, stamina, energy, Vault grants, and auth changes remain deferred.',
     ],
   });
 }
