@@ -1,7 +1,7 @@
 /* ============================================================================
    API Battle History Endpoint
-   Battle Phase 3 responsibility: read battle_history rows for diagnostics.
-   Performs no writes.
+   Battle Phase 5 responsibility: read battle_history rows with reward and XP
+   application details for diagnostics. Performs no writes.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
@@ -21,7 +21,7 @@ export async function onRequestGet({ env, request }) {
 
     return jsonResponse({
       ok: true,
-      phase: 'battle-3',
+      phase: 'battle-5',
       readOnly: true,
       source: 'D1 battle_history',
       ownerUserId,
@@ -29,7 +29,8 @@ export async function onRequestGet({ env, request }) {
       notes: [
         'This endpoint performs no writes.',
         'Battle history rows are written only by POST /api/battles.',
-        'Rewards, XP, currency, stamina, energy, Vault changes, and card progression remain deferred.',
+        'Battle Phase 5 history rows may include rewardApplied and xpApplied details.',
+        'Pull tickets, drops, stamina, energy, Vault grants, and auth changes remain deferred.',
       ],
     });
   } catch (error) {
