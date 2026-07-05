@@ -1,59 +1,51 @@
 # Route Map
 
-## Active Phase 1 routes
+## Player routes
+
+These routes render through `src/components/AppShell.js` with the player top bar and bottom nav.
 
 | Route | File | Purpose |
 |---|---|---|
 | `#/home` | `src/routes/Home.js` | Player dashboard and quick actions |
 | `#/pull` | `src/routes/Pull.js` | Gacha entry point and ticket CTA |
-| `#/vault` | `src/routes/Vault.js` | Owned card collection |
-| `#/library` | `src/routes/Library.js` | Global card pool preview |
-
-## Active Phase 2 routes
-
-| Route | File | Purpose |
-|---|---|---|
 | `#/pull/confirm?count=1` | `src/routes/PullConfirm.js` | Confirm a 1-pull ticket spend |
 | `#/pull/confirm?count=5` | `src/routes/PullConfirm.js` | Confirm a 5-pull ticket spend |
-| `#/pull/results?count=1` | `src/routes/PullResults.js` | Show deterministic one-card mock result |
-| `#/pull/results?count=5` | `src/routes/PullResults.js` | Show deterministic five-card mock result |
+| `#/pull/results?count=1` | `src/routes/PullResults.js` | Show pull result |
+| `#/pull/results?count=5` | `src/routes/PullResults.js` | Show five-pull result |
+| `#/pull/history` | `src/routes/PullHistory.js` | Show pull history |
+| `#/vault` | `src/routes/Vault.js` | Owned card collection |
 | `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Owned card detail screen |
+| `#/library` | `src/routes/Library.js` | Global card pool preview |
 | `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
-| `#/shop` | `src/routes/TicketShop.js` | Static ticket shop layout |
-
-## Active Phase 3 routes
-
-| Route | File | Purpose |
-|---|---|---|
+| `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
 | `#/battle/squad?encounter=:encounterId` | `src/routes/SquadBuilder.js` | Review selected squad before battle |
-| `#/battle/results?encounter=:encounterId` | `src/routes/BattleResults.js` | Show deterministic battle result and rewards |
+| `#/battle/results?encounter=:encounterId` | `src/routes/BattleResults.js` | Show deterministic battle result and reward preview |
+| `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
-## Active Phase 4 routes
+## Admin and diagnostic routes
 
-| Route | File | Purpose |
-|---|---|---|
-| `#/submit` | `src/routes/SubmitCard.js` | Static card submission form shape |
-| `#/admin` | `src/routes/AdminDashboard.js` | Static moderation/admin dashboard |
-
-## Active Phase 5 routes
+These routes render through `src/components/AdminShell.js`. Admin navigation intentionally contains no links back to player routes.
 
 | Route | File | Purpose |
 |---|---|---|
-| `#/backend` | `src/routes/BackendStatus.js` | Read-only backend status and diagnostic endpoint links |
+| `#/admin` | `src/routes/AdminIndex.js` | Isolated admin and diagnostics hub |
+| `#/admin/submissions` | `src/routes/AdminDashboard.js` | Submission review queue |
+| `#/admin/submission/:submissionId` | `src/routes/AdminSubmissionDetail.js` | Submission review detail and server-owned review actions |
+| `#/admin/backend` | `src/routes/BackendStatus.js` | Backend status and diagnostic endpoint links |
+| `#/admin/inventory` | `src/routes/ResourceInventory.js` | Resource inventory and verification checklist |
+| `#/admin/card-lab` | `src/routes/CardLab.js` | Card frame inspection and tuning diagnostics |
 
-## Active Phase 6 routes
+## Legacy admin redirects
 
-| Route | File | Purpose |
-|---|---|---|
-| `#/inventory` | `src/routes/ResourceInventory.js` | Resource inventory hub before real backend reads |
+These older diagnostic routes are redirected into the admin boundary by `src/main.js`.
 
-## Active Phase 7.5 routes
-
-| Route | File | Purpose |
-|---|---|---|
-| `#/card-lab` | `src/routes/CardLab.js` | Live card-frame inspection across title lengths and densities |
+| Legacy route | Redirects to |
+|---|---|
+| `#/backend` | `#/admin/backend` |
+| `#/inventory` | `#/admin/inventory` |
+| `#/card-lab` | `#/admin/card-lab` |
 
 ## Active API endpoints
 
@@ -66,7 +58,18 @@
 | `/api/images-summary` | `functions/api/images-summary.js` | Summarize sampled R2 key patterns |
 | `/api/cards` | `functions/api/cards.js` | Read and normalize Library cards from D1 |
 | `/api/card-image?key=...` | `functions/api/card-image.js` | Read a single R2 card-art object by key |
+| `/api/vault` | `functions/api/vault.js` | Read owned Vault cards |
+| `/api/pull-pool` | `functions/api/pull-pool.js` | Read pull-eligible pool diagnostics |
+| `/api/pull-simulate` | `functions/api/pull-simulate.js` | No-write pull simulation |
+| `/api/pulls` | `functions/api/pulls.js` | Resolve pulls and write owned cards/history |
+| `/api/pull-history` | `functions/api/pull-history.js` | Read pull history |
+| `/api/pull-resources` | `functions/api/pull-resources.js` | Read pull tickets and gold resources |
+| `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle card and table diagnostics |
+| `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write battle simulation |
+| `/api/battles` | `functions/api/battles.js` | Write battle_history only |
+| `/api/battle-history` | `functions/api/battle-history.js` | Read battle history |
+| `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 4 reward and XP contract |
 
 ## Routing implementation note
 
-Hash routing is temporary and practical for the static prototype. Phase 7.5 adds a Card Lab for frame stabilization, but it still performs no gameplay writes. If this becomes a larger app with deeper navigation and server-side concerns, route ownership should be revisited before backend coupling.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 4.5 keeps hash routing and adds a clean admin boundary at `#/admin`. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
