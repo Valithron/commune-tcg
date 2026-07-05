@@ -9,7 +9,8 @@ export const battleRewardContractVersion = 'battle-reward-xp-v1';
 export const battleRewardContract = {
   phase: 'battle-5',
   version: battleRewardContractVersion,
-  readOnly: false,
+  readOnly: true,
+  writeApplicationEndpoint: 'POST /api/battles',
   purpose: 'Define reward and XP rules for validated battle reward writes.',
   rewardRules: {
     currency: 'gold',
@@ -61,7 +62,7 @@ export const battleRewardContract = {
     'Do not grant pull tickets, drops, stamina, energy, or Vault changes in this contract version.',
   ],
   guardrails: [
-    'Battle Phase 5 writes battle_history, user_resources.gold, and owned card card_json XP/level only.',
+    'Battle Phase 5 writes battle_history, user_resources.gold, and owned card card_json XP/level only through POST /api/battles.',
     'No pull-ticket rewards in Battle Phase 5.',
     'No battle drops or card grants in Battle Phase 5.',
     'No stamina or energy writes in Battle Phase 5.',
