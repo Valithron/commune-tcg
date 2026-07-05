@@ -1,10 +1,11 @@
 /* ============================================================================
    Battle Results Route
-   Phase 6.1 responsibility: player-facing battle result screen with clear
-   preview-vs-applied labels and a visibly resolved backend reward button.
+   Phase 6.2 responsibility: player-facing battle result screen with clear
+   preview-vs-applied labels, visible resolved state, and live resource refresh.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
+import { refreshTopBarResources } from '../components/TopBar.js';
 import { getBattleOutcome } from '../data/mockBattle.js';
 import { getApiRoutes } from '../services/apiClient.js';
 
@@ -56,7 +57,7 @@ function renderResolvedBattle(payload) {
   return `
     <div class="battle-state-note battle-state-note-live">
       <strong>Resolved for real.</strong>
-      <span>This section reflects the backend write that was just applied.</span>
+      <span>This section reflects the backend write that was just applied. The resource bar has been refreshed from live resources.</span>
     </div>
 
     <div class="detail-list">
@@ -176,8 +177,12 @@ export function initBattleResults(root) {
         throw new Error(payload?.error || `Battle failed with ${response.status}`);
       }
 
+      if (payload.ok) {
+        await refreshTopBarResources(document);
+      }
+
       resultTarget.innerHTML = renderResolvedBattle(payload);
-      status.textContent = payload.ok ? 'Resolved. Real gold and XP were applied.' : 'Battle returned a validation error.';
+      status.textContent = payload.ok ? 'Resolved. Real gold and XP were applied, and resources were refreshed.' : 'Battle returned a validation error.';
       button.classList.remove('button-working');
 
       if (payload.ok) {
