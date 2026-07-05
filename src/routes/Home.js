@@ -1,6 +1,6 @@
 /* ============================================================================
    Home Route
-   Phase 4 responsibility: player dashboard, quick actions, and prototype status.
+   Phase 4.5 responsibility: clean player dashboard with no admin links.
    ============================================================================ */
 
 import { mockUser } from '../data/mockUser.js';
@@ -12,9 +12,9 @@ export function renderHome() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Phase 4 Prototype</span>
+      <span class="section-kicker">Gacha Prototype</span>
       <h2 class="hero-title">Build the Vault. Pull the Commune.</h2>
-      <p class="hero-copy">A clean mobile shell for the gacha version of Commune TCG. Current data is mocked while the route map and component foundation stabilize.</p>
+      <p class="hero-copy">The player game stays focused on pulling, collecting, battling, and building the Vault. Admin and diagnostic tools are isolated elsewhere.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull">Start Pulling</a>
         <a class="button button-secondary" href="#/battle">Battle</a>
@@ -49,8 +49,8 @@ export function renderHome() {
         <div class="quick-grid">
           <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
           <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
-          <a class="quick-card" href="#/submit"><strong>Submit</strong><span>Mock the future card submission flow.</span></a>
-          <a class="quick-card" href="#/admin"><strong>Admin</strong><span>Review the static moderation dashboard.</span></a>
+          <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
+          <a class="quick-card" href="#/vault"><strong>Vault</strong><span>Review owned cards pulled into the account.</span></a>
         </div>
       </div>
     </section>
