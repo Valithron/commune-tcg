@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Battle Phase 1 maps owned fighter eligibility, mock encounter sources, backend battle-table signals, and proposed battle contracts.</p>
+      <p class="hero-copy">Battle Phase 2 simulates deterministic battle outcomes without writing battle history, rewards, XP, currency, or Vault changes.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/battle">Battle Hub</a>
         <a class="button button-secondary" href="#/vault">Vault</a>
@@ -20,6 +20,7 @@ export function renderResourceInventory() {
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
         <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
+        <a href="${routes.battleSimulate}?encounterId=training-yard-goblin" target="_blank" rel="noreferrer"><span>Battle Simulate</span><strong>${routes.battleSimulate}</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
@@ -37,13 +38,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify battle inventory</h2>
+      <h2 class="section-title">Verify battle simulation</h2>
       <div class="admin-checklist">
         <div>Open Battle Inventory and confirm phase is battle-1.</div>
-        <div>Confirm readOnly is true.</div>
-        <div>Confirm Sterling owned cards and battle eligibility are reported.</div>
-        <div>Confirm mock encounter and proposed contract sections are present.</div>
-        <div>Confirm no battle, reward, XP, or Vault writes occurred.</div>
+        <div>Open Battle Simulate and confirm phase is battle-2.</div>
+        <div>Confirm readOnly is true and writes is an empty array.</div>
+        <div>Confirm simulation includes squad, encounter, victory, rewardPreview, xpPreview, and combatLog.</div>
+        <div>Confirm no battle_history, reward, XP, currency, or Vault writes occurred.</div>
       </div>
     </section>
   `;
