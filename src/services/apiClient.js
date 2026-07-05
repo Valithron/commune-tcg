@@ -17,6 +17,8 @@ const apiRoutes = {
   pullTopUp: '/api/pull-top-up',
   battleInventory: '/api/battle-inventory',
   battleSimulate: '/api/battle-simulate',
+  battles: '/api/battles',
+  battleHistory: '/api/battle-history',
   submissions: '/api/submissions',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
