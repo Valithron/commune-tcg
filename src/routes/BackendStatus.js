@@ -5,12 +5,12 @@ export function renderBackendStatus() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Backend Status</span>
+      <span class="section-kicker">Admin Backend</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Battle Phase 4 adds a read-only battle contract endpoint. Battle history remains the only battle write currently enabled.</p>
+      <p class="hero-copy">Backend checks now live inside the isolated admin shell. These links inspect health, schema, pulls, battle history, and battle contracts without sending the user back into the player game.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/inventory">Resource Inventory</a>
-        <a class="button button-secondary" href="#/battle">Battle Hub</a>
+        <a class="button button-secondary" href="#/admin">Admin Home</a>
+        <a class="button button-secondary" href="#/admin/inventory">Resource Inventory</a>
       </div>
     </section>
 
@@ -27,9 +27,9 @@ export function renderBackendStatus() {
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
         <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
-        <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault</span><strong>${routes.vault}</strong></a>
+        <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault API</span><strong>${routes.vault}</strong></a>
         <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
-        <a href="${routes.cards}" target="_blank" rel="noreferrer"><span>Library Cards</span><strong>${routes.cards}</strong></a>
+        <a href="${routes.cards}" target="_blank" rel="noreferrer"><span>Library Cards API</span><strong>${routes.cards}</strong></a>
         <a href="${routes.schema}" target="_blank" rel="noreferrer"><span>D1 Schema</span><strong>${routes.schema}</strong></a>
         <a href="${routes.schemaDetails}" target="_blank" rel="noreferrer"><span>D1 Details</span><strong>${routes.schemaDetails}</strong></a>
         <a href="${routes.images}" target="_blank" rel="noreferrer"><span>R2 Images</span><strong>${routes.images}</strong></a>
@@ -39,12 +39,12 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Battle Phase 4 guardrails</h2>
+      <h2 class="section-title">Admin containment guardrails</h2>
       <div class="admin-checklist">
-        <div>Battle Contract is read-only.</div>
+        <div>This page is rendered by AdminShell, not AppShell.</div>
+        <div>Internal page links stay inside #/admin routes.</div>
+        <div>Endpoint links open raw API diagnostics only.</div>
         <div>POST /api/battles still writes battle_history only.</div>
-        <div>No progression, currency, stamina, energy, or Vault data are changed.</div>
-        <div>Pulls, submissions, Library, and Vault behavior are unchanged.</div>
       </div>
     </section>
   `;
