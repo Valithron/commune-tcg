@@ -6,6 +6,7 @@
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/admin.css';
 
 // Card system styles: foundation, density overrides, detail layout, then dev tools.
 import './styles/cards.css';
