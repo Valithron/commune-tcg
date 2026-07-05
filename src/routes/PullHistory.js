@@ -9,13 +9,19 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function titleCase(value) {
+  return String(value || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function formatPullResults(results) {
   if (!Array.isArray(results) || !results.length) {
     return 'No card results recorded.';
   }
 
   return results
-    .map((result) => `${result.actualRarity || result.selectedRarity || 'card'} -> ${result.ownedCardId || 'owned card'}`)
+    .map((result) => `${titleCase(result.actualRarity || result.selectedRarity || 'card')} · ${result.cardTitle || 'Unknown card'}`)
     .join(', ');
 }
 
@@ -39,10 +45,12 @@ async function loadHistory() {
 }
 
 function renderPullRow(pull) {
+  const ownerName = pull.ownerDisplayName || pull.ownerUserId || pull.userId || 'Unknown owner';
+
   return `
     <article class="admin-row">
       <div>
-        <strong>${escapeHtml(`${pull.pullCount}-Pull`)}</strong>
+        <strong>${escapeHtml(`${ownerName} pulled ${pull.pullCount} card${pull.pullCount === 1 ? '' : 's'}`)}</strong>
         <span>${escapeHtml(formatPullResults(pull.results))}</span>
       </div>
       <em>🎟 ${escapeHtml(pull.ticketCost)} · ${escapeHtml(pull.createdAt)}</em>
@@ -57,7 +65,7 @@ export async function renderPullHistory() {
     <section class="hero-panel">
       <span class="section-kicker">Pull History</span>
       <h2 class="hero-title">Recent pulls.</h2>
-      <p class="hero-copy">Phase 10.5 shows recent Sterling pull history from the live pull_history table.</p>
+      <p class="hero-copy">Phase 10.6 shows who pulled each card, plus card titles and rarity.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/pull">Back to Pull</a>
         <a class="button button-secondary" href="#/shop">Ticket Shop</a>
