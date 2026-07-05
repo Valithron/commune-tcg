@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. This keeps player routes clean while preserving the tools needed to verify battle and pull systems.</p>
+      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. Phase 5 verifies that battle rewards apply only to gold plus owned-card XP/levels.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-secondary" href="#/admin/backend">Backend Status</a>
@@ -40,13 +40,14 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify containment</h2>
+      <h2 class="section-title">Verify Phase 5</h2>
       <div class="admin-checklist">
-        <div>Open #/admin and confirm AdminShell renders instead of the player shell.</div>
-        <div>Open Battle Contract and confirm phase is battle-4.</div>
-        <div>Confirm POST /api/battles still writes battle_history only.</div>
-        <div>Confirm player Home, Library, Pull, Battle, Vault, and Shop have no admin links.</div>
-        <div>Confirm no progression, currency, stamina, energy, or Vault writes occurred.</div>
+        <div>Open Battle Contract and confirm phase is battle-5.</div>
+        <div>POST /api/battles and confirm writes include battle_history, user_resources.gold, and cards.card_json.xp_level.</div>
+        <div>Open Battle History and confirm rewardApplied and xpApplied appear on the new row.</div>
+        <div>Open Pull Resources and confirm gold increased but pull tickets did not change.</div>
+        <div>Open Sterling Vault API and confirm owned squad cards gained XP and/or levels.</div>
+        <div>Confirm no drops, stamina, energy, Vault grants, or auth writes occurred.</div>
       </div>
     </section>
   `;
