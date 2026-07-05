@@ -35,6 +35,30 @@ The endpoint is:
 functions/api/battles.js
 ```
 
+## Phase 5.5 admin check panel
+
+Phase 5.5 adds an admin-only button page:
+
+```text
+#/admin/battle-check
+```
+
+This page runs Training Yard Goblin through the real battle endpoint and displays:
+
+```text
+phase
+battleId
+encounter
+result
+gold gained
+total XP
+writes
+XP applied by card
+raw response
+```
+
+This avoids manual raw API testing while keeping the real write check out of the player game.
+
 ## Reward rules
 
 Current reward contract version:
@@ -103,6 +127,7 @@ GET /api/battle-reward-contract
 GET /api/battle-history
 #/admin/backend
 #/admin/inventory
+#/admin/battle-check
 ```
 
 Battle History now surfaces:
@@ -119,42 +144,36 @@ phase
 
 After Cloudflare deploys:
 
-1. Open `/api/battle-reward-contract`.
-2. Confirm `phase: "battle-5"`.
-3. Confirm `readOnly: true`.
-4. Confirm `writeApplicationEndpoint: "POST /api/battles"`.
-5. Open `/api/pull-resources` and note current gold.
-6. Open `/api/vault?ownerUserId=sterling` and note XP/levels on likely squad cards.
-7. POST to `/api/battles` with:
-
-```json
-{
-  "encounterId": "training-yard-goblin"
-}
-```
-
-8. Confirm response includes:
+1. Open `#/admin/battle-check`.
+2. Click `Run Training Battle`.
+3. Confirm the result says `phase: battle-5`.
+4. Confirm the result shows a battle ID.
+5. Confirm the result shows gold gained.
+6. Confirm the result shows total XP.
+7. Confirm XP Applied lists owned squad cards.
+8. Confirm writes include:
 
 ```text
-phase: battle-5
-writes: battle_history, user_resources.gold, cards.card_json.xp_level
-rewardApplied
-xpApplied
+battle_history
+user_resources.gold
+cards.card_json.xp_level
 ```
 
-9. Open `/api/battle-history`.
-10. Confirm the newest row includes `rewardApplied` and `xpApplied`.
-11. Open `/api/pull-resources` again and confirm gold increased.
-12. Open `/api/vault?ownerUserId=sterling` again and confirm selected owned cards gained XP and/or levels.
-13. Confirm pull tickets did not change.
-14. Confirm no drops, stamina, energy, Vault grants, or auth changes occurred.
+9. Confirm the guardrails still say no drops, tickets, stamina, energy, Vault grants, or auth changes.
+
+Optional deeper checks:
+
+1. Open `/api/battle-history`.
+2. Confirm the newest row includes `rewardApplied` and `xpApplied`.
+3. Open `/api/pull-resources` and confirm gold increased.
+4. Open `/api/vault?ownerUserId=sterling` and confirm selected owned cards gained XP and/or levels.
 
 ## Next phase
 
-Recommended next step after verification:
+Recommended next step after the admin check works:
 
 ```text
-Battle Phase 5.5: reward-write hardening and display pass
+Battle Phase 6: wire the player Battle flow to the real backend battle endpoint
 ```
 
-Do not add drops, stamina, or complex animation until the reward write path is verified live.
+Do not add drops, stamina, or complex animation until the reward write path is verified through the admin check panel.
