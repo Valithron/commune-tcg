@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Hub Route
-   Phase 3 responsibility: static battle entry point and encounter loop gateway.
-   Real stamina, matchmaking, cooldowns, and battle history are deferred.
+   Phase 6 responsibility: player battle entry point for the backend-connected
+   battle resolution flow. Stamina, matchmaking, drops, and animation are deferred.
    ============================================================================ */
 
 import { mockEncounters, getDefaultSquad, getSquadPower } from '../data/mockBattle.js';
@@ -15,7 +15,7 @@ export function renderBattleHub() {
     <section class="hero-panel">
       <span class="section-kicker">Battle</span>
       <h2 class="hero-title">Send the squad.</h2>
-      <p class="hero-copy">Phase 3 adds the static battle loop: choose an encounter, review your squad, and view deterministic results.</p>
+      <p class="hero-copy">Battle now uses a safe two-step flow: preview the matchup, then resolve the battle from the results screen to apply real gold and XP rewards.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/battle/encounters">Choose Encounter</a>
         <a class="button button-secondary" href="#/battle/squad?encounter=${nextEncounter.id}">Review Squad</a>
@@ -32,8 +32,8 @@ export function renderBattleHub() {
       </div>
       <div class="stat-grid">
         <div class="stat-panel"><span class="stat-label">Squad</span><span class="stat-value">${squad.length}</span></div>
-        <div class="stat-panel"><span class="stat-label">Energy</span><span class="stat-value">24</span></div>
-        <div class="stat-panel"><span class="stat-label">Wins</span><span class="stat-value">7</span></div>
+        <div class="stat-panel"><span class="stat-label">Reward Writes</span><span class="stat-value">Manual</span></div>
+        <div class="stat-panel"><span class="stat-label">Drops</span><span class="stat-value">Off</span></div>
       </div>
     </section>
 
@@ -52,7 +52,7 @@ export function renderBattleHub() {
             <p>${encounter.description}</p>
             <div class="battle-meta-row">
               <span>Power ${encounter.enemyPower}</span>
-              <span>⚡ ${encounter.staminaCost}</span>
+              <span>⚡ deferred</span>
             </div>
           </a>
         `).join('')}
