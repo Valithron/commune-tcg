@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 10.5 adds temporary ticket top-ups and in-app pull history.
+This document tracks the live backend contracts for the Gacha branch. Phase 10.6 adds semantic pull history fields.
 
 ## Existing Cloudflare bindings
 
@@ -114,7 +114,21 @@ result_json
 created_at
 ```
 
-`GET /api/pull-history` reads this table if it exists and otherwise returns an empty history without creating rows.
+Future `result_json` rows include semantic fields:
+
+```text
+ownerUserId
+ownerDisplayName
+cardTitle
+actualRarity
+selectedRarity
+characterId
+sourceCardId
+sourceRowId
+ownedCardId
+```
+
+Older rows are hydrated by `/api/pull-history` from `ownedCardId` when the owned card row is still present.
 
 ### card_submissions
 
@@ -158,14 +172,15 @@ Pull options:
 8. Server rolls rarity.
 9. Server inserts owned card rows into `cards`.
 10. Server decrements tickets.
-11. Server records `pull_history`.
+11. Server records semantic `pull_history` results.
 12. Pull Results renders owned cards with Vault links.
-13. Pull History displays recent records from `/api/pull-history`.
+13. Pull History displays owner, card title, and rarity from `/api/pull-history`.
 
 ## Guardrails
 
-- Phase 10.5 uses temporary Sterling ownership.
+- Phase 10.6 uses temporary Sterling ownership.
 - Ticket top-up is a testing tool, not a real purchase flow.
+- Pull history semantics are text-only and do not add thumbnails or visual redesign.
 - Battle and rewards are unchanged.
 - Auth is still deferred.
 - Pull odds, tickets, Vault writes, and pull history are server-owned.
