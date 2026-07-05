@@ -7,7 +7,7 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Backend Status</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Battle Phase 3 adds a write-enabled battle endpoint that records battle_history only. Rewards, XP, currency, stamina, and Vault writes remain deferred.</p>
+      <p class="hero-copy">Battle Phase 4 adds a read-only battle contract endpoint. Battle history remains the only battle write currently enabled.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/inventory">Resource Inventory</a>
         <a class="button button-secondary" href="#/battle">Battle Hub</a>
@@ -22,6 +22,7 @@ export function renderBackendStatus() {
         <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
         <a href="${routes.battleSimulate}?encounterId=training-yard-goblin" target="_blank" rel="noreferrer"><span>Battle Simulate</span><strong>${routes.battleSimulate}</strong></a>
         <a href="${routes.battleHistory}" target="_blank" rel="noreferrer"><span>Battle History</span><strong>${routes.battleHistory}</strong></a>
+        <a href="/api/battle-reward-contract" target="_blank" rel="noreferrer"><span>Battle Contract</span><strong>/api/battle-reward-contract</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
@@ -38,11 +39,11 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Battle Phase 3 guardrails</h2>
+      <h2 class="section-title">Battle Phase 4 guardrails</h2>
       <div class="admin-checklist">
-        <div>POST /api/battles writes battle_history only.</div>
-        <div>Battle Inventory, Battle Simulate, and Battle History diagnostics are safe to inspect.</div>
-        <div>No rewards, XP, level, currency, stamina, energy, or Vault data are changed.</div>
+        <div>Battle Contract is read-only.</div>
+        <div>POST /api/battles still writes battle_history only.</div>
+        <div>No progression, currency, stamina, energy, or Vault data are changed.</div>
         <div>Pulls, submissions, Library, and Vault behavior are unchanged.</div>
       </div>
     </section>
