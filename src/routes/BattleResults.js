@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Results Route
-   Phase 6.2 responsibility: player-facing battle result screen with clear
-   preview-vs-applied labels, visible resolved state, and live resource refresh.
+   Phase 6.3 responsibility: player-facing battle result screen with clear
+   preview-vs-applied labels, visible resolved state, and immediate live resource refresh.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
@@ -57,7 +57,7 @@ function renderResolvedBattle(payload) {
   return `
     <div class="battle-state-note battle-state-note-live">
       <strong>Resolved for real.</strong>
-      <span>This section reflects the backend write that was just applied. The resource bar has been refreshed from live resources.</span>
+      <span>This section reflects the backend write that was just applied. The resource bar has been updated from the battle response.</span>
     </div>
 
     <div class="detail-list">
@@ -65,6 +65,7 @@ function renderResolvedBattle(payload) {
       <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name || payload.historyRow?.encounterId || 'Unknown')}</strong></div>
       <div class="detail-row"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Loss'}</strong></div>
       <div class="detail-row"><span>Gold Applied</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
+      <div class="detail-row"><span>Gold After</span><strong>◎ ${escapeHtml(reward.goldAfter ?? 'refresh on next route')}</strong></div>
       <div class="detail-row"><span>Total XP Applied</span><strong>${escapeHtml(reward.totalXp || 0)}</strong></div>
       <div class="detail-row"><span>Writes</span><strong>${escapeHtml((payload.writes || []).join(', ') || 'None')}</strong></div>
     </div>
@@ -178,11 +179,13 @@ export function initBattleResults(root) {
       }
 
       if (payload.ok) {
-        await refreshTopBarResources(document);
+        await refreshTopBarResources(document, {
+          gold: payload.rewardApplied?.goldAfter,
+        });
       }
 
       resultTarget.innerHTML = renderResolvedBattle(payload);
-      status.textContent = payload.ok ? 'Resolved. Real gold and XP were applied, and resources were refreshed.' : 'Battle returned a validation error.';
+      status.textContent = payload.ok ? 'Resolved. Real gold and XP were applied, and the gold bar was updated.' : 'Battle returned a validation error.';
       button.classList.remove('button-working');
 
       if (payload.ok) {
