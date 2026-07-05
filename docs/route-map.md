@@ -31,6 +31,7 @@ These routes render through `src/components/AdminShell.js`. Admin navigation int
 | Route | File | Purpose |
 |---|---|---|
 | `#/admin` | `src/routes/AdminIndex.js` | Isolated admin and diagnostics hub |
+| `#/admin/battle-check` | `src/routes/AdminBattleTest.js` | Button-based Phase 5 battle reward write check |
 | `#/admin/submissions` | `src/routes/AdminDashboard.js` | Submission review queue |
 | `#/admin/submission/:submissionId` | `src/routes/AdminSubmissionDetail.js` | Submission review detail and server-owned review actions |
 | `#/admin/backend` | `src/routes/BackendStatus.js` | Backend status and diagnostic endpoint links |
@@ -66,10 +67,10 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 | `/api/pull-resources` | `functions/api/pull-resources.js` | Read pull tickets and gold resources |
 | `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle card and table diagnostics |
 | `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write battle simulation |
-| `/api/battles` | `functions/api/battles.js` | Write battle_history only |
-| `/api/battle-history` | `functions/api/battle-history.js` | Read battle history |
-| `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 4 reward and XP contract |
+| `/api/battles` | `functions/api/battles.js` | Resolve battle and write Phase 5 battle_history, gold, XP, and levels |
+| `/api/battle-history` | `functions/api/battle-history.js` | Read battle history with reward and XP details |
+| `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 5 reward and XP contract |
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 4.5 keeps hash routing and adds a clean admin boundary at `#/admin`. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 5.5 keeps hash routing and adds an admin-only Battle Check route at `#/admin/battle-check`. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
