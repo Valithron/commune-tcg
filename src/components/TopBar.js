@@ -1,44 +1,63 @@
 import { mockUser } from '../data/mockUser.js';
-import { fetchJson, getApiRoutes } from '../services/apiClient.js';
+import { getApiRoutes } from '../services/apiClient.js';
 import { formatNumber } from './format.js';
 
-async function loadTopBarResources() {
+function normalizeResourceValue(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+}
+
+async function loadTopBarResources(overrides = {}) {
   try {
     const routes = getApiRoutes();
-    const payload = await fetchJson(routes.pullResources);
+    const response = await fetch(routes.pullResources + '?_=' + Date.now(), {
+      cache: 'no-store',
+      headers: {
+        accept: 'application/json',
+        'cache-control': 'no-cache',
+      },
+    });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload) {
+      throw new Error(payload?.error || `Resource request failed with ${response.status}`);
+    }
+
     const resources = payload.resources || payload;
-    const pullTickets = Number(resources.pullTickets);
-    const gold = Number(resources.gold);
 
     return {
-      pullTickets: Number.isFinite(pullTickets) ? pullTickets : mockUser.pullTickets,
-      gold: Number.isFinite(gold) ? gold : mockUser.gold,
+      pullTickets: normalizeResourceValue(overrides.pullTickets ?? resources.pullTickets, mockUser.pullTickets),
+      gold: normalizeResourceValue(overrides.gold ?? resources.gold, mockUser.gold),
       live: true,
     };
   } catch {
     return {
-      pullTickets: mockUser.pullTickets,
-      gold: mockUser.gold,
-      live: false,
+      pullTickets: normalizeResourceValue(overrides.pullTickets, mockUser.pullTickets),
+      gold: normalizeResourceValue(overrides.gold, mockUser.gold),
+      live: Boolean(Number.isFinite(Number(overrides.pullTickets)) || Number.isFinite(Number(overrides.gold))),
     };
   }
 }
 
-export async function refreshTopBarResources(root = document) {
+function renderResourcePills(resources) {
+  return `
+    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
+    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
+  `;
+}
+
+export async function refreshTopBarResources(root = document, overrides = {}) {
   const target = root.querySelector('[data-topbar-resources]');
 
   if (!target) {
     return null;
   }
 
-  const resources = await loadTopBarResources();
+  const resources = await loadTopBarResources(overrides);
   const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
 
   target.setAttribute('title', resourceTitle);
-  target.innerHTML = `
-    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
-    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
-  `;
+  target.innerHTML = renderResourcePills(resources);
 
   return resources;
 }
@@ -54,8 +73,7 @@ export async function renderTopBar() {
         <h1 class="brand-title">Gacha</h1>
       </a>
       <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources>
-        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
-        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
+        ${renderResourcePills(resources)}
       </div>
     </header>
   `;
