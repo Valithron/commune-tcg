@@ -1,7 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 5.5 responsibility: keep player routes separate while adding an
-   admin-only battle reward check route.
+   Phase 6 responsibility: keep player/admin routes separate while wiring the
+   player Battle Results route to the backend battle reward endpoint.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -37,7 +37,7 @@ import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
 import { renderSquadBuilder } from './routes/SquadBuilder.js';
-import { renderBattleResults } from './routes/BattleResults.js';
+import { initBattleResults, renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminIndex } from './routes/AdminIndex.js';
 import { initAdminBattleTest, renderAdminBattleTest } from './routes/AdminBattleTest.js';
@@ -198,6 +198,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/admin/battle-check') {
       initAdminBattleTest(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/battle/results') {
+      initBattleResults(appRoot);
     }
 
     if (matchedRoute.pattern === '/submit') {
