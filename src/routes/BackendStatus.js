@@ -7,10 +7,10 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Backend Status</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Phase 10.4 adds live ticket and history diagnostics.</p>
+      <p class="hero-copy">Battle Phase 1 adds read-only battle inventory diagnostics while keeping battle resolution, rewards, and XP deferred.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/inventory">Resource Inventory</a>
-        <a class="button button-secondary" href="#/pull">Pull Chamber</a>
+        <a class="button button-secondary" href="#/battle">Battle Hub</a>
       </div>
     </section>
 
@@ -19,6 +19,7 @@ export function renderBackendStatus() {
       <h2 class="section-title">Checks and endpoint links</h2>
       <div class="backend-endpoint-list">
         <a href="${routes.health}" target="_blank" rel="noreferrer"><span>Health</span><strong>${routes.health}</strong></a>
+        <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
@@ -35,12 +36,12 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Phase 10.4 guardrails</h2>
+      <h2 class="section-title">Battle Phase 1 guardrails</h2>
       <div class="admin-checklist">
-        <div>Resource and history endpoints are read-only.</div>
-        <div>Confirm blocks pulls when tickets are too low.</div>
-        <div>Failed live pulls show a failure state.</div>
-        <div>Battle, rewards, and auth are unchanged.</div>
+        <div>Battle Inventory is read-only.</div>
+        <div>No battle_history rows are written.</div>
+        <div>No rewards, XP, level, currency, or Vault data are changed.</div>
+        <div>Pulls, submissions, Library, and Vault behavior are unchanged.</div>
       </div>
     </section>
   `;
