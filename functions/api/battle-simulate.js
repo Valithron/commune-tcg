@@ -1,7 +1,7 @@
 /* ============================================================================
    API Battle Simulate Endpoint
-   Battle Phase 2 responsibility: no-write deterministic battle simulation.
-   Battle Phase 3 update: delegates to shared battle engine used by POST /api/battles.
+   Battle Phase 5 responsibility: no-write deterministic battle simulation using
+   the same validation path as POST /api/battles. Performs no writes.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
@@ -25,14 +25,25 @@ export async function onRequestGet({ env, request }) {
     });
 
     if (!result.ok) {
-      return jsonResponse(result, { status: result.status || 400 });
+      return jsonResponse({
+        ...result,
+        phase: 'battle-5-simulate',
+        readOnly: true,
+        writes: [],
+      }, { status: result.status || 400 });
     }
 
     return jsonResponse({
       ...result,
-      phase: 'battle-2',
+      phase: 'battle-5-simulate',
       readOnly: true,
-      nextStep: 'POST /api/battles writes battle_history only after this simulation contract validates.',
+      writes: [],
+      guardrails: [
+        'Simulation performs no writes.',
+        'POST /api/battles is the only Phase 5 reward write path.',
+        'No gold, XP, level, stamina, energy, Vault, drop, ticket, or auth writes occur from this endpoint.',
+      ],
+      nextStep: 'POST /api/battles applies gold and owned-card XP/level only after this validation path passes.',
     });
   } catch (error) {
     return errorResponse('Failed to run battle simulation.', 500, error.message);
