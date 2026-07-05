@@ -7,7 +7,7 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Backend</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Backend checks now live inside the isolated admin shell. These links inspect health, schema, pulls, battle history, and battle contracts without sending the user back into the player game.</p>
+      <p class="hero-copy">Backend checks now live inside the isolated admin shell. Phase 5 lets validated battles apply gold plus owned-card XP/levels while keeping drops, tickets, stamina, energy, and Vault grants deferred.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-secondary" href="#/admin/inventory">Resource Inventory</a>
@@ -39,12 +39,12 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Admin containment guardrails</h2>
+      <h2 class="section-title">Phase 5 guardrails</h2>
       <div class="admin-checklist">
         <div>This page is rendered by AdminShell, not AppShell.</div>
-        <div>Internal page links stay inside #/admin routes.</div>
-        <div>Endpoint links open raw API diagnostics only.</div>
-        <div>POST /api/battles still writes battle_history only.</div>
+        <div>POST /api/battles validates before any write.</div>
+        <div>Validated battles write battle_history, user_resources.gold, and owned card XP/level only.</div>
+        <div>No pull tickets, drops, stamina, energy, Vault grants, or auth changes are written.</div>
       </div>
     </section>
   `;
