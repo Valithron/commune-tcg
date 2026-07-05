@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Styles
-   Phase 3 responsibility: encounter, squad, and result screen presentation.
-   Keep battle-specific layout here instead of bloating shared component styles.
+   Phase 6.1 responsibility: encounter, squad, and result screen presentation
+   with clear placeholder-vs-real reward states.
    ============================================================================ */
 
 .encounter-grid,
@@ -60,6 +60,61 @@
   display: grid;
   gap: var(--space-2);
   padding: var(--space-4);
+}
+
+.battle-preview-panel {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.battle-live-panel {
+  border-color: rgba(122, 220, 150, 0.22);
+}
+
+.battle-state-note {
+  display: grid;
+  gap: 0.25rem;
+  padding: var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.battle-state-note strong {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+}
+
+.battle-state-note-preview {
+  border-color: rgba(212, 175, 55, 0.24);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.battle-state-note-pending {
+  border-style: dashed;
+}
+
+.battle-state-note-live {
+  border-color: rgba(122, 220, 150, 0.38);
+  background: rgba(122, 220, 150, 0.1);
+}
+
+.battle-state-note-live strong {
+  color: #baf5c8;
+}
+
+.battle-state-note-error {
+  border-color: rgba(255, 107, 74, 0.38);
+  background: rgba(255, 107, 74, 0.08);
+}
+
+.battle-state-note-error strong {
+  color: #ffb8a8;
+}
+
+.battle-applied-row {
+  border-color: rgba(122, 220, 150, 0.14);
 }
 
 .bench-row {
