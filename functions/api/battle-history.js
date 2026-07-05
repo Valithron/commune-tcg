@@ -5,7 +5,80 @@
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
-import { readBattleHistory, temporaryBattleUserId } from '../_shared/battle-engine.js';
+import { temporaryBattleUserDisplayName, temporaryBattleUserId } from '../_shared/battle-engine.js';
+
+async function tableExists(env, tableName) {
+  const row = await env.DB.prepare(`
+    SELECT name FROM sqlite_master
+    WHERE type = 'table' AND name = ?
+    LIMIT 1
+  `).bind(tableName).first();
+
+  return Boolean(row);
+}
+
+function parseResultJson(value) {
+  try {
+    return JSON.parse(value || 'null');
+  } catch {
+    return null;
+  }
+}
+
+async function readBattleHistoryRows(env, { ownerUserId, limit }) {
+  const exists = await tableExists(env, 'battle_history');
+
+  if (!exists) {
+    return {
+      tableExists: false,
+      totalReturned: 0,
+      battles: [],
+    };
+  }
+
+  const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const result = await env.DB.prepare(`
+    SELECT id, user_id AS userId, encounter_id AS encounterId, victory, squad_power AS squadPower, enemy_power AS enemyPower, result_json AS resultJson, created_at AS createdAt
+    FROM battle_history
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).bind(ownerUserId, safeLimit).all();
+
+  const battles = (result.results || []).map((row) => {
+    const parsedResult = parseResultJson(row.resultJson);
+
+    return {
+      id: row.id,
+      userId: row.userId,
+      ownerUserId: row.userId,
+      ownerDisplayName: row.userId === temporaryBattleUserId ? temporaryBattleUserDisplayName : row.userId,
+      encounterId: row.encounterId,
+      encounterName: parsedResult?.encounterName || row.encounterId,
+      victory: Number(row.victory) === 1,
+      squadPower: Number(row.squadPower),
+      enemyPower: Number(row.enemyPower),
+      margin: parsedResult?.margin ?? Number(row.squadPower) - Number(row.enemyPower),
+      squad: parsedResult?.squad || [],
+      rewardPreview: parsedResult?.rewardPreview || null,
+      rewardApplied: parsedResult?.rewardApplied || null,
+      xpPreview: parsedResult?.xpPreview || [],
+      xpApplied: parsedResult?.xpApplied || parsedResult?.xpPreview || [],
+      combatLog: parsedResult?.combatLog || [],
+      writes: parsedResult?.writes || ['battle_history'],
+      deferredWrites: parsedResult?.deferredWrites || [],
+      phase: parsedResult?.phase || 'battle-3',
+      createdAt: row.createdAt,
+      resultHydrated: Boolean(parsedResult),
+    };
+  });
+
+  return {
+    tableExists: true,
+    totalReturned: battles.length,
+    battles,
+  };
+}
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) {
@@ -17,7 +90,7 @@ export async function onRequestGet({ env, request }) {
   const limit = url.searchParams.get('limit') || 20;
 
   try {
-    const history = await readBattleHistory(env, { ownerUserId, limit });
+    const history = await readBattleHistoryRows(env, { ownerUserId, limit });
 
     return jsonResponse({
       ok: true,
