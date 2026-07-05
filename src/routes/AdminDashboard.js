@@ -1,7 +1,7 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 9.4 responsibility: read the real submission queue and link rows to
-   review detail. Review transitions happen server-side.
+   Phase 4.5 responsibility: submission review queue inside isolated admin shell.
+   Review transitions happen server-side.
    ============================================================================ */
 
 import { mockAdminStats, mockSubmissions, adminChecklist } from '../data/mockAdmin.js';
@@ -98,13 +98,13 @@ export async function renderAdminDashboard() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Admin</span>
+      <span class="section-kicker">Admin Submissions</span>
       <h2 class="hero-title">Control the pool.</h2>
-      <p class="hero-copy">The moderation queue reads submitted cards. Tap a row to inspect and review it.</p>
+      <p class="hero-copy">The moderation queue reads submitted cards. Review tools live inside the isolated admin shell and do not link back into player routes.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/submit">Open Submit Flow</a>
-        <a class="button button-secondary" href="#/backend">Backend Status</a>
-        <a class="button button-secondary" href="#/library">Back to Library</a>
+        <a class="button button-secondary" href="#/admin">Admin Home</a>
+        <a class="button button-secondary" href="#/admin/backend">Backend Status</a>
+        <a class="button button-secondary" href="#/admin/inventory">Inventory</a>
       </div>
     </section>
 
