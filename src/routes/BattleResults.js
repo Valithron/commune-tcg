@@ -56,6 +56,7 @@ function renderResolvedBattle(payload) {
     <section class="glass-panel battle-summary-panel">
       <span class="section-kicker">Progression Applied</span>
       <h2 class="section-title">Squad XP</h2>
+      <p class="body-copy">This section is the source of truth for which owned cards actually received XP.</p>
       <div class="detail-list">
         ${renderAppliedXpRows(payload.xpApplied)}
       </div>
@@ -82,6 +83,7 @@ export function renderBattleResults({ query }) {
     <section class="glass-panel battle-summary-panel">
       <span class="section-kicker">Preview</span>
       <h2 class="section-title">Before reward write</h2>
+      <p class="body-copy">Real squad selection is not wired yet, so the backend may resolve with its default eligible owned squad. The applied XP section below shows the actual rewarded cards.</p>
       <div class="detail-row"><span>Encounter</span><strong>${result.encounter.name}</strong></div>
       <div class="detail-row"><span>Squad Power</span><strong>${result.squadPower}</strong></div>
       <div class="detail-row"><span>Preview Gold</span><strong>◎ ${result.rewards.gold}</strong></div>
@@ -101,7 +103,7 @@ export function renderBattleResults({ query }) {
       <div class="section-heading">
         <div>
           <span class="section-kicker">Squad</span>
-          <h2 class="section-title">Participants</h2>
+          <h2 class="section-title">Preview Participants</h2>
         </div>
       </div>
       <div class="card-grid">
