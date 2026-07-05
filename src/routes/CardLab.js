@@ -1,7 +1,8 @@
 /* ============================================================================
    Card Lab Route
-   Phase 7.5 responsibility: live card-frame inspection using real Library data,
-   title-length samples, rarity samples, and full detail-sheet preview. No writes.
+   Phase 4.5 responsibility: admin-only card-frame inspection using real Library
+   data, title-length samples, rarity samples, and full detail-sheet preview.
+   No writes.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -469,12 +470,12 @@ export async function renderCardLab() {
 
   return `
     <section class="hero-panel card-lab-hero">
-      <span class="section-kicker">Card Lab</span>
+      <span class="section-kicker">Admin Card Lab</span>
       <h2 class="hero-title">Stress the frame.</h2>
-      <p class="hero-copy">Live detail, title-length, and rarity samples from the Library render before we lock the production overlay shape.</p>
+      <p class="hero-copy">Live detail, title-length, and rarity samples from the Library render inside the isolated admin area before we lock the production overlay shape.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/library">Back to Library</a>
-        <a class="button button-secondary" href="#/inventory">Inventory</a>
+        <a class="button button-secondary" href="#/admin">Admin Home</a>
+        <a class="button button-secondary" href="#/admin/inventory">Inventory</a>
       </div>
     </section>
 
