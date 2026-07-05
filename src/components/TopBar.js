@@ -24,6 +24,25 @@ async function loadTopBarResources() {
   }
 }
 
+export async function refreshTopBarResources(root = document) {
+  const target = root.querySelector('[data-topbar-resources]');
+
+  if (!target) {
+    return null;
+  }
+
+  const resources = await loadTopBarResources();
+  const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
+
+  target.setAttribute('title', resourceTitle);
+  target.innerHTML = `
+    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
+    <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
+  `;
+
+  return resources;
+}
+
 export async function renderTopBar() {
   const resources = await loadTopBarResources();
   const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
@@ -34,7 +53,7 @@ export async function renderTopBar() {
         <span class="brand-kicker">Commune TCG</span>
         <h1 class="brand-title">Gacha</h1>
       </a>
-      <div class="resource-row" aria-label="Player resources" title="${resourceTitle}">
+      <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources>
         <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
         <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
       </div>
