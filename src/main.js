@@ -1,6 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 4.5 responsibility: separate player routes from isolated admin routes.
+   Phase 5.5 responsibility: keep player routes separate while adding an
+   admin-only battle reward check route.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -39,6 +40,7 @@ import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminIndex } from './routes/AdminIndex.js';
+import { initAdminBattleTest, renderAdminBattleTest } from './routes/AdminBattleTest.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
 import { initAdminSubmissionDetail, renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
@@ -66,6 +68,7 @@ const routeDefinitions = [
   { pattern: '/battle/results', navRoute: '/battle', shell: 'player', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', shell: 'player', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/admin', shell: 'admin', render: renderAdminIndex },
+  { pattern: '/admin/battle-check', navRoute: '/admin/battle-check', shell: 'admin', render: renderAdminBattleTest },
   { pattern: '/admin/submissions', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminDashboard },
   { pattern: '/admin/submission/:submissionId', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminSubmissionDetail },
   { pattern: '/admin/backend', navRoute: '/admin/backend', shell: 'admin', render: renderBackendStatus },
@@ -191,6 +194,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/admin/card-lab') {
       initCardFrameTuner(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/admin/battle-check') {
+      initAdminBattleTest(appRoot);
     }
 
     if (matchedRoute.pattern === '/submit') {
