@@ -1,7 +1,6 @@
 /* ============================================================================
    Library Route
-   Phase 7.5 responsibility: render the global card pool from the read-only
-   backend Library model and expose Card Lab for frame checks.
+   Phase 4.5 responsibility: clean player Library with no admin/debug links.
    ============================================================================ */
 
 import { loadLibraryCards } from '../data/libraryData.js';
@@ -26,10 +25,10 @@ export async function renderLibrary() {
     <section class="hero-panel">
       <span class="section-kicker">Global Pool</span>
       <h2 class="hero-title">The Library</h2>
-      <p class="hero-copy">The Library now prefers the read-only D1 card model. If the deployed schema is unavailable or unmapped, it falls back to local mock cards.</p>
+      <p class="hero-copy">The Library shows the global card pool for the player experience. Admin frame checks and diagnostics now live in the isolated admin area.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/submit">Submit Card</a>
-        <a class="button button-secondary" href="#/card-lab">Card Lab</a>
+        <a class="button button-secondary" href="#/pull">Start Pulling</a>
       </div>
     </section>
 
