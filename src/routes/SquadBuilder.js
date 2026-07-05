@@ -1,12 +1,12 @@
 /* ============================================================================
    Squad Builder Route
-   Phase 3 responsibility: static squad review before battle results.
-   Drag/drop, saved squads, validation, and server writes are deferred.
+   Phase 6 responsibility: review the prototype squad before player-facing
+   backend battle resolution. Slot editing and saved squads are deferred.
    ============================================================================ */
 
-import { ownedCards } from '../data/mockCards.js';
-import { getDefaultSquad, getEncounterById, getSquadPower } from '../data/mockBattle.js';
 import { renderCardFrame } from '../components/CardFrame.js';
+import { getDefaultSquad, getEncounterById, getSquadPower } from '../data/mockBattle.js';
+import { ownedCards } from '../data/mockCards.js';
 
 export function renderSquadBuilder({ query }) {
   const encounter = getEncounterById(query.encounter);
@@ -18,7 +18,7 @@ export function renderSquadBuilder({ query }) {
     <section class="hero-panel">
       <span class="section-kicker">Squad Builder</span>
       <h2 class="hero-title">Review the lineup.</h2>
-      <p class="hero-copy">Phase 3 uses a locked mock squad. Later this screen will support slot editing, saved squads, and battle validation.</p>
+      <p class="hero-copy">This screen still uses the prototype locked squad. The next screen now has a Resolve Battle button that applies real gold and XP rewards through the backend.</p>
       <div class="action-row"><a class="button button-secondary" href="#/battle/encounters">Change Encounter</a></div>
     </section>
 
@@ -27,6 +27,7 @@ export function renderSquadBuilder({ query }) {
       <div class="detail-row"><span>Enemy Power</span><strong>${encounter.enemyPower}</strong></div>
       <div class="detail-row"><span>Squad Power</span><strong>${squadPower}</strong></div>
       <div class="detail-row"><span>Forecast</span><strong>${powerDelta >= 0 ? `Favored +${powerDelta}` : `Risky ${powerDelta}`}</strong></div>
+      <div class="detail-row"><span>Reward Write</span><strong>Manual on results screen</strong></div>
       <div class="action-row"><a class="button button-primary" href="#/battle/results?encounter=${encounter.id}">Start Battle</a></div>
     </section>
 
