@@ -1,13 +1,8 @@
-/* ============================================================================
-   Pull Engine
-   Phase 10.4 responsibility: live pull writes plus read helpers for resources
-   and history hardening around the temporary Sterling owner.
-   ============================================================================ */
-
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
 
 export const temporaryPullUserId = 'sterling';
+export const temporaryPullUserDisplayName = 'Sterling';
 export const temporaryStartingTickets = 12;
 
 const userResourcesSql = `
@@ -86,6 +81,18 @@ function buildId(prefix) {
   return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8);
 }
 
+function safeParseJson(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 async function tableExists(env, tableName) {
   const row = await env.DB.prepare(`
     SELECT name FROM sqlite_master
@@ -154,6 +161,60 @@ export async function readPullResources(env) {
   };
 }
 
+async function readOwnedCardSummary(env, ownedCardId) {
+  if (!ownedCardId) {
+    return null;
+  }
+
+  const row = await env.DB.prepare(`
+    SELECT id, owner_user_id, card_json
+    FROM cards
+    WHERE id = ?
+    LIMIT 1
+  `).bind(ownedCardId).first();
+
+  if (!row) {
+    return null;
+  }
+
+  const parsed = safeParseJson(row.card_json);
+  const payload = parsed?.card || parsed?.data || parsed || {};
+
+  return {
+    ownedCardId: row.id,
+    ownerUserId: row.owner_user_id || '',
+    ownerDisplayName: row.owner_user_id === temporaryPullUserId ? temporaryPullUserDisplayName : row.owner_user_id || 'Unknown owner',
+    cardTitle: payload.name || payload.card_name || payload.title || 'Unknown card',
+    actualRarity: payload.rarity || 'common',
+    characterId: payload.character_id || payload.characterId || payload.character || '',
+  };
+}
+
+async function hydrateHistoryResult(env, result, userId) {
+  const ownerUserId = result.ownerUserId || userId || temporaryPullUserId;
+  const alreadySemantic = result.cardTitle && result.ownerDisplayName;
+
+  if (alreadySemantic) {
+    return {
+      ...result,
+      ownerUserId,
+      ownerDisplayName: result.ownerDisplayName,
+    };
+  }
+
+  const ownedSummary = await readOwnedCardSummary(env, result.ownedCardId);
+
+  return {
+    ...result,
+    ownerUserId: result.ownerUserId || ownedSummary?.ownerUserId || ownerUserId,
+    ownerDisplayName: result.ownerDisplayName || ownedSummary?.ownerDisplayName || temporaryPullUserDisplayName,
+    cardTitle: result.cardTitle || ownedSummary?.cardTitle || result.sourceCardTitle || 'Unknown card',
+    actualRarity: result.actualRarity || ownedSummary?.actualRarity || result.selectedRarity || 'common',
+    characterId: result.characterId || ownedSummary?.characterId || '',
+    historyHydrated: Boolean(ownedSummary),
+  };
+}
+
 export async function readPullHistory(env, { limit = 20 } = {}) {
   const exists = await tableExists(env, 'pull_history');
 
@@ -174,24 +235,34 @@ export async function readPullHistory(env, { limit = 20 } = {}) {
     LIMIT ?
   `).bind(temporaryPullUserId, safeLimit).all();
 
-  const pulls = (result.results || []).map((row) => {
-    let results = [];
+  const pulls = [];
+
+  for (const row of result.results || []) {
+    let rawResults = [];
 
     try {
-      results = JSON.parse(row.resultJson || '[]');
+      rawResults = JSON.parse(row.resultJson || '[]');
     } catch {
-      results = [];
+      rawResults = [];
     }
 
-    return {
+    const results = [];
+
+    for (const rawResult of rawResults) {
+      results.push(await hydrateHistoryResult(env, rawResult, row.userId));
+    }
+
+    pulls.push({
       id: row.id,
       userId: row.userId,
+      ownerUserId: row.userId,
+      ownerDisplayName: row.userId === temporaryPullUserId ? temporaryPullUserDisplayName : row.userId,
       pullCount: Number(row.pullCount),
       ticketCost: Number(row.ticketCost),
       results,
       createdAt: row.createdAt,
-    };
-  });
+    });
+  }
 
   return {
     tableExists: true,
@@ -223,6 +294,8 @@ function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
     image_key: baseCard.imageKey,
     imageKey: baseCard.imageKey,
     owned: true,
+    owner_user_id: temporaryPullUserId,
+    ownerDisplayName: temporaryPullUserDisplayName,
     level: 1,
     xp: 0,
     copies: 1,
@@ -254,6 +327,22 @@ function simulateSelections(cards, count, rarityOdds) {
   }
 
   return results;
+}
+
+function buildHistoryResult(result) {
+  return {
+    index: result.index,
+    ownerUserId: temporaryPullUserId,
+    ownerDisplayName: temporaryPullUserDisplayName,
+    cardTitle: result.baseCard.name,
+    actualRarity: result.actualRarity,
+    selectedRarity: result.selectedRarity,
+    fallbackUsed: result.fallbackUsed,
+    characterId: result.baseCard.characterId,
+    sourceCardId: result.baseCard.id,
+    sourceRowId: result.baseCard.sourceRowId,
+    ownedCardId: result.ownedCardId,
+  };
 }
 
 export async function resolvePull(env, { count }) {
@@ -296,6 +385,7 @@ export async function resolvePull(env, { count }) {
       ...selection.baseCard,
       id: ownedCardId,
       ownerUserId: temporaryPullUserId,
+      ownerDisplayName: temporaryPullUserDisplayName,
       owned: true,
       level: 1,
       xp: 0,
@@ -308,6 +398,8 @@ export async function resolvePull(env, { count }) {
       ownedCard,
     };
   });
+
+  const historyResults = grantedResults.map(buildHistoryResult);
 
   const statements = [
     env.DB.prepare(`
@@ -334,15 +426,7 @@ export async function resolvePull(env, { count }) {
       temporaryPullUserId,
       pullCount,
       ticketCost,
-      JSON.stringify(grantedResults.map((result) => ({
-        index: result.index,
-        selectedRarity: result.selectedRarity,
-        actualRarity: result.actualRarity,
-        fallbackUsed: result.fallbackUsed,
-        sourceCardId: result.baseCard.id,
-        sourceRowId: result.baseCard.sourceRowId,
-        ownedCardId: result.ownedCardId,
-      }))),
+      JSON.stringify(historyResults),
       now
     ),
   ];
@@ -356,12 +440,16 @@ export async function resolvePull(env, { count }) {
     status: 200,
     pullId,
     userId: temporaryPullUserId,
+    ownerDisplayName: temporaryPullUserDisplayName,
     count: pullCount,
     ticketCost,
     ticketsBefore: Number(resources.pullTickets),
     ticketsAfter: Number(updatedResources.pullTickets),
     results: grantedResults.map((result) => ({
       index: result.index,
+      ownerUserId: temporaryPullUserId,
+      ownerDisplayName: temporaryPullUserDisplayName,
+      cardTitle: result.baseCard.name,
       selectedRarity: result.selectedRarity,
       actualRarity: result.actualRarity,
       fallbackUsed: result.fallbackUsed,
