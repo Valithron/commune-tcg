@@ -1,7 +1,6 @@
 /* ============================================================================
    Submit Card Route
-   Phase 9.2 responsibility: collect card-submission fields and upload one image
-   through the write-enabled /api/submissions endpoint.
+   Phase 4.5 responsibility: player submission flow with no admin links.
    ============================================================================ */
 
 import { getApiRoutes } from '../services/apiClient.js';
@@ -11,10 +10,10 @@ export function renderSubmitCard() {
     <section class="hero-panel">
       <span class="section-kicker">Submit Card</span>
       <h2 class="hero-title">Add to the pool.</h2>
-      <p class="hero-copy">Submissions now create a pending-review record and store card art in CARD_IMAGES. Approval into Library and pulls is still deferred.</p>
+      <p class="hero-copy">Submissions create a pending-review record and store card art in CARD_IMAGES. Review tools are handled separately in the isolated admin area.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/library">Back to Library</a>
-        <a class="button button-secondary" href="#/admin">Admin Review</a>
+        <a class="button button-secondary" href="#/pull">Start Pulling</a>
       </div>
     </section>
 
@@ -83,8 +82,8 @@ export function renderSubmitCard() {
       </form>
 
       <aside class="glass-panel submit-notes">
-        <span class="section-kicker">Phase 9.2</span>
-        <h3>Submission contract</h3>
+        <span class="section-kicker">Submission Contract</span>
+        <h3>Pending review only</h3>
         <p>This flow writes a pending-review submission and stores original art in R2. It does not approve the card, add it to Library, or make it pullable yet.</p>
         <div class="detail-list">
           <div class="detail-row"><span>Database</span><strong>card_submissions</strong></div>
