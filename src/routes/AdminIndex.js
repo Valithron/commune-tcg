@@ -1,10 +1,15 @@
 /* ============================================================================
    Admin Index Route
-   Phase 4.5 responsibility: entry point for isolated admin and diagnostics.
+   Phase 5.5 responsibility: entry point for isolated admin and diagnostics.
    Contains no links to player routes.
    ============================================================================ */
 
 const adminSections = [
+  {
+    href: '#/admin/battle-check',
+    title: 'Battle Check',
+    copy: 'Run the real Phase 5 battle reward path from an admin button and view applied gold and XP.',
+  },
   {
     href: '#/admin/submissions',
     title: 'Submissions Review',
@@ -32,7 +37,7 @@ export function renderAdminIndex() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Containment</span>
       <h2 class="hero-title">Tools stay here.</h2>
-      <p class="hero-copy">This area isolates builder, review, and diagnostic tools from the player game. The player shell, top bar, bottom nav, and player routes are intentionally not rendered here.</p>
+      <p class="hero-copy">This area isolates builder, review, and diagnostic tools from the player game. Phase 5.5 adds a button-based battle check so reward writes can be reviewed without manual API work.</p>
     </section>
 
     <section>
