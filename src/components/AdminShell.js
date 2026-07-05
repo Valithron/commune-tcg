@@ -1,11 +1,11 @@
 /* ============================================================================
    Admin Shell Component
-   Phase 4.5 responsibility: isolate admin and diagnostic routes from the player
-   game shell. This shell intentionally contains no links to player routes.
+   Phase 5.5 responsibility: isolate admin and diagnostic routes from player routes.
    ============================================================================ */
 
 const adminNavItems = [
   { href: '#/admin', route: '/admin', label: 'Admin Home' },
+  { href: '#/admin/battle-check', route: '/admin/battle-check', label: 'Battle Check' },
   { href: '#/admin/submissions', route: '/admin/submissions', label: 'Submissions' },
   { href: '#/admin/backend', route: '/admin/backend', label: 'Backend' },
   { href: '#/admin/inventory', route: '/admin/inventory', label: 'Inventory' },
