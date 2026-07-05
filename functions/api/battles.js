@@ -1,7 +1,8 @@
 /* ============================================================================
    API Battles Endpoint
-   Battle Phase 3 responsibility: write battle_history only after validation.
-   Rewards, XP, currency, stamina, Vault, card progression, and auth remain deferred.
+   Battle Phase 5 responsibility: validate battle, apply gold and owned-card
+   XP/level progression, then write battle_history. Drops, pull tickets, stamina,
+   energy, Vault grants, and auth remain deferred.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
@@ -9,8 +10,8 @@ import {
   mockBattleEncounters,
   resolveBattleSimulation,
   temporaryBattleUserId,
-  writeBattleHistory,
 } from '../_shared/battle-engine.js';
+import { writeBattleProgression } from '../_shared/battle-progression.js';
 
 async function readPayload(request) {
   const contentType = request.headers.get('content-type') || '';
@@ -49,45 +50,48 @@ export async function onRequestPost({ env, request }) {
     if (!simulationResult.ok) {
       return jsonResponse({
         ...simulationResult,
-        phase: 'battle-3',
+        phase: 'battle-5',
         readOnly: false,
         writesPerformed: false,
         writes: [],
         error: simulationResult.error || 'Battle validation failed.',
         notes: [
-          'Validation failed before any write was attempted.',
-          'No battle_history, rewards, XP, currency, stamina, energy, or Vault writes occurred.',
+          'Validation failed before any reward or history write was attempted.',
+          'No battle_history, gold, XP, levels, stamina, energy, Vault, or card ownership writes occurred.',
         ],
       }, { status: simulationResult.status || 400 });
     }
 
-    const written = await writeBattleHistory(env, simulationResult, { now });
+    const written = await writeBattleProgression(env, simulationResult, { now });
 
     return jsonResponse({
       ok: true,
-      phase: 'battle-3',
-      source: 'D1 owned Vault cards + battle_history',
+      phase: 'battle-5',
+      source: 'D1 owned Vault cards + user_resources + battle_history',
       readOnly: false,
       writesPerformed: true,
-      writes: ['battle_history'],
-      deferredWrites: ['rewards', 'XP', 'level-ups', 'currency', 'stamina', 'energy', 'Vault changes'],
+      writes: written.writes,
+      deferredWrites: written.deferredWrites,
       battleId: written.battleId,
       historyRow: written.historyRow,
       simulation: written.simulation,
+      rewardApplied: written.rewardApplied,
+      xpApplied: written.xpApplied,
       validation: simulationResult.validation,
       requested: simulationResult.requested,
       guardrails: [
-        'Only battle_history was written.',
-        'No rewards were written.',
-        'No XP or levels were written.',
-        'No currency was written.',
+        'Validated battle result was required before writes.',
+        'Gold was applied to user_resources only.',
+        'XP and levels were applied to owned card rows only.',
+        'Battle history was written with reward and XP application details.',
+        'No pull tickets were granted.',
+        'No drops or card grants were written.',
         'No stamina or energy was written.',
-        'No Vault or card progression data was changed.',
         'Temporary Sterling owner remains in use until auth exists.',
       ],
-      nextStep: 'Battle Phase 4 should define reward and XP contracts before any progression or currency writes.',
+      nextStep: 'Verify Phase 5 reward and XP writes before adding stamina, drops, tickets, or battle UI polish.',
     });
   } catch (error) {
-    return errorResponse('Failed to resolve battle.', 500, error.message);
+    return errorResponse('Failed to resolve battle.', error.status || 500, error.message);
   }
 }
