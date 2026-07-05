@@ -2,20 +2,31 @@ import { mockUser } from '../data/mockUser.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { formatNumber } from './format.js';
 
-async function loadTopBarTickets() {
+async function loadTopBarResources() {
   try {
     const routes = getApiRoutes();
     const payload = await fetchJson(routes.pullResources);
-    const tickets = Number(payload.resources?.pullTickets);
+    const resources = payload.resources || payload;
+    const pullTickets = Number(resources.pullTickets);
+    const gold = Number(resources.gold);
 
-    return Number.isFinite(tickets) ? tickets : mockUser.pullTickets;
+    return {
+      pullTickets: Number.isFinite(pullTickets) ? pullTickets : mockUser.pullTickets,
+      gold: Number.isFinite(gold) ? gold : mockUser.gold,
+      live: true,
+    };
   } catch {
-    return mockUser.pullTickets;
+    return {
+      pullTickets: mockUser.pullTickets,
+      gold: mockUser.gold,
+      live: false,
+    };
   }
 }
 
 export async function renderTopBar() {
-  const pullTickets = await loadTopBarTickets();
+  const resources = await loadTopBarResources();
+  const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
 
   return `
     <header class="app-topbar">
@@ -23,9 +34,9 @@ export async function renderTopBar() {
         <span class="brand-kicker">Commune TCG</span>
         <h1 class="brand-title">Gacha</h1>
       </a>
-      <div class="resource-row" aria-label="Player resources">
-        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(pullTickets)}</a>
-        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(mockUser.gold)}</a>
+      <div class="resource-row" aria-label="Player resources" title="${resourceTitle}">
+        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
+        <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
       </div>
     </header>
   `;
