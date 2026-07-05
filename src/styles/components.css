@@ -163,6 +163,30 @@
   color: var(--color-functional);
 }
 
+.button:disabled,
+.button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.65);
+  box-shadow: none;
+}
+
+.button-working:disabled {
+  opacity: 0.75;
+  filter: none;
+}
+
+.button-resolved,
+.button-resolved:disabled,
+.button-resolved[aria-disabled='true'] {
+  border-color: rgba(122, 220, 150, 0.45);
+  background: rgba(122, 220, 150, 0.14);
+  color: #baf5c8;
+  opacity: 1;
+  filter: none;
+  box-shadow: none;
+}
+
 .section-heading {
   display: flex;
   align-items: end;
