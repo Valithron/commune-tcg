@@ -7,9 +7,9 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Resource Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Phase 10.4 hardens live pulls with resource and history checks.</p>
+      <p class="hero-copy">Battle Phase 1 maps owned fighter eligibility, mock encounter sources, backend battle-table signals, and proposed battle contracts.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/pull">Pull Chamber</a>
+        <a class="button button-secondary" href="#/battle">Battle Hub</a>
         <a class="button button-secondary" href="#/vault">Vault</a>
         <a class="button button-secondary" href="#/backend">Backend Status</a>
       </div>
@@ -19,6 +19,7 @@ export function renderResourceInventory() {
       <span class="section-kicker">Inventory Endpoints</span>
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
+        <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
@@ -36,13 +37,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify pull hardening</h2>
+      <h2 class="section-title">Verify battle inventory</h2>
       <div class="admin-checklist">
-        <div>Open Pull Resources and confirm tickets.</div>
-        <div>Open Pull History and confirm recent pulls.</div>
-        <div>Confirm Pull and Confirm show live ticket data.</div>
-        <div>Confirm low tickets block Resolve Pull.</div>
-        <div>Confirm battle and rewards are unchanged.</div>
+        <div>Open Battle Inventory and confirm phase is battle-1.</div>
+        <div>Confirm readOnly is true.</div>
+        <div>Confirm Sterling owned cards and battle eligibility are reported.</div>
+        <div>Confirm mock encounter and proposed contract sections are present.</div>
+        <div>Confirm no battle, reward, XP, or Vault writes occurred.</div>
       </div>
     </section>
   `;
