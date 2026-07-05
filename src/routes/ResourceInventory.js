@@ -5,13 +5,13 @@ export function renderResourceInventory() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Resource Inventory</span>
+      <span class="section-kicker">Admin Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Battle Phase 4 defines the next battle contract before any progression or resource mutation work begins.</p>
+      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. This keeps player routes clean while preserving the tools needed to verify battle and pull systems.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/battle">Battle Hub</a>
-        <a class="button button-secondary" href="#/vault">Vault</a>
-        <a class="button button-secondary" href="#/backend">Backend Status</a>
+        <a class="button button-secondary" href="#/admin">Admin Home</a>
+        <a class="button button-secondary" href="#/admin/backend">Backend Status</a>
+        <a class="button button-secondary" href="#/admin/card-lab">Card Lab</a>
       </div>
     </section>
 
@@ -27,12 +27,12 @@ export function renderResourceInventory() {
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
         <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
-        <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault</span><strong>${routes.vault}</strong></a>
+        <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault API</span><strong>${routes.vault}</strong></a>
         <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
-        <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions</span><strong>${routes.submissions}</strong></a>
-        <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Vault Cards</span><strong>${routes.vault}</strong></a>
+        <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions API</span><strong>${routes.submissions}</strong></a>
+        <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Vault Cards API</span><strong>${routes.vault}</strong></a>
         <a href="${routes.vaultInventory}" target="_blank" rel="noreferrer"><span>Vault Ownership Inventory</span><strong>${routes.vaultInventory}</strong></a>
-        <a href="${routes.cards}" target="_blank" rel="noreferrer"><span>Library Cards</span><strong>${routes.cards}</strong></a>
+        <a href="${routes.cards}" target="_blank" rel="noreferrer"><span>Library Cards API</span><strong>${routes.cards}</strong></a>
         <a href="${routes.schemaDetails}" target="_blank" rel="noreferrer"><span>Schema Details</span><strong>${routes.schemaDetails}</strong></a>
         <a href="${routes.imagesSummary}" target="_blank" rel="noreferrer"><span>Image Summary</span><strong>${routes.imagesSummary}</strong></a>
       </div>
@@ -40,12 +40,12 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify battle contract</h2>
+      <h2 class="section-title">Verify containment</h2>
       <div class="admin-checklist">
+        <div>Open #/admin and confirm AdminShell renders instead of the player shell.</div>
         <div>Open Battle Contract and confirm phase is battle-4.</div>
-        <div>Confirm readOnly is true.</div>
-        <div>Confirm level curve, win/loss scaling, and write targets are described.</div>
         <div>Confirm POST /api/battles still writes battle_history only.</div>
+        <div>Confirm player Home, Library, Pull, Battle, Vault, and Shop have no admin links.</div>
         <div>Confirm no progression, currency, stamina, energy, or Vault writes occurred.</div>
       </div>
     </section>
