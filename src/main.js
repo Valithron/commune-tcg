@@ -1,6 +1,6 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 10.5 responsibility: initialize ticket shop top-ups and pull history.
+   Phase 4.5 responsibility: separate player routes from isolated admin routes.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -20,6 +20,7 @@ import './styles/battle.css';
 import './styles/phase4.css';
 
 import { renderAppShell } from './components/AppShell.js';
+import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
 import { renderHome } from './routes/Home.js';
 import { renderPull } from './routes/Pull.js';
@@ -36,6 +37,7 @@ import { renderEncounterSelect } from './routes/EncounterSelect.js';
 import { renderSquadBuilder } from './routes/SquadBuilder.js';
 import { renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
+import { renderAdminIndex } from './routes/AdminIndex.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
 import { initAdminSubmissionDetail, renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
@@ -47,27 +49,34 @@ const appRoot = document.querySelector('#app');
 let renderToken = 0;
 
 const routeDefinitions = [
-  { pattern: '/home', navRoute: '/home', render: renderHome },
-  { pattern: '/pull', navRoute: '/pull', render: renderPull },
-  { pattern: '/pull/confirm', navRoute: '/pull', render: renderPullConfirm },
-  { pattern: '/pull/results', navRoute: '/pull', render: renderPullResults },
-  { pattern: '/pull/history', navRoute: '/pull', render: renderPullHistory },
-  { pattern: '/vault', navRoute: '/vault', render: renderVault },
-  { pattern: '/vault/card/:cardId', navRoute: '/vault', render: renderVaultCardDetail },
-  { pattern: '/library', navRoute: '/library', render: renderLibrary },
-  { pattern: '/library/card/:cardId', navRoute: '/library', render: renderLibraryCardDetail },
-  { pattern: '/shop', navRoute: '/pull', render: renderTicketShop },
-  { pattern: '/battle', navRoute: '/battle', render: renderBattleHub },
-  { pattern: '/battle/encounters', navRoute: '/battle', render: renderEncounterSelect },
-  { pattern: '/battle/squad', navRoute: '/battle', render: renderSquadBuilder },
-  { pattern: '/battle/results', navRoute: '/battle', render: renderBattleResults },
-  { pattern: '/submit', navRoute: '/library', render: renderSubmitCard },
-  { pattern: '/admin', navRoute: '/home', render: renderAdminDashboard },
-  { pattern: '/admin/submission/:submissionId', navRoute: '/home', render: renderAdminSubmissionDetail },
-  { pattern: '/backend', navRoute: '/home', render: renderBackendStatus },
-  { pattern: '/inventory', navRoute: '/home', render: renderResourceInventory },
-  { pattern: '/card-lab', navRoute: '/library', render: renderCardLab },
+  { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
+  { pattern: '/pull', navRoute: '/pull', shell: 'player', render: renderPull },
+  { pattern: '/pull/confirm', navRoute: '/pull', shell: 'player', render: renderPullConfirm },
+  { pattern: '/pull/results', navRoute: '/pull', shell: 'player', render: renderPullResults },
+  { pattern: '/pull/history', navRoute: '/pull', shell: 'player', render: renderPullHistory },
+  { pattern: '/vault', navRoute: '/vault', shell: 'player', render: renderVault },
+  { pattern: '/vault/card/:cardId', navRoute: '/vault', shell: 'player', render: renderVaultCardDetail },
+  { pattern: '/library', navRoute: '/library', shell: 'player', render: renderLibrary },
+  { pattern: '/library/card/:cardId', navRoute: '/library', shell: 'player', render: renderLibraryCardDetail },
+  { pattern: '/shop', navRoute: '/pull', shell: 'player', render: renderTicketShop },
+  { pattern: '/battle', navRoute: '/battle', shell: 'player', render: renderBattleHub },
+  { pattern: '/battle/encounters', navRoute: '/battle', shell: 'player', render: renderEncounterSelect },
+  { pattern: '/battle/squad', navRoute: '/battle', shell: 'player', render: renderSquadBuilder },
+  { pattern: '/battle/results', navRoute: '/battle', shell: 'player', render: renderBattleResults },
+  { pattern: '/submit', navRoute: '/library', shell: 'player', render: renderSubmitCard },
+  { pattern: '/admin', navRoute: '/admin', shell: 'admin', render: renderAdminIndex },
+  { pattern: '/admin/submissions', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminDashboard },
+  { pattern: '/admin/submission/:submissionId', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminSubmissionDetail },
+  { pattern: '/admin/backend', navRoute: '/admin/backend', shell: 'admin', render: renderBackendStatus },
+  { pattern: '/admin/inventory', navRoute: '/admin/inventory', shell: 'admin', render: renderResourceInventory },
+  { pattern: '/admin/card-lab', navRoute: '/admin/card-lab', shell: 'admin', render: renderCardLab },
 ];
+
+const legacyAdminRedirects = {
+  '/backend': '/admin/backend',
+  '/inventory': '/admin/inventory',
+  '/card-lab': '/admin/card-lab',
+};
 
 function parseHashRoute() {
   const rawHash = window.location.hash.replace('#', '') || '/home';
@@ -78,6 +87,10 @@ function parseHashRoute() {
     path: path || '/home',
     query,
   };
+}
+
+function setHashRoute(path) {
+  window.history.replaceState(null, '', '#' + path);
 }
 
 function matchPattern(path, pattern) {
@@ -121,24 +134,47 @@ function resolveRoute(path) {
   return null;
 }
 
-function renderError(error) {
+function getFallbackPath(path) {
+  return path.startsWith('/admin') ? '/admin' : '/home';
+}
+
+function renderError(error, shell) {
+  const fallbackHref = shell === 'admin' ? '#/admin' : '#/home';
+  const fallbackLabel = shell === 'admin' ? 'Back to Admin' : 'Back Home';
+
   return `
     <section class="hero-panel">
       <span class="section-kicker">Route Error</span>
       <h2 class="hero-title">Something failed.</h2>
       <p class="hero-copy">${error.message}</p>
-      <div class="action-row"><a class="button button-secondary" href="#/home">Back Home</a></div>
+      <div class="action-row"><a class="button button-secondary" href="${fallbackHref}">${fallbackLabel}</a></div>
     </section>
   `;
+}
+
+function renderShell(route, content) {
+  if (route.shell === 'admin') {
+    return renderAdminShell({
+      activeRoute: route.navRoute,
+      content,
+    });
+  }
+
+  return renderAppShell({
+    activeRoute: route.navRoute,
+    content,
+  });
 }
 
 async function render() {
   const currentToken = ++renderToken;
   const { path, query } = parseHashRoute();
-  const matchedRoute = resolveRoute(path) || resolveRoute('/home');
+  const redirectedPath = legacyAdminRedirects[path] || path;
+  const fallbackPath = getFallbackPath(redirectedPath);
+  const matchedRoute = resolveRoute(redirectedPath) || resolveRoute(fallbackPath);
 
-  if (!resolveRoute(path)) {
-    window.history.replaceState(null, '', '#/home');
+  if (redirectedPath !== path || !resolveRoute(redirectedPath)) {
+    setHashRoute(resolveRoute(redirectedPath) ? redirectedPath : fallbackPath);
   }
 
   try {
@@ -148,14 +184,11 @@ async function render() {
       return;
     }
 
-    appRoot.innerHTML = await renderAppShell({
-      activeRoute: matchedRoute.navRoute,
-      content,
-    });
+    appRoot.innerHTML = await renderShell(matchedRoute, content);
 
     fitCardTitles(appRoot);
 
-    if (matchedRoute.pattern === '/card-lab') {
+    if (matchedRoute.pattern === '/admin/card-lab') {
       initCardFrameTuner(appRoot);
     }
 
@@ -171,10 +204,7 @@ async function render() {
       initAdminSubmissionDetail(appRoot);
     }
   } catch (error) {
-    appRoot.innerHTML = await renderAppShell({
-      activeRoute: matchedRoute.navRoute,
-      content: renderError(error),
-    });
+    appRoot.innerHTML = await renderShell(matchedRoute, renderError(error, matchedRoute.shell));
   }
 }
 
