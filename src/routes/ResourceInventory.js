@@ -7,9 +7,10 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. Phase 5 verifies that battle rewards apply only to gold plus owned-card XP/levels.</p>
+      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. Phase 5.5 adds a button-based battle check so reward writes can be reviewed without manual API posting.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
+        <a class="button button-primary" href="#/admin/battle-check">Battle Check</a>
         <a class="button button-secondary" href="#/admin/backend">Backend Status</a>
         <a class="button button-secondary" href="#/admin/card-lab">Card Lab</a>
       </div>
@@ -40,13 +41,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify Phase 5</h2>
+      <h2 class="section-title">Verify Phase 5.5</h2>
       <div class="admin-checklist">
-        <div>Open Battle Contract and confirm phase is battle-5.</div>
-        <div>POST /api/battles and confirm writes include battle_history, user_resources.gold, and cards.card_json.xp_level.</div>
-        <div>Open Battle History and confirm rewardApplied and xpApplied appear on the new row.</div>
-        <div>Open Pull Resources and confirm gold increased but pull tickets did not change.</div>
-        <div>Open Sterling Vault API and confirm owned squad cards gained XP and/or levels.</div>
+        <div>Open #/admin/battle-check.</div>
+        <div>Click Run Training Battle.</div>
+        <div>Confirm the result shows phase battle-5.</div>
+        <div>Confirm the result shows rewardApplied and xpApplied.</div>
+        <div>Confirm writes include battle_history, user_resources.gold, and cards.card_json.xp_level.</div>
         <div>Confirm no drops, stamina, energy, Vault grants, or auth writes occurred.</div>
       </div>
     </section>
