@@ -1,0 +1,78 @@
+/* ============================================================================
+   Admin Containment Styles
+   Phase 4.5 responsibility: minimal isolated admin shell styling.
+   ============================================================================ */
+
+.admin-shell {
+  width: min(100%, var(--app-max-width));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: max(env(safe-area-inset-top), var(--space-4)) var(--space-4) var(--space-6);
+}
+
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-3);
+  backdrop-filter: blur(18px);
+}
+
+.admin-brand {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.admin-nav {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: 0 0 var(--space-4);
+  margin-bottom: var(--space-2);
+  scrollbar-width: none;
+}
+
+.admin-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-nav-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-nav-link[aria-current='page'] {
+  border-color: rgba(45, 156, 219, 0.4);
+  background: rgba(45, 156, 219, 0.12);
+  color: var(--color-functional);
+}
+
+.admin-screen-stack {
+  padding-bottom: var(--space-4);
+}
+
+.admin-hub-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 520px) {
+  .admin-hub-grid {
+    grid-template-columns: 1fr;
+  }
+}
