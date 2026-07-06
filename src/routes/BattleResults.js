@@ -1,13 +1,14 @@
 /* ============================================================================
    Battle Results Route
-   Phase 8 responsibility: resolve the exact backend-owned squad selected on
-   Squad Builder with a unique attempt ID so rewards can only apply once.
+   Phase 8.1 responsibility: render the exact backend-owned squad and preflight
+   attempt status so already-resolved attempts do not show a fresh Resolve button.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
 import { getEncounterById } from '../data/mockBattle.js';
 import {
   buildSquadBuilderHref,
+  fetchBattleAttemptStatus,
   fetchBattleInventory,
   getBattleCardKey,
   getBattleSquadPower,
@@ -83,11 +84,12 @@ function renderResolvedBattle(payload) {
   const reward = payload.rewardApplied || {};
   const simulation = payload.simulation || {};
   const encounter = simulation.encounter || {};
+  const alreadyResolved = Boolean(payload.alreadyResolved);
 
   return `
     <div class="battle-state-note battle-state-note-live">
-      <strong>Resolved for real.</strong>
-      <span>This backend attempt has been marked used and cannot apply rewards again.</span>
+      <strong>${alreadyResolved ? 'Already resolved.' : 'Resolved for real.'}</strong>
+      <span>${alreadyResolved ? 'The backend says this attempt has already been used, so Resolve Battle is hidden.' : 'This backend attempt has been marked used and cannot apply rewards again.'}</span>
     </div>
 
     <div class="detail-list">
@@ -103,8 +105,8 @@ function renderResolvedBattle(payload) {
 
     <section class="glass-panel battle-summary-panel battle-live-panel">
       <span class="section-kicker">Real Applied Progression</span>
-      <h2 class="section-title">Cards that actually received XP</h2>
-      <p class="body-copy">This should now match the backend squad selected before resolving.</p>
+      <h2 class="section-title">Cards that received XP</h2>
+      <p class="body-copy">This should match the backend squad selected before resolving.</p>
       <div class="detail-list">
         ${renderAppliedXpRows(payload.xpApplied)}
       </div>
@@ -117,7 +119,10 @@ export async function renderBattleResults({ query }) {
   const attemptId = normalizeBattleAttemptId(query.attemptId);
 
   try {
-    const inventory = await fetchBattleInventory();
+    const [inventory, attemptStatus] = await Promise.all([
+      fetchBattleInventory(),
+      attemptId ? fetchBattleAttemptStatus({ attemptId }) : Promise.resolve({ resolved: false, battle: null }),
+    ]);
     const eligibleCards = getEligibleBattleCards(inventory);
     const selection = resolveSelectedBattleSquad(eligibleCards, query.squadCardIds);
     const selectedCards = selection.selected;
@@ -127,15 +132,17 @@ export async function renderBattleResults({ query }) {
     const victory = margin >= 0;
     const previewGold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
     const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
-    const canResolve = selectedCards.length > 0 && Boolean(attemptId);
+    const alreadyResolved = Boolean(attemptStatus?.resolved && attemptStatus?.battle);
+    const canResolve = selectedCards.length > 0 && Boolean(attemptId) && !alreadyResolved;
+    const heroTitle = alreadyResolved ? 'Already Resolved' : (canResolve ? 'Ready to Resolve' : 'Resolve Blocked');
 
     return `
       <section class="result-banner">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">${canResolve ? 'Ready to Resolve' : 'Resolve Blocked'}</h2>
-        <p class="hero-copy">This result screen uses the backend-owned squad selected on the previous page and one unique attempt ID. The same attempt cannot apply rewards twice.</p>
+        <h2 class="hero-title">${heroTitle}</h2>
+        <p class="hero-copy">This screen checks the backend attempt status before showing Resolve Battle. If the attempt was already used, rewards cannot be applied again.</p>
         <div class="action-row">
-          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Resolve Battle</button>` : '<span class="button button-secondary" aria-disabled="true">Resolve Blocked</span>'}
+          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Resolve Battle</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Resolved' : 'Resolve Blocked'}</span>`}
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
           <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
         </div>
@@ -143,10 +150,10 @@ export async function renderBattleResults({ query }) {
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
         <span class="section-kicker">Backend Squad Preview</span>
-        <h2 class="section-title">These selected cards will receive XP</h2>
-        <div class="battle-state-note battle-state-note-preview">
-          <strong>${canResolve ? 'Protected battle attempt.' : 'Resolve blocked.'}</strong>
-          <span>${canResolve ? 'These selected IDs and this attempt ID are passed into POST /api/battles.' : 'A valid selected backend squad and attempt ID are required before rewards can be written.'}</span>
+        <h2 class="section-title">These selected cards ${alreadyResolved ? 'received' : 'will receive'} XP</h2>
+        <div class="battle-state-note ${alreadyResolved ? 'battle-state-note-live' : 'battle-state-note-preview'}">
+          <strong>${alreadyResolved ? 'Attempt already used.' : (canResolve ? 'Protected battle attempt.' : 'Resolve blocked.')}</strong>
+          <span>${alreadyResolved ? 'The backend found an existing battle_history row for this attempt ID.' : (canResolve ? 'These selected IDs and this attempt ID are passed into POST /api/battles.' : 'A valid selected backend squad and attempt ID are required before rewards can be written.')}</span>
         </div>
         <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
         <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(attemptId || 'missing')}</strong></div>
@@ -161,9 +168,9 @@ export async function renderBattleResults({ query }) {
       <section class="glass-panel battle-summary-panel battle-live-panel">
         <span class="section-kicker">Real Backend Result</span>
         <h2 class="section-title">Applied rewards</h2>
-        <div class="empty-note" data-battle-resolve-status>${canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad and attempt ID are selected.'}</div>
+        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'Backend preflight found this attempt was already resolved.' : (canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad and attempt ID are selected.')}</div>
         <div data-battle-resolve-result>
-          ${renderResolvedBattle(null)}
+          ${renderResolvedBattle(alreadyResolved ? attemptStatus.battle : null)}
         </div>
       </section>
 
@@ -199,7 +206,7 @@ export async function renderBattleResults({ query }) {
       <section class="hero-panel">
         <span class="section-kicker">Battle Results</span>
         <h2 class="hero-title">Inventory failed.</h2>
-        <p class="hero-copy">The backend squad could not be loaded, so Resolve Battle is blocked to avoid rewarding the wrong cards.</p>
+        <p class="hero-copy">The backend squad or attempt status could not be loaded, so Resolve Battle is blocked to avoid rewarding the wrong cards.</p>
         <div class="action-row"><a class="button button-secondary" href="#/battle">Back to Battle</a></div>
       </section>
       <section class="glass-panel battle-summary-panel">
