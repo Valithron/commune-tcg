@@ -56,6 +56,26 @@ That means:
 one user + one attempt ID = one successful reward write
 ```
 
+## Attempt status preflight
+
+Phase 8.1 adds a read-only status endpoint:
+
+```text
+GET /api/battle-attempt?ownerUserId=sterling&attemptId=:attemptId
+```
+
+This endpoint checks whether a battle attempt already has a `battle_history` row.
+
+It performs no reward, XP, level, resource, or card writes.
+
+Battle Results calls this endpoint during render. If the attempt has already resolved, the page renders:
+
+```text
+Already Resolved
+```
+
+and does not show a fresh Resolve Battle button.
+
 ## Duplicate behavior
 
 If the same `attemptId` is posted again for the same user, the endpoint returns:
@@ -82,9 +102,11 @@ Battle Results:
 
 ```text
 shows the attempt ID
+checks attempt status before rendering Resolve Battle
 requires a valid attempt ID before Resolve Battle appears
-sends attemptId to POST /api/battles
-turns duplicate responses into Already Resolved state
+hides Resolve Battle if the attempt was already used
+sends attemptId to POST /api/battles when unresolved
+turns duplicate POST responses into Already Resolved state
 ```
 
 Admin Battle Check also generates a fresh attempt ID per run.
@@ -94,6 +116,9 @@ Admin Battle Check also generates a fresh attempt ID per run.
 ```text
 functions/_shared/battle-progression.js
 functions/api/battles.js
+functions/api/battle-attempt.js
+functions/api/battle-history.js
+src/services/apiClient.js
 src/services/battleSquadSelection.js
 src/routes/BattleResults.js
 src/routes/AdminBattleTest.js
@@ -117,7 +142,7 @@ auth changes
 animations
 ```
 
-Phase 8 does not rely on more route-local DOM mutation for reward hardening. The key protection is backend-side.
+Phase 8 does not rely on more route-local DOM mutation for reward hardening. The key protection is backend-side, and Phase 8.1 render state comes from a backend preflight read.
 
 ## Verification checklist
 
@@ -129,10 +154,10 @@ Phase 8 does not rely on more route-local DOM mutation for reward hardening. The
 6. Click Resolve Battle.
 7. Confirm rewards apply and the button becomes Resolved.
 8. Refresh the same results URL.
-9. Click Resolve Battle again if the button appears.
-10. Confirm it returns Already Resolved or duplicate-battle-attempt.
-11. Confirm gold does not increase a second time.
-12. Confirm XP does not apply a second time to the selected cards.
+9. Confirm the page renders Already Resolved without showing a fresh Resolve Battle button.
+10. Confirm gold does not increase a second time.
+11. Confirm XP does not apply a second time to the selected cards.
+12. Open `/api/battle-attempt?attemptId=<same attempt id>` and confirm `resolved: true`.
 13. Confirm a new trip through Squad Builder creates a fresh attempt ID and can resolve normally.
 
 ## Recommended next phase
@@ -141,4 +166,4 @@ Phase 8 does not rely on more route-local DOM mutation for reward hardening. The
 Phase 9: saved squad state
 ```
 
-Now that the one-time reward write is hardened, the next clean step is saving a preferred squad instead of only storing it in the URL.
+Now that the one-time reward write is hardened and the UI can preflight attempt state, the next clean step is saving a preferred squad instead of only storing it in the URL.
