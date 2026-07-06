@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Squad Selection Service
-   Phase 8 responsibility: shared helpers for selecting backend-owned battle
-   cards and generating one-time battle attempt IDs through URL state.
+   Phase 8.1 responsibility: shared helpers for selecting backend-owned battle
+   cards, generating one-time attempt IDs, and reading attempt status.
    No DOM mutation and no writes.
    ============================================================================ */
 
@@ -73,6 +73,28 @@ export async function fetchBattleInventory({ ownerUserId = defaultBattleOwnerUse
   params.set('_', String(Date.now()));
 
   return fetchJson(routes.battleInventory + '?' + params.toString());
+}
+
+export async function fetchBattleAttemptStatus({ ownerUserId = defaultBattleOwnerUserId, attemptId } = {}) {
+  const safeAttemptId = normalizeBattleAttemptId(attemptId);
+
+  if (!safeAttemptId) {
+    return {
+      ok: false,
+      resolved: false,
+      attemptId: '',
+      battle: null,
+      error: 'attemptId is required',
+    };
+  }
+
+  const routes = getApiRoutes();
+  const params = new URLSearchParams();
+  params.set('ownerUserId', ownerUserId);
+  params.set('attemptId', safeAttemptId);
+  params.set('_', String(Date.now()));
+
+  return fetchJson(routes.battleAttempt + '?' + params.toString());
 }
 
 export function getEligibleBattleCards(inventory) {
