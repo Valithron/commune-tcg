@@ -124,14 +124,15 @@ export async function renderBattleResults({ query }) {
     const victory = margin >= 0;
     const previewGold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
     const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
+    const canResolve = selectedCards.length > 0;
 
     return `
       <section class="result-banner">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">Ready to Resolve</h2>
-        <p class="hero-copy">This result screen now uses the backend-owned squad selected on the previous page. Resolve Battle writes rewards to those selected card row IDs.</p>
+        <h2 class="hero-title">${canResolve ? 'Ready to Resolve' : 'No Valid Squad'}</h2>
+        <p class="hero-copy">This result screen uses the backend-owned squad selected on the previous page. Resolve Battle writes rewards to those selected card row IDs.</p>
         <div class="action-row">
-          <button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Resolve Battle</button>
+          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Resolve Battle</button>` : '<span class="button button-secondary" aria-disabled="true">No Valid Squad</span>'}
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
           <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
         </div>
@@ -141,8 +142,8 @@ export async function renderBattleResults({ query }) {
         <span class="section-kicker">Backend Squad Preview</span>
         <h2 class="section-title">These selected cards will receive XP</h2>
         <div class="battle-state-note battle-state-note-preview">
-          <strong>Backend-selected squad.</strong>
-          <span>These IDs are passed into POST /api/battles as squadCardIds.</span>
+          <strong>${canResolve ? 'Backend-selected squad.' : 'Resolve blocked.'}</strong>
+          <span>${canResolve ? 'These IDs are passed into POST /api/battles as squadCardIds.' : 'No valid selected backend cards were found, so this page will not resolve a default squad by accident.'}</span>
         </div>
         <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
         <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
@@ -156,7 +157,7 @@ export async function renderBattleResults({ query }) {
       <section class="glass-panel battle-summary-panel battle-live-panel">
         <span class="section-kicker">Real Backend Result</span>
         <h2 class="section-title">Applied rewards</h2>
-        <div class="empty-note" data-battle-resolve-status>Nothing has been written yet.</div>
+        <div class="empty-note" data-battle-resolve-status>${canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad is selected.'}</div>
         <div data-battle-resolve-result>
           ${renderResolvedBattle(null)}
         </div>
