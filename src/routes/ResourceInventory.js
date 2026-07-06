@@ -7,7 +7,7 @@ export function renderResourceInventory() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Inventory</span>
       <h2 class="hero-title">Map what exists.</h2>
-      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. Phase 5.5 adds a button-based battle check so reward writes can be reviewed without manual API posting.</p>
+      <p class="hero-copy">Resource and contract diagnostics now live inside the isolated admin shell. Phase 8.1 adds battle attempt status so already-resolved battle pages can render correctly before another POST.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-primary" href="#/admin/battle-check">Battle Check</a>
@@ -22,6 +22,7 @@ export function renderResourceInventory() {
       <div class="backend-endpoint-list">
         <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
         <a href="${routes.battleSimulate}?encounterId=training-yard-goblin" target="_blank" rel="noreferrer"><span>Battle Simulate</span><strong>${routes.battleSimulate}</strong></a>
+        <a href="${routes.battleAttempt}?attemptId=replace-with-attempt-id" target="_blank" rel="noreferrer"><span>Battle Attempt Status</span><strong>${routes.battleAttempt}</strong></a>
         <a href="${routes.battleHistory}" target="_blank" rel="noreferrer"><span>Battle History</span><strong>${routes.battleHistory}</strong></a>
         <a href="/api/battle-reward-contract" target="_blank" rel="noreferrer"><span>Battle Contract</span><strong>/api/battle-reward-contract</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
@@ -41,13 +42,13 @@ export function renderResourceInventory() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Capture Checklist</span>
-      <h2 class="section-title">Verify Phase 5.5</h2>
+      <h2 class="section-title">Verify Phase 8.1</h2>
       <div class="admin-checklist">
-        <div>Open #/admin/battle-check.</div>
-        <div>Click Run Training Battle.</div>
-        <div>Confirm the result shows phase battle-5.</div>
-        <div>Confirm the result shows rewardApplied and xpApplied.</div>
-        <div>Confirm writes include battle_history, user_resources.gold, and cards.card_json.xp_level.</div>
+        <div>Resolve a battle from the player Battle Results page.</div>
+        <div>Refresh the exact same Battle Results URL.</div>
+        <div>Confirm the page renders Already Resolved before another POST.</div>
+        <div>Confirm no fresh Resolve Battle button appears for the used attempt.</div>
+        <div>Confirm Battle History shows attemptId and duplicateProtection details.</div>
         <div>Confirm no drops, stamina, energy, Vault grants, or auth writes occurred.</div>
       </div>
     </section>
