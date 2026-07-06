@@ -1,12 +1,20 @@
 /* ============================================================================
    Battle Results Route
-   Phase 6.3 responsibility: player-facing battle result screen with clear
-   preview-vs-applied labels, visible resolved state, and immediate live resource refresh.
+   Phase 7 responsibility: resolve the exact backend-owned squad selected on
+   Squad Builder and apply rewards to those selected card row IDs.
    ============================================================================ */
 
-import { renderCardFrame } from '../components/CardFrame.js';
 import { refreshTopBarResources } from '../components/TopBar.js';
-import { getBattleOutcome } from '../data/mockBattle.js';
+import { getEncounterById } from '../data/mockBattle.js';
+import {
+  buildSquadBuilderHref,
+  fetchBattleInventory,
+  getBattleCardKey,
+  getBattleSquadPower,
+  getEligibleBattleCards,
+  getSelectedBattleIds,
+  resolveSelectedBattleSquad,
+} from '../services/battleSquadSelection.js';
 import { getApiRoutes } from '../services/apiClient.js';
 
 function escapeHtml(value) {
@@ -27,6 +35,27 @@ function renderAppliedXpRows(xpApplied = []) {
     <div class="detail-row battle-applied-row">
       <span>${escapeHtml(row.cardTitle || row.cardId || 'Card')}</span>
       <strong>+${escapeHtml(row.gainedXp || 0)} XP · Lv ${escapeHtml(row.previousLevel || 1)} → ${escapeHtml(row.nextLevel || row.previousLevel || 1)}</strong>
+    </div>
+  `).join('');
+}
+
+function renderBackendSquadRows(cards = []) {
+  if (!cards.length) {
+    return '<div class="empty-note">No backend squad cards selected.</div>';
+  }
+
+  return cards.map((card) => `
+    <div class="battle-card-row battle-card-row-selected">
+      <div>
+        <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
+        <strong>${escapeHtml(card.name)}</strong>
+        <small>Lv ${escapeHtml(card.level)} · XP ${escapeHtml(card.xp)} · ${escapeHtml(getBattleCardKey(card))}</small>
+      </div>
+      <div class="battle-card-stat-stack">
+        <span>P${escapeHtml(card.stats?.pow ?? 0)} D${escapeHtml(card.stats?.def ?? 0)} S${escapeHtml(card.stats?.spd ?? 0)}</span>
+        <strong>${escapeHtml(card.battlePower || 0)}</strong>
+        <small>Will receive XP</small>
+      </div>
     </div>
   `).join('');
 }
@@ -57,7 +86,7 @@ function renderResolvedBattle(payload) {
   return `
     <div class="battle-state-note battle-state-note-live">
       <strong>Resolved for real.</strong>
-      <span>This section reflects the backend write that was just applied. The resource bar has been updated from the battle response.</span>
+      <span>This section reflects the backend write that was just applied to the selected backend squad.</span>
     </div>
 
     <div class="detail-list">
@@ -73,7 +102,7 @@ function renderResolvedBattle(payload) {
     <section class="glass-panel battle-summary-panel battle-live-panel">
       <span class="section-kicker">Real Applied Progression</span>
       <h2 class="section-title">Cards that actually received XP</h2>
-      <p class="body-copy">This is the source of truth for which owned cards received XP from the backend.</p>
+      <p class="body-copy">This should now match the backend squad selected before resolving.</p>
       <div class="detail-list">
         ${renderAppliedXpRows(payload.xpApplied)}
       </div>
@@ -81,69 +110,98 @@ function renderResolvedBattle(payload) {
   `;
 }
 
-export function renderBattleResults({ query }) {
-  const result = getBattleOutcome(query.encounter);
-  const resultLabel = result.victory ? 'Ready to Resolve' : 'Risky Result';
+export async function renderBattleResults({ query }) {
+  const encounter = getEncounterById(query.encounter);
 
-  return `
-    <section class="result-banner">
-      <span class="section-kicker">Battle Results</span>
-      <h2 class="hero-title">${resultLabel}</h2>
-      <p class="hero-copy">This is a two-step battle screen. The preview is placeholder forecasting. The Resolve Battle button is the real backend reward write.</p>
-      <div class="action-row">
-        <button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(result.encounter.id)}">Resolve Battle</button>
-        <a class="button button-secondary" href="#/battle/squad?encounter=${result.encounter.id}">Battle Again</a>
-        <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
-      </div>
-    </section>
+  try {
+    const inventory = await fetchBattleInventory();
+    const eligibleCards = getEligibleBattleCards(inventory);
+    const selection = resolveSelectedBattleSquad(eligibleCards, query.squadCardIds);
+    const selectedCards = selection.selected;
+    const selectedIds = getSelectedBattleIds(selectedCards);
+    const squadPower = getBattleSquadPower(selectedCards);
+    const margin = squadPower - encounter.enemyPower;
+    const victory = margin >= 0;
+    const previewGold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
+    const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
 
-    <section class="glass-panel battle-summary-panel battle-preview-panel">
-      <span class="section-kicker">Placeholder Preview</span>
-      <h2 class="section-title">Forecast only, not yet written</h2>
-      <div class="battle-state-note battle-state-note-preview">
-        <strong>Preview only.</strong>
-        <span>These numbers help frame the fight, but they are not the account write. Click Resolve Battle for the real result.</span>
-      </div>
-      <p class="body-copy">Real squad selection is not wired yet, so the backend may resolve with its default eligible owned squad. The applied XP section below shows the actual rewarded cards.</p>
-      <div class="detail-row"><span>Encounter</span><strong>${result.encounter.name}</strong></div>
-      <div class="detail-row"><span>Preview Squad Power</span><strong>${result.squadPower}</strong></div>
-      <div class="detail-row"><span>Preview Gold</span><strong>◎ ${result.rewards.gold}</strong></div>
-      <div class="detail-row"><span>Preview XP</span><strong>${result.rewards.xp}</strong></div>
-    </section>
-
-    <section class="glass-panel battle-summary-panel battle-live-panel">
-      <span class="section-kicker">Real Backend Result</span>
-      <h2 class="section-title">Applied rewards</h2>
-      <div class="empty-note" data-battle-resolve-status>Nothing has been written yet.</div>
-      <div data-battle-resolve-result>
-        ${renderResolvedBattle(null)}
-      </div>
-    </section>
-
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Placeholder Squad Preview</span>
-          <h2 class="section-title">Preview participants</h2>
+    return `
+      <section class="result-banner">
+        <span class="section-kicker">Battle Results</span>
+        <h2 class="hero-title">Ready to Resolve</h2>
+        <p class="hero-copy">This result screen now uses the backend-owned squad selected on the previous page. Resolve Battle writes rewards to those selected card row IDs.</p>
+        <div class="action-row">
+          <button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Resolve Battle</button>
+          <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
+          <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
         </div>
-      </div>
-      <div class="card-grid">
-        ${result.squad.map((card) => renderCardFrame(card, { href: `#/vault/card/${card.id}` })).join('')}
-      </div>
-    </section>
+      </section>
 
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Placeholder Log</span>
-          <h2 class="section-title">Combat Summary</h2>
+      <section class="glass-panel battle-summary-panel battle-live-panel">
+        <span class="section-kicker">Backend Squad Preview</span>
+        <h2 class="section-title">These selected cards will receive XP</h2>
+        <div class="battle-state-note battle-state-note-preview">
+          <strong>Backend-selected squad.</strong>
+          <span>These IDs are passed into POST /api/battles as squadCardIds.</span>
         </div>
-      </div>
-      <div class="battle-log">
-        ${result.log.map((entry) => `<div>${entry}</div>`).join('')}
-      </div>
-    </section>
-  `;
+        <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
+        <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
+        <div class="detail-row"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
+        <div class="detail-row"><span>Forecast</span><strong>${margin >= 0 ? `Favored +${margin}` : `Risky ${margin}`}</strong></div>
+        <div class="detail-row"><span>Preview Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
+        <div class="detail-row"><span>Preview XP</span><strong>${escapeHtml(previewXp)}</strong></div>
+        <div class="detail-row"><span>Selected IDs</span><strong>${escapeHtml(selectedIds.join(', ') || 'none')}</strong></div>
+      </section>
+
+      <section class="glass-panel battle-summary-panel battle-live-panel">
+        <span class="section-kicker">Real Backend Result</span>
+        <h2 class="section-title">Applied rewards</h2>
+        <div class="empty-note" data-battle-resolve-status>Nothing has been written yet.</div>
+        <div data-battle-resolve-result>
+          ${renderResolvedBattle(null)}
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Selected Backend Squad</span>
+            <h2 class="section-title">Reward targets</h2>
+          </div>
+          <span class="status-pill">${selectedCards.length}/3</span>
+        </div>
+        <div class="battle-card-list">
+          ${renderBackendSquadRows(selectedCards)}
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Contract Log</span>
+            <h2 class="section-title">Combat Summary</h2>
+          </div>
+        </div>
+        <div class="battle-log">
+          <div>${escapeHtml(selectedCards[0]?.name || 'Selected squad')} leads ${selectedCards.length} backend card(s) into ${escapeHtml(encounter.name)}.</div>
+          <div>Squad power resolves to ${escapeHtml(squadPower)} against enemy power ${escapeHtml(encounter.enemyPower)}.</div>
+          <div>${victory ? `The squad is favored by ${margin} power.` : `The squad is short by ${Math.abs(margin)} power.`}</div>
+        </div>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="hero-panel">
+        <span class="section-kicker">Battle Results</span>
+        <h2 class="hero-title">Inventory failed.</h2>
+        <p class="hero-copy">The backend squad could not be loaded, so Resolve Battle is blocked to avoid rewarding the wrong cards.</p>
+        <div class="action-row"><a class="button button-secondary" href="#/battle">Back to Battle</a></div>
+      </section>
+      <section class="glass-panel battle-summary-panel">
+        <div class="empty-note">${escapeHtml(error.message)}</div>
+      </section>
+    `;
+  }
 }
 
 export function initBattleResults(root) {
@@ -157,11 +215,12 @@ export function initBattleResults(root) {
 
   button.addEventListener('click', async () => {
     const encounterId = button.getAttribute('data-encounter-id') || 'training-yard-goblin';
+    const squadCardIds = button.getAttribute('data-squad-card-ids') || '';
     const routes = getApiRoutes();
     button.disabled = true;
     button.textContent = 'Resolving...';
     button.classList.add('button-working');
-    status.textContent = 'Resolving battle and applying real backend rewards...';
+    status.textContent = 'Resolving battle and applying real backend rewards to the selected squad...';
 
     try {
       const response = await fetch(routes.battles, {
@@ -170,7 +229,7 @@ export function initBattleResults(root) {
           accept: 'application/json',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ encounterId }),
+        body: JSON.stringify({ encounterId, squadCardIds }),
       });
       const payload = await response.json().catch(() => null);
 
@@ -185,7 +244,7 @@ export function initBattleResults(root) {
       }
 
       resultTarget.innerHTML = renderResolvedBattle(payload);
-      status.textContent = payload.ok ? 'Resolved. Real gold and XP were applied, and the gold bar was updated.' : 'Battle returned a validation error.';
+      status.textContent = payload.ok ? 'Resolved. Rewards were applied to the selected backend squad.' : 'Battle returned a validation error.';
       button.classList.remove('button-working');
 
       if (payload.ok) {
