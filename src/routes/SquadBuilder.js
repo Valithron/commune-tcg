@@ -1,7 +1,7 @@
 /* ============================================================================
    Squad Builder Route
-   Phase 9 responsibility: select real backend-owned battle cards, load a saved
-   preferred squad by default, and let the player save the current selection.
+   Phase 10A responsibility: player-facing squad selection polish. Mechanics stay
+   the same: owned cards, route selection, saved squad loading, and save action.
    ============================================================================ */
 
 import { getEncounterById } from '../data/mockBattle.js';
@@ -30,6 +30,22 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function getSavedSquadLabel(selectionInput) {
+  if (selectionInput.source === 'saved-squad') {
+    return 'Saved squad loaded';
+  }
+
+  if (selectionInput.source === 'url-query') {
+    return 'Custom lineup selected';
+  }
+
+  if (selectionInput.savedStatus === 'saved-squad-invalid-fell-back') {
+    return 'Saved squad needs an update';
+  }
+
+  return 'Using strongest available cards';
+}
+
 function renderBattleCardRow(card, { selected = false, href = '', disabled = false, note = '' } = {}) {
   const tag = href && !disabled ? 'a' : 'div';
   const hrefAttribute = tag === 'a' ? ` href="${href}"` : '';
@@ -44,7 +60,7 @@ function renderBattleCardRow(card, { selected = false, href = '', disabled = fal
       <div>
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <strong>${escapeHtml(card.name)}</strong>
-        <small>Lv ${escapeHtml(card.level)} · XP ${escapeHtml(card.xp)} · ${escapeHtml(card.sourceRowId || card.id)}</small>
+        <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
       </div>
       <div class="battle-card-stat-stack">
         <span>P${escapeHtml(card.stats?.pow ?? 0)} D${escapeHtml(card.stats?.def ?? 0)} S${escapeHtml(card.stats?.spd ?? 0)}</span>
@@ -60,7 +76,7 @@ function renderSelectedSquad({ encounter, selectedCards }) {
 
   if (!selectedCards.length) {
     return `
-      <div class="empty-note">No eligible cards selected. Pick at least one owned card before starting battle.</div>
+      <div class="empty-note">Pick at least one card before starting battle.</div>
     `;
   }
 
@@ -82,7 +98,7 @@ function renderAvailableCards({ encounter, cards, selectedCards }) {
   const full = selectedIds.length >= battleSquadMaxSize;
 
   if (!cards.length) {
-    return '<div class="empty-note">No backend-owned cards are battle eligible yet.</div>';
+    return '<div class="empty-note">No cards are ready for battle yet.</div>';
   }
 
   return cards.map((card) => {
@@ -95,7 +111,7 @@ function renderAvailableCards({ encounter, cards, selectedCards }) {
       selected,
       disabled: !canAdd,
       href: canAdd ? buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: nextIds }) : '',
-      note: selected ? 'Selected' : (full ? 'Squad full' : 'Tap to add'),
+      note: selected ? 'In squad' : (full ? 'Squad full' : 'Tap to add'),
     });
   }).join('');
 }
@@ -143,40 +159,40 @@ export async function renderSquadBuilder({ query }) {
     const squadPower = getBattleSquadPower(selectedCards);
     const powerDelta = squadPower - encounter.enemyPower;
     const startHref = buildBattleResultsHref({ encounterId: encounter.id, squadCardIds: selectedIds });
-    const savedIds = parseSquadCardIds(savedSquadPayload?.selectedIds);
-    const savedIdsText = savedIds.length ? savedIds.join(', ') : 'none';
+    const savedSquadLabel = getSavedSquadLabel(selectionInput);
 
     return `
       <section class="hero-panel">
         <span class="section-kicker">Squad Builder</span>
-        <h2 class="hero-title">Pick the lineup.</h2>
-        <p class="hero-copy">This screen now loads your saved backend squad by default. Route selection still works while editing, and Save Squad stores the current selected row IDs.</p>
+        <h2 class="hero-title">Choose your squad.</h2>
+        <p class="hero-copy">Pick up to three cards for battle. Save your favorite lineup and it will load here next time.</p>
         <div class="action-row"><a class="button button-secondary" href="#/battle/encounters">Change Encounter</a></div>
       </section>
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
-        <span class="section-kicker">Backend Selection</span>
-        <h2 class="section-title">Selected squad writes to these cards</h2>
-        <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
-        <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-        <div class="detail-row"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
-        <div class="detail-row"><span>Forecast</span><strong>${powerDelta >= 0 ? `Favored +${powerDelta}` : `Risky ${powerDelta}`}</strong></div>
-        <div class="detail-row"><span>Selection Source</span><strong>${escapeHtml(selectionInput.source)}</strong></div>
-        <div class="detail-row"><span>Saved Squad</span><strong>${escapeHtml(selectionInput.savedStatus)}</strong></div>
-        <div class="detail-row"><span>Saved IDs</span><strong>${escapeHtml(savedIdsText)}</strong></div>
-        <div class="detail-row"><span>Selected IDs</span><strong>${escapeHtml(selectedIds.join(', ') || 'none')}</strong></div>
+        <span class="section-kicker">Your Squad</span>
+        <h2 class="section-title">Ready for ${escapeHtml(encounter.name)}</h2>
+        <div class="battle-score-grid">
+          <div class="battle-score-card"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
+          <div class="battle-score-card"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
+          <div class="battle-score-card"><span>Outlook</span><strong>${powerDelta >= 0 ? `Favored +${powerDelta}` : `Risky ${powerDelta}`}</strong></div>
+        </div>
+        <div class="battle-state-note battle-state-note-preview">
+          <strong>${escapeHtml(savedSquadLabel)}</strong>
+          <span>${selectedCards.length ? 'These cards will receive battle XP if rewards are claimed.' : 'Select at least one card to start battle.'}</span>
+        </div>
         <div class="action-row">
           ${selectedCards.length ? `<a class="button button-primary" href="${startHref}">Start Battle</a>` : '<span class="button button-secondary" aria-disabled="true">Select a Card</span>'}
           ${selectedCards.length ? `<button class="button button-secondary" type="button" data-save-battle-squad data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Save Squad</button>` : ''}
         </div>
-        <div class="empty-note" data-save-battle-squad-status>${savedSquadPayload?.saved ? 'Saved squad loaded from backend when available.' : 'No saved squad yet.'}</div>
+        <div class="empty-note" data-save-battle-squad-status>${savedSquadPayload?.saved ? 'Saved squad available.' : 'No saved squad yet.'}</div>
       </section>
 
       <section>
         <div class="section-heading">
           <div>
             <span class="section-kicker">Selected</span>
-            <h2 class="section-title">Active backend squad</h2>
+            <h2 class="section-title">Your active squad</h2>
           </div>
           <span class="status-pill">${selectedCards.length}/${battleSquadMaxSize}</span>
         </div>
@@ -188,10 +204,10 @@ export async function renderSquadBuilder({ query }) {
       <section>
         <div class="section-heading">
           <div>
-            <span class="section-kicker">Owned Backend Cards</span>
-            <h2 class="section-title">Tap cards to select or remove</h2>
+            <span class="section-kicker">Available Cards</span>
+            <h2 class="section-title">Tap cards to add or remove</h2>
           </div>
-          <span class="status-pill">${eligibleCards.length} eligible</span>
+          <span class="status-pill">${eligibleCards.length} ready</span>
         </div>
         <div class="battle-card-list">
           ${renderAvailableCards({ encounter, cards: eligibleCards, selectedCards })}
@@ -202,8 +218,8 @@ export async function renderSquadBuilder({ query }) {
     return `
       <section class="hero-panel">
         <span class="section-kicker">Squad Builder</span>
-        <h2 class="hero-title">Inventory failed.</h2>
-        <p class="hero-copy">The backend battle inventory could not be loaded, so the real squad selector cannot safely start a battle.</p>
+        <h2 class="hero-title">Squad unavailable.</h2>
+        <p class="hero-copy">Your battle cards could not be loaded, so battle setup is paused for now.</p>
         <div class="action-row"><a class="button button-secondary" href="#/battle">Back to Battle</a></div>
       </section>
       <section class="glass-panel battle-summary-panel">
@@ -225,12 +241,11 @@ export function initSquadBuilder(root) {
     const squadCardIds = parseSquadCardIds(button.getAttribute('data-squad-card-ids'));
     button.disabled = true;
     button.textContent = 'Saving...';
-    status.textContent = 'Saving selected backend squad...';
+    status.textContent = 'Saving your squad...';
 
     try {
-      const payload = await saveBattleSquad({ squadCardIds });
-      const savedIds = payload.savedSquad?.squadCardIds || squadCardIds;
-      status.textContent = `Saved squad: ${savedIds.join(', ')}`;
+      await saveBattleSquad({ squadCardIds });
+      status.textContent = 'Saved. This squad will load by default next time.';
       button.textContent = 'Saved';
       button.classList.add('button-resolved');
       button.setAttribute('aria-disabled', 'true');
