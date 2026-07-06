@@ -1,7 +1,8 @@
 /* ============================================================================
    Battle Squad Selection Service
-   Phase 7 responsibility: shared helpers for selecting backend-owned battle
-   cards by URL state. No DOM mutation and no writes.
+   Phase 8 responsibility: shared helpers for selecting backend-owned battle
+   cards and generating one-time battle attempt IDs through URL state.
+   No DOM mutation and no writes.
    ============================================================================ */
 
 import { fetchJson, getApiRoutes } from './apiClient.js';
@@ -11,6 +12,18 @@ export const defaultBattleOwnerUserId = 'sterling';
 
 export function getBattleCardKey(card) {
   return String(card?.sourceRowId || card?.id || '').trim();
+}
+
+export function createBattleAttemptId() {
+  const randomPart = globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    : Math.random().toString(36).slice(2, 14);
+
+  return `attempt_${Date.now().toString(36)}_${randomPart}`;
+}
+
+export function normalizeBattleAttemptId(value) {
+  return String(value || '').trim().slice(0, 120);
 }
 
 export function parseSquadCardIds(value) {
@@ -28,9 +41,10 @@ export function encodeSquadCardIds(ids = []) {
   return parseSquadCardIds(ids).join(',');
 }
 
-export function buildBattleResultsHref({ encounterId, squadCardIds = [] }) {
+export function buildBattleResultsHref({ encounterId, squadCardIds = [], attemptId } = {}) {
   const params = new URLSearchParams();
   params.set('encounter', encounterId || 'training-yard-goblin');
+  params.set('attemptId', normalizeBattleAttemptId(attemptId) || createBattleAttemptId());
 
   const encodedSquad = encodeSquadCardIds(squadCardIds);
   if (encodedSquad) {
