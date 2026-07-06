@@ -21,7 +21,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
 | `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Select backend-owned battle cards for the active squad |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids` | `src/routes/BattleResults.js` | Resolve selected backend squad and apply rewards |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Resolve selected backend squad once with protected attempt ID |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -31,7 +31,7 @@ These routes render through `src/components/AdminShell.js`. Admin navigation int
 | Route | File | Purpose |
 |---|---|---|
 | `#/admin` | `src/routes/AdminIndex.js` | Isolated admin and diagnostics hub |
-| `#/admin/battle-check` | `src/routes/AdminBattleTest.js` | Button-based Phase 5 battle reward write check |
+| `#/admin/battle-check` | `src/routes/AdminBattleTest.js` | Button-based protected battle reward write check |
 | `#/admin/submissions` | `src/routes/AdminDashboard.js` | Submission review queue |
 | `#/admin/submission/:submissionId` | `src/routes/AdminSubmissionDetail.js` | Submission review detail and server-owned review actions |
 | `#/admin/backend` | `src/routes/BackendStatus.js` | Backend status and diagnostic endpoint links |
@@ -67,10 +67,10 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 | `/api/pull-resources` | `functions/api/pull-resources.js` | Read pull tickets and gold resources |
 | `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle card and table diagnostics |
 | `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write battle simulation |
-| `/api/battles` | `functions/api/battles.js` | Resolve battle and write Phase 5 battle_history, gold, XP, and levels |
+| `/api/battles` | `functions/api/battles.js` | Resolve battle once per attempt and write battle_history, gold, XP, and levels |
 | `/api/battle-history` | `functions/api/battle-history.js` | Read battle history with reward and XP details |
 | `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 5 reward and XP contract |
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 7 keeps hash routing and uses `squadCardIds` in the route query string so Squad Builder and Battle Results share the same backend-owned card selection. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 8 keeps hash routing and uses `squadCardIds` plus `attemptId` in the route query string so Squad Builder, Battle Results, and POST `/api/battles` share the same backend-owned card selection and one-time battle attempt. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
