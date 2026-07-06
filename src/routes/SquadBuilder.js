@@ -1,7 +1,7 @@
 /* ============================================================================
    Squad Builder Route
-   Phase 7 responsibility: select real backend-owned battle cards and pass the
-   exact selected card row IDs into the player battle resolver.
+   Phase 9 responsibility: select real backend-owned battle cards, load a saved
+   preferred squad by default, and let the player save the current selection.
    ============================================================================ */
 
 import { getEncounterById } from '../data/mockBattle.js';
@@ -10,11 +10,14 @@ import {
   buildBattleResultsHref,
   buildSquadBuilderHref,
   fetchBattleInventory,
+  fetchSavedBattleSquad,
   getBattleCardKey,
   getBattleSquadPower,
   getEligibleBattleCards,
   getSelectedBattleIds,
+  parseSquadCardIds,
   resolveSelectedBattleSquad,
+  saveBattleSquad,
   toggleBattleCardSelection,
 } from '../services/battleSquadSelection.js';
 
@@ -97,24 +100,57 @@ function renderAvailableCards({ encounter, cards, selectedCards }) {
   }).join('');
 }
 
+function getSelectionInput({ query, savedSquadPayload }) {
+  const queryIds = parseSquadCardIds(query.squadCardIds);
+  const savedIds = savedSquadPayload?.validForBattle ? parseSquadCardIds(savedSquadPayload.selectedIds) : [];
+
+  if (queryIds.length) {
+    return {
+      requestedIds: queryIds,
+      source: 'url-query',
+      savedStatus: savedSquadPayload?.saved ? 'saved-squad-available' : 'no-saved-squad',
+    };
+  }
+
+  if (savedIds.length) {
+    return {
+      requestedIds: savedIds,
+      source: 'saved-squad',
+      savedStatus: 'loaded-saved-squad',
+    };
+  }
+
+  return {
+    requestedIds: [],
+    source: 'default-highest-power',
+    savedStatus: savedSquadPayload?.saved ? 'saved-squad-invalid-fell-back' : 'no-saved-squad',
+  };
+}
+
 export async function renderSquadBuilder({ query }) {
   const encounter = getEncounterById(query.encounter);
 
   try {
-    const inventory = await fetchBattleInventory();
+    const [inventory, savedSquadPayload] = await Promise.all([
+      fetchBattleInventory(),
+      fetchSavedBattleSquad().catch(() => null),
+    ]);
     const eligibleCards = getEligibleBattleCards(inventory);
-    const selection = resolveSelectedBattleSquad(eligibleCards, query.squadCardIds);
+    const selectionInput = getSelectionInput({ query, savedSquadPayload });
+    const selection = resolveSelectedBattleSquad(eligibleCards, selectionInput.requestedIds);
     const selectedCards = selection.selected;
     const selectedIds = getSelectedBattleIds(selectedCards);
     const squadPower = getBattleSquadPower(selectedCards);
     const powerDelta = squadPower - encounter.enemyPower;
     const startHref = buildBattleResultsHref({ encounterId: encounter.id, squadCardIds: selectedIds });
+    const savedIds = parseSquadCardIds(savedSquadPayload?.selectedIds);
+    const savedIdsText = savedIds.length ? savedIds.join(', ') : 'none';
 
     return `
       <section class="hero-panel">
         <span class="section-kicker">Squad Builder</span>
         <h2 class="hero-title">Pick the lineup.</h2>
-        <p class="hero-copy">This screen now uses real backend-owned battle cards. The selected row IDs are passed into Resolve Battle, so these are the cards that receive XP.</p>
+        <p class="hero-copy">This screen now loads your saved backend squad by default. Route selection still works while editing, and Save Squad stores the current selected row IDs.</p>
         <div class="action-row"><a class="button button-secondary" href="#/battle/encounters">Change Encounter</a></div>
       </section>
 
@@ -125,11 +161,15 @@ export async function renderSquadBuilder({ query }) {
         <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
         <div class="detail-row"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
         <div class="detail-row"><span>Forecast</span><strong>${powerDelta >= 0 ? `Favored +${powerDelta}` : `Risky ${powerDelta}`}</strong></div>
-        <div class="detail-row"><span>Selection Source</span><strong>${escapeHtml(selection.selectionSource)}</strong></div>
+        <div class="detail-row"><span>Selection Source</span><strong>${escapeHtml(selectionInput.source)}</strong></div>
+        <div class="detail-row"><span>Saved Squad</span><strong>${escapeHtml(selectionInput.savedStatus)}</strong></div>
+        <div class="detail-row"><span>Saved IDs</span><strong>${escapeHtml(savedIdsText)}</strong></div>
         <div class="detail-row"><span>Selected IDs</span><strong>${escapeHtml(selectedIds.join(', ') || 'none')}</strong></div>
         <div class="action-row">
           ${selectedCards.length ? `<a class="button button-primary" href="${startHref}">Start Battle</a>` : '<span class="button button-secondary" aria-disabled="true">Select a Card</span>'}
+          ${selectedCards.length ? `<button class="button button-secondary" type="button" data-save-battle-squad data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Save Squad</button>` : ''}
         </div>
+        <div class="empty-note" data-save-battle-squad-status>${savedSquadPayload?.saved ? 'Saved squad loaded from backend when available.' : 'No saved squad yet.'}</div>
       </section>
 
       <section>
@@ -171,4 +211,35 @@ export async function renderSquadBuilder({ query }) {
       </section>
     `;
   }
+}
+
+export function initSquadBuilder(root) {
+  const button = root.querySelector('[data-save-battle-squad]');
+  const status = root.querySelector('[data-save-battle-squad-status]');
+
+  if (!button || !status) {
+    return;
+  }
+
+  button.addEventListener('click', async () => {
+    const squadCardIds = parseSquadCardIds(button.getAttribute('data-squad-card-ids'));
+    button.disabled = true;
+    button.textContent = 'Saving...';
+    status.textContent = 'Saving selected backend squad...';
+
+    try {
+      const payload = await saveBattleSquad({ squadCardIds });
+      const savedIds = payload.savedSquad?.squadCardIds || squadCardIds;
+      status.textContent = `Saved squad: ${savedIds.join(', ')}`;
+      button.textContent = 'Saved';
+      button.classList.add('button-resolved');
+      button.setAttribute('aria-disabled', 'true');
+    } catch (error) {
+      status.textContent = error.message;
+      button.disabled = false;
+      button.textContent = 'Save Squad';
+      button.classList.remove('button-resolved');
+      button.removeAttribute('aria-disabled');
+    }
+  });
 }
