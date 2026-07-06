@@ -1,8 +1,8 @@
 /* ============================================================================
    Battle Progression Writer
-   Battle Phase 5 responsibility: apply validated battle rewards to gold and
-   owned-card XP/level, then record battle_history. No drops, tickets, stamina,
-   energy, Vault grants, or auth changes.
+   Battle Phase 8 responsibility: apply validated battle rewards once per unique
+   battle attempt, then record battle_history. No drops, tickets, stamina, energy,
+   Vault grants, or auth changes.
    ============================================================================ */
 
 import { calculateBattleRewardPreview, previewLevelFromXp } from './battle-reward-contract.js';
@@ -34,8 +34,26 @@ function safeParseJson(value) {
   }
 }
 
+async function columnExists(env, tableName, columnName) {
+  const result = await env.DB.prepare(`PRAGMA table_info(${tableName})`).all();
+  return (result.results || []).some((column) => column.name === columnName);
+}
+
+async function ensureBattleAttemptSchema(env) {
+  if (!(await columnExists(env, 'battle_history', 'attempt_id'))) {
+    await env.DB.prepare('ALTER TABLE battle_history ADD COLUMN attempt_id TEXT').run();
+  }
+
+  await env.DB.prepare(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_battle_history_user_attempt
+    ON battle_history (user_id, attempt_id)
+    WHERE attempt_id IS NOT NULL AND TRIM(attempt_id) != ''
+  `).run();
+}
+
 async function ensureRewardSchemas(env, ownerUserId, now) {
   await ensureBattleHistorySchema(env);
+  await ensureBattleAttemptSchema(env);
   await env.DB.prepare(userResourcesSql).run();
   await env.DB.prepare(`
     INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, created_at, updated_at)
@@ -50,6 +68,15 @@ async function readUserResources(env, ownerUserId) {
     WHERE user_id = ?
     LIMIT 1
   `).bind(ownerUserId).first();
+}
+
+async function readExistingAttempt(env, ownerUserId, attemptId) {
+  return env.DB.prepare(`
+    SELECT id, user_id AS userId, encounter_id AS encounterId, victory, squad_power AS squadPower, enemy_power AS enemyPower, result_json AS resultJson, created_at AS createdAt
+    FROM battle_history
+    WHERE user_id = ? AND attempt_id = ?
+    LIMIT 1
+  `).bind(ownerUserId, attemptId).first();
 }
 
 async function readOwnedCardRows(env, ownerUserId, sourceRowIds) {
@@ -159,10 +186,11 @@ function buildRewardPlan(simulation) {
   };
 }
 
-function buildResultJson({ battleId, simulation, rewardPlan, resourceBefore, resourceAfter, now }) {
+function buildResultJson({ battleId, attemptId, simulation, rewardPlan, resourceBefore, resourceAfter, now }) {
   return JSON.stringify({
     battleId,
-    phase: 'battle-5',
+    attemptId,
+    phase: 'battle-8',
     ownerUserId: simulation.ownerUserId,
     ownerDisplayName: simulation.ownerDisplayName,
     encounterId: simulation.encounter.id,
@@ -193,22 +221,58 @@ function buildResultJson({ battleId, simulation, rewardPlan, resourceBefore, res
     xpApplied: rewardPlan.xpApplications,
     combatLog: [
       ...simulation.combatLog,
-      `Battle Phase 5 applied ${rewardPlan.reward.gold} gold and ${rewardPlan.reward.totalXp} total XP.`,
+      `Battle Phase 8 applied ${rewardPlan.reward.gold} gold and ${rewardPlan.reward.totalXp} total XP once for attempt ${attemptId}.`,
     ],
     resultRule: simulation.resultRule,
     rewardRule: rewardPlan.reward.xpAllocationRule,
+    duplicateProtection: {
+      attemptId,
+      rule: 'The same user_id + attempt_id can only be written once.',
+    },
     writes: rewardPlan.writes,
     deferredWrites: rewardPlan.deferredWrites,
     createdAt: now,
   });
 }
 
-export async function writeBattleProgression(env, simulationResult, { now = new Date().toISOString() } = {}) {
+export async function readBattleAttempt(env, { ownerUserId, attemptId } = {}) {
+  if (!ownerUserId || !attemptId) {
+    return null;
+  }
+
+  await ensureBattleHistorySchema(env);
+  await ensureBattleAttemptSchema(env);
+  return readExistingAttempt(env, ownerUserId, attemptId);
+}
+
+export async function writeBattleProgression(env, simulationResult, { now = new Date().toISOString(), attemptId } = {}) {
   const simulation = simulationResult.simulation;
   const ownerUserId = simulation.ownerUserId;
+  const safeAttemptId = String(attemptId || '').trim();
+
+  if (!safeAttemptId) {
+    const error = new Error('Battle attempt ID is required before rewards can be applied.');
+    error.status = 400;
+    error.code = 'battle-attempt-required';
+    throw error;
+  }
+
   const battleId = buildId('battle');
   const rewardPlan = buildRewardPlan(simulation);
   const sourceRowIds = rewardPlan.xpApplications.map((application) => application.sourceRowId);
+
+  await ensureRewardSchemas(env, ownerUserId, now);
+  const existingAttempt = await readExistingAttempt(env, ownerUserId, safeAttemptId);
+
+  if (existingAttempt) {
+    const error = new Error('This battle attempt has already been resolved. No rewards were applied again.');
+    error.status = 409;
+    error.code = 'duplicate-battle-attempt';
+    error.existingBattleId = existingAttempt.id;
+    error.attemptId = safeAttemptId;
+    throw error;
+  }
+
   const cardRows = await readOwnedCardRows(env, ownerUserId, sourceRowIds);
   const missingRows = sourceRowIds.filter((sourceRowId) => !cardRows.has(String(sourceRowId)));
 
@@ -228,7 +292,6 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
     };
   });
 
-  await ensureRewardSchemas(env, ownerUserId, now);
   const resourcesBeforeRow = await readUserResources(env, ownerUserId);
   const goldBefore = Number(resourcesBeforeRow?.gold || 0);
   const resourcesBefore = {
@@ -241,9 +304,23 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
     pullTickets: resourcesBefore.pullTickets,
     gold: goldBefore + rewardPlan.reward.gold,
   };
-  const resultJson = buildResultJson({ battleId, simulation, rewardPlan, resourceBefore: resourcesBefore, resourceAfter: resourcesAfter, now });
+  const resultJson = buildResultJson({ battleId, attemptId: safeAttemptId, simulation, rewardPlan, resourceBefore: resourcesBefore, resourceAfter: resourcesAfter, now });
 
   const statements = [
+    env.DB.prepare(`
+      INSERT INTO battle_history (id, attempt_id, user_id, encounter_id, victory, squad_power, enemy_power, result_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      battleId,
+      safeAttemptId,
+      ownerUserId,
+      simulation.encounter.id,
+      simulation.victory ? 1 : 0,
+      simulation.squadPower,
+      simulation.enemyPower,
+      resultJson,
+      now
+    ),
     env.DB.prepare(`
       UPDATE user_resources
       SET gold = gold + ?, updated_at = ?
@@ -254,19 +331,6 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
       SET card_json = ?, updated_at = ?
       WHERE id = ? AND CAST(owner_user_id AS TEXT) = ?
     `).bind(updatedCardJson, now, application.sourceRowId, ownerUserId)),
-    env.DB.prepare(`
-      INSERT INTO battle_history (id, user_id, encounter_id, victory, squad_power, enemy_power, result_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      battleId,
-      ownerUserId,
-      simulation.encounter.id,
-      simulation.victory ? 1 : 0,
-      simulation.squadPower,
-      simulation.enemyPower,
-      resultJson,
-      now
-    ),
   ];
 
   await env.DB.batch(statements);
@@ -274,8 +338,10 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
 
   return {
     battleId,
+    attemptId: safeAttemptId,
     historyRow: {
       id: battleId,
+      attemptId: safeAttemptId,
       userId: ownerUserId,
       encounterId: simulation.encounter.id,
       victory: simulation.victory,
@@ -287,6 +353,7 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
     simulation: {
       ...simulation,
       battleId,
+      attemptId: safeAttemptId,
       createdAt: now,
       rewardPreview: rewardPlan.reward,
       xpPreview: rewardPlan.xpApplications,
@@ -298,6 +365,10 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
       goldAfter: Number(updatedResources?.gold ?? resourcesAfter.gold),
     },
     xpApplied: rewardPlan.xpApplications,
+    duplicateProtection: {
+      attemptId: safeAttemptId,
+      rule: 'The same user_id + attempt_id can only be written once.',
+    },
     writes: rewardPlan.writes,
     deferredWrites: rewardPlan.deferredWrites,
   };
