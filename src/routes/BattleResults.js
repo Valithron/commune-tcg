@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Results Route
-   Phase 7 responsibility: resolve the exact backend-owned squad selected on
-   Squad Builder and apply rewards to those selected card row IDs.
+   Phase 8 responsibility: resolve the exact backend-owned squad selected on
+   Squad Builder with a unique attempt ID so rewards can only apply once.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
@@ -13,6 +13,7 @@ import {
   getBattleSquadPower,
   getEligibleBattleCards,
   getSelectedBattleIds,
+  normalizeBattleAttemptId,
   resolveSelectedBattleSquad,
 } from '../services/battleSquadSelection.js';
 import { getApiRoutes } from '../services/apiClient.js';
@@ -73,7 +74,7 @@ function renderResolvedBattle(payload) {
   if (!payload.ok) {
     return `
       <div class="battle-state-note battle-state-note-error">
-        <strong>Resolution failed.</strong>
+        <strong>${payload.code === 'duplicate-battle-attempt' ? 'Already resolved.' : 'Resolution failed.'}</strong>
         <span>${escapeHtml(payload.error || 'Unknown error')}</span>
       </div>
     `;
@@ -86,11 +87,12 @@ function renderResolvedBattle(payload) {
   return `
     <div class="battle-state-note battle-state-note-live">
       <strong>Resolved for real.</strong>
-      <span>This section reflects the backend write that was just applied to the selected backend squad.</span>
+      <span>This backend attempt has been marked used and cannot apply rewards again.</span>
     </div>
 
     <div class="detail-list">
       <div class="detail-row"><span>Battle ID</span><strong>${escapeHtml(payload.battleId)}</strong></div>
+      <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(payload.attemptId || payload.duplicateProtection?.attemptId || 'missing')}</strong></div>
       <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name || payload.historyRow?.encounterId || 'Unknown')}</strong></div>
       <div class="detail-row"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Loss'}</strong></div>
       <div class="detail-row"><span>Gold Applied</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
@@ -112,6 +114,7 @@ function renderResolvedBattle(payload) {
 
 export async function renderBattleResults({ query }) {
   const encounter = getEncounterById(query.encounter);
+  const attemptId = normalizeBattleAttemptId(query.attemptId);
 
   try {
     const inventory = await fetchBattleInventory();
@@ -124,15 +127,15 @@ export async function renderBattleResults({ query }) {
     const victory = margin >= 0;
     const previewGold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
     const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
-    const canResolve = selectedCards.length > 0;
+    const canResolve = selectedCards.length > 0 && Boolean(attemptId);
 
     return `
       <section class="result-banner">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">${canResolve ? 'Ready to Resolve' : 'No Valid Squad'}</h2>
-        <p class="hero-copy">This result screen uses the backend-owned squad selected on the previous page. Resolve Battle writes rewards to those selected card row IDs.</p>
+        <h2 class="hero-title">${canResolve ? 'Ready to Resolve' : 'Resolve Blocked'}</h2>
+        <p class="hero-copy">This result screen uses the backend-owned squad selected on the previous page and one unique attempt ID. The same attempt cannot apply rewards twice.</p>
         <div class="action-row">
-          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Resolve Battle</button>` : '<span class="button button-secondary" aria-disabled="true">No Valid Squad</span>'}
+          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Resolve Battle</button>` : '<span class="button button-secondary" aria-disabled="true">Resolve Blocked</span>'}
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
           <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
         </div>
@@ -142,10 +145,11 @@ export async function renderBattleResults({ query }) {
         <span class="section-kicker">Backend Squad Preview</span>
         <h2 class="section-title">These selected cards will receive XP</h2>
         <div class="battle-state-note battle-state-note-preview">
-          <strong>${canResolve ? 'Backend-selected squad.' : 'Resolve blocked.'}</strong>
-          <span>${canResolve ? 'These IDs are passed into POST /api/battles as squadCardIds.' : 'No valid selected backend cards were found, so this page will not resolve a default squad by accident.'}</span>
+          <strong>${canResolve ? 'Protected battle attempt.' : 'Resolve blocked.'}</strong>
+          <span>${canResolve ? 'These selected IDs and this attempt ID are passed into POST /api/battles.' : 'A valid selected backend squad and attempt ID are required before rewards can be written.'}</span>
         </div>
         <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
+        <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(attemptId || 'missing')}</strong></div>
         <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
         <div class="detail-row"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
         <div class="detail-row"><span>Forecast</span><strong>${margin >= 0 ? `Favored +${margin}` : `Risky ${margin}`}</strong></div>
@@ -157,7 +161,7 @@ export async function renderBattleResults({ query }) {
       <section class="glass-panel battle-summary-panel battle-live-panel">
         <span class="section-kicker">Real Backend Result</span>
         <h2 class="section-title">Applied rewards</h2>
-        <div class="empty-note" data-battle-resolve-status>${canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad is selected.'}</div>
+        <div class="empty-note" data-battle-resolve-status>${canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad and attempt ID are selected.'}</div>
         <div data-battle-resolve-result>
           ${renderResolvedBattle(null)}
         </div>
@@ -217,6 +221,7 @@ export function initBattleResults(root) {
   button.addEventListener('click', async () => {
     const encounterId = button.getAttribute('data-encounter-id') || 'training-yard-goblin';
     const squadCardIds = button.getAttribute('data-squad-card-ids') || '';
+    const attemptId = button.getAttribute('data-attempt-id') || '';
     const routes = getApiRoutes();
     button.disabled = true;
     button.textContent = 'Resolving...';
@@ -230,11 +235,23 @@ export function initBattleResults(root) {
           accept: 'application/json',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ encounterId, squadCardIds }),
+        body: JSON.stringify({ encounterId, squadCardIds, attemptId }),
       });
       const payload = await response.json().catch(() => null);
 
       if (!response.ok || !payload) {
+        if (payload?.code === 'duplicate-battle-attempt') {
+          resultTarget.innerHTML = renderResolvedBattle(payload);
+          status.textContent = 'Already resolved. No rewards were applied again.';
+          button.disabled = true;
+          button.textContent = 'Already Resolved';
+          button.classList.remove('button-working');
+          button.classList.add('button-resolved');
+          button.setAttribute('aria-disabled', 'true');
+          button.setAttribute('data-resolved', 'true');
+          return;
+        }
+
         throw new Error(payload?.error || `Battle failed with ${response.status}`);
       }
 
