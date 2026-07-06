@@ -1,8 +1,7 @@
 /* ============================================================================
    Battle Squad Selection Service
-   Phase 8.1 responsibility: shared helpers for selecting backend-owned battle
-   cards, generating one-time attempt IDs, and reading attempt status.
-   No DOM mutation and no writes.
+   Phase 9 responsibility: shared helpers for selecting, saving, loading, and
+   resolving backend-owned battle squads. No route-local DOM mutation.
    ============================================================================ */
 
 import { fetchJson, getApiRoutes } from './apiClient.js';
@@ -73,6 +72,37 @@ export async function fetchBattleInventory({ ownerUserId = defaultBattleOwnerUse
   params.set('_', String(Date.now()));
 
   return fetchJson(routes.battleInventory + '?' + params.toString());
+}
+
+export async function fetchSavedBattleSquad({ ownerUserId = defaultBattleOwnerUserId } = {}) {
+  const routes = getApiRoutes();
+  const params = new URLSearchParams();
+  params.set('ownerUserId', ownerUserId);
+  params.set('_', String(Date.now()));
+
+  return fetchJson(routes.battleSquad + '?' + params.toString());
+}
+
+export async function saveBattleSquad({ ownerUserId = defaultBattleOwnerUserId, squadCardIds = [] } = {}) {
+  const routes = getApiRoutes();
+  const response = await fetch(routes.battleSquad, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      ownerUserId,
+      squadCardIds: encodeSquadCardIds(squadCardIds),
+    }),
+  });
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || !payload) {
+    throw new Error(payload?.error || `Saved squad request failed with ${response.status}`);
+  }
+
+  return payload;
 }
 
 export async function fetchBattleAttemptStatus({ ownerUserId = defaultBattleOwnerUserId, attemptId } = {}) {
