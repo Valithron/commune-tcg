@@ -20,8 +20,8 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
-| `#/battle/squad?encounter=:encounterId` | `src/routes/SquadBuilder.js` | Review prototype squad before backend battle resolution |
-| `#/battle/results?encounter=:encounterId` | `src/routes/BattleResults.js` | Preview result, then manually resolve backend rewards |
+| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Select backend-owned battle cards for the active squad |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids` | `src/routes/BattleResults.js` | Resolve selected backend squad and apply rewards |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -73,4 +73,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 6 keeps hash routing and wires the player Battle Results route to a deliberate backend reward resolution button. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 7 keeps hash routing and uses `squadCardIds` in the route query string so Squad Builder and Battle Results share the same backend-owned card selection. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
