@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Styles
-   Phase 7 responsibility: encounter, squad, and result screen presentation
-   with backend-owned squad selection and clear reward target states.
+   Phase 10A responsibility: player-facing battle presentation. Keep mechanics
+   intact while making squad, rewards, and claimed states read like game UI.
    ============================================================================ */
 
 .encounter-grid,
@@ -16,6 +16,8 @@
 .battle-summary-panel,
 .bench-row,
 .battle-card-row,
+.battle-score-card,
+.battle-reward-card,
 .battle-log div {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
@@ -53,16 +55,20 @@
 .battle-meta-row span,
 .bench-row strong,
 .battle-card-stat-stack span,
-.battle-card-stat-stack small {
+.battle-card-stat-stack small,
+.battle-score-card span,
+.battle-reward-card span {
   color: var(--color-functional);
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .battle-summary-panel {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-4);
 }
 
@@ -72,6 +78,50 @@
 
 .battle-live-panel {
   border-color: rgba(122, 220, 150, 0.22);
+}
+
+.battle-result-hero {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.battle-result-victory::before {
+  background: radial-gradient(circle, rgba(122, 220, 150, 0.24), transparent 70%);
+}
+
+.battle-result-defeat::before {
+  background: radial-gradient(circle, rgba(255, 107, 74, 0.18), transparent 70%);
+}
+
+.battle-score-grid,
+.battle-reward-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.battle-reward-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.battle-score-card,
+.battle-reward-card {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 4.4rem;
+  padding: var(--space-3);
+}
+
+.battle-score-card strong,
+.battle-reward-card strong {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  line-height: 1.05;
+}
+
+.battle-reward-card strong {
+  color: var(--color-primary);
+  font-size: 1.45rem;
 }
 
 .battle-state-note {
@@ -186,4 +236,11 @@
   border-left: 3px solid var(--color-functional);
   color: var(--color-text-muted);
   line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .battle-score-grid,
+  .battle-reward-grid {
+    grid-template-columns: 1fr;
+  }
 }
