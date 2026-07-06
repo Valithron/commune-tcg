@@ -1,7 +1,7 @@
 /* ============================================================================
    API Battle History Endpoint
-   Battle Phase 5 responsibility: read battle_history rows with reward and XP
-   application details for diagnostics. Performs no writes.
+   Battle Phase 8 responsibility: read battle_history rows with attempt, reward,
+   and XP application details for diagnostics. Performs no writes.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
@@ -50,6 +50,7 @@ async function readBattleHistoryRows(env, { ownerUserId, limit }) {
 
     return {
       id: row.id,
+      attemptId: parsedResult?.attemptId || null,
       userId: row.userId,
       ownerUserId: row.userId,
       ownerDisplayName: row.userId === temporaryBattleUserId ? temporaryBattleUserDisplayName : row.userId,
@@ -64,6 +65,7 @@ async function readBattleHistoryRows(env, { ownerUserId, limit }) {
       rewardApplied: parsedResult?.rewardApplied || null,
       xpPreview: parsedResult?.xpPreview || [],
       xpApplied: parsedResult?.xpApplied || parsedResult?.xpPreview || [],
+      duplicateProtection: parsedResult?.duplicateProtection || null,
       combatLog: parsedResult?.combatLog || [],
       writes: parsedResult?.writes || ['battle_history'],
       deferredWrites: parsedResult?.deferredWrites || [],
@@ -94,7 +96,7 @@ export async function onRequestGet({ env, request }) {
 
     return jsonResponse({
       ok: true,
-      phase: 'battle-5',
+      phase: 'battle-8',
       readOnly: true,
       source: 'D1 battle_history',
       ownerUserId,
@@ -102,7 +104,7 @@ export async function onRequestGet({ env, request }) {
       notes: [
         'This endpoint performs no writes.',
         'Battle history rows are written only by POST /api/battles.',
-        'Battle Phase 5 history rows may include rewardApplied and xpApplied details.',
+        'Battle Phase 8 history rows may include attemptId, duplicateProtection, rewardApplied, and xpApplied details.',
         'Pull tickets, drops, stamina, energy, Vault grants, and auth changes remain deferred.',
       ],
     });
