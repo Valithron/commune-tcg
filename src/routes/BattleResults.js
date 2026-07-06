@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Results Route
-   Phase 8.1 responsibility: render the exact backend-owned squad and preflight
-   attempt status so already-resolved attempts do not show a fresh Resolve button.
+   Phase 10A responsibility: player-facing battle result polish. Mechanics stay
+   the same: selected squad IDs, attempt preflight, protected resolve, rewards.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
@@ -10,7 +10,6 @@ import {
   buildSquadBuilderHref,
   fetchBattleAttemptStatus,
   fetchBattleInventory,
-  getBattleCardKey,
   getBattleSquadPower,
   getEligibleBattleCards,
   getSelectedBattleIds,
@@ -28,22 +27,33 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function getLevelNote(row) {
+  const previousLevel = Number(row.previousLevel || 1);
+  const nextLevel = Number(row.nextLevel || previousLevel);
+
+  if (nextLevel > previousLevel) {
+    return `Level Up! ${previousLevel} → ${nextLevel}`;
+  }
+
+  return `Level ${nextLevel}`;
+}
+
 function renderAppliedXpRows(xpApplied = []) {
   if (!Array.isArray(xpApplied) || !xpApplied.length) {
-    return '<div class="empty-note">No real XP has been applied yet.</div>';
+    return '<div class="empty-note">No squad XP has been claimed yet.</div>';
   }
 
   return xpApplied.map((row) => `
     <div class="detail-row battle-applied-row">
       <span>${escapeHtml(row.cardTitle || row.cardId || 'Card')}</span>
-      <strong>+${escapeHtml(row.gainedXp || 0)} XP · Lv ${escapeHtml(row.previousLevel || 1)} → ${escapeHtml(row.nextLevel || row.previousLevel || 1)}</strong>
+      <strong>+${escapeHtml(row.gainedXp || 0)} XP · ${escapeHtml(getLevelNote(row))}</strong>
     </div>
   `).join('');
 }
 
-function renderBackendSquadRows(cards = []) {
+function renderSquadRows(cards = [], note = 'Will gain XP') {
   if (!cards.length) {
-    return '<div class="empty-note">No backend squad cards selected.</div>';
+    return '<div class="empty-note">No squad cards selected.</div>';
   }
 
   return cards.map((card) => `
@@ -51,23 +61,23 @@ function renderBackendSquadRows(cards = []) {
       <div>
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <strong>${escapeHtml(card.name)}</strong>
-        <small>Lv ${escapeHtml(card.level)} · XP ${escapeHtml(card.xp)} · ${escapeHtml(getBattleCardKey(card))}</small>
+        <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
       </div>
       <div class="battle-card-stat-stack">
         <span>P${escapeHtml(card.stats?.pow ?? 0)} D${escapeHtml(card.stats?.def ?? 0)} S${escapeHtml(card.stats?.spd ?? 0)}</span>
         <strong>${escapeHtml(card.battlePower || 0)}</strong>
-        <small>Will receive XP</small>
+        <small>${escapeHtml(note)}</small>
       </div>
     </div>
   `).join('');
 }
 
-function renderResolvedBattle(payload) {
+function renderClaimedRewards(payload) {
   if (!payload) {
     return `
       <div class="battle-state-note battle-state-note-pending">
-        <strong>Not resolved yet.</strong>
-        <span>No gold, XP, level, or battle history write has happened from this screen yet.</span>
+        <strong>Rewards unclaimed.</strong>
+        <span>Claim rewards to add gold and squad XP.</span>
       </div>
     `;
   }
@@ -75,38 +85,32 @@ function renderResolvedBattle(payload) {
   if (!payload.ok) {
     return `
       <div class="battle-state-note battle-state-note-error">
-        <strong>${payload.code === 'duplicate-battle-attempt' ? 'Already resolved.' : 'Resolution failed.'}</strong>
-        <span>${escapeHtml(payload.error || 'Unknown error')}</span>
+        <strong>${payload.code === 'duplicate-battle-attempt' ? 'Already claimed.' : 'Rewards failed.'}</strong>
+        <span>${escapeHtml(payload.error || 'The rewards could not be claimed.')}</span>
       </div>
     `;
   }
 
   const reward = payload.rewardApplied || {};
   const simulation = payload.simulation || {};
-  const encounter = simulation.encounter || {};
   const alreadyResolved = Boolean(payload.alreadyResolved);
 
   return `
     <div class="battle-state-note battle-state-note-live">
-      <strong>${alreadyResolved ? 'Already resolved.' : 'Resolved for real.'}</strong>
-      <span>${alreadyResolved ? 'The backend says this attempt has already been used, so Resolve Battle is hidden.' : 'This backend attempt has been marked used and cannot apply rewards again.'}</span>
+      <strong>${alreadyResolved ? 'Already claimed.' : 'Rewards claimed.'}</strong>
+      <span>${alreadyResolved ? 'These rewards were claimed earlier.' : 'Gold and squad XP have been added.'}</span>
     </div>
 
-    <div class="detail-list">
-      <div class="detail-row"><span>Battle ID</span><strong>${escapeHtml(payload.battleId)}</strong></div>
-      <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(payload.attemptId || payload.duplicateProtection?.attemptId || 'missing')}</strong></div>
-      <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name || payload.historyRow?.encounterId || 'Unknown')}</strong></div>
-      <div class="detail-row"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Loss'}</strong></div>
-      <div class="detail-row"><span>Gold Applied</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
-      <div class="detail-row"><span>Gold After</span><strong>◎ ${escapeHtml(reward.goldAfter ?? 'refresh on next route')}</strong></div>
-      <div class="detail-row"><span>Total XP Applied</span><strong>${escapeHtml(reward.totalXp || 0)}</strong></div>
-      <div class="detail-row"><span>Writes</span><strong>${escapeHtml((payload.writes || []).join(', ') || 'None')}</strong></div>
+    <div class="battle-reward-grid">
+      <div class="battle-reward-card"><span>Gold Earned</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
+      <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(reward.totalXp || 0)}</strong></div>
+      <div class="battle-reward-card"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Defeat'}</strong></div>
     </div>
 
     <section class="glass-panel battle-summary-panel battle-live-panel">
-      <span class="section-kicker">Real Applied Progression</span>
-      <h2 class="section-title">Cards that received XP</h2>
-      <p class="body-copy">This should match the backend squad selected before resolving.</p>
+      <span class="section-kicker">Squad Progress</span>
+      <h2 class="section-title">Cards that gained XP</h2>
+      <p class="body-copy">Your selected squad received these rewards.</p>
       <div class="detail-list">
         ${renderAppliedXpRows(payload.xpApplied)}
       </div>
@@ -134,70 +138,68 @@ export async function renderBattleResults({ query }) {
     const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
     const alreadyResolved = Boolean(attemptStatus?.resolved && attemptStatus?.battle);
     const canResolve = selectedCards.length > 0 && Boolean(attemptId) && !alreadyResolved;
-    const heroTitle = alreadyResolved ? 'Already Resolved' : (canResolve ? 'Ready to Resolve' : 'Resolve Blocked');
+    const resultWord = victory ? 'Victory' : 'Defeat';
+    const heroTitle = alreadyResolved ? `${resultWord} Claimed` : (canResolve ? resultWord : 'Battle Paused');
 
     return `
-      <section class="result-banner">
+      <section class="result-banner battle-result-hero ${victory ? 'battle-result-victory' : 'battle-result-defeat'}">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">${heroTitle}</h2>
-        <p class="hero-copy">This screen checks the backend attempt status before showing Resolve Battle. If the attempt was already used, rewards cannot be applied again.</p>
+        <h2 class="hero-title">${escapeHtml(heroTitle)}</h2>
+        <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${alreadyResolved ? 'These rewards have already been claimed.' : 'Claim your rewards when you are ready.'}</p>
         <div class="action-row">
-          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Resolve Battle</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Resolved' : 'Resolve Blocked'}</span>`}
+          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Claim Rewards</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Claimed' : 'Select a Squad'}</span>`}
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
-          <a class="button button-secondary" href="#/battle/encounters">Choose New</a>
+          <a class="button button-secondary" href="#/battle/encounters">Choose New Encounter</a>
+        </div>
+      </section>
+
+      <section class="glass-panel battle-summary-panel battle-preview-panel">
+        <span class="section-kicker">Battle Preview</span>
+        <h2 class="section-title">${escapeHtml(encounter.name)}</h2>
+        <div class="battle-score-grid">
+          <div class="battle-score-card"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
+          <div class="battle-score-card"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
+          <div class="battle-score-card"><span>Outlook</span><strong>${margin >= 0 ? `Favored +${margin}` : `Risky ${margin}`}</strong></div>
+        </div>
+        <div class="battle-reward-grid">
+          <div class="battle-reward-card"><span>Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
+          <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(previewXp)}</strong></div>
         </div>
       </section>
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
-        <span class="section-kicker">Backend Squad Preview</span>
-        <h2 class="section-title">These selected cards ${alreadyResolved ? 'received' : 'will receive'} XP</h2>
-        <div class="battle-state-note ${alreadyResolved ? 'battle-state-note-live' : 'battle-state-note-preview'}">
-          <strong>${alreadyResolved ? 'Attempt already used.' : (canResolve ? 'Protected battle attempt.' : 'Resolve blocked.')}</strong>
-          <span>${alreadyResolved ? 'The backend found an existing battle_history row for this attempt ID.' : (canResolve ? 'These selected IDs and this attempt ID are passed into POST /api/battles.' : 'A valid selected backend squad and attempt ID are required before rewards can be written.')}</span>
-        </div>
-        <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name)}</strong></div>
-        <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(attemptId || 'missing')}</strong></div>
-        <div class="detail-row"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-        <div class="detail-row"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
-        <div class="detail-row"><span>Forecast</span><strong>${margin >= 0 ? `Favored +${margin}` : `Risky ${margin}`}</strong></div>
-        <div class="detail-row"><span>Preview Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
-        <div class="detail-row"><span>Preview XP</span><strong>${escapeHtml(previewXp)}</strong></div>
-        <div class="detail-row"><span>Selected IDs</span><strong>${escapeHtml(selectedIds.join(', ') || 'none')}</strong></div>
-      </section>
-
-      <section class="glass-panel battle-summary-panel battle-live-panel">
-        <span class="section-kicker">Real Backend Result</span>
-        <h2 class="section-title">Applied rewards</h2>
-        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'Backend preflight found this attempt was already resolved.' : (canResolve ? 'Nothing has been written yet.' : 'Resolve is blocked until a valid backend squad and attempt ID are selected.')}</div>
+        <span class="section-kicker">Rewards</span>
+        <h2 class="section-title">${alreadyResolved ? 'Already claimed' : 'Claim battle rewards'}</h2>
+        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'These rewards have already been claimed.' : (canResolve ? 'Rewards have not been claimed yet.' : 'Choose a squad before claiming rewards.')}</div>
         <div data-battle-resolve-result>
-          ${renderResolvedBattle(alreadyResolved ? attemptStatus.battle : null)}
+          ${renderClaimedRewards(alreadyResolved ? attemptStatus.battle : null)}
         </div>
       </section>
 
       <section>
         <div class="section-heading">
           <div>
-            <span class="section-kicker">Selected Backend Squad</span>
+            <span class="section-kicker">Your Squad</span>
             <h2 class="section-title">Reward targets</h2>
           </div>
           <span class="status-pill">${selectedCards.length}/3</span>
         </div>
         <div class="battle-card-list">
-          ${renderBackendSquadRows(selectedCards)}
+          ${renderSquadRows(selectedCards, alreadyResolved ? 'Rewarded' : 'Will gain XP')}
         </div>
       </section>
 
       <section>
         <div class="section-heading">
           <div>
-            <span class="section-kicker">Contract Log</span>
-            <h2 class="section-title">Combat Summary</h2>
+            <span class="section-kicker">Combat Summary</span>
+            <h2 class="section-title">What happened</h2>
           </div>
         </div>
         <div class="battle-log">
-          <div>${escapeHtml(selectedCards[0]?.name || 'Selected squad')} leads ${selectedCards.length} backend card(s) into ${escapeHtml(encounter.name)}.</div>
-          <div>Squad power resolves to ${escapeHtml(squadPower)} against enemy power ${escapeHtml(encounter.enemyPower)}.</div>
-          <div>${victory ? `The squad is favored by ${margin} power.` : `The squad is short by ${Math.abs(margin)} power.`}</div>
+          <div>${escapeHtml(selectedCards[0]?.name || 'Your squad')} led ${selectedCards.length} card(s) against ${escapeHtml(encounter.name)}.</div>
+          <div>Your squad power was ${escapeHtml(squadPower)} against enemy power ${escapeHtml(encounter.enemyPower)}.</div>
+          <div>${victory ? `Your squad won by ${margin} power.` : `Your squad fell short by ${Math.abs(margin)} power.`}</div>
         </div>
       </section>
     `;
@@ -205,8 +207,8 @@ export async function renderBattleResults({ query }) {
     return `
       <section class="hero-panel">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">Inventory failed.</h2>
-        <p class="hero-copy">The backend squad or attempt status could not be loaded, so Resolve Battle is blocked to avoid rewarding the wrong cards.</p>
+        <h2 class="hero-title">Results unavailable.</h2>
+        <p class="hero-copy">Your battle result could not be loaded, so rewards are paused for now.</p>
         <div class="action-row"><a class="button button-secondary" href="#/battle">Back to Battle</a></div>
       </section>
       <section class="glass-panel battle-summary-panel">
@@ -231,9 +233,9 @@ export function initBattleResults(root) {
     const attemptId = button.getAttribute('data-attempt-id') || '';
     const routes = getApiRoutes();
     button.disabled = true;
-    button.textContent = 'Resolving...';
+    button.textContent = 'Claiming...';
     button.classList.add('button-working');
-    status.textContent = 'Resolving battle and applying real backend rewards to the selected squad...';
+    status.textContent = 'Claiming rewards...';
 
     try {
       const response = await fetch(routes.battles, {
@@ -248,10 +250,14 @@ export function initBattleResults(root) {
 
       if (!response.ok || !payload) {
         if (payload?.code === 'duplicate-battle-attempt') {
-          resultTarget.innerHTML = renderResolvedBattle(payload);
-          status.textContent = 'Already resolved. No rewards were applied again.';
+          resultTarget.innerHTML = renderClaimedRewards({
+            ok: false,
+            code: payload.code,
+            error: 'These rewards have already been claimed.',
+          });
+          status.textContent = 'These rewards have already been claimed.';
           button.disabled = true;
-          button.textContent = 'Already Resolved';
+          button.textContent = 'Already Claimed';
           button.classList.remove('button-working');
           button.classList.add('button-resolved');
           button.setAttribute('aria-disabled', 'true');
@@ -268,24 +274,24 @@ export function initBattleResults(root) {
         });
       }
 
-      resultTarget.innerHTML = renderResolvedBattle(payload);
-      status.textContent = payload.ok ? 'Resolved. Rewards were applied to the selected backend squad.' : 'Battle returned a validation error.';
+      resultTarget.innerHTML = renderClaimedRewards(payload);
+      status.textContent = payload.ok ? 'Rewards claimed.' : 'Rewards could not be claimed.';
       button.classList.remove('button-working');
 
       if (payload.ok) {
-        button.textContent = 'Resolved';
+        button.textContent = 'Claimed';
         button.classList.add('button-resolved');
         button.setAttribute('aria-disabled', 'true');
         button.setAttribute('data-resolved', 'true');
       } else {
         button.disabled = false;
-        button.textContent = 'Resolve Battle';
+        button.textContent = 'Claim Rewards';
       }
     } catch (error) {
       status.textContent = error.message;
-      resultTarget.innerHTML = renderResolvedBattle({ ok: false, error: error.message });
+      resultTarget.innerHTML = renderClaimedRewards({ ok: false, error: error.message });
       button.disabled = false;
-      button.textContent = 'Resolve Battle';
+      button.textContent = 'Claim Rewards';
       button.classList.remove('button-working', 'button-resolved');
       button.removeAttribute('aria-disabled');
       button.removeAttribute('data-resolved');
