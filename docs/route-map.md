@@ -20,8 +20,8 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
-| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad by default, edit backend-owned battle cards, and save current squad |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Preflight attempt status, then resolve selected backend squad once |
+| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, edit your cards, and save the current squad |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Claim battle rewards once for the selected squad |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 9 keeps hash routing and adds saved squad state through `GET/POST /api/battle-squad`. Route `squadCardIds` still controls the editable current selection, while the saved squad loads by default when no explicit route selection exists. Normal slash routing can be revisited later after the player/admin split and progression writes are stable.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10A keeps the same routes and mechanics, but removes backend/debug presentation from player-facing battle screens. Technical identifiers and endpoint details remain available in the admin area and API diagnostics.
