@@ -1,7 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 6 responsibility: keep player/admin routes separate while wiring the
-   player Battle Results route to the backend battle reward endpoint.
+   Phase 9 responsibility: keep player/admin routes separate while wiring saved
+   battle squad state into the player Squad Builder route.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -36,7 +36,7 @@ import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
 import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
-import { renderSquadBuilder } from './routes/SquadBuilder.js';
+import { initSquadBuilder, renderSquadBuilder } from './routes/SquadBuilder.js';
 import { initBattleResults, renderBattleResults } from './routes/BattleResults.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminIndex } from './routes/AdminIndex.js';
@@ -198,6 +198,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/admin/battle-check') {
       initAdminBattleTest(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/battle/squad') {
+      initSquadBuilder(appRoot);
     }
 
     if (matchedRoute.pattern === '/battle/results') {
