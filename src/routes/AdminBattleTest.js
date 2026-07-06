@@ -1,9 +1,10 @@
 /* ============================================================================
    Admin Battle Test Route
-   Phase 5.5 responsibility: provide an admin-only button for testing the real
-   Phase 5 battle reward write path without manual raw API calls.
+   Phase 8 responsibility: provide an admin-only button for testing the real
+   protected battle reward write path without manual raw API calls.
    ============================================================================ */
 
+import { createBattleAttemptId } from '../services/battleSquadSelection.js';
 import { getApiRoutes } from '../services/apiClient.js';
 
 function escapeHtml(value) {
@@ -48,6 +49,7 @@ function renderResult(payload) {
     <div class="detail-list">
       <div class="detail-row"><span>Phase</span><strong>${escapeHtml(payload.phase)}</strong></div>
       <div class="detail-row"><span>Battle ID</span><strong>${escapeHtml(payload.battleId)}</strong></div>
+      <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(payload.attemptId || payload.duplicateProtection?.attemptId || 'missing')}</strong></div>
       <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name || payload.historyRow?.encounterId || 'Unknown')}</strong></div>
       <div class="detail-row"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Loss'}</strong></div>
       <div class="detail-row"><span>Gold</span><strong>+${escapeHtml(reward.gold || 0)}</strong></div>
@@ -74,8 +76,8 @@ export function renderAdminBattleTest() {
   return `
     <section class="hero-panel">
       <span class="section-kicker">Admin Battle Test</span>
-      <h2 class="hero-title">Run one real test.</h2>
-      <p class="hero-copy">This admin-only panel runs the real Phase 5 battle reward path without making you manually POST to an API. It uses Training Yard Goblin and the default eligible squad.</p>
+      <h2 class="hero-title">Run one protected test.</h2>
+      <p class="hero-copy">This admin-only panel runs the real Phase 8 battle reward path with a fresh attempt ID. Duplicate attempt protection is enforced by the backend.</p>
       <div class="action-row">
         <button class="button button-primary" type="button" data-admin-battle-test-run>Run Training Battle</button>
         <a class="button button-secondary" href="#/admin/inventory">Inventory</a>
@@ -84,12 +86,13 @@ export function renderAdminBattleTest() {
 
     <section class="glass-panel admin-panel">
       <span class="section-kicker">What this writes</span>
-      <h2 class="section-title">Phase 5 reward path</h2>
+      <h2 class="section-title">Phase 8 reward path</h2>
       <div class="admin-checklist">
+        <div>Generates a fresh attemptId before POST /api/battles.</div>
         <div>Validates the selected battle first.</div>
-        <div>Applies gold to user_resources.</div>
-        <div>Applies XP and level updates to owned squad cards.</div>
-        <div>Writes battle_history with rewardApplied and xpApplied details.</div>
+        <div>Applies gold to user_resources once for that attempt.</div>
+        <div>Applies XP and level updates to owned squad cards once for that attempt.</div>
+        <div>Writes battle_history with attemptId, rewardApplied, and xpApplied details.</div>
         <div>Does not write drops, tickets, stamina, energy, Vault grants, or auth changes.</div>
       </div>
     </section>
@@ -116,8 +119,9 @@ export function initAdminBattleTest(root) {
 
   button.addEventListener('click', async () => {
     const routes = getApiRoutes();
+    const attemptId = createBattleAttemptId();
     button.disabled = true;
-    status.textContent = 'Running Training Yard Goblin through POST /api/battles...';
+    status.textContent = `Running Training Yard Goblin through POST /api/battles with attempt ${attemptId}...`;
 
     try {
       const response = await fetch(routes.battles, {
@@ -128,6 +132,7 @@ export function initAdminBattleTest(root) {
         },
         body: JSON.stringify({
           encounterId: 'training-yard-goblin',
+          attemptId,
         }),
       });
       const payload = await response.json().catch(() => null);
@@ -136,7 +141,7 @@ export function initAdminBattleTest(root) {
         throw new Error(payload?.error || `Battle test failed with ${response.status}`);
       }
 
-      status.textContent = payload.ok ? 'Battle test complete. Review the applied reward below.' : 'Battle test returned a validation error.';
+      status.textContent = payload.ok ? 'Battle test complete. Review the protected reward below.' : 'Battle test returned a validation error.';
       resultTarget.innerHTML = renderResult(payload);
     } catch (error) {
       status.textContent = error.message;
