@@ -1,12 +1,13 @@
 /* ============================================================================
    Battle Styles
-   Phase 6.1 responsibility: encounter, squad, and result screen presentation
-   with clear placeholder-vs-real reward states.
+   Phase 7 responsibility: encounter, squad, and result screen presentation
+   with backend-owned squad selection and clear reward target states.
    ============================================================================ */
 
 .encounter-grid,
 .bench-list,
-.battle-log {
+.battle-log,
+.battle-card-list {
   display: grid;
   gap: var(--space-3);
 }
@@ -14,6 +15,7 @@
 .encounter-card,
 .battle-summary-panel,
 .bench-row,
+.battle-card-row,
 .battle-log div {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
@@ -49,7 +51,9 @@
 }
 
 .battle-meta-row span,
-.bench-row strong {
+.bench-row strong,
+.battle-card-stat-stack span,
+.battle-card-stat-stack small {
   color: var(--color-functional);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -115,6 +119,51 @@
 
 .battle-applied-row {
   border-color: rgba(122, 220, 150, 0.14);
+}
+
+.battle-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.battle-card-row strong {
+  display: block;
+  margin: 0.15rem 0;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  line-height: 1.15;
+}
+
+.battle-card-row small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.battle-card-row-selected {
+  border-color: rgba(122, 220, 150, 0.36);
+  background: linear-gradient(145deg, rgba(122, 220, 150, 0.12), rgba(255, 255, 255, 0.025));
+}
+
+.battle-card-row-disabled {
+  opacity: 0.55;
+}
+
+.battle-card-stat-stack {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 5rem;
+  text-align: right;
+}
+
+.battle-card-stat-stack strong {
+  color: var(--color-primary);
+  font-size: 1.05rem;
 }
 
 .bench-row {
