@@ -1,13 +1,14 @@
 /* ============================================================================
    Battle Styles
-   Phase 10A responsibility: player-facing battle presentation. Keep mechanics
-   intact while making squad, rewards, and claimed states read like game UI.
+   Phase 10B responsibility: navy-and-gold battle result polish. Keep mechanics
+   intact while making victory, rewards, and squad progression feel like game UI.
    ============================================================================ */
 
 .encounter-grid,
 .bench-list,
 .battle-log,
-.battle-card-list {
+.battle-card-list,
+.battle-xp-list {
   display: grid;
   gap: var(--space-3);
 }
@@ -18,10 +19,12 @@
 .battle-card-row,
 .battle-score-card,
 .battle-reward-card,
+.battle-lead-card,
+.battle-xp-row,
 .battle-log div {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
+  background: linear-gradient(145deg, rgba(23, 26, 45, 0.96), rgba(9, 12, 29, 0.86));
 }
 
 .encounter-card {
@@ -57,7 +60,8 @@
 .battle-card-stat-stack span,
 .battle-card-stat-stack small,
 .battle-score-card span,
-.battle-reward-card span {
+.battle-reward-card span,
+.battle-lead-stat span {
   color: var(--color-functional);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -81,15 +85,97 @@
 }
 
 .battle-result-hero {
-  border-color: rgba(212, 175, 55, 0.18);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  background: linear-gradient(145deg, rgba(9, 12, 29, 0.96), rgba(15, 18, 36, 0.94));
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.28), 0 0 2rem rgba(212, 175, 55, 0.08);
+}
+
+.battle-result-hero::before {
+  content: '';
+  position: absolute;
+  inset: -30% -10% auto auto;
+  width: 16rem;
+  height: 16rem;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.battle-result-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.battle-result-title {
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 15vw, 5rem);
+  letter-spacing: 0.04em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-shadow: 0 0 1.2rem rgba(212, 175, 55, 0.24);
 }
 
 .battle-result-victory::before {
-  background: radial-gradient(circle, rgba(122, 220, 150, 0.24), transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.34), transparent 68%);
 }
 
 .battle-result-defeat::before {
-  background: radial-gradient(circle, rgba(255, 107, 74, 0.18), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 180, 171, 0.18), transparent 68%);
+}
+
+.battle-lead-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.battle-lead-card h2,
+.battle-lead-card p {
+  margin: 0;
+}
+
+.battle-lead-card h2 {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+}
+
+.battle-lead-card p {
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.battle-mvp-badge {
+  justify-self: start;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  border-radius: var(--radius-full);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.battle-lead-stat {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 4.8rem;
+  text-align: right;
+}
+
+.battle-lead-stat strong {
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 1.65rem;
+  line-height: 1;
 }
 
 .battle-score-grid,
@@ -101,6 +187,10 @@
 
 .battle-reward-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.battle-reward-grid-claimed {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .battle-score-card,
@@ -119,9 +209,86 @@
   line-height: 1.05;
 }
 
+.battle-reward-card {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
 .battle-reward-card strong {
   color: var(--color-primary);
   font-size: 1.45rem;
+}
+
+.battle-reward-card-gold {
+  box-shadow: inset 0 0 1.5rem rgba(212, 175, 55, 0.06);
+}
+
+.battle-rewards-acquired-panel {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.battle-progression-panel {
+  margin-top: var(--space-3);
+}
+
+.battle-xp-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.battle-xp-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.battle-xp-row-main strong,
+.battle-xp-row-main span,
+.battle-xp-row-main em {
+  display: block;
+}
+
+.battle-xp-row-main strong {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-style: normal;
+}
+
+.battle-xp-row-main span {
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.battle-xp-row-main em {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+  text-align: right;
+}
+
+.battle-xp-row-level-up {
+  border-color: rgba(212, 175, 55, 0.36);
+  box-shadow: inset 0 0 1.6rem rgba(212, 175, 55, 0.08);
+}
+
+.battle-xp-row-level-up em {
+  color: var(--color-primary);
+}
+
+.battle-xp-track {
+  height: 0.42rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.battle-xp-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-functional), var(--color-primary));
+  box-shadow: 0 0 1rem rgba(212, 175, 55, 0.22);
 }
 
 .battle-state-note {
@@ -167,6 +334,10 @@
   color: #ffb8a8;
 }
 
+.battle-reward-stage {
+  margin-bottom: var(--space-3);
+}
+
 .battle-applied-row {
   border-color: rgba(122, 220, 150, 0.14);
 }
@@ -197,7 +368,7 @@
 
 .battle-card-row-selected {
   border-color: rgba(122, 220, 150, 0.36);
-  background: linear-gradient(145deg, rgba(122, 220, 150, 0.12), rgba(255, 255, 255, 0.025));
+  background: linear-gradient(145deg, rgba(122, 220, 150, 0.12), rgba(23, 26, 45, 0.68));
 }
 
 .battle-card-row-disabled {
@@ -240,7 +411,14 @@
 
 @media (max-width: 520px) {
   .battle-score-grid,
-  .battle-reward-grid {
+  .battle-reward-grid,
+  .battle-reward-grid-claimed,
+  .battle-lead-card {
     grid-template-columns: 1fr;
+  }
+
+  .battle-lead-stat,
+  .battle-xp-row-main em {
+    text-align: left;
   }
 }
