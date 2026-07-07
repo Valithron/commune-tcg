@@ -108,9 +108,9 @@ function normalizeCharacterKey(value) {
 
 function findCharacter(card) {
   const cid = normalizeCharacterKey(card.cid)
-    || normalizeCharacterKey(card.characterId)
+    || normalizeCharacterKey(card.character)
     || normalizeCharacterKey(card.character_id)
-    || normalizeCharacterKey(card.character);
+    || normalizeCharacterKey(card.characterId);
 
   return characterMap.find((character) => character.key === cid)
     || { key: 'unknown', name: 'Unknown', abbr: '??', color: '#9da2b7' };
