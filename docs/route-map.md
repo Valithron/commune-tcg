@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.2 keeps battle selection and reward mechanics unchanged, but extends canonical card-frame thumbnails to the Battle Results Lead Card panel and Cards in this battle rows.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.3 keeps the same routing model, but route renders now reset scroll to the top after mounting the new shell. This keeps Battle Results from opening halfway down the page after the player starts a battle from a scrolled Squad Builder screen.
