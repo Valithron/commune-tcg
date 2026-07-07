@@ -1,12 +1,13 @@
 /* ============================================================================
    Battle Results Route
-   Phase 10A responsibility: player-facing battle result polish. Mechanics stay
-   the same: selected squad IDs, attempt preflight, protected resolve, rewards.
+   Phase 10B responsibility: reward-screen polish. Mechanics stay the same:
+   selected squad IDs, attempt preflight, protected resolve, gold, and XP writes.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
 import { getEncounterById } from '../data/mockBattle.js';
 import {
+  buildBattleResultsHref,
   buildSquadBuilderHref,
   fetchBattleAttemptStatus,
   fetchBattleInventory,
@@ -27,6 +28,10 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(Number(value) || 0, min), max);
+}
+
 function getLevelNote(row) {
   const previousLevel = Number(row.previousLevel || 1);
   const nextLevel = Number(row.nextLevel || previousLevel);
@@ -38,17 +43,67 @@ function getLevelNote(row) {
   return `Level ${nextLevel}`;
 }
 
+function getXpProgressPercent(row) {
+  const intoLevel = Number(row.xpIntoCurrentLevel ?? row.gainedXp ?? 0);
+  const toNextLevel = Number(row.xpToNextLevel ?? 100);
+
+  if (!toNextLevel) {
+    return 100;
+  }
+
+  return clamp(Math.round((intoLevel / toNextLevel) * 100), 4, 100);
+}
+
+function getLeadCard(cards = []) {
+  return [...cards].sort((a, b) => Number(b.battlePower || 0) - Number(a.battlePower || 0))[0] || null;
+}
+
+function renderLeadCard(card) {
+  if (!card) {
+    return '';
+  }
+
+  return `
+    <section class="battle-lead-card glass-panel">
+      <span class="battle-mvp-badge">Lead Card</span>
+      <div>
+        <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
+        <h2>${escapeHtml(card.name)}</h2>
+        <p>Led the squad with ${escapeHtml(card.battlePower || 0)} battle power.</p>
+      </div>
+      <div class="battle-lead-stat">
+        <span>Power</span>
+        <strong>${escapeHtml(card.battlePower || 0)}</strong>
+      </div>
+    </section>
+  `;
+}
+
 function renderAppliedXpRows(xpApplied = []) {
   if (!Array.isArray(xpApplied) || !xpApplied.length) {
     return '<div class="empty-note">No squad XP has been claimed yet.</div>';
   }
 
-  return xpApplied.map((row) => `
-    <div class="detail-row battle-applied-row">
-      <span>${escapeHtml(row.cardTitle || row.cardId || 'Card')}</span>
-      <strong>+${escapeHtml(row.gainedXp || 0)} XP · ${escapeHtml(getLevelNote(row))}</strong>
-    </div>
-  `).join('');
+  return xpApplied.map((row) => {
+    const levelNote = getLevelNote(row);
+    const leveledUp = levelNote.startsWith('Level Up');
+    const progress = getXpProgressPercent(row);
+
+    return `
+      <div class="battle-xp-row ${leveledUp ? 'battle-xp-row-level-up' : ''}">
+        <div class="battle-xp-row-main">
+          <div>
+            <strong>${escapeHtml(row.cardTitle || row.cardId || 'Card')}</strong>
+            <span>+${escapeHtml(row.gainedXp || 0)} XP</span>
+          </div>
+          <em>${escapeHtml(levelNote)}</em>
+        </div>
+        <div class="battle-xp-track" aria-hidden="true">
+          <div class="battle-xp-fill" style="width: ${progress}%;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderSquadRows(cards = [], note = 'Will gain XP') {
@@ -75,8 +130,8 @@ function renderSquadRows(cards = [], note = 'Will gain XP') {
 function renderClaimedRewards(payload) {
   if (!payload) {
     return `
-      <div class="battle-state-note battle-state-note-pending">
-        <strong>Rewards unclaimed.</strong>
+      <div class="battle-state-note battle-state-note-pending battle-reward-stage">
+        <strong>Rewards waiting.</strong>
         <span>Claim rewards to add gold and squad XP.</span>
       </div>
     `;
@@ -84,7 +139,7 @@ function renderClaimedRewards(payload) {
 
   if (!payload.ok) {
     return `
-      <div class="battle-state-note battle-state-note-error">
+      <div class="battle-state-note battle-state-note-error battle-reward-stage">
         <strong>${payload.code === 'duplicate-battle-attempt' ? 'Already claimed.' : 'Rewards failed.'}</strong>
         <span>${escapeHtml(payload.error || 'The rewards could not be claimed.')}</span>
       </div>
@@ -96,22 +151,22 @@ function renderClaimedRewards(payload) {
   const alreadyResolved = Boolean(payload.alreadyResolved);
 
   return `
-    <div class="battle-state-note battle-state-note-live">
+    <div class="battle-state-note battle-state-note-live battle-reward-stage">
       <strong>${alreadyResolved ? 'Already claimed.' : 'Rewards claimed.'}</strong>
       <span>${alreadyResolved ? 'These rewards were claimed earlier.' : 'Gold and squad XP have been added.'}</span>
     </div>
 
-    <div class="battle-reward-grid">
-      <div class="battle-reward-card"><span>Gold Earned</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
+    <div class="battle-reward-grid battle-reward-grid-claimed">
+      <div class="battle-reward-card battle-reward-card-gold"><span>Gold Earned</span><strong>◎ ${escapeHtml(reward.gold || 0)}</strong></div>
       <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(reward.totalXp || 0)}</strong></div>
       <div class="battle-reward-card"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Defeat'}</strong></div>
     </div>
 
-    <section class="glass-panel battle-summary-panel battle-live-panel">
+    <section class="glass-panel battle-summary-panel battle-live-panel battle-progression-panel">
       <span class="section-kicker">Squad Progress</span>
       <h2 class="section-title">Cards that gained XP</h2>
       <p class="body-copy">Your selected squad received these rewards.</p>
-      <div class="detail-list">
+      <div class="battle-xp-list">
         ${renderAppliedXpRows(payload.xpApplied)}
       </div>
     </section>
@@ -131,6 +186,7 @@ export async function renderBattleResults({ query }) {
     const selection = resolveSelectedBattleSquad(eligibleCards, query.squadCardIds);
     const selectedCards = selection.selected;
     const selectedIds = getSelectedBattleIds(selectedCards);
+    const leadCard = getLeadCard(selectedCards);
     const squadPower = getBattleSquadPower(selectedCards);
     const margin = squadPower - encounter.enemyPower;
     const victory = margin >= 0;
@@ -140,35 +196,33 @@ export async function renderBattleResults({ query }) {
     const canResolve = selectedCards.length > 0 && Boolean(attemptId) && !alreadyResolved;
     const resultWord = victory ? 'Victory' : 'Defeat';
     const heroTitle = alreadyResolved ? `${resultWord} Claimed` : (canResolve ? resultWord : 'Battle Paused');
+    const battleAgainHref = buildBattleResultsHref({ encounterId: encounter.id, squadCardIds: selectedIds });
 
     return `
       <section class="result-banner battle-result-hero ${victory ? 'battle-result-victory' : 'battle-result-defeat'}">
         <span class="section-kicker">Battle Results</span>
-        <h2 class="hero-title">${escapeHtml(heroTitle)}</h2>
+        <h2 class="hero-title battle-result-title">${escapeHtml(heroTitle)}</h2>
         <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${alreadyResolved ? 'These rewards have already been claimed.' : 'Claim your rewards when you are ready.'}</p>
         <div class="action-row">
           ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Claim Rewards</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Claimed' : 'Select a Squad'}</span>`}
+          <a class="button button-secondary" href="${battleAgainHref}">Battle Again</a>
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
-          <a class="button button-secondary" href="#/battle/encounters">Choose New Encounter</a>
         </div>
       </section>
 
-      <section class="glass-panel battle-summary-panel battle-preview-panel">
-        <span class="section-kicker">Battle Preview</span>
-        <h2 class="section-title">${escapeHtml(encounter.name)}</h2>
-        <div class="battle-score-grid">
-          <div class="battle-score-card"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-          <div class="battle-score-card"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
-          <div class="battle-score-card"><span>Outlook</span><strong>${margin >= 0 ? `Favored +${margin}` : `Risky ${margin}`}</strong></div>
-        </div>
+      ${renderLeadCard(leadCard)}
+
+      <section class="glass-panel battle-summary-panel battle-preview-panel battle-rewards-acquired-panel">
+        <span class="section-kicker">Rewards Acquired</span>
+        <h2 class="section-title">${alreadyResolved ? 'Claimed rewards' : 'Rewards waiting'}</h2>
         <div class="battle-reward-grid">
-          <div class="battle-reward-card"><span>Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
+          <div class="battle-reward-card battle-reward-card-gold"><span>Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
           <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(previewXp)}</strong></div>
         </div>
       </section>
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
-        <span class="section-kicker">Rewards</span>
+        <span class="section-kicker">Reward Claim</span>
         <h2 class="section-title">${alreadyResolved ? 'Already claimed' : 'Claim battle rewards'}</h2>
         <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'These rewards have already been claimed.' : (canResolve ? 'Rewards have not been claimed yet.' : 'Choose a squad before claiming rewards.')}</div>
         <div data-battle-resolve-result>
@@ -180,7 +234,7 @@ export async function renderBattleResults({ query }) {
         <div class="section-heading">
           <div>
             <span class="section-kicker">Your Squad</span>
-            <h2 class="section-title">Reward targets</h2>
+            <h2 class="section-title">Cards in this battle</h2>
           </div>
           <span class="status-pill">${selectedCards.length}/3</span>
         </div>
