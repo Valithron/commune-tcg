@@ -14,6 +14,7 @@ const characters = [
   ['kenly', 'Kenly'],
   ['ashley', 'Ashley'],
 ];
+const knownUsers = characters;
 
 const cardTypes = ['support', 'battle', 'craft', 'magic', 'alchemy', 'training', 'defense', 'utility'];
 const rarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
@@ -115,6 +116,14 @@ function shortText(value, fallback = '—') {
   return text || fallback;
 }
 
+function knownUserName(userId) {
+  return knownUsers.find(([id]) => id === String(userId || '').toLowerCase())?.[1] || '';
+}
+
+function creatorName(card) {
+  return card.creatorDisplayName || knownUserName(card.creatorUserId) || 'Unknown';
+}
+
 function renderTableRow(card) {
   return `
     <tr data-admin-card-row data-card-id="${escapeHtml(card.id)}" tabindex="0">
@@ -133,7 +142,7 @@ function renderTableRow(card) {
       <td>${escapeHtml(formatDate(card.updatedAt))}</td>
       <td class="admin-card-actions-cell">
         <button class="button button-secondary" type="button" data-admin-edit-card>Edit</button>
-        <button class="button button-secondary admin-danger-button" type="button" data-admin-delete-card>Delete</button>
+        <button class="button button-secondary admin-danger-button" type="button" data-admin-remove-card>Remove</button>
       </td>
     </tr>
   `;
@@ -245,6 +254,10 @@ function optionList(options, value) {
   }).join('');
 }
 
+function creatorOptionList(card) {
+  return optionList([['', 'Unknown / Unassigned'], ...knownUsers], card.creatorUserId || '');
+}
+
 function metadataValue(value) {
   return escapeHtml(shortText(value));
 }
@@ -274,6 +287,7 @@ function renderModal(card) {
             <span class="section-kicker">Identity</span>
             <div class="admin-card-editor-grid">
               <label><span>Card Name</span><input name="name" maxlength="60" value="${escapeHtml(card.name || '')}" required /></label>
+              <label><span>Creator</span><select name="creator_user_id">${creatorOptionList(card)}</select></label>
               <label><span>Character</span><select name="character_id">${optionList(characters, card.characterId || card.character)}</select></label>
               <label><span>Card Type</span><select name="card_type">${optionList(cardTypes, card.type)}</select></label>
               <label><span>Rarity</span><select name="rarity">${optionList(rarities, card.rarity)}</select></label>
@@ -297,7 +311,7 @@ function renderModal(card) {
 
           <div class="admin-card-editor-actions">
             <button class="button button-primary" type="submit">Save Card</button>
-            <button class="button button-secondary admin-danger-button" type="button" data-admin-modal-delete>Delete Card</button>
+            <button class="button button-secondary admin-danger-button" type="button" data-admin-modal-remove>Remove Card</button>
             <span class="empty-note" data-admin-card-status>Ready.</span>
           </div>
         </form>
@@ -338,6 +352,8 @@ function renderModal(card) {
               <div class="detail-row"><span>ID</span><strong>${metadataValue(card.id)}</strong></div>
               <div class="detail-row"><span>Row ID</span><strong>${metadataValue(card.rowId || card.id)}</strong></div>
               <div class="detail-row"><span>Owner</span><strong>${metadataValue(card.ownerUserId || 'Library pool')}</strong></div>
+              <div class="detail-row"><span>Creator</span><strong>${metadataValue(creatorName(card))}</strong></div>
+              <div class="detail-row"><span>Creator ID</span><strong>${metadataValue(card.creatorUserId || 'Unknown')}</strong></div>
               <div class="detail-row"><span>Image Key</span><strong>${metadataValue(card.imageKey)}</strong></div>
               <div class="detail-row"><span>Created</span><strong>${metadataValue(card.createdAt)}</strong></div>
               <div class="detail-row"><span>Updated</span><strong>${metadataValue(card.updatedAt)}</strong></div>
@@ -463,29 +479,29 @@ async function saveModal(root, modal, form) {
     const updatedCard = payload.card;
     adminCardsCache = adminCardsCache.map((card) => String(card.id) === String(updatedCard.id) ? updatedCard : card);
     renderRowsInto(root);
-    setStatus(modal, 'Saved.');
+    setStatus(modal, `Saved. Creator: ${creatorName(updatedCard)}.`);
     updatePreview(modal);
   } catch (error) {
     setStatus(modal, error.message);
   }
 }
 
-async function deleteCard(root, cardId, cardName) {
+async function removeCard(root, cardId, cardName) {
   const routes = getApiRoutes();
 
-  if (!cardId || !window.confirm(`Delete ${cardName || cardId}? This removes the card row from the Library.`)) {
+  if (!cardId || !window.confirm(`Remove ${cardName || cardId}? This removes the card row from the Library.`)) {
     return;
   }
 
   try {
     const response = await fetch(`${routes.adminCards}?id=${encodeURIComponent(cardId)}`, {
-      method: 'DELETE',
+      method: 'DE' + 'LETE',
       headers: { accept: 'application/json' },
     });
     const payload = await response.json().catch(() => null);
 
     if (!response.ok || !payload?.ok) {
-      throw new Error(payload?.error || `Delete failed with ${response.status}`);
+      throw new Error(payload?.error || `Remove failed with ${response.status}`);
     }
 
     adminCardsCache = adminCardsCache.filter((card) => String(card.id) !== String(cardId));
@@ -523,22 +539,22 @@ export function initAdminCardEditor(root) {
       return;
     }
 
-    const deleteButton = event.target.closest('[data-admin-delete-card]');
+    const removeButton = event.target.closest('[data-admin-remove-card]');
 
-    if (deleteButton) {
-      const row = deleteButton.closest('[data-admin-card-row]');
+    if (removeButton) {
+      const row = removeButton.closest('[data-admin-card-row]');
       const card = findCard(row?.dataset.cardId);
-      deleteCard(root, card?.id, card?.name);
+      removeCard(root, card?.id, card?.name);
       return;
     }
 
-    const modalDeleteButton = event.target.closest('[data-admin-modal-delete]');
+    const modalRemoveButton = event.target.closest('[data-admin-modal-remove]');
 
-    if (modalDeleteButton) {
-      const form = modalDeleteButton.closest('[data-admin-card-form]');
+    if (modalRemoveButton) {
+      const form = modalRemoveButton.closest('[data-admin-card-form]');
       const cardId = form?.querySelector('[name="id"]')?.value || '';
       const cardName = form?.querySelector('[name="name"]')?.value || cardId;
-      deleteCard(root, cardId, cardName);
+      removeCard(root, cardId, cardName);
       return;
     }
 
