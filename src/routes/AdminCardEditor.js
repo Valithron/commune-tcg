@@ -1,6 +1,6 @@
 /* ============================================================================
    Admin Card Editor Route
-   Lists editable Library cards from D1 and provides contained text/stat/image/crop controls.
+   Desktop-first table manager for D1 Library cards with modal editing.
    ============================================================================ */
 
 import { getApiRoutes } from '../services/apiClient.js';
@@ -18,6 +18,10 @@ const characters = [
 const cardTypes = ['support', 'battle', 'craft', 'magic', 'alchemy', 'training', 'defense', 'utility'];
 const rarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
+let adminCardsCache = [];
+let adminCardSort = { key: 'updatedAt', direction: 'desc' };
+let activePreviewUrl = '';
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -32,7 +36,7 @@ function selected(value, option) {
 }
 
 function normalizeCrop(card) {
-  const crop = card.crop || {};
+  const crop = card?.crop || {};
 
   return {
     x: Number.isFinite(Number(crop.x)) ? Number(crop.x) : 50,
@@ -41,102 +45,133 @@ function normalizeCrop(card) {
   };
 }
 
-function renderImagePreview(card, crop) {
-  const imageUrl = card.imageUrl || '';
+function imagePreviewHtml(card, className = 'admin-card-art-thumb') {
+  const crop = normalizeCrop(card);
+  const imageUrl = card?.imageUrl || '';
   const style = `object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;`;
 
   if (!imageUrl) {
-    return `<div class="admin-card-editor-empty-art" data-admin-card-preview>◆</div>`;
+    return `<div class="${className} admin-card-art-empty" data-admin-card-preview>◆</div>`;
   }
 
   return `
-    <div class="admin-card-editor-art" data-admin-card-preview>
+    <div class="${className}" data-admin-card-preview>
       <img src="${escapeHtml(imageUrl)}" alt="" style="${escapeHtml(style)}" />
     </div>
   `;
 }
 
-function renderCardEditor(card) {
-  const crop = normalizeCrop(card);
-  const stats = card.stats || {};
+function cardStat(card, key) {
+  return Number(card?.stats?.[key] ?? 0) || 0;
+}
 
+function sortValue(card, key) {
+  if (key === 'pow') return cardStat(card, 'pow');
+  if (key === 'def') return cardStat(card, 'def');
+  if (key === 'spd') return cardStat(card, 'spd');
+  if (key === 'createdAt' || key === 'updatedAt') return new Date(card?.[key] || 0).getTime() || 0;
+  return String(card?.[key] ?? '').toLowerCase();
+}
+
+function sortedCards() {
+  const direction = adminCardSort.direction === 'asc' ? 1 : -1;
+
+  return [...adminCardsCache].sort((a, b) => {
+    const left = sortValue(a, adminCardSort.key);
+    const right = sortValue(b, adminCardSort.key);
+
+    if (typeof left === 'number' && typeof right === 'number') {
+      return (left - right) * direction;
+    }
+
+    return String(left).localeCompare(String(right), undefined, { numeric: true }) * direction;
+  });
+}
+
+function sortIndicator(key) {
+  if (adminCardSort.key !== key) return '';
+  return adminCardSort.direction === 'asc' ? ' ↑' : ' ↓';
+}
+
+function renderSortButton(label, key) {
+  return `<button type="button" data-admin-sort="${escapeHtml(key)}">${escapeHtml(label)}${sortIndicator(key)}</button>`;
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function shortText(value, fallback = '—') {
+  const text = String(value || '').trim();
+  return text || fallback;
+}
+
+function renderTableRow(card) {
   return `
-    <article class="glass-panel admin-card-editor-card" data-admin-card-row data-card-id="${escapeHtml(card.id)}">
-      <div class="admin-card-editor-head">
-        ${renderImagePreview(card, crop)}
-        <div>
-          <span class="section-kicker">${escapeHtml(card.rarity || 'common')} · ${escapeHtml(card.characterId || 'unknown')}</span>
-          <h3>${escapeHtml(card.name || 'Unnamed Card')}</h3>
-          <p>${escapeHtml(card.id)}</p>
-        </div>
+    <tr data-admin-card-row data-card-id="${escapeHtml(card.id)}" tabindex="0">
+      <td class="admin-card-table-art">${imagePreviewHtml(card)}</td>
+      <td>
+        <strong>${escapeHtml(card.name || 'Unnamed Card')}</strong>
+        <span>${escapeHtml(card.id)}</span>
+      </td>
+      <td>${escapeHtml(shortText(card.characterId || card.character))}</td>
+      <td>${escapeHtml(shortText(card.type))}</td>
+      <td><span class="status-pill admin-rarity-pill">${escapeHtml(shortText(card.rarity))}</span></td>
+      <td class="admin-number-cell">${escapeHtml(cardStat(card, 'pow'))}</td>
+      <td class="admin-number-cell">${escapeHtml(cardStat(card, 'def'))}</td>
+      <td class="admin-number-cell">${escapeHtml(cardStat(card, 'spd'))}</td>
+      <td class="admin-card-image-key">${escapeHtml(shortText(card.imageKey))}</td>
+      <td>${escapeHtml(formatDate(card.updatedAt))}</td>
+      <td class="admin-card-actions-cell">
+        <button class="button button-secondary" type="button" data-admin-edit-card>Edit</button>
         <button class="button button-secondary admin-danger-button" type="button" data-admin-delete-card>Delete</button>
+      </td>
+    </tr>
+  `;
+}
+
+function renderTableRows() {
+  return sortedCards().map(renderTableRow).join('');
+}
+
+function renderTable() {
+  return `
+    <div class="glass-panel admin-card-table-panel">
+      <div class="admin-card-table-toolbar">
+        <div>
+          <span class="section-kicker">Library Rows</span>
+          <h2 class="section-title">${adminCardsCache.length} editable cards</h2>
+        </div>
+        <span class="empty-note">Click any row to edit. Click a column header to sort.</span>
       </div>
-
-      <form class="admin-card-editor-form" data-admin-card-form>
-        <input type="hidden" name="id" value="${escapeHtml(card.id)}" />
-        <div class="admin-card-editor-grid">
-          <label>
-            <span>Card Name</span>
-            <input name="name" maxlength="60" value="${escapeHtml(card.name || '')}" required />
-          </label>
-          <label>
-            <span>Character</span>
-            <select name="character_id">
-              ${characters.map(([value, label]) => `<option value="${value}"${selected(card.characterId, value)}>${label}</option>`).join('')}
-            </select>
-          </label>
-          <label>
-            <span>Card Type</span>
-            <select name="card_type">
-              ${cardTypes.map((value) => `<option value="${value}"${selected(card.type, value)}>${escapeHtml(value)}</option>`).join('')}
-            </select>
-          </label>
-          <label>
-            <span>Rarity</span>
-            <select name="rarity">
-              ${rarities.map((value) => `<option value="${value}"${selected(card.rarity, value)}>${escapeHtml(value)}</option>`).join('')}
-            </select>
-          </label>
-        </div>
-
-        <div class="admin-card-editor-grid admin-card-editor-stats">
-          <label><span>POW</span><input name="pow" type="number" min="1" max="99" value="${escapeHtml(stats.pow ?? 1)}" required /></label>
-          <label><span>DEF</span><input name="def" type="number" min="1" max="99" value="${escapeHtml(stats.def ?? 1)}" required /></label>
-          <label><span>SPD</span><input name="spd" type="number" min="1" max="99" value="${escapeHtml(stats.spd ?? 1)}" required /></label>
-        </div>
-
-        <label>
-          <span>Flavor Text</span>
-          <textarea name="flavor_text" maxlength="500" rows="3">${escapeHtml(card.flavor || '')}</textarea>
-        </label>
-        <label>
-          <span>Ability Text</span>
-          <textarea name="ability_text" maxlength="500" rows="3">${escapeHtml(card.ability || '')}</textarea>
-        </label>
-
-        <div class="admin-card-editor-grid">
-          <label>
-            <span>Image Key</span>
-            <input name="image_key" value="${escapeHtml(card.imageKey || '')}" placeholder="R2 object key" />
-          </label>
-          <label>
-            <span>Replace Image</span>
-            <input name="image" type="file" accept="image/png,image/jpeg,image/webp" />
-          </label>
-        </div>
-
-        <div class="admin-card-editor-crop" data-admin-crop-controls>
-          <label><span>Crop X</span><input name="crop_x" type="range" min="0" max="100" step="1" value="${escapeHtml(crop.x)}" /></label>
-          <label><span>Crop Y</span><input name="crop_y" type="range" min="0" max="100" step="1" value="${escapeHtml(crop.y)}" /></label>
-          <label><span>Zoom</span><input name="crop_zoom" type="range" min="1" max="3" step="0.01" value="${escapeHtml(crop.zoom)}" /></label>
-        </div>
-
-        <div class="admin-card-editor-actions">
-          <button class="button button-primary" type="submit">Save Card</button>
-          <span class="empty-note" data-admin-card-status>Ready.</span>
-        </div>
-      </form>
-    </article>
+      <div class="admin-card-table-scroll">
+        <table class="admin-card-table" data-admin-card-table>
+          <thead>
+            <tr>
+              <th>Art</th>
+              <th>${renderSortButton('Name', 'name')}</th>
+              <th>${renderSortButton('Character', 'characterId')}</th>
+              <th>${renderSortButton('Type', 'type')}</th>
+              <th>${renderSortButton('Rarity', 'rarity')}</th>
+              <th>${renderSortButton('POW', 'pow')}</th>
+              <th>${renderSortButton('DEF', 'def')}</th>
+              <th>${renderSortButton('SPD', 'spd')}</th>
+              <th>${renderSortButton('Image Key', 'imageKey')}</th>
+              <th>${renderSortButton('Updated', 'updatedAt')}</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody data-admin-card-table-body>
+            ${renderTableRows() || '<tr><td colspan="11" class="empty-note">No cards were found in the cards table.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 }
 
@@ -159,9 +194,12 @@ export async function renderAdminCardEditor() {
 
   try {
     payload = await loadAdminCards();
+    adminCardsCache = payload.cards || [];
   } catch (error) {
+    adminCardsCache = [];
+
     return `
-      <section class="hero-panel">
+      <section class="hero-panel admin-card-manager-hero">
         <span class="section-kicker">Admin Cards</span>
         <h2 class="hero-title">Card editor unavailable.</h2>
         <p class="hero-copy">${escapeHtml(error.message)}</p>
@@ -171,152 +209,406 @@ export async function renderAdminCardEditor() {
   }
 
   return `
-    <section class="hero-panel">
+    <section class="hero-panel admin-card-manager-hero">
       <span class="section-kicker">Admin Cards</span>
-      <h2 class="hero-title">Edit the Library.</h2>
-      <p class="hero-copy">This page lists rows from the D1 cards table. You can change card text, stats, rarity, character, image key, replacement image, and crop values, or delete the row.</p>
+      <h2 class="hero-title">Manage the Library.</h2>
+      <p class="hero-copy">A desktop-first card manager for scanning, sorting, editing, replacing art, adjusting crop, and deleting D1 Library card rows.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-secondary" href="#/admin/submissions">Submissions</a>
+        <span class="status-pill">${escapeHtml(payload.source || 'D1 cards')}</span>
       </div>
     </section>
 
-    <section data-admin-card-editor>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Library Rows</span>
-          <h2 class="section-title">${payload.cards.length} editable cards</h2>
-        </div>
-        <span class="status-pill">${escapeHtml(payload.source || 'D1 cards')}</span>
-      </div>
-      <div class="admin-card-editor-list">
-        ${payload.cards.length ? payload.cards.map(renderCardEditor).join('') : '<div class="empty-note">No cards were found in the cards table.</div>'}
-      </div>
+    <section class="admin-card-manager" data-admin-card-editor>
+      ${renderTable()}
+      <div class="admin-card-modal" data-admin-card-modal aria-hidden="true"></div>
     </section>
   `;
 }
 
-function updatePreview(row) {
-  const preview = row.querySelector('[data-admin-card-preview]');
-  const image = preview?.querySelector('img');
-
-  if (!image) {
-    return;
-  }
-
-  const x = row.querySelector('[name="crop_x"]')?.value || 50;
-  const y = row.querySelector('[name="crop_y"]')?.value || 50;
-  const zoom = row.querySelector('[name="crop_zoom"]')?.value || 1;
-
-  image.style.objectPosition = `${x}% ${y}%`;
-  image.style.transform = `scale(${zoom})`;
-  image.style.transformOrigin = `${x}% ${y}%`;
+function findCard(cardId) {
+  return adminCardsCache.find((card) => String(card.id) === String(cardId));
 }
 
-function setStatus(row, message) {
-  const status = row.querySelector('[data-admin-card-status]');
+function optionList(options, value) {
+  return options.map((option) => {
+    if (Array.isArray(option)) {
+      return `<option value="${escapeHtml(option[0])}"${selected(value, option[0])}>${escapeHtml(option[1])}</option>`;
+    }
+
+    return `<option value="${escapeHtml(option)}"${selected(value, option)}>${escapeHtml(option)}</option>`;
+  }).join('');
+}
+
+function metadataValue(value) {
+  return escapeHtml(shortText(value));
+}
+
+function renderModal(card) {
+  const crop = normalizeCrop(card);
+  const stats = card.stats || {};
+
+  return `
+    <div class="admin-card-modal-backdrop" data-admin-close-modal></div>
+    <div class="glass-panel admin-card-modal-panel" role="dialog" aria-modal="true" aria-label="Edit ${escapeHtml(card.name || 'card')}">
+      <div class="admin-card-modal-header">
+        <div>
+          <span class="section-kicker">Editing Card</span>
+          <h2 class="section-title">${escapeHtml(card.name || 'Unnamed Card')}</h2>
+          <p>${escapeHtml(card.id)}</p>
+        </div>
+        <button class="button button-secondary" type="button" data-admin-close-modal>Close</button>
+      </div>
+
+      <div class="admin-card-modal-layout">
+        <form class="admin-card-editor-form" data-admin-card-form>
+          <input type="hidden" name="id" value="${escapeHtml(card.id)}" />
+
+          <div class="admin-card-editor-section">
+            <span class="section-kicker">Identity</span>
+            <div class="admin-card-editor-grid">
+              <label><span>Card Name</span><input name="name" maxlength="60" value="${escapeHtml(card.name || '')}" required /></label>
+              <label><span>Character</span><select name="character_id">${optionList(characters, card.characterId || card.character)}</select></label>
+              <label><span>Card Type</span><select name="card_type">${optionList(cardTypes, card.type)}</select></label>
+              <label><span>Rarity</span><select name="rarity">${optionList(rarities, card.rarity)}</select></label>
+            </div>
+          </div>
+
+          <div class="admin-card-editor-section">
+            <span class="section-kicker">Battle Stats</span>
+            <div class="admin-card-editor-grid admin-card-editor-stats">
+              <label><span>POW</span><input name="pow" type="number" min="1" max="99" value="${escapeHtml(stats.pow ?? 1)}" required /></label>
+              <label><span>DEF</span><input name="def" type="number" min="1" max="99" value="${escapeHtml(stats.def ?? 1)}" required /></label>
+              <label><span>SPD</span><input name="spd" type="number" min="1" max="99" value="${escapeHtml(stats.spd ?? 1)}" required /></label>
+            </div>
+          </div>
+
+          <div class="admin-card-editor-section">
+            <span class="section-kicker">Text</span>
+            <label><span>Flavor Text</span><textarea name="flavor_text" maxlength="500" rows="4">${escapeHtml(card.flavor || '')}</textarea></label>
+            <label><span>Ability Text</span><textarea name="ability_text" maxlength="500" rows="4">${escapeHtml(card.ability || '')}</textarea></label>
+          </div>
+
+          <div class="admin-card-editor-section">
+            <span class="section-kicker">Art Source</span>
+            <div class="admin-card-editor-grid">
+              <label><span>Image Key</span><input name="image_key" value="${escapeHtml(card.imageKey || '')}" placeholder="R2 object key" /></label>
+              <label><span>Replace Image</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+            </div>
+          </div>
+
+          <div class="admin-card-editor-section">
+            <span class="section-kicker">Crop</span>
+            <div class="admin-card-editor-crop" data-admin-crop-controls>
+              <label><span>Crop X</span><input name="crop_x" type="range" min="0" max="100" step="1" value="${escapeHtml(crop.x)}" /></label>
+              <label><span>Crop Y</span><input name="crop_y" type="range" min="0" max="100" step="1" value="${escapeHtml(crop.y)}" /></label>
+              <label><span>Zoom</span><input name="crop_zoom" type="range" min="1" max="3" step="0.01" value="${escapeHtml(crop.zoom)}" /></label>
+            </div>
+          </div>
+
+          <div class="admin-card-editor-actions">
+            <button class="button button-primary" type="submit">Save Card</button>
+            <button class="button button-secondary admin-danger-button" type="button" data-admin-modal-delete>Delete Card</button>
+            <span class="empty-note" data-admin-card-status>Ready.</span>
+          </div>
+        </form>
+
+        <aside class="admin-card-preview-column">
+          <div class="admin-card-preview-shell">
+            ${imagePreviewHtml(card, 'admin-card-modal-art')}
+            <div class="admin-card-preview-caption">
+              <strong data-preview-name>${escapeHtml(card.name || 'Unnamed Card')}</strong>
+              <span data-preview-meta>${escapeHtml(card.rarity || 'common')} · ${escapeHtml(card.characterId || card.character || 'unknown')}</span>
+              <div class="admin-card-preview-stats">
+                <span>POW <b data-preview-pow>${escapeHtml(stats.pow ?? 1)}</b></span>
+                <span>DEF <b data-preview-def>${escapeHtml(stats.def ?? 1)}</b></span>
+                <span>SPD <b data-preview-spd>${escapeHtml(stats.spd ?? 1)}</b></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card-meta-panel">
+            <span class="section-kicker">Metadata</span>
+            <div class="detail-list">
+              <div class="detail-row"><span>ID</span><strong>${metadataValue(card.id)}</strong></div>
+              <div class="detail-row"><span>Row ID</span><strong>${metadataValue(card.rowId || card.id)}</strong></div>
+              <div class="detail-row"><span>Owner</span><strong>${metadataValue(card.ownerUserId || 'Library pool')}</strong></div>
+              <div class="detail-row"><span>Image Key</span><strong>${metadataValue(card.imageKey)}</strong></div>
+              <div class="detail-row"><span>Created</span><strong>${metadataValue(card.createdAt)}</strong></div>
+              <div class="detail-row"><span>Updated</span><strong>${metadataValue(card.updatedAt)}</strong></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  `;
+}
+
+function setStatus(root, message) {
+  const status = root.querySelector('[data-admin-card-status]');
 
   if (status) {
     status.textContent = message;
   }
 }
 
-export function initAdminCardEditor(root) {
+function updatePreview(modal) {
+  const form = modal.querySelector('[data-admin-card-form]');
+  const preview = modal.querySelector('[data-admin-card-preview]');
+  const image = preview?.querySelector('img');
+
+  if (image) {
+    const x = form.querySelector('[name="crop_x"]')?.value || 50;
+    const y = form.querySelector('[name="crop_y"]')?.value || 50;
+    const zoom = form.querySelector('[name="crop_zoom"]')?.value || 1;
+
+    image.style.objectPosition = `${x}% ${y}%`;
+    image.style.transform = `scale(${zoom})`;
+    image.style.transformOrigin = `${x}% ${y}%`;
+  }
+
+  const previewName = modal.querySelector('[data-preview-name]');
+  const previewMeta = modal.querySelector('[data-preview-meta]');
+  const pow = modal.querySelector('[data-preview-pow]');
+  const def = modal.querySelector('[data-preview-def]');
+  const spd = modal.querySelector('[data-preview-spd]');
+
+  if (previewName) previewName.textContent = form.querySelector('[name="name"]')?.value || 'Unnamed Card';
+  if (previewMeta) previewMeta.textContent = `${form.querySelector('[name="rarity"]')?.value || 'common'} · ${form.querySelector('[name="character_id"]')?.value || 'unknown'}`;
+  if (pow) pow.textContent = form.querySelector('[name="pow"]')?.value || '1';
+  if (def) def.textContent = form.querySelector('[name="def"]')?.value || '1';
+  if (spd) spd.textContent = form.querySelector('[name="spd"]')?.value || '1';
+}
+
+function renderRowsInto(root) {
+  const tableBody = root.querySelector('[data-admin-card-table-body]');
+  const tableHead = root.querySelector('[data-admin-card-table] thead');
+
+  if (tableBody) {
+    tableBody.innerHTML = renderTableRows() || '<tr><td colspan="11" class="empty-note">No cards were found in the cards table.</td></tr>';
+  }
+
+  if (tableHead) {
+    tableHead.innerHTML = `
+      <tr>
+        <th>Art</th>
+        <th>${renderSortButton('Name', 'name')}</th>
+        <th>${renderSortButton('Character', 'characterId')}</th>
+        <th>${renderSortButton('Type', 'type')}</th>
+        <th>${renderSortButton('Rarity', 'rarity')}</th>
+        <th>${renderSortButton('POW', 'pow')}</th>
+        <th>${renderSortButton('DEF', 'def')}</th>
+        <th>${renderSortButton('SPD', 'spd')}</th>
+        <th>${renderSortButton('Image Key', 'imageKey')}</th>
+        <th>${renderSortButton('Updated', 'updatedAt')}</th>
+        <th>Actions</th>
+      </tr>
+    `;
+  }
+}
+
+function openModal(root, cardId) {
+  const card = findCard(cardId);
+  const modal = root.querySelector('[data-admin-card-modal]');
+
+  if (!card || !modal) return;
+
+  if (activePreviewUrl) {
+    URL.revokeObjectURL(activePreviewUrl);
+    activePreviewUrl = '';
+  }
+
+  modal.innerHTML = renderModal(card);
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('admin-modal-open');
+}
+
+function closeModal(root) {
+  const modal = root.querySelector('[data-admin-card-modal]');
+
+  if (!modal) return;
+
+  if (activePreviewUrl) {
+    URL.revokeObjectURL(activePreviewUrl);
+    activePreviewUrl = '';
+  }
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = '';
+  document.body.classList.remove('admin-modal-open');
+}
+
+async function saveModal(root, modal, form) {
+  const routes = getApiRoutes();
+  setStatus(modal, 'Saving...');
+
+  try {
+    const response = await fetch(routes.adminCards, {
+      method: 'POST',
+      body: new FormData(form),
+    });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload?.ok) {
+      throw new Error(payload?.error || `Save failed with ${response.status}`);
+    }
+
+    const updatedCard = payload.card;
+    adminCardsCache = adminCardsCache.map((card) => String(card.id) === String(updatedCard.id) ? updatedCard : card);
+    renderRowsInto(root);
+    setStatus(modal, 'Saved.');
+    updatePreview(modal);
+  } catch (error) {
+    setStatus(modal, error.message);
+  }
+}
+
+async function deleteCard(root, cardId, cardName) {
   const routes = getApiRoutes();
 
-  root.querySelectorAll('[data-admin-card-row]').forEach((row) => {
-    const form = row.querySelector('[data-admin-card-form]');
-    const deleteButton = row.querySelector('[data-admin-delete-card]');
-    const fileInput = row.querySelector('[name="image"]');
+  if (!cardId || !window.confirm(`Delete ${cardName || cardId}? This removes the card row from the Library.`)) {
+    return;
+  }
 
-    row.querySelectorAll('[name="crop_x"], [name="crop_y"], [name="crop_zoom"]').forEach((input) => {
-      input.addEventListener('input', () => updatePreview(row));
+  try {
+    const response = await fetch(`${routes.adminCards}?id=${encodeURIComponent(cardId)}`, {
+      method: 'DELETE',
+      headers: { accept: 'application/json' },
     });
+    const payload = await response.json().catch(() => null);
 
-    fileInput?.addEventListener('change', () => {
-      const file = fileInput.files?.[0];
-      const preview = row.querySelector('[data-admin-card-preview]');
+    if (!response.ok || !payload?.ok) {
+      throw new Error(payload?.error || `Delete failed with ${response.status}`);
+    }
 
-      if (!file || !preview) {
-        return;
+    adminCardsCache = adminCardsCache.filter((card) => String(card.id) !== String(cardId));
+    renderRowsInto(root);
+    closeModal(root);
+  } catch (error) {
+    const modal = root.querySelector('[data-admin-card-modal].is-open');
+    if (modal) setStatus(modal, error.message);
+    else window.alert(error.message);
+  }
+}
+
+export function initAdminCardEditor(root) {
+  const manager = root.querySelector('[data-admin-card-editor]');
+
+  if (!manager) return;
+
+  manager.addEventListener('click', (event) => {
+    const sortButton = event.target.closest('[data-admin-sort]');
+
+    if (sortButton) {
+      const key = sortButton.dataset.adminSort;
+      adminCardSort = {
+        key,
+        direction: adminCardSort.key === key && adminCardSort.direction === 'asc' ? 'desc' : 'asc',
+      };
+      renderRowsInto(root);
+      return;
+    }
+
+    const closeButton = event.target.closest('[data-admin-close-modal]');
+
+    if (closeButton) {
+      closeModal(root);
+      return;
+    }
+
+    const deleteButton = event.target.closest('[data-admin-delete-card]');
+
+    if (deleteButton) {
+      const row = deleteButton.closest('[data-admin-card-row]');
+      const card = findCard(row?.dataset.cardId);
+      deleteCard(root, card?.id, card?.name);
+      return;
+    }
+
+    const modalDeleteButton = event.target.closest('[data-admin-modal-delete]');
+
+    if (modalDeleteButton) {
+      const form = modalDeleteButton.closest('[data-admin-card-form]');
+      const cardId = form?.querySelector('[name="id"]')?.value || '';
+      const cardName = form?.querySelector('[name="name"]')?.value || cardId;
+      deleteCard(root, cardId, cardName);
+      return;
+    }
+
+    const editButton = event.target.closest('[data-admin-edit-card]');
+
+    if (editButton) {
+      const row = editButton.closest('[data-admin-card-row]');
+      openModal(root, row?.dataset.cardId);
+      return;
+    }
+
+    const row = event.target.closest('[data-admin-card-row]');
+
+    if (row && !event.target.closest('button, a, input, select, textarea')) {
+      openModal(root, row.dataset.cardId);
+    }
+  });
+
+  manager.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal(root);
+      return;
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-admin-card-row]')) {
+      event.preventDefault();
+      openModal(root, event.target.dataset.cardId);
+    }
+  });
+
+  manager.addEventListener('input', (event) => {
+    const modal = event.target.closest('[data-admin-card-modal].is-open');
+
+    if (!modal) return;
+
+    updatePreview(modal);
+  });
+
+  manager.addEventListener('change', (event) => {
+    const modal = event.target.closest('[data-admin-card-modal].is-open');
+
+    if (!modal) return;
+
+    if (event.target.matches('[name="image"]')) {
+      const file = event.target.files?.[0];
+      const preview = modal.querySelector('[data-admin-card-preview]');
+
+      if (!file || !preview) return;
+
+      if (activePreviewUrl) {
+        URL.revokeObjectURL(activePreviewUrl);
       }
 
-      const previewUrl = URL.createObjectURL(file);
+      activePreviewUrl = URL.createObjectURL(file);
 
-      if (preview.matches('.admin-card-editor-empty-art')) {
-        preview.className = 'admin-card-editor-art';
-        preview.innerHTML = `<img alt="" />`;
+      if (preview.matches('.admin-card-art-empty')) {
+        preview.classList.remove('admin-card-art-empty');
+        preview.innerHTML = '<img alt="" />';
       }
 
       const image = preview.querySelector('img');
+      if (image) image.src = activePreviewUrl;
+    }
 
-      if (image) {
-        image.src = previewUrl;
-        updatePreview(row);
-      }
-    });
+    updatePreview(modal);
+  });
 
-    form?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      setStatus(row, 'Saving...');
+  manager.addEventListener('submit', (event) => {
+    const form = event.target.closest('[data-admin-card-form]');
+    const modal = event.target.closest('[data-admin-card-modal].is-open');
 
-      try {
-        const response = await fetch(routes.adminCards, {
-          method: 'POST',
-          body: new FormData(form),
-        });
-        const payload = await response.json().catch(() => null);
+    if (!form || !modal) return;
 
-        if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.error || `Save failed with ${response.status}`);
-        }
-
-        const name = form.querySelector('[name="name"]')?.value || payload.card?.name || 'Card';
-        const heading = row.querySelector('.admin-card-editor-head h3');
-
-        if (heading) {
-          heading.textContent = name;
-        }
-
-        if (payload.card?.imageKey) {
-          const imageKeyInput = form.querySelector('[name="image_key"]');
-
-          if (imageKeyInput) {
-            imageKeyInput.value = payload.card.imageKey;
-          }
-        }
-
-        setStatus(row, 'Saved.');
-      } catch (error) {
-        setStatus(row, error.message);
-      }
-    });
-
-    deleteButton?.addEventListener('click', async () => {
-      const cardId = row.dataset.cardId || form?.querySelector('[name="id"]')?.value || '';
-      const cardName = form?.querySelector('[name="name"]')?.value || cardId;
-
-      if (!cardId || !window.confirm(`Delete ${cardName}? This removes the card row from the Library.`)) {
-        return;
-      }
-
-      setStatus(row, 'Deleting...');
-
-      try {
-        const response = await fetch(`${routes.adminCards}?id=${encodeURIComponent(cardId)}`, {
-          method: 'DELETE',
-          headers: { accept: 'application/json' },
-        });
-        const payload = await response.json().catch(() => null);
-
-        if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.error || `Delete failed with ${response.status}`);
-        }
-
-        row.remove();
-      } catch (error) {
-        setStatus(row, error.message);
-      }
-    });
+    event.preventDefault();
+    saveModal(root, modal, form);
   });
 }
