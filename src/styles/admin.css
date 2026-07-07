@@ -343,7 +343,22 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.admin-card-editor-form label {
+.admin-card-preview-crop-panel .admin-card-editor-crop {
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.admin-card-preview-crop-panel,
+.admin-card-preview-upload-panel {
+  margin-top: 0;
+}
+
+.admin-card-preview-upload-panel .empty-note {
+  margin: 0;
+}
+
+.admin-card-editor-form label,
+.admin-card-preview-column label {
   display: grid;
   gap: 0.4rem;
   color: var(--color-text-muted);
@@ -356,7 +371,8 @@
 
 .admin-card-editor-form input,
 .admin-card-editor-form select,
-.admin-card-editor-form textarea {
+.admin-card-editor-form textarea,
+.admin-card-preview-column input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
@@ -369,6 +385,13 @@
   letter-spacing: 0;
   text-transform: none;
   padding: 0.72rem 0.78rem;
+}
+
+.admin-card-preview-column input[type='range'] {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--color-functional);
 }
 
 .admin-card-editor-form textarea {
