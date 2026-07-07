@@ -21,7 +21,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Compare squad power, rewards, and difficulty before choosing an encounter |
 | `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill three squad slots, and save the current squad |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Show the reward screen and auto-claim rewards once for the selected squad |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Auto-settle rewards safely, then let the player reveal them manually |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10E.1 keeps the same protected attempt route, but Battle Results now auto-claims unclaimed rewards shortly after render while keeping the Claim Now button as a manual retry path. Manual and automatic claims share the same battle reward claim helper.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10E.2 keeps the same protected attempt route, but separates reward settlement from reward reveal. Battle Results quietly settles unclaimed rewards in the backend, then leaves the player-facing reward reveal behind the Reveal Rewards button. Manual reveal and fallback settlement share the same reward claim helper.
