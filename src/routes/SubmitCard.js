@@ -4,6 +4,7 @@
    ============================================================================ */
 
 import { getApiRoutes } from '../services/apiClient.js';
+import { initSubmitImageCropper, validateSubmitImage } from './submitCardCrop.js';
 
 export function renderSubmitCard() {
   return `
@@ -12,11 +13,17 @@ export function renderSubmitCard() {
       <form class="glass-panel submit-form submit-card-form" aria-label="Card submission form" data-submit-card-form>
         <label class="submit-art-field">
           <span>Card Illustration</span>
-          <div class="submit-art-cropper">
-            <strong>Tap to Upload Art</strong>
-            <small>PNG, JPG, or WEBP (Max 5MB)</small>
-            <input name="image" type="file" accept="image/png,image/jpeg,image/webp" required />
+          <div class="submit-art-cropper" data-submit-cropper role="button" tabindex="0" aria-label="Upload and crop card illustration">
+            <input data-submit-image-input name="image" type="file" accept="image/png,image/jpeg,image/webp" required />
+            <img data-submit-preview alt="" hidden />
+            <div class="submit-upload-prompt">
+              <strong aria-hidden="true">☁</strong>
+              <b>Tap to Upload Art</b>
+              <small>PNG, JPG, or WEBP (Max 5MB)</small>
+            </div>
           </div>
+          <p class="submit-crop-help" data-submit-crop-help hidden>Drag to reposition. Pinch or scroll to zoom. Double tap/click to reset.</p>
+          <button class="button button-secondary submit-change-art" type="button" data-submit-change-art hidden>Change Art</button>
         </label>
         <label><span>Card Title</span><input name="card_name" maxlength="25" placeholder="e.g., Celestial Arbiter" required /></label>
         <label><span>Suggested Character</span><select name="character_id" required><option value="sterling">Sterling</option><option value="cydney">Cydney</option><option value="ryan">Ryan</option><option value="gabi">Gabi</option><option value="cooper">Cooper</option><option value="kenly">Kenly</option><option value="ashley">Ashley</option></select></label>
@@ -24,8 +31,8 @@ export function renderSubmitCard() {
         <input name="card_type" type="hidden" value="support" />
         <input name="rarity_suggestion" type="hidden" value="random" />
         <input name="ability_text" type="hidden" value="" />
-        <input name="crop_json" type="hidden" value="{}" />
-        <button class="button button-primary submit-card-button" type="submit">Submit to Commune</button>
+        <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
+        <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
         <div class="submit-cost-note">Costs 5 Submission Tickets</div>
         <div class="empty-note submit-status" data-submit-card-status>Ready to create a pending-review submission.</div>
       </form>
@@ -38,16 +45,21 @@ export function initSubmitCardForm(root) {
   const status = root.querySelector('[data-submit-card-status]');
   if (!form || !status) return;
 
+  initSubmitImageCropper(form, status);
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     status.textContent = 'Submitting card for review...';
     try {
+      const imageValidationError = validateSubmitImage(form);
+      if (imageValidationError) throw new Error(imageValidationError);
+
       const response = await fetch(getApiRoutes().submissions, { method: 'POST', body: new FormData(form) });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error((Array.isArray(payload?.errors) ? payload.errors.join(' ') : payload?.error) || `Submission failed with ${response.status}`);
       status.textContent = 'Submitted to Commune: ' + payload.submission.cardName;
       form.reset();
-      form.querySelector('[name="crop_json"]').value = '{}';
+      form.querySelector('[name="crop_json"]').value = JSON.stringify({ x: 50, y: 50, zoom: 1 });
     } catch (error) {
       status.textContent = error.message;
     }
