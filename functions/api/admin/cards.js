@@ -32,6 +32,10 @@ const flavorColumns = [
   'backstory',
   'flavorCopy',
   'flavourCopy',
+  'effect',
+  'effect_text',
+  'effectText',
+  'fx',
 ];
 const nestedFlavorContainers = ['card_json', 'card', 'data', 'payload', 'copy', 'text', 'content', 'details', 'metadata', 'meta'];
 const nestedTextKeys = ['text', 'value', 'content', 'copy', 'body', 'html', 'markdown', ...flavorColumns];
@@ -247,7 +251,7 @@ function normalizeCardRow(row) {
       spd: toStat(payload.spd ?? stats.spd, 1),
     },
     flavor: resolveFlavorText(payload, row),
-    ability: payload.ability || payload.ability_text || payload.abilityText || '',
+    ability: payload.ability || payload.ability_text || payload.abilityText || payload.mechanic || '',
     abilityIcon: payload.abilityIcon || payload.ability_icon || '✦',
     imageKey: isLikelyUrl(imageKey) ? '' : String(imageKey || ''),
     imageUrl: imageUrlFromValue(imageKey),
@@ -277,6 +281,7 @@ function buildCardJson(existingPayload, fields) {
     flavor: fields.flavorText,
     flavor_text: fields.flavorText,
     flavorText: fields.flavorText,
+    effect: fields.flavorText,
     ability: fields.abilityText,
     ability_text: fields.abilityText,
     abilityIcon: existingPayload.abilityIcon || existingPayload.ability_icon || '✦',
