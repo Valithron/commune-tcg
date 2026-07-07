@@ -21,7 +21,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Compare squad power, rewards, and difficulty before choosing an encounter |
 | `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill squad slots, and pick cards from thumbnail rows |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Auto-settle rewards safely, then let the player reveal them manually |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Auto-settle rewards safely, show thumbnails for battle cards, then let the player reveal rewards manually |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.1 keeps battle selection mechanics unchanged, but the Squad Builder Available Cards list now uses canonical card-frame thumbnails on the left side of each row. Battle inventory also normalizes image fields so battle UI can reuse the same card art path as Vault.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.2 keeps battle selection and reward mechanics unchanged, but extends canonical card-frame thumbnails to the Battle Results Lead Card panel and Cards in this battle rows.
