@@ -28,10 +28,31 @@ const rarityColumns = ['rarity', 'tier'];
 const powColumns = ['pow', 'power', 'attack', 'atk', 'strength'];
 const defColumns = ['def', 'defense', 'health', 'hp'];
 const spdColumns = ['spd', 'speed', 'agility'];
-const flavorColumns = ['flavor', 'flavor_text', 'description', 'lore'];
+const flavorColumns = [
+  'flavor',
+  'flavour',
+  'flavor_text',
+  'flavour_text',
+  'flavorText',
+  'flavourText',
+  'card_flavor',
+  'cardFlavor',
+  'card_flavor_text',
+  'cardFlavorText',
+  'description',
+  'desc',
+  'summary',
+  'lore',
+  'story',
+  'backstory',
+  'flavorCopy',
+  'flavourCopy',
+];
 const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
 const cropColumns = ['crop', 'crop_json', 'cropJson', 'image_crop', 'imageCrop'];
 const statusColumns = ['status', 'moderation_status', 'approved', 'is_approved', 'published'];
+const nestedFlavorContainers = ['card_json', 'card', 'data', 'payload', 'copy', 'text', 'content', 'details', 'metadata', 'meta'];
+const nestedTextKeys = ['text', 'value', 'content', 'copy', 'body', 'html', 'markdown', ...flavorColumns];
 
 function quoteIdentifier(name) {
   return `"${String(name).replaceAll('"', '""')}"`;
@@ -103,6 +124,108 @@ function safeParseJson(value) {
   }
 }
 
+function cleanTextValue(value, depth = 0) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanTextValue(item, depth + 1)).filter(Boolean).join(' ').trim();
+  }
+
+  if (typeof value === 'object' && depth < 4) {
+    for (const key of nestedTextKeys) {
+      const text = cleanTextValue(value[key], depth + 1);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function sourceObject(value) {
+  const parsed = safeParseJson(value);
+
+  if (parsed && typeof parsed === 'object') {
+    return parsed;
+  }
+
+  if (value && typeof value === 'object') {
+    return value;
+  }
+
+  return null;
+}
+
+function readTextValue(row, candidates) {
+  const keys = Array.isArray(candidates) ? candidates : [candidates];
+
+  for (const key of keys) {
+    if (key && row[key] !== undefined && row[key] !== null && row[key] !== '') {
+      const text = cleanTextValue(row[key]);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorTextFromSource(source, depth = 0) {
+  if (depth > 4) {
+    return '';
+  }
+
+  const object = sourceObject(source);
+
+  if (!object) {
+    return '';
+  }
+
+  const direct = readTextValue(object, flavorColumns);
+
+  if (direct) {
+    return direct;
+  }
+
+  for (const key of nestedFlavorContainers) {
+    const nested = object[key];
+
+    if (nested === undefined || nested === null || nested === '') {
+      continue;
+    }
+
+    const text = resolveFlavorTextFromSource(nested, depth + 1);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorText(...sources) {
+  for (const source of sources) {
+    const text = resolveFlavorTextFromSource(source);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
+}
+
 function isLikelyUrl(value) {
   return /^https?:\/\//i.test(String(value || '')) || String(value || '').startsWith('/');
 }
@@ -136,6 +259,7 @@ function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const stats = payload.stats || payload.statBlock || {};
+  const flavor = resolveFlavorText(payload, parsed, row);
 
   return {
     ...row,
@@ -145,7 +269,7 @@ function flattenCardPayload(row) {
     spd: payload.spd ?? payload.speed ?? payload.agility ?? stats.spd ?? stats.speed ?? stats.agility,
     image_key: payload.image_key ?? payload.imageKey ?? payload.image_path ?? payload.image ?? payload.image_url ?? payload.art_url ?? payload.art_key ?? payload.object_key ?? payload.r2_key,
     crop: payload.crop ?? payload.crop_json ?? payload.cropJson ?? payload.image_crop ?? payload.imageCrop,
-    flavor: payload.flavor ?? payload.flavor_text ?? payload.description ?? payload.lore,
+    flavor,
     character: payload.character ?? payload.character_id ?? payload.characterId ?? payload.cid,
     type: payload.type ?? payload.card_type ?? payload.cardType ?? payload.role ?? payload.battle_role ?? payload.battleRole ?? payload.faction ?? payload.class,
     ability: payload.ability ?? payload.ability_text ?? payload.abilityText ?? payload.effect ?? payload.mechanic,
@@ -180,6 +304,7 @@ function normalizeRow(row, columns) {
   const name = String(readValue(data, nameColumns, 'Unnamed Card'));
   const id = String(readValue(data, [idColumn, 'id', 'card_id', 'uuid', 'slug'], slugify(name)));
   const imageValue = String(readValue(data, imageColumns, ''));
+  const flavor = resolveFlavorText(data, row) || 'A discovered Library card from the connected database.';
 
   return {
     id,
@@ -199,7 +324,7 @@ function normalizeRow(row, columns) {
     owned: false,
     level: 1,
     copies: 0,
-    flavor: String(readValue(data, flavorColumns, 'A discovered Library card from the connected database.')),
+    flavor,
     imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
     imageUrl: imageUrlFromValue(imageValue),
     crop: normalizeCrop(readValue(data, cropColumns, data.crop || {})),
