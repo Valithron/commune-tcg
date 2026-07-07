@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Styles
-   Phase 10C responsibility: navy-and-gold squad slot tray and reward polish.
-   Keep mechanics intact while making team assembly feel like game UI.
+   Phase 10D responsibility: navy-and-gold encounter, squad, and reward polish.
+   Keep mechanics intact while making battle selection feel like game UI.
    ============================================================================ */
 
 .encounter-grid,
@@ -48,6 +48,106 @@
 .encounter-card p {
   color: var(--color-text-muted);
   line-height: 1.45;
+}
+
+.battle-encounter-hero {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.encounter-grid-polished {
+  gap: var(--space-4);
+}
+
+.encounter-card-polished {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(212, 175, 55, 0.14);
+}
+
+.encounter-card-polished::before {
+  content: '';
+  position: absolute;
+  inset: -30% -20% auto auto;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1), transparent 70%);
+  pointer-events: none;
+}
+
+.encounter-card-polished > * {
+  position: relative;
+  z-index: 1;
+}
+
+.encounter-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.battle-difficulty-pill,
+.encounter-element-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.55rem;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.battle-difficulty-easy {
+  border-color: rgba(122, 220, 150, 0.32);
+  background: rgba(122, 220, 150, 0.1);
+  color: #baf5c8;
+}
+
+.battle-difficulty-medium {
+  border-color: rgba(212, 175, 55, 0.34);
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--color-primary);
+}
+
+.battle-difficulty-hard {
+  border-color: rgba(255, 107, 74, 0.34);
+  background: rgba(255, 107, 74, 0.08);
+  color: #ffb8a8;
+}
+
+.encounter-element-pill {
+  color: var(--color-text-muted);
+}
+
+.encounter-portrait-panel {
+  display: grid;
+  place-items: center;
+  min-height: 6.25rem;
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(212, 175, 55, 0.18), transparent 62%),
+    linear-gradient(145deg, rgba(15, 18, 36, 0.92), rgba(9, 12, 29, 0.92));
+}
+
+.encounter-portrait-panel span {
+  color: rgba(212, 175, 55, 0.62);
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 1.2rem rgba(212, 175, 55, 0.2);
+}
+
+.encounter-score-grid,
+.encounter-reward-grid {
+  gap: var(--space-2);
 }
 
 .battle-meta-row {
@@ -498,11 +598,19 @@
   line-height: 1.45;
 }
 
+@media (min-width: 700px) {
+  .encounter-grid-polished {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 520px) {
   .battle-score-grid,
   .battle-reward-grid,
   .battle-reward-grid-claimed,
-  .battle-lead-card {
+  .battle-lead-card,
+  .encounter-score-grid,
+  .encounter-reward-grid {
     grid-template-columns: 1fr;
   }
 
