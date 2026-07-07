@@ -1,8 +1,3 @@
-/* ============================================================================
-   Submission Review Helper
-   Phase 10F.4 responsibility: review submitted cards and roll approval values.
-   ============================================================================ */
-
 import { rollApprovalProfile } from './approval-rolls.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
 
@@ -29,11 +24,24 @@ function buildApprovedCardId(submission) {
   return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
+function resolveCreatorDisplayName(submission) {
+  return cleanText(
+    submission.creatorDisplayNameOverride
+      || submission.creatorDisplayName
+      || submission.submitterDisplayName
+      || submission.submitterUserId
+      || 'Unknown',
+    120
+  );
+}
+
 function buildApprovedCardJson(submission, now, approvalProfile) {
   const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
   const stats = approvalProfile?.stats || { pow: 1, def: 1, spd: 1 };
-  const creatorDisplayName = cleanText(submission.submitterDisplayName || '', 120);
+  const creatorDisplayName = resolveCreatorDisplayName(submission);
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
+  const creatorDisplayNameOverride = cleanText(submission.creatorDisplayNameOverride || '', 120);
+  const submitterDisplayName = cleanText(submission.submitterDisplayName || creatorDisplayName, 120);
 
   return JSON.stringify({
     id: buildApprovedCardId(submission),
@@ -48,10 +56,12 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     creator_name: creatorDisplayName,
     creatorDisplayName,
     creator_display_name: creatorDisplayName,
+    creatorDisplayNameOverride,
+    creator_display_name_override: creatorDisplayNameOverride,
     creatorUserId,
     creator_user_id: creatorUserId,
-    submitterDisplayName: creatorDisplayName,
-    submitter_display_name: creatorDisplayName,
+    submitterDisplayName,
+    submitter_display_name: submitterDisplayName,
     submitterUserId: creatorUserId,
     submitter_user_id: creatorUserId,
     rarity: approvalProfile?.rarity || 'common',
@@ -117,11 +127,12 @@ async function upsertApprovedLibraryCard(env, submission, now, approvalProfile) 
   return approvedCardId;
 }
 
-async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, now) {
+async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, creatorDisplayNameOverride, now) {
   await env.DB.prepare(`
     UPDATE card_submissions
     SET moderation_status = ?,
         review_notes = ?,
+        creator_display_name_override = ?,
         approved_card_id = ?,
         reviewed_at = ?,
         reviewed_by = ?,
@@ -130,6 +141,7 @@ async function updateSubmissionReview(env, submission, action, reviewNotes, appr
   `).bind(
     statusFromAction(action),
     reviewNotes,
+    creatorDisplayNameOverride,
     approvedCardId || submission.approvedCardId || '',
     now,
     temporaryReviewerId,
@@ -138,7 +150,7 @@ async function updateSubmissionReview(env, submission, action, reviewNotes, appr
   ).run();
 }
 
-export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
+export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '' }) {
   await ensureSubmissionSchema(env);
 
   const normalizedAction = String(action || '').trim().toLowerCase();
@@ -164,15 +176,21 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
 
   const now = new Date().toISOString();
   const cleanedNotes = cleanText(reviewNotes);
+  const creatorOverride = cleanText(creatorDisplayName, 120) || cleanText(submission.creatorDisplayNameOverride || '', 120);
+  const submissionForReview = {
+    ...submission,
+    creatorDisplayNameOverride: creatorOverride,
+    creatorDisplayName: creatorOverride || submission.creatorDisplayName,
+  };
   let approvedCardId = submission.approvedCardId || '';
   let approvalProfile = null;
 
   if (normalizedAction === 'approve') {
     approvalProfile = rollApprovalProfile();
-    approvedCardId = await upsertApprovedLibraryCard(env, submission, now, approvalProfile);
+    approvedCardId = await upsertApprovedLibraryCard(env, submissionForReview, now, approvalProfile);
   }
 
-  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, now);
+  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, creatorOverride, now);
   const updatedSubmission = await getSubmissionById(env, id);
 
   return {
@@ -183,5 +201,6 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
     approvalProfile,
     submission: updatedSubmission,
     reviewerId: temporaryReviewerId,
+    creatorDisplayName: updatedSubmission?.creatorDisplayName || '',
   };
 }
