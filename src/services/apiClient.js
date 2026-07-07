@@ -22,6 +22,7 @@ const apiRoutes = {
   battles: '/api/battles',
   battleHistory: '/api/battle-history',
   submissions: '/api/submissions',
+  adminCards: '/api/admin/cards',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
   adminSubmissionAction: '/api/admin/submission-action',
@@ -31,9 +32,16 @@ export function getApiRoutes() {
   return { ...apiRoutes };
 }
 
-export async function fetchJson(path) {
+export async function fetchJson(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+
+  if (!headers.has('accept')) {
+    headers.set('accept', 'application/json');
+  }
+
   const response = await fetch(path, {
-    headers: { accept: 'application/json' },
+    ...options,
+    headers,
   });
 
   const payload = await response.json().catch(() => null);
