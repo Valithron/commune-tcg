@@ -19,7 +19,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
 | `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
-| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
+| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Compare squad power, rewards, and difficulty before choosing an encounter |
 | `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill three squad slots, and save the current squad |
 | `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Show the polished reward screen and claim rewards once for the selected squad |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10C keeps the same mechanics and routes, but makes Squad Builder feel more like a team assembly screen with three visible squad slots, empty slot prompts, removable filled slots, and the available card list below.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10D keeps the same mechanics and routes, but makes Choose Encounter feel more like selecting a fight with squad power, difficulty pills, recommended power, real reward preview, and clearer encounter cards.
