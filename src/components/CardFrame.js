@@ -7,7 +7,7 @@
 import { escapeHtml, titleCase } from './format.js';
 
 const characterMap = [
-  { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#f3c93f' },
+  { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#789461' },
   { key: 'sterling', name: 'Sterling', abbr: 'ST', color: '#c4c5db' },
   { key: 'ryan', name: 'Ryan', abbr: 'RY', color: '#a98cff' },
   { key: 'gabi', name: 'Gabi', abbr: 'GA', color: '#8ccdff' },
