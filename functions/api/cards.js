@@ -47,6 +47,10 @@ const flavorColumns = [
   'backstory',
   'flavorCopy',
   'flavourCopy',
+  'effect',
+  'effect_text',
+  'effectText',
+  'fx',
 ];
 const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
 const cropColumns = ['crop', 'crop_json', 'cropJson', 'image_crop', 'imageCrop'];
