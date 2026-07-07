@@ -1,7 +1,7 @@
 /* ============================================================================
    Encounter Select Route
-   Phase 10D responsibility: player-facing encounter card polish. Mechanics stay
-   the same: encounter selection still routes into Squad Builder.
+   Phase 10D.1 responsibility: compact player-facing encounter cards. Mechanics
+   stay the same: encounter selection still routes into Squad Builder.
    ============================================================================ */
 
 import { mockEncounters } from '../data/mockBattle.js';
@@ -55,27 +55,31 @@ function renderEncounterCard(encounter, squadPower) {
   const outlook = getEncounterOutlook(encounter, squadPower);
 
   return `
-    <article class="encounter-card encounter-card-polished">
-      <div class="encounter-card-topline">
-        <span class="battle-difficulty-pill ${getDifficultyClass(encounter.difficulty)}">${escapeHtml(encounter.difficulty)}</span>
-        <span class="encounter-element-pill">${escapeHtml(encounter.element)}</span>
+    <article class="encounter-card encounter-card-polished encounter-card-compact">
+      <div class="encounter-card-main">
+        <div class="encounter-portrait-panel encounter-portrait-compact" aria-hidden="true">
+          <span>${escapeHtml(encounter.name.slice(0, 1))}</span>
+        </div>
+        <div class="encounter-card-copy">
+          <div class="encounter-card-topline">
+            <span class="battle-difficulty-pill ${getDifficultyClass(encounter.difficulty)}">${escapeHtml(encounter.difficulty)}</span>
+            <span class="encounter-element-pill">${escapeHtml(encounter.element)}</span>
+          </div>
+          <h3>${escapeHtml(encounter.name)}</h3>
+        </div>
       </div>
-      <div class="encounter-portrait-panel" aria-hidden="true">
-        <span>${escapeHtml(encounter.name.slice(0, 1))}</span>
+
+      <div class="encounter-quick-grid">
+        <div><span>Rec.</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
+        <div><span>Your</span><strong>${escapeHtml(squadPower)}</strong></div>
+        <div><span>Outlook</span><strong>${escapeHtml(outlook)}</strong></div>
       </div>
-      <div>
-        <h3>${escapeHtml(encounter.name)}</h3>
-        <p>${escapeHtml(encounter.description)}</p>
+
+      <div class="encounter-reward-strip">
+        <span>◎ ${escapeHtml(encounter.rewardGold)} Gold</span>
+        <span>+${escapeHtml(encounter.rewardXp)} Squad XP</span>
       </div>
-      <div class="battle-score-grid encounter-score-grid">
-        <div class="battle-score-card"><span>Rec. Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-        <div class="battle-score-card"><span>Your Power</span><strong>${escapeHtml(squadPower)}</strong></div>
-        <div class="battle-score-card"><span>Outlook</span><strong>${escapeHtml(outlook)}</strong></div>
-      </div>
-      <div class="battle-reward-grid encounter-reward-grid">
-        <div class="battle-reward-card battle-reward-card-gold"><span>Gold</span><strong>◎ ${escapeHtml(encounter.rewardGold)}</strong></div>
-        <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(encounter.rewardXp)}</strong></div>
-      </div>
+
       <a class="button button-primary" href="#/battle/squad?encounter=${encodeURIComponent(encounter.id)}">Select Encounter</a>
     </article>
   `;
