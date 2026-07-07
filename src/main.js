@@ -1,7 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 9 responsibility: keep player/admin routes separate while wiring saved
-   battle squad state into the player Squad Builder route.
+   Phase 10D.1 responsibility: keep player/admin routes separate while loading
+   compact battle encounter presentation overrides after the shared battle CSS.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -19,6 +19,7 @@ import './styles/card-lab.css';
 import './styles/card-standard-tuner.css';
 
 import './styles/battle.css';
+import './styles/battle-encounter-compact.css';
 import './styles/phase4.css';
 
 import { renderAppShell } from './components/AppShell.js';
