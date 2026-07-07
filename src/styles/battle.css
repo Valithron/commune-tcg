@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Styles
-   Phase 10B responsibility: navy-and-gold battle result polish. Keep mechanics
-   intact while making victory, rewards, and squad progression feel like game UI.
+   Phase 10C responsibility: navy-and-gold squad slot tray and reward polish.
+   Keep mechanics intact while making team assembly feel like game UI.
    ============================================================================ */
 
 .encounter-grid,
@@ -21,6 +21,7 @@
 .battle-reward-card,
 .battle-lead-card,
 .battle-xp-row,
+.battle-squad-slot,
 .battle-log div {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
@@ -61,7 +62,8 @@
 .battle-card-stat-stack small,
 .battle-score-card span,
 .battle-reward-card span,
-.battle-lead-stat span {
+.battle-lead-stat span,
+.battle-slot-label {
   color: var(--color-functional);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -82,6 +84,93 @@
 
 .battle-live-panel {
   border-color: rgba(122, 220, 150, 0.22);
+}
+
+.battle-squad-builder-panel {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.battle-squad-slot-tray {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.battle-squad-slot {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  min-height: 8.4rem;
+  padding: var(--space-3);
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.battle-squad-slot::before {
+  content: '';
+  position: absolute;
+  inset: auto -30% -50% auto;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.12), transparent 68%);
+  pointer-events: none;
+}
+
+.battle-squad-slot > * {
+  position: relative;
+  z-index: 1;
+}
+
+.battle-squad-slot strong {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  line-height: 1.12;
+}
+
+.battle-squad-slot small,
+.battle-squad-slot span,
+.battle-squad-slot em {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.battle-squad-slot em {
+  margin-top: auto;
+  color: var(--color-primary);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.battle-squad-slot-filled {
+  border-color: rgba(212, 175, 55, 0.32);
+  background: linear-gradient(145deg, rgba(23, 26, 45, 0.98), rgba(43, 33, 0, 0.42));
+  box-shadow: inset 0 0 1.4rem rgba(212, 175, 55, 0.08);
+}
+
+.battle-squad-slot-empty {
+  align-content: center;
+  justify-items: center;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(145deg, rgba(15, 18, 36, 0.7), rgba(9, 12, 29, 0.7));
+  text-align: center;
+}
+
+.battle-slot-plus {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(212, 175, 55, 0.34);
+  border-radius: 999px;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  line-height: 1;
 }
 
 .battle-result-hero {
@@ -415,6 +504,26 @@
   .battle-reward-grid-claimed,
   .battle-lead-card {
     grid-template-columns: 1fr;
+  }
+
+  .battle-squad-slot-tray {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .battle-squad-slot {
+    min-height: 7.6rem;
+    padding: var(--space-2);
+  }
+
+  .battle-squad-slot strong {
+    font-size: 0.8rem;
+  }
+
+  .battle-squad-slot small,
+  .battle-squad-slot span,
+  .battle-squad-slot em {
+    font-size: 0.64rem;
   }
 
   .battle-lead-stat,
