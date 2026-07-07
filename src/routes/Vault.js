@@ -1,24 +1,30 @@
 /* ============================================================================
    Vault Route
-   Phase 8.4 responsibility: render Sterling's temporary Vault using the shared
-   Vault data source, with mock fallback owned by src/data/vaultData.js.
+   Phase 8.4 responsibility: render the temporary active user's Vault using the
+   shared Vault data source, with mock fallback owned by src/data/vaultData.js.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
-import { getVaultSourceLabel, loadVaultCards, temporaryVaultOwner } from '../data/vaultData.js';
+import { loadVaultCards, temporaryVaultOwner } from '../data/vaultData.js';
+
+function formatVaultOwnerName(ownerUserId) {
+  return String(ownerUserId || temporaryVaultOwner || 'User')
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ') || 'User';
+}
 
 export async function renderVault() {
   const vault = await loadVaultCards();
-  const sourceLabel = getVaultSourceLabel(vault);
+  const ownerName = formatVaultOwnerName(vault.selectedOwnerUserId);
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
-      <h2 class="hero-title">Your Vault</h2>
+      <h2 class="hero-title">${ownerName}'s Vault</h2>
       <p class="hero-copy">The Vault is currently mapped to ${temporaryVaultOwner} as the temporary active owner until real authentication exists.</p>
     </section>
-
-    <div class="empty-note">Source: ${sourceLabel}</div>
 
     <section>
       <div class="section-heading">
