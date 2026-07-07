@@ -10,20 +10,53 @@ const nameColumns = ['name', 'card_name', 'title'];
 const characterColumns = ['character', 'character_id', 'characterId', 'cid', 'person', 'commune_member'];
 const typeColumns = ['type', 'card_type', 'cardType', 'role', 'battle_role', 'battleRole', 'faction', 'class'];
 const categoryColumns = ['category', 'class', 'faction'];
-const abilityColumns = ['ability', 'ability_text', 'abilityText', 'effect', 'mechanic'];
+const abilityColumns = ['ability', 'ability_text', 'abilityText', 'mechanic'];
 const abilityIconColumns = ['ability_icon', 'abilityIcon', 'icon', 'symbol'];
 const rarityColumns = ['rarity', 'tier'];
 const powColumns = ['pow', 'power', 'attack', 'atk', 'strength'];
 const defColumns = ['def', 'defense', 'health', 'hp'];
 const spdColumns = ['spd', 'speed', 'agility'];
-const flavorColumns = ['flavor', 'flavor_text', 'description', 'lore'];
+const flavorColumns = [
+  'flavor',
+  'flavour',
+  'flavor_text',
+  'flavour_text',
+  'flavorText',
+  'flavourText',
+  'card_flavor',
+  'cardFlavor',
+  'card_flavor_text',
+  'cardFlavorText',
+  'description',
+  'desc',
+  'summary',
+  'lore',
+  'story',
+  'backstory',
+  'flavorCopy',
+  'flavourCopy',
+  'effect',
+  'effect_text',
+  'effectText',
+  'fx',
+];
 const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
 const levelColumns = ['level', 'card_level', 'cardLevel'];
 const xpColumns = ['xp', 'experience', 'experience_points', 'experiencePoints'];
 const copiesColumns = ['copies', 'copy_count', 'copyCount', 'quantity'];
+const nestedFlavorContainers = ['card_json', 'card', 'data', 'payload', 'copy', 'text', 'content', 'details', 'metadata', 'meta'];
+const nestedTextKeys = ['text', 'value', 'content', 'copy', 'body', 'html', 'markdown', ...flavorColumns];
 
 function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
     return null;
   }
 
@@ -42,6 +75,108 @@ function readValue(row, candidates, fallback = '') {
   }
 
   return fallback;
+}
+
+function cleanTextValue(value, depth = 0) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanTextValue(item, depth + 1)).filter(Boolean).join(' ').trim();
+  }
+
+  if (typeof value === 'object' && depth < 4) {
+    for (const key of nestedTextKeys) {
+      const text = cleanTextValue(value[key], depth + 1);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function sourceObject(value) {
+  const parsed = safeParseJson(value);
+
+  if (parsed && typeof parsed === 'object') {
+    return parsed;
+  }
+
+  if (value && typeof value === 'object') {
+    return value;
+  }
+
+  return null;
+}
+
+function readTextValue(row, candidates) {
+  const keys = Array.isArray(candidates) ? candidates : [candidates];
+
+  for (const key of keys) {
+    if (key && row?.[key] !== undefined && row[key] !== null && row[key] !== '') {
+      const text = cleanTextValue(row[key]);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorTextFromSource(source, depth = 0) {
+  if (depth > 4) {
+    return '';
+  }
+
+  const object = sourceObject(source);
+
+  if (!object) {
+    return '';
+  }
+
+  const direct = readTextValue(object, flavorColumns);
+
+  if (direct) {
+    return direct;
+  }
+
+  for (const key of nestedFlavorContainers) {
+    const nested = object[key];
+
+    if (nested === undefined || nested === null || nested === '') {
+      continue;
+    }
+
+    const text = resolveFlavorTextFromSource(nested, depth + 1);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorText(...sources) {
+  for (const source of sources) {
+    const text = resolveFlavorTextFromSource(source);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
 }
 
 function toNumber(value, fallback) {
@@ -94,6 +229,7 @@ function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const stats = payload.stats || payload.statBlock || {};
+  const flavor = resolveFlavorText(payload, parsed, row);
 
   return {
     ...row,
@@ -102,10 +238,10 @@ function flattenCardPayload(row) {
     def: payload.def ?? payload.defense ?? payload.health ?? payload.hp ?? stats.def ?? stats.defense ?? stats.health ?? stats.hp,
     spd: payload.spd ?? payload.speed ?? payload.agility ?? stats.spd ?? stats.speed ?? stats.agility,
     image_key: payload.image_key ?? payload.imageKey ?? payload.image_path ?? payload.image ?? payload.image_url ?? payload.art_url ?? payload.art_key ?? payload.object_key ?? payload.r2_key,
-    flavor: payload.flavor ?? payload.flavor_text ?? payload.description ?? payload.lore,
+    flavor,
     character: payload.character ?? payload.character_id ?? payload.characterId ?? payload.cid ?? row.character_id,
     type: payload.type ?? payload.card_type ?? payload.cardType ?? payload.role ?? payload.battle_role ?? payload.battleRole ?? payload.faction ?? payload.class,
-    ability: payload.ability ?? payload.ability_text ?? payload.abilityText ?? payload.effect ?? payload.mechanic,
+    ability: payload.ability ?? payload.ability_text ?? payload.abilityText ?? payload.mechanic,
     abilityIcon: payload.abilityIcon ?? payload.ability_icon ?? payload.icon,
     level: payload.level ?? payload.card_level ?? payload.cardLevel,
     xp: payload.xp ?? payload.experience ?? payload.experience_points ?? payload.experiencePoints,
@@ -120,6 +256,7 @@ function normalizeOwnedRow(row) {
   const levelValue = readValue(data, levelColumns, null);
   const xpValue = readValue(data, xpColumns, null);
   const copiesValue = readValue(data, copiesColumns, null);
+  const flavor = resolveFlavorText(data, row) || 'No flavor text has been mapped for this card yet.';
 
   return {
     id: String(row.id ?? slugify(name)),
@@ -145,7 +282,7 @@ function normalizeOwnedRow(row) {
     xp: toNumber(xpValue, 0),
     copies: toNumber(copiesValue, 1),
     progressionMapped: levelValue !== null || xpValue !== null || copiesValue !== null,
-    flavor: String(readValue(data, flavorColumns, 'An owned Vault card from the connected database.')),
+    flavor,
     imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
     imageUrl: imageUrlFromValue(imageValue),
     createdAt: row.created_at ?? null,
