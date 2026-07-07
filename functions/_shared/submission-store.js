@@ -9,6 +9,7 @@ const createTableSql = `
     id TEXT PRIMARY KEY,
     submitter_user_id TEXT NOT NULL,
     submitter_display_name TEXT NOT NULL,
+    creator_display_name_override TEXT,
     card_name TEXT NOT NULL,
     character_id TEXT NOT NULL,
     card_type TEXT NOT NULL,
@@ -33,17 +34,61 @@ const createTableSql = `
   )
 `;
 
+const additiveColumns = [
+  ['creator_display_name_override', 'TEXT'],
+];
+
+async function addColumnIfMissing(env, columnName, definition) {
+  try {
+    await env.DB.prepare(`ALTER TABLE card_submissions ADD COLUMN ${columnName} ${definition}`).run();
+  } catch (error) {
+    if (!String(error?.message || '').toLowerCase().includes('duplicate column')) {
+      throw error;
+    }
+  }
+}
+
+function cleanText(value, maxLength = 500) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
 export async function ensureSubmissionSchema(env) {
   await env.DB.prepare(createTableSql).run();
+
+  for (const [columnName, definition] of additiveColumns) {
+    await addColumnIfMissing(env, columnName, definition);
+  }
+
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_card_submissions_status ON card_submissions (moderation_status)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_card_submissions_created ON card_submissions (created_at)').run();
 }
 
+function resolveCreatorDisplayName(row) {
+  return cleanText(
+    row.creator_display_name_override
+      || row.creatorDisplayName
+      || row.creator_display_name
+      || row.creator_name
+      || row.creator
+      || row.submitter_display_name
+      || row.submitterDisplayName
+      || row.submitter_user_id
+      || row.submitterUserId
+      || 'Unknown',
+    120
+  );
+}
+
 export function normalizeSubmissionRow(row) {
+  const creatorDisplayNameOverride = cleanText(row.creator_display_name_override || '', 120);
+  const creatorDisplayName = resolveCreatorDisplayName(row);
+
   return {
     id: row.id,
     submitterUserId: row.submitter_user_id,
     submitterDisplayName: row.submitter_display_name,
+    creatorDisplayNameOverride,
+    creatorDisplayName,
     cardName: row.card_name,
     characterId: row.character_id,
     cardType: row.card_type,
@@ -79,6 +124,7 @@ export async function insertSubmission(env, submission) {
       id,
       submitter_user_id,
       submitter_display_name,
+      creator_display_name_override,
       card_name,
       character_id,
       card_type,
@@ -100,11 +146,12 @@ export async function insertSubmission(env, submission) {
       updated_at,
       reviewed_at,
       reviewed_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     submission.id,
     submission.submitterUserId,
     submission.submitterDisplayName,
+    submission.creatorDisplayNameOverride || '',
     submission.cardName,
     submission.characterId,
     submission.cardType,
