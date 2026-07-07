@@ -7,43 +7,24 @@
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
 function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
+  if (!value || typeof value !== 'string') return null;
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 export function normalizeRarity(value) {
   const rarity = String(value || 'common').trim().toLowerCase();
-
-  if (allowedRarities.includes(rarity)) {
-    return rarity;
-  }
-
+  if (allowedRarities.includes(rarity)) return rarity;
   if (rarity.includes('myth')) return 'mythic';
   if (rarity.includes('legend')) return 'legendary';
   if (rarity.includes('uncommon')) return 'uncommon';
   if (rarity.includes('rare')) return 'rare';
-
   return 'common';
 }
 
 function imageUrlFromKey(key) {
   const imageKey = String(key || '').trim();
-
-  if (!imageKey) {
-    return '';
-  }
-
-  if (/^https?:\/\//i.test(imageKey) || imageKey.startsWith('/')) {
-    return imageKey;
-  }
-
+  if (!imageKey) return '';
+  if (/^https?:\/\//i.test(imageKey) || imageKey.startsWith('/')) return imageKey;
   return `/api/card-image?key=${encodeURIComponent(imageKey)}`;
 }
 
@@ -52,11 +33,21 @@ function toNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function readCreatorDisplayName(payload) {
+  return String(payload.creatorDisplayName || payload.creator_display_name || payload.creatorName || payload.creator_name || payload.creator || payload.createdBy || payload.created_by || payload.submitterDisplayName || payload.submitter_display_name || payload.artistName || payload.artist_name || payload.artist || payload.author || '').trim();
+}
+
+function readCreatorUserId(payload) {
+  return String(payload.creatorUserId || payload.creator_user_id || payload.submitterUserId || payload.submitter_user_id || payload.userId || payload.user_id || '').trim();
+}
+
 export function normalizeCardRow(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const stats = payload.stats || payload.statBlock || {};
   const imageKey = payload.image_key || payload.imageKey || payload.image_path || payload.art_key || payload.object_key || '';
+  const creatorDisplayName = readCreatorDisplayName(payload);
+  const creatorUserId = readCreatorUserId(payload);
 
   return {
     id: String(payload.id || row.id),
@@ -78,6 +69,9 @@ export function normalizeCardRow(row) {
     flavor: String(payload.flavor || payload.flavor_text || payload.description || 'A pull-eligible Library card.'),
     imageKey,
     imageUrl: imageUrlFromKey(imageKey),
+    creator: creatorDisplayName,
+    creatorDisplayName,
+    creatorUserId,
     ownerUserId: row.owner_user_id || '',
     cardJsonValid: Boolean(parsed),
     source: payload.source || 'cards',
@@ -100,29 +94,15 @@ export function summarizeByRarity(cards) {
 
 export function buildReadiness(cards, byRarity) {
   if (!cards.length) {
-    return {
-      status: 'no-pull-pool-cards',
-      summary: 'No unowned Library cards are currently eligible for pulls.',
-      nextStep: 'Approve at least one submission or seed unowned Library cards before pull simulation.',
-    };
+    return { status: 'no-pull-pool-cards', summary: 'No unowned Library cards are currently eligible for pulls.', nextStep: 'Approve at least one submission or seed unowned Library cards before pull simulation.' };
   }
 
   const missingRarities = allowedRarities.filter((rarity) => byRarity[rarity] === 0);
-
   if (missingRarities.length) {
-    return {
-      status: 'pool-ready-with-rarity-gaps',
-      summary: 'Pull pool has cards, but one or more rarity buckets are empty.',
-      nextStep: 'Phase 10.2 can simulate pulls with fallback behavior, or seed missing rarity buckets first.',
-      missingRarities,
-    };
+    return { status: 'pool-ready-with-rarity-gaps', summary: 'Pull pool has cards, but one or more rarity buckets are empty.', nextStep: 'Phase 10.2 can simulate pulls with fallback behavior, or seed missing rarity buckets first.', missingRarities };
   }
 
-  return {
-    status: 'ready-for-pull-simulation',
-    summary: 'Pull pool has unowned Library cards across all configured rarity buckets.',
-    nextStep: 'Build write-enabled pulls only after simulation verifies cleanly.',
-  };
+  return { status: 'ready-for-pull-simulation', summary: 'Pull pool has unowned Library cards across all configured rarity buckets.', nextStep: 'Build write-enabled pulls only after simulation verifies cleanly.' };
 }
 
 export async function readPullPool(env) {
