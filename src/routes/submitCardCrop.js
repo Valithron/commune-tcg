@@ -8,6 +8,7 @@ const maxImageBytes = 5 * 1024 * 1024;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const point = (event) => ({ x: event.clientX, y: event.clientY });
+const touchPoint = (touch) => ({ x: touch.clientX, y: touch.clientY });
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const midpoint = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
@@ -39,10 +40,18 @@ export function initSubmitImageCropper(form, status) {
   const pointers = new Map();
   let crop = { ...defaultCrop };
   let start = null;
+  let touchStart = null;
+  let gestureStartCrop = null;
   let objectUrl = '';
   let lastTap = 0;
+  let nativeTouchMode = false;
 
   const hasImage = () => box.classList.contains('has-image');
+
+  function showStatus(message) {
+    status.hidden = false;
+    status.textContent = message;
+  }
 
   function writeCrop() {
     const next = rounded(crop);
@@ -109,6 +118,46 @@ export function initSubmitImageCropper(form, status) {
     });
   }
 
+  function beginTouchGesture(touches) {
+    const active = Array.from(touches).map(touchPoint);
+    if (!active.length) {
+      touchStart = null;
+      return;
+    }
+
+    touchStart = {
+      crop: { ...crop },
+      points: active,
+      midpoint: active.length > 1 ? midpoint(active[0], active[1]) : active[0],
+      distance: active.length > 1 ? Math.max(distance(active[0], active[1]), 1) : 1,
+    };
+  }
+
+  function updateTouchGesture(touches) {
+    if (!touchStart || !hasImage()) return;
+
+    const active = Array.from(touches).map(touchPoint);
+    const rect = box.getBoundingClientRect();
+    if (!active.length || !rect.width || !rect.height) return;
+
+    if (active.length > 1 && touchStart.points.length > 1) {
+      const currentMidpoint = midpoint(active[0], active[1]);
+      const currentDistance = Math.max(distance(active[0], active[1]), 1);
+      setCrop({
+        x: touchStart.crop.x - ((currentMidpoint.x - touchStart.midpoint.x) / rect.width) * 100,
+        y: touchStart.crop.y - ((currentMidpoint.y - touchStart.midpoint.y) / rect.height) * 100,
+        zoom: touchStart.crop.zoom * (currentDistance / touchStart.distance),
+      });
+      return;
+    }
+
+    setCrop({
+      x: touchStart.crop.x - ((active[0].x - touchStart.points[0].x) / rect.width) * 100,
+      y: touchStart.crop.y - ((active[0].y - touchStart.points[0].y) / rect.height) * 100,
+      zoom: touchStart.crop.zoom,
+    });
+  }
+
   function clearPreview() {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = '';
@@ -120,6 +169,10 @@ export function initSubmitImageCropper(form, status) {
     if (changeButton) changeButton.hidden = true;
     crop = { ...defaultCrop };
     cropInput.value = JSON.stringify(defaultCrop);
+    pointers.clear();
+    start = null;
+    touchStart = null;
+    gestureStartCrop = null;
   }
 
   box.addEventListener('click', () => {
@@ -140,7 +193,7 @@ export function initSubmitImageCropper(form, status) {
     const error = validateFile(file);
 
     if (error) {
-      status.textContent = error;
+      showStatus(error);
       input.value = '';
       return;
     }
@@ -152,12 +205,12 @@ export function initSubmitImageCropper(form, status) {
     box.classList.add('has-image');
     if (cropHelp) cropHelp.hidden = false;
     if (changeButton) changeButton.hidden = false;
-    status.textContent = 'Art loaded. Set the crop, then submit.';
+    showStatus('Art loaded. Set the crop, then submit.');
     resetCrop();
   });
 
   box.addEventListener('pointerdown', (event) => {
-    if (!hasImage()) return;
+    if (!hasImage() || (nativeTouchMode && event.pointerType === 'touch')) return;
 
     const now = Date.now();
     if (now - lastTap < 300) {
@@ -175,7 +228,7 @@ export function initSubmitImageCropper(form, status) {
   });
 
   box.addEventListener('pointermove', (event) => {
-    if (!pointers.has(event.pointerId)) return;
+    if ((nativeTouchMode && event.pointerType === 'touch') || !pointers.has(event.pointerId)) return;
     pointers.set(event.pointerId, point(event));
     updateGesture();
     event.preventDefault();
@@ -188,6 +241,58 @@ export function initSubmitImageCropper(form, status) {
 
   box.addEventListener('pointerup', endPointer);
   box.addEventListener('pointercancel', endPointer);
+
+  box.addEventListener('touchstart', (event) => {
+    if (!hasImage()) return;
+    nativeTouchMode = true;
+    pointers.clear();
+
+    const now = Date.now();
+    if (event.touches.length === 1 && now - lastTap < 300) {
+      resetCrop();
+      lastTap = 0;
+      event.preventDefault();
+      return;
+    }
+    lastTap = now;
+
+    beginTouchGesture(event.touches);
+    event.preventDefault();
+  }, { passive: false });
+
+  box.addEventListener('touchmove', (event) => {
+    if (!hasImage()) return;
+    updateTouchGesture(event.touches);
+    event.preventDefault();
+  }, { passive: false });
+
+  box.addEventListener('touchend', (event) => {
+    if (!hasImage()) return;
+    beginTouchGesture(event.touches);
+    if (!event.touches.length) nativeTouchMode = false;
+  }, { passive: false });
+
+  box.addEventListener('touchcancel', () => {
+    nativeTouchMode = false;
+    touchStart = null;
+  }, { passive: false });
+
+  box.addEventListener('gesturestart', (event) => {
+    if (!hasImage()) return;
+    gestureStartCrop = { ...crop };
+    event.preventDefault();
+  }, { passive: false });
+
+  box.addEventListener('gesturechange', (event) => {
+    if (!hasImage() || !gestureStartCrop) return;
+    setCrop({ ...gestureStartCrop, zoom: gestureStartCrop.zoom * Number(event.scale || 1) });
+    event.preventDefault();
+  }, { passive: false });
+
+  box.addEventListener('gestureend', (event) => {
+    gestureStartCrop = null;
+    event.preventDefault();
+  }, { passive: false });
 
   box.addEventListener('wheel', (event) => {
     if (!hasImage()) return;
