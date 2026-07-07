@@ -7,6 +7,7 @@
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/library.css';
 import './styles/admin.css';
 
 // Card system styles: foundation, density overrides, detail layout, then dev tools.
@@ -33,7 +34,7 @@ import { renderPullResults } from './routes/PullResults.js';
 import { renderPullHistory } from './routes/PullHistory.js';
 import { renderVault } from './routes/Vault.js';
 import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
-import { renderLibrary } from './routes/Library.js';
+import { initLibraryControls, renderLibrary } from './routes/Library.js';
 import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
 import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
@@ -218,6 +219,10 @@ async function render() {
     scrollRouteToTop();
 
     fitCardTitles(appRoot);
+
+    if (matchedRoute.pattern === '/library') {
+      initLibraryControls(appRoot);
+    }
 
     if (matchedRoute.pattern === '/admin/card-lab') {
       initCardFrameTuner(appRoot);
