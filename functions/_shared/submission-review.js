@@ -32,15 +32,28 @@ function buildApprovedCardId(submission) {
 function buildApprovedCardJson(submission, now, approvalProfile) {
   const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
   const stats = approvalProfile?.stats || { pow: 1, def: 1, spd: 1 };
+  const creatorDisplayName = cleanText(submission.submitterDisplayName || '', 120);
+  const creatorUserId = cleanText(submission.submitterUserId || '', 120);
 
   return JSON.stringify({
     id: buildApprovedCardId(submission),
     name: submission.cardName,
     character: submission.characterId,
     character_id: submission.characterId,
+    cid: submission.characterId,
     type: submission.cardType,
     card_type: submission.cardType,
     category: titleCase(submission.cardType),
+    creator: creatorDisplayName,
+    creator_name: creatorDisplayName,
+    creatorDisplayName,
+    creator_display_name: creatorDisplayName,
+    creatorUserId,
+    creator_user_id: creatorUserId,
+    submitterDisplayName: creatorDisplayName,
+    submitter_display_name: creatorDisplayName,
+    submitterUserId: creatorUserId,
+    submitter_user_id: creatorUserId,
     rarity: approvalProfile?.rarity || 'common',
     rarity_source: 'approval_random_roll',
     rarity_suggestion: submission.raritySuggestion,
@@ -63,6 +76,10 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     source_submission_id: submission.id,
     approved_by: temporaryReviewerId,
     approved_at: now,
+    createdAt: now,
+    created_at: now,
+    updatedAt: now,
+    updated_at: now,
   });
 }
 
