@@ -6,6 +6,11 @@
 import { getApiRoutes } from '../services/apiClient.js';
 import { initSubmitImageCropper, validateSubmitImage } from './submitCardCrop.js';
 
+function showSubmitStatus(status, message) {
+  status.hidden = false;
+  status.textContent = message;
+}
+
 export function renderSubmitCard() {
   return `
     <section class="submit-page">
@@ -33,8 +38,7 @@ export function renderSubmitCard() {
         <input name="ability_text" type="hidden" value="" />
         <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
         <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
-        <div class="submit-cost-note">Costs 5 Submission Tickets</div>
-        <div class="empty-note submit-status" data-submit-card-status>Ready to create a pending-review submission.</div>
+        <div class="empty-note submit-status" data-submit-card-status hidden></div>
       </form>
     </section>
   `;
@@ -49,7 +53,7 @@ export function initSubmitCardForm(root) {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    status.textContent = 'Submitting card for review...';
+    showSubmitStatus(status, 'Submitting card for review...');
     try {
       const imageValidationError = validateSubmitImage(form);
       if (imageValidationError) throw new Error(imageValidationError);
@@ -57,11 +61,11 @@ export function initSubmitCardForm(root) {
       const response = await fetch(getApiRoutes().submissions, { method: 'POST', body: new FormData(form) });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error((Array.isArray(payload?.errors) ? payload.errors.join(' ') : payload?.error) || `Submission failed with ${response.status}`);
-      status.textContent = 'Submitted to Commune: ' + payload.submission.cardName;
+      showSubmitStatus(status, 'Submitted to Commune: ' + payload.submission.cardName);
       form.reset();
       form.querySelector('[name="crop_json"]').value = JSON.stringify({ x: 50, y: 50, zoom: 1 });
     } catch (error) {
-      status.textContent = error.message;
+      showSubmitStatus(status, error.message);
     }
   });
 }
