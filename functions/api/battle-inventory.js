@@ -1,7 +1,7 @@
 /* ============================================================================
    API Battle Inventory Endpoint
-   Battle Phase 1 responsibility: read-only battle diagnostics and contract map.
-   Performs no battle resolution, rewards, XP, history, currency, or Vault writes.
+   Battle Phase 10F.1 responsibility: read-only battle diagnostics plus normalized
+   card image fields for player-facing battle selection UI. Performs no writes.
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
@@ -9,6 +9,8 @@ import { errorResponse, jsonResponse } from '../_shared/json.js';
 const defaultOwnerUserId = 'sterling';
 const defaultOwnerDisplayName = 'Sterling';
 const squadSize = 3;
+
+const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
 
 const candidateBattleTables = [
   'battle_history',
@@ -90,10 +92,39 @@ function normalizeRarity(value) {
   return 'common';
 }
 
+function readValue(row, candidates, fallback = '') {
+  for (const key of candidates) {
+    if (key && row?.[key] !== undefined && row[key] !== null && row[key] !== '') {
+      return row[key];
+    }
+  }
+
+  return fallback;
+}
+
+function isLikelyUrl(value) {
+  return /^https?:\/\//i.test(String(value || '')) || String(value || '').startsWith('/');
+}
+
+function imageUrlFromValue(value) {
+  const imageValue = String(value || '').trim();
+
+  if (!imageValue) {
+    return '';
+  }
+
+  if (isLikelyUrl(imageValue)) {
+    return imageValue;
+  }
+
+  return `/api/card-image?key=${encodeURIComponent(imageValue)}`;
+}
+
 function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const stats = payload.stats || payload.statBlock || {};
+  const imageValue = String(readValue(payload, imageColumns, ''));
 
   return {
     parsed,
@@ -111,6 +142,8 @@ function flattenCardPayload(row) {
       level: toNumber(payload.level ?? payload.card_level ?? payload.cardLevel, 1),
       xp: toNumber(payload.xp ?? payload.experience ?? payload.experience_points ?? payload.experiencePoints, 0),
       copies: toNumber(payload.copies ?? payload.copy_count ?? payload.copyCount ?? payload.quantity, 1),
+      imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
+      imageUrl: imageUrlFromValue(imageValue),
       stats: {
         pow: toNumber(payload.pow ?? stats.pow ?? stats.power ?? stats.attack ?? stats.atk ?? stats.strength, 1),
         def: toNumber(payload.def ?? stats.def ?? stats.defense ?? stats.health ?? stats.hp, 1),
@@ -395,7 +428,7 @@ export async function onRequestGet({ env, request }) {
         'This endpoint performs no writes.',
         'Battle eligibility currently uses Sterling-owned Vault cards from cards.owner_user_id.',
         'Enemy and encounter data are still frontend mock data unless D1 battle/enemy tables are created later.',
-        'No rewards, XP, level-ups, battle_history, currency, stamina, Vault, auth, card visual, or animation changes are performed in Battle Phase 1.',
+        'No rewards, XP, level-ups, battle_history, currency, stamina, Vault, auth, or animation changes are performed by this endpoint.',
       ],
     });
   } catch (error) {
