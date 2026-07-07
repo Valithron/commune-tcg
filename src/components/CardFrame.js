@@ -87,18 +87,32 @@ function getRarityInitial(rarity) {
   return normalizeRarity(rarity).charAt(0).toUpperCase();
 }
 
-function findCharacter(card) {
-  const haystack = [
-    card.character,
-    card.characterId,
-    card.character_id,
-    card.cid,
-    card.category,
-    card.name,
-    card.id,
-  ].filter(Boolean).join(' ').toLowerCase();
+function normalizeCharacterKey(value) {
+  const raw = String(value || '').trim().toLowerCase();
 
-  return characterMap.find((character) => haystack.includes(character.key) || haystack.includes(character.abbr.toLowerCase()))
+  if (!raw) {
+    return '';
+  }
+
+  const normalized = raw.replace(/[^a-z0-9]+/g, '');
+  const character = characterMap.find((candidate) => {
+    const key = candidate.key.toLowerCase();
+    const abbr = candidate.abbr.toLowerCase();
+    const name = candidate.name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+    return normalized === key || normalized === abbr || normalized === name;
+  });
+
+  return character?.key || '';
+}
+
+function findCharacter(card) {
+  const cid = normalizeCharacterKey(card.cid)
+    || normalizeCharacterKey(card.characterId)
+    || normalizeCharacterKey(card.character_id)
+    || normalizeCharacterKey(card.character);
+
+  return characterMap.find((character) => character.key === cid)
     || { key: 'unknown', name: 'Unknown', abbr: '??', color: '#9da2b7' };
 }
 
