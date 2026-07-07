@@ -33,10 +33,22 @@ function getPayloadError(payload, response) {
   return parts.join(': ') || `Review action failed with ${response.status}`;
 }
 
+function getCreatorDisplayName(submission) {
+  return String(
+    submission.creatorDisplayName
+      || submission.creatorDisplayNameOverride
+      || submission.submitterDisplayName
+      || submission.creatorDisplayName
+      || submission.submitterUserId
+      || 'Unknown'
+  ).trim();
+}
+
 function submissionToPreviewCard(submission) {
   return {
     id: submission.id,
     name: submission.cardName,
+    cid: submission.characterId,
     character: submission.characterId,
     characterId: submission.characterId,
     type: submission.cardType,
@@ -66,16 +78,22 @@ function renderReviewControls(submission) {
       <section class="glass-panel admin-panel">
         <span class="section-kicker">Review Closed</span>
         <h2 class="section-title">${escapeHtml(formatStatus(submission.moderationStatus))}</h2>
-        <p class="hero-copy">This submission is no longer in a reviewable state.</p>
+        <p class="hero-copy">This submission is no longer in a reviewable state. Creator editing is pre-approval only for now.</p>
       </section>
     `;
   }
+
+  const creatorDisplayName = getCreatorDisplayName(submission);
 
   return `
     <section class="glass-panel admin-panel" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
       <span class="section-kicker">Review Actions</span>
       <h2 class="section-title">Server-owned review</h2>
       <p class="hero-copy">Approve creates an unowned Library card row. Rarity and POW/DEF/SPD are rolled by the server during approval.</p>
+      <label class="review-notes-label">
+        <span>Creator</span>
+        <input data-review-creator maxlength="120" value="${escapeHtml(creatorDisplayName)}" placeholder="Visible creator name" />
+      </label>
       <label class="review-notes-label">
         <span>Review Notes</span>
         <textarea data-review-notes maxlength="500" placeholder="Optional note for this review action."></textarea>
@@ -85,7 +103,7 @@ function renderReviewControls(submission) {
         <button class="button button-secondary" type="button" data-review-action="needs_changes">Needs Changes</button>
         <button class="button button-secondary" type="button" data-review-action="reject">Reject</button>
       </div>
-      <div class="empty-note" data-review-status>Ready for review action.</div>
+      <div class="empty-note" data-review-status>Ready for review action. Creator override will be saved with the action.</div>
     </section>
   `;
 }
@@ -103,6 +121,7 @@ export async function renderAdminSubmissionDetail({ params }) {
   try {
     const submission = await loadSubmission(submissionId);
     const previewCard = submissionToPreviewCard(submission);
+    const creatorDisplayName = getCreatorDisplayName(submission);
 
     return `
       <section class="hero-panel">
@@ -127,6 +146,7 @@ export async function renderAdminSubmissionDetail({ params }) {
             ${renderDetailRow('Status', formatStatus(submission.moderationStatus))}
             ${renderDetailRow('Approved Card ID', submission.approvedCardId || 'Not approved')}
             ${renderDetailRow('Submitter', submission.submitterDisplayName)}
+            ${renderDetailRow('Creator', creatorDisplayName)}
             ${renderDetailRow('Character', titleCase(submission.characterId))}
             ${renderDetailRow('Type', titleCase(submission.cardType))}
             ${renderDetailRow('Approval Rarity', formatRarityReview(submission.raritySuggestion))}
@@ -164,25 +184,35 @@ export function initAdminSubmissionDetail(root) {
 
   const status = panel.querySelector('[data-review-status]');
   const notes = panel.querySelector('[data-review-notes]');
+  const creator = panel.querySelector('[data-review-creator]');
 
   panel.querySelectorAll('[data-review-action]').forEach((button) => {
     button.addEventListener('click', async () => {
       const action = button.getAttribute('data-review-action');
-      status.textContent = 'Applying review action...';
+      const creatorDisplayName = creator?.value?.trim() || '';
+      status.textContent = 'Applying review action and saving creator...';
 
       try {
         const routes = getApiRoutes();
         const response = await fetch(routes.adminSubmissionAction, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ id: panel.getAttribute('data-submission-id'), action, reviewNotes: notes.value }),
+          body: JSON.stringify({
+            id: panel.getAttribute('data-submission-id'),
+            action,
+            reviewNotes: notes.value,
+            creatorDisplayName,
+          }),
         });
         const payload = await response.json().catch(() => null);
         if (!response.ok || !payload?.ok) throw new Error(getPayloadError(payload, response));
 
         const roll = payload.approvalProfile;
-        status.textContent = roll ? `Approved: ${titleCase(roll.rarity)} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd}` : 'Review action applied: ' + action.replaceAll('_', ' ');
-        window.setTimeout(() => window.location.reload(), 700);
+        const creatorMessage = payload.creatorDisplayName ? ` Creator saved as ${payload.creatorDisplayName}.` : ' Creator saved.';
+        status.textContent = roll
+          ? `Approved: ${titleCase(roll.rarity)} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd}.${creatorMessage}`
+          : 'Review action applied: ' + action.replaceAll('_', ' ') + '.' + creatorMessage;
+        window.setTimeout(() => window.location.reload(), 900);
       } catch (error) {
         status.textContent = error.message;
       }
