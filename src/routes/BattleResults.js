@@ -1,11 +1,12 @@
 /* ============================================================================
    Battle Results Route
-   Phase 10B responsibility: reward-screen polish. Mechanics stay the same:
-   selected squad IDs, attempt preflight, protected resolve, gold, and XP writes.
+   Phase 10E.1 responsibility: auto-claim battle rewards while preserving the
+   protected attempt system. Manual Claim Now and auto-claim share one helper.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
 import { getEncounterById } from '../data/mockBattle.js';
+import { claimBattleRewards } from '../services/battleRewardClaim.js';
 import {
   buildBattleResultsHref,
   buildSquadBuilderHref,
@@ -17,7 +18,6 @@ import {
   normalizeBattleAttemptId,
   resolveSelectedBattleSquad,
 } from '../services/battleSquadSelection.js';
-import { getApiRoutes } from '../services/apiClient.js';
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -131,8 +131,8 @@ function renderClaimedRewards(payload) {
   if (!payload) {
     return `
       <div class="battle-state-note battle-state-note-pending battle-reward-stage">
-        <strong>Rewards waiting.</strong>
-        <span>Claim rewards to add gold and squad XP.</span>
+        <strong>Rewards pending.</strong>
+        <span>Rewards will be claimed automatically. Tap Claim Now to collect immediately.</span>
       </div>
     `;
   }
@@ -202,9 +202,9 @@ export async function renderBattleResults({ query }) {
       <section class="result-banner battle-result-hero ${victory ? 'battle-result-victory' : 'battle-result-defeat'}">
         <span class="section-kicker">Battle Results</span>
         <h2 class="hero-title battle-result-title">${escapeHtml(heroTitle)}</h2>
-        <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${alreadyResolved ? 'These rewards have already been claimed.' : 'Claim your rewards when you are ready.'}</p>
+        <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${alreadyResolved ? 'These rewards have already been claimed.' : 'Rewards will be claimed automatically.'}</p>
         <div class="action-row">
-          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Claim Rewards</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Claimed' : 'Select a Squad'}</span>`}
+          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-battle-auto-claim="true" data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Claim Now</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Claimed' : 'Select a Squad'}</span>`}
           <a class="button button-secondary" href="${battleAgainHref}">Battle Again</a>
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
         </div>
@@ -214,7 +214,7 @@ export async function renderBattleResults({ query }) {
 
       <section class="glass-panel battle-summary-panel battle-preview-panel battle-rewards-acquired-panel">
         <span class="section-kicker">Rewards Acquired</span>
-        <h2 class="section-title">${alreadyResolved ? 'Claimed rewards' : 'Rewards waiting'}</h2>
+        <h2 class="section-title">${alreadyResolved ? 'Claimed rewards' : 'Rewards pending'}</h2>
         <div class="battle-reward-grid">
           <div class="battle-reward-card battle-reward-card-gold"><span>Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
           <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(previewXp)}</strong></div>
@@ -223,8 +223,8 @@ export async function renderBattleResults({ query }) {
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
         <span class="section-kicker">Reward Claim</span>
-        <h2 class="section-title">${alreadyResolved ? 'Already claimed' : 'Claim battle rewards'}</h2>
-        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'These rewards have already been claimed.' : (canResolve ? 'Rewards have not been claimed yet.' : 'Choose a squad before claiming rewards.')}</div>
+        <h2 class="section-title">${alreadyResolved ? 'Already claimed' : 'Auto-claim enabled'}</h2>
+        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'These rewards have already been claimed.' : (canResolve ? 'Auto-claim will collect these rewards shortly.' : 'Choose a squad before claiming rewards.')}</div>
         <div data-battle-resolve-result>
           ${renderClaimedRewards(alreadyResolved ? attemptStatus.battle : null)}
         </div>
@@ -281,28 +281,28 @@ export function initBattleResults(root) {
     return;
   }
 
-  button.addEventListener('click', async () => {
+  let claimInFlight = false;
+
+  async function runClaim({ source = 'manual' } = {}) {
+    if (claimInFlight || button.getAttribute('data-resolved') === 'true') {
+      return;
+    }
+
     const encounterId = button.getAttribute('data-encounter-id') || 'training-yard-goblin';
     const squadCardIds = button.getAttribute('data-squad-card-ids') || '';
     const attemptId = button.getAttribute('data-attempt-id') || '';
-    const routes = getApiRoutes();
+    const isAuto = source === 'auto';
+
+    claimInFlight = true;
     button.disabled = true;
-    button.textContent = 'Claiming...';
+    button.textContent = isAuto ? 'Auto-claiming...' : 'Claiming...';
     button.classList.add('button-working');
-    status.textContent = 'Claiming rewards...';
+    status.textContent = isAuto ? 'Auto-claiming rewards...' : 'Claiming rewards...';
 
     try {
-      const response = await fetch(routes.battles, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ encounterId, squadCardIds, attemptId }),
-      });
-      const payload = await response.json().catch(() => null);
+      const payload = await claimBattleRewards({ encounterId, squadCardIds, attemptId });
 
-      if (!response.ok || !payload) {
+      if (!payload.responseOk || !payload.ok) {
         if (payload?.code === 'duplicate-battle-attempt') {
           resultTarget.innerHTML = renderClaimedRewards({
             ok: false,
@@ -316,39 +316,44 @@ export function initBattleResults(root) {
           button.classList.add('button-resolved');
           button.setAttribute('aria-disabled', 'true');
           button.setAttribute('data-resolved', 'true');
+          claimInFlight = false;
           return;
         }
 
-        throw new Error(payload?.error || `Battle failed with ${response.status}`);
+        throw new Error(payload?.error || `Battle reward claim failed with ${payload.httpStatus || 'unknown status'}`);
       }
 
-      if (payload.ok) {
-        await refreshTopBarResources(document, {
-          gold: payload.rewardApplied?.goldAfter,
-        });
-      }
+      await refreshTopBarResources(document, {
+        gold: payload.rewardApplied?.goldAfter,
+      });
 
       resultTarget.innerHTML = renderClaimedRewards(payload);
-      status.textContent = payload.ok ? 'Rewards claimed.' : 'Rewards could not be claimed.';
+      status.textContent = 'Rewards claimed.';
       button.classList.remove('button-working');
-
-      if (payload.ok) {
-        button.textContent = 'Claimed';
-        button.classList.add('button-resolved');
-        button.setAttribute('aria-disabled', 'true');
-        button.setAttribute('data-resolved', 'true');
-      } else {
-        button.disabled = false;
-        button.textContent = 'Claim Rewards';
-      }
+      button.textContent = 'Claimed';
+      button.classList.add('button-resolved');
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('data-resolved', 'true');
     } catch (error) {
-      status.textContent = error.message;
+      status.textContent = isAuto ? `Auto-claim failed. Tap Claim Now to retry. ${error.message}` : error.message;
       resultTarget.innerHTML = renderClaimedRewards({ ok: false, error: error.message });
       button.disabled = false;
-      button.textContent = 'Claim Rewards';
+      button.textContent = 'Claim Now';
       button.classList.remove('button-working', 'button-resolved');
       button.removeAttribute('aria-disabled');
       button.removeAttribute('data-resolved');
+    } finally {
+      claimInFlight = false;
     }
+  }
+
+  button.addEventListener('click', () => {
+    runClaim({ source: 'manual' });
   });
+
+  if (button.getAttribute('data-battle-auto-claim') === 'true') {
+    window.setTimeout(() => {
+      runClaim({ source: 'auto' });
+    }, 650);
+  }
 }
