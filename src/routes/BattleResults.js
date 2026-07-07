@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Results Route
-   Phase 10E.1 responsibility: auto-claim battle rewards while preserving the
-   protected attempt system. Manual Claim Now and auto-claim share one helper.
+   Phase 10E.2 responsibility: auto-settle battle rewards while preserving a
+   manual reward reveal moment. Settlement and reveal are intentionally separate.
    ============================================================================ */
 
 import { refreshTopBarResources } from '../components/TopBar.js';
@@ -19,6 +19,8 @@ import {
   resolveSelectedBattleSquad,
 } from '../services/battleSquadSelection.js';
 
+const rewardRevealStoragePrefix = 'commune-tcg-battle-reveal:';
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -30,6 +32,28 @@ function escapeHtml(value) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(Number(value) || 0, min), max);
+}
+
+function getRewardRevealKey(attemptId) {
+  return rewardRevealStoragePrefix + String(attemptId || '').trim();
+}
+
+function hasSeenRewardReveal(attemptId) {
+  try {
+    return Boolean(attemptId && globalThis.localStorage?.getItem(getRewardRevealKey(attemptId)) === 'seen');
+  } catch {
+    return false;
+  }
+}
+
+function markRewardRevealSeen(attemptId) {
+  try {
+    if (attemptId) {
+      globalThis.localStorage?.setItem(getRewardRevealKey(attemptId), 'seen');
+    }
+  } catch {
+    // Local reveal memory is cosmetic. Backend settlement remains the source of truth.
+  }
 }
 
 function getLevelNote(row) {
@@ -81,7 +105,7 @@ function renderLeadCard(card) {
 
 function renderAppliedXpRows(xpApplied = []) {
   if (!Array.isArray(xpApplied) || !xpApplied.length) {
-    return '<div class="empty-note">No squad XP has been claimed yet.</div>';
+    return '<div class="empty-note">No squad XP is ready to show yet.</div>';
   }
 
   return xpApplied.map((row) => {
@@ -127,21 +151,34 @@ function renderSquadRows(cards = [], note = 'Will gain XP') {
   `).join('');
 }
 
-function renderClaimedRewards(payload) {
-  if (!payload) {
+function renderSecuredRewardPrompt({ secured = false, failed = false } = {}) {
+  if (failed) {
     return `
-      <div class="battle-state-note battle-state-note-pending battle-reward-stage">
-        <strong>Rewards pending.</strong>
-        <span>Rewards will be claimed automatically. Tap Claim Now to collect immediately.</span>
+      <div class="battle-state-note battle-state-note-error battle-reward-stage">
+        <strong>Rewards not secured yet.</strong>
+        <span>Tap Reveal Rewards to retry settlement and reveal your rewards.</span>
       </div>
     `;
+  }
+
+  return `
+    <div class="battle-state-note ${secured ? 'battle-state-note-live' : 'battle-state-note-pending'} battle-reward-stage">
+      <strong>${secured ? 'Rewards secured.' : 'Securing rewards.'}</strong>
+      <span>${secured ? 'Your rewards are safe. Tap Reveal Rewards when you are ready.' : 'The game is making sure these rewards cannot be lost.'}</span>
+    </div>
+  `;
+}
+
+function renderRevealedRewards(payload) {
+  if (!payload) {
+    return renderSecuredRewardPrompt({ secured: false });
   }
 
   if (!payload.ok) {
     return `
       <div class="battle-state-note battle-state-note-error battle-reward-stage">
-        <strong>${payload.code === 'duplicate-battle-attempt' ? 'Already claimed.' : 'Rewards failed.'}</strong>
-        <span>${escapeHtml(payload.error || 'The rewards could not be claimed.')}</span>
+        <strong>${payload.code === 'duplicate-battle-attempt' ? 'Rewards secured.' : 'Reveal failed.'}</strong>
+        <span>${escapeHtml(payload.error || 'The rewards could not be revealed yet.')}</span>
       </div>
     `;
   }
@@ -152,8 +189,8 @@ function renderClaimedRewards(payload) {
 
   return `
     <div class="battle-state-note battle-state-note-live battle-reward-stage">
-      <strong>${alreadyResolved ? 'Already claimed.' : 'Rewards claimed.'}</strong>
-      <span>${alreadyResolved ? 'These rewards were claimed earlier.' : 'Gold and squad XP have been added.'}</span>
+      <strong>${alreadyResolved ? 'Rewards revealed.' : 'Rewards revealed.'}</strong>
+      <span>${alreadyResolved ? 'These rewards were already secured for this battle.' : 'Gold and squad XP have been added.'}</span>
     </div>
 
     <div class="battle-reward-grid battle-reward-grid-claimed">
@@ -193,18 +230,21 @@ export async function renderBattleResults({ query }) {
     const previewGold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
     const previewXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
     const alreadyResolved = Boolean(attemptStatus?.resolved && attemptStatus?.battle);
-    const canResolve = selectedCards.length > 0 && Boolean(attemptId) && !alreadyResolved;
+    const revealSeen = alreadyResolved && hasSeenRewardReveal(attemptId);
+    const canSettle = selectedCards.length > 0 && Boolean(attemptId) && !alreadyResolved;
+    const canReveal = selectedCards.length > 0 && Boolean(attemptId) && !revealSeen;
     const resultWord = victory ? 'Victory' : 'Defeat';
-    const heroTitle = alreadyResolved ? `${resultWord} Claimed` : (canResolve ? resultWord : 'Battle Paused');
+    const heroTitle = revealSeen ? `${resultWord} Revealed` : (alreadyResolved ? `${resultWord} Secured` : (canSettle ? resultWord : 'Battle Paused'));
     const battleAgainHref = buildBattleResultsHref({ encounterId: encounter.id, squadCardIds: selectedIds });
+    const securedPayload = alreadyResolved ? attemptStatus.battle : null;
 
     return `
       <section class="result-banner battle-result-hero ${victory ? 'battle-result-victory' : 'battle-result-defeat'}">
         <span class="section-kicker">Battle Results</span>
         <h2 class="hero-title battle-result-title">${escapeHtml(heroTitle)}</h2>
-        <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${alreadyResolved ? 'These rewards have already been claimed.' : 'Rewards will be claimed automatically.'}</p>
+        <p class="hero-copy">${escapeHtml(encounter.name)} is complete. ${revealSeen ? 'Your rewards have been revealed.' : 'Your rewards are protected, and the reveal is yours to open.'}</p>
         <div class="action-row">
-          ${canResolve ? `<button class="button button-primary" type="button" data-battle-resolve data-battle-auto-claim="true" data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Claim Now</button>` : `<span class="button ${alreadyResolved ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${alreadyResolved ? 'Already Claimed' : 'Select a Squad'}</span>`}
+          ${canReveal ? `<button class="button button-primary" type="button" data-battle-reveal data-battle-auto-settle="${canSettle ? 'true' : 'false'}" data-encounter-id="${escapeHtml(encounter.id)}" data-squad-card-ids="${escapeHtml(selectedIds.join(','))}" data-attempt-id="${escapeHtml(attemptId)}">Reveal Rewards</button>` : `<span class="button ${revealSeen ? 'button-resolved' : 'button-secondary'}" aria-disabled="true">${revealSeen ? 'Already Revealed' : 'Select a Squad'}</span>`}
           <a class="button button-secondary" href="${battleAgainHref}">Battle Again</a>
           <a class="button button-secondary" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: selectedIds })}">Edit Squad</a>
         </div>
@@ -213,8 +253,8 @@ export async function renderBattleResults({ query }) {
       ${renderLeadCard(leadCard)}
 
       <section class="glass-panel battle-summary-panel battle-preview-panel battle-rewards-acquired-panel">
-        <span class="section-kicker">Rewards Acquired</span>
-        <h2 class="section-title">${alreadyResolved ? 'Claimed rewards' : 'Rewards pending'}</h2>
+        <span class="section-kicker">Rewards</span>
+        <h2 class="section-title">${revealSeen ? 'Revealed rewards' : (alreadyResolved ? 'Rewards secured' : 'Rewards being secured')}</h2>
         <div class="battle-reward-grid">
           <div class="battle-reward-card battle-reward-card-gold"><span>Gold</span><strong>◎ ${escapeHtml(previewGold)}</strong></div>
           <div class="battle-reward-card"><span>Squad XP</span><strong>+${escapeHtml(previewXp)}</strong></div>
@@ -222,11 +262,11 @@ export async function renderBattleResults({ query }) {
       </section>
 
       <section class="glass-panel battle-summary-panel battle-live-panel">
-        <span class="section-kicker">Reward Claim</span>
-        <h2 class="section-title">${alreadyResolved ? 'Already claimed' : 'Auto-claim enabled'}</h2>
-        <div class="empty-note" data-battle-resolve-status>${alreadyResolved ? 'These rewards have already been claimed.' : (canResolve ? 'Auto-claim will collect these rewards shortly.' : 'Choose a squad before claiming rewards.')}</div>
-        <div data-battle-resolve-result>
-          ${renderClaimedRewards(alreadyResolved ? attemptStatus.battle : null)}
+        <span class="section-kicker">Reward Reveal</span>
+        <h2 class="section-title">${revealSeen ? 'Rewards revealed' : (alreadyResolved ? 'Ready to reveal' : 'Securing rewards')}</h2>
+        <div class="empty-note" data-battle-reveal-status>${revealSeen ? 'Your rewards have been revealed.' : (alreadyResolved ? 'Rewards are secured. Tap Reveal Rewards when you are ready.' : (canSettle ? 'Securing rewards in the background.' : 'Choose a squad before revealing rewards.'))}</div>
+        <div data-battle-reveal-result>
+          ${revealSeen ? renderRevealedRewards(securedPayload) : renderSecuredRewardPrompt({ secured: alreadyResolved })}
         </div>
       </section>
 
@@ -273,18 +313,46 @@ export async function renderBattleResults({ query }) {
 }
 
 export function initBattleResults(root) {
-  const button = root.querySelector('[data-battle-resolve]');
-  const status = root.querySelector('[data-battle-resolve-status]');
-  const resultTarget = root.querySelector('[data-battle-resolve-result]');
+  const button = root.querySelector('[data-battle-reveal]');
+  const status = root.querySelector('[data-battle-reveal-status]');
+  const resultTarget = root.querySelector('[data-battle-reveal-result]');
 
   if (!button || !status || !resultTarget) {
     return;
   }
 
-  let claimInFlight = false;
+  let settlementInFlight = false;
+  let settledPayload = null;
 
-  async function runClaim({ source = 'manual' } = {}) {
-    if (claimInFlight || button.getAttribute('data-resolved') === 'true') {
+  async function fetchSettledPayload(attemptId) {
+    const attemptStatus = await fetchBattleAttemptStatus({ attemptId });
+    return attemptStatus?.battle || null;
+  }
+
+  async function revealRewards(payload, attemptId) {
+    if (!payload) {
+      throw new Error('Rewards are not secured yet.');
+    }
+
+    if (payload.ok) {
+      await refreshTopBarResources(document, {
+        gold: payload.rewardApplied?.goldAfter,
+      });
+    }
+
+    resultTarget.innerHTML = renderRevealedRewards(payload);
+    status.textContent = 'Rewards revealed.';
+    button.disabled = true;
+    button.textContent = 'Revealed';
+    button.classList.remove('button-working');
+    button.classList.add('button-resolved');
+    button.setAttribute('aria-disabled', 'true');
+    button.setAttribute('data-resolved', 'true');
+    markRewardRevealSeen(attemptId);
+  }
+
+  async function settleRewards({ revealAfter = false, source = 'auto' } = {}) {
+    if (settlementInFlight || button.getAttribute('data-resolved') === 'true') {
       return;
     }
 
@@ -293,67 +361,80 @@ export function initBattleResults(root) {
     const attemptId = button.getAttribute('data-attempt-id') || '';
     const isAuto = source === 'auto';
 
-    claimInFlight = true;
+    settlementInFlight = true;
     button.disabled = true;
-    button.textContent = isAuto ? 'Auto-claiming...' : 'Claiming...';
+    button.textContent = isAuto ? 'Securing...' : 'Preparing...';
     button.classList.add('button-working');
-    status.textContent = isAuto ? 'Auto-claiming rewards...' : 'Claiming rewards...';
+    status.textContent = isAuto ? 'Securing rewards in the background...' : 'Preparing your reward reveal...';
 
     try {
       const payload = await claimBattleRewards({ encounterId, squadCardIds, attemptId });
 
       if (!payload.responseOk || !payload.ok) {
         if (payload?.code === 'duplicate-battle-attempt') {
-          resultTarget.innerHTML = renderClaimedRewards({
-            ok: false,
-            code: payload.code,
-            error: 'These rewards have already been claimed.',
-          });
-          status.textContent = 'These rewards have already been claimed.';
-          button.disabled = true;
-          button.textContent = 'Already Claimed';
-          button.classList.remove('button-working');
-          button.classList.add('button-resolved');
-          button.setAttribute('aria-disabled', 'true');
-          button.setAttribute('data-resolved', 'true');
-          claimInFlight = false;
-          return;
+          settledPayload = await fetchSettledPayload(attemptId);
+        } else {
+          throw new Error(payload?.error || `Battle reward settlement failed with ${payload.httpStatus || 'unknown status'}`);
         }
-
-        throw new Error(payload?.error || `Battle reward claim failed with ${payload.httpStatus || 'unknown status'}`);
+      } else {
+        settledPayload = payload;
       }
 
-      await refreshTopBarResources(document, {
-        gold: payload.rewardApplied?.goldAfter,
-      });
+      if (!settledPayload) {
+        throw new Error('Rewards could not be verified after settlement.');
+      }
 
-      resultTarget.innerHTML = renderClaimedRewards(payload);
-      status.textContent = 'Rewards claimed.';
       button.classList.remove('button-working');
-      button.textContent = 'Claimed';
-      button.classList.add('button-resolved');
-      button.setAttribute('aria-disabled', 'true');
-      button.setAttribute('data-resolved', 'true');
-    } catch (error) {
-      status.textContent = isAuto ? `Auto-claim failed. Tap Claim Now to retry. ${error.message}` : error.message;
-      resultTarget.innerHTML = renderClaimedRewards({ ok: false, error: error.message });
       button.disabled = false;
-      button.textContent = 'Claim Now';
+      button.textContent = 'Reveal Rewards';
+      button.setAttribute('data-settled', 'true');
+      status.textContent = 'Rewards secured. Tap Reveal Rewards when you are ready.';
+      resultTarget.innerHTML = renderSecuredRewardPrompt({ secured: true });
+
+      if (revealAfter) {
+        await revealRewards(settledPayload, attemptId);
+      }
+    } catch (error) {
+      status.textContent = isAuto ? `Rewards were not secured automatically. Tap Reveal Rewards to retry. ${error.message}` : error.message;
+      resultTarget.innerHTML = renderSecuredRewardPrompt({ failed: true });
+      button.disabled = false;
+      button.textContent = 'Reveal Rewards';
       button.classList.remove('button-working', 'button-resolved');
       button.removeAttribute('aria-disabled');
       button.removeAttribute('data-resolved');
     } finally {
-      claimInFlight = false;
+      settlementInFlight = false;
     }
   }
 
-  button.addEventListener('click', () => {
-    runClaim({ source: 'manual' });
+  button.addEventListener('click', async () => {
+    const attemptId = button.getAttribute('data-attempt-id') || '';
+
+    try {
+      if (!settledPayload && button.getAttribute('data-settled') === 'true') {
+        settledPayload = await fetchSettledPayload(attemptId);
+      }
+
+      if (settledPayload) {
+        await revealRewards(settledPayload, attemptId);
+        return;
+      }
+
+      await settleRewards({ revealAfter: true, source: 'manual' });
+    } catch (error) {
+      status.textContent = error.message;
+      resultTarget.innerHTML = renderSecuredRewardPrompt({ failed: true });
+      button.disabled = false;
+      button.textContent = 'Reveal Rewards';
+      button.classList.remove('button-working', 'button-resolved');
+      button.removeAttribute('aria-disabled');
+      button.removeAttribute('data-resolved');
+    }
   });
 
-  if (button.getAttribute('data-battle-auto-claim') === 'true') {
+  if (button.getAttribute('data-battle-auto-settle') === 'true') {
     window.setTimeout(() => {
-      runClaim({ source: 'auto' });
-    }, 650);
+      settleRewards({ revealAfter: false, source: 'auto' });
+    }, 250);
   }
 }
