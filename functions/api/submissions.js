@@ -1,9 +1,8 @@
+import { resolveCurrentUser } from '../_shared/current-user.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 import { insertSubmission, listSubmissions } from '../_shared/submission-store.js';
 
 const maxImageBytes = 5 * 1024 * 1024;
-const temporarySubmitterUserId = 'temporary-sterling';
-const temporarySubmitterDisplayName = 'Sterling';
 const allowedMimeTypes = new Map([['image/png', 'png'], ['image/jpeg', 'jpg'], ['image/webp', 'webp']]);
 const allowedRarities = new Set(['random', 'common', 'uncommon', 'rare', 'legendary', 'mythic']);
 const allowedCharacters = new Set(['sterling', 'cydney', 'ryan', 'gabi', 'cooper', 'kenly', 'ashley']);
@@ -69,6 +68,7 @@ export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
   if (!env.CARD_IMAGES) return errorResponse('R2 binding CARD_IMAGES is not available.', 503);
   try {
+    const currentUser = resolveCurrentUser(request);
     const formData = await request.formData();
     const fields = buildFields(formData);
     const imageFile = formData.get('image');
@@ -78,10 +78,10 @@ export async function onRequestPost({ env, request }) {
     const id = buildSubmissionId();
     const extension = getImageExtension(imageFile);
     const imageKey = `submissions/${id}/original.${extension}`;
-    await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { submissionId: id, originalName: cleanText(imageFile.name, 160) } });
-    const submission = { id, submitterUserId: temporarySubmitterUserId, submitterDisplayName: temporarySubmitterDisplayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
+    await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { submissionId: id, originalName: cleanText(imageFile.name, 160), creatorUserId: currentUser.id } });
+    const submission = { id, submitterUserId: currentUser.id, submitterDisplayName: currentUser.displayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
     try { await insertSubmission(env, submission); } catch (error) { await env.CARD_IMAGES.delete(imageKey).catch(() => null); throw error; }
-    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: '10F.4', submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Temporary submitter placeholder is used until real authentication exists.', 'Submission is pending_review and does not enter Library or pulls until approved.', 'Rarity and POW/DEF/SPD are generated during approval.'] }, { status: 201 });
+    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: '10F.4', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Rarity and POW/DEF/SPD are generated during approval.'] }, { status: 201 });
   } catch (error) {
     return errorResponse('Failed to create submission.', 500, error.message);
   }
