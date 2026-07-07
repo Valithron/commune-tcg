@@ -30,6 +30,7 @@ const defColumns = ['def', 'defense', 'health', 'hp'];
 const spdColumns = ['spd', 'speed', 'agility'];
 const flavorColumns = ['flavor', 'flavor_text', 'description', 'lore'];
 const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
+const cropColumns = ['crop', 'crop_json', 'cropJson', 'image_crop', 'imageCrop'];
 const statusColumns = ['status', 'moderation_status', 'approved', 'is_approved', 'published'];
 
 function quoteIdentifier(name) {
@@ -83,7 +84,15 @@ function normalizeRarity(value) {
 }
 
 function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
     return null;
   }
 
@@ -112,6 +121,17 @@ function imageUrlFromValue(value) {
   return `/api/card-image?key=${encodeURIComponent(imageValue)}`;
 }
 
+function normalizeCrop(value) {
+  const parsed = safeParseJson(value);
+  const crop = parsed?.crop || parsed?.imageCrop || parsed || {};
+
+  return {
+    x: toNumber(crop.x ?? crop.left, 50),
+    y: toNumber(crop.y ?? crop.top, 50),
+    zoom: toNumber(crop.zoom ?? crop.z ?? crop.scale, 1),
+  };
+}
+
 function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
@@ -124,6 +144,7 @@ function flattenCardPayload(row) {
     def: payload.def ?? payload.defense ?? payload.health ?? payload.hp ?? stats.def ?? stats.defense ?? stats.health ?? stats.hp,
     spd: payload.spd ?? payload.speed ?? payload.agility ?? stats.spd ?? stats.speed ?? stats.agility,
     image_key: payload.image_key ?? payload.imageKey ?? payload.image_path ?? payload.image ?? payload.image_url ?? payload.art_url ?? payload.art_key ?? payload.object_key ?? payload.r2_key,
+    crop: payload.crop ?? payload.crop_json ?? payload.cropJson ?? payload.image_crop ?? payload.imageCrop,
     flavor: payload.flavor ?? payload.flavor_text ?? payload.description ?? payload.lore,
     character: payload.character ?? payload.character_id ?? payload.characterId ?? payload.cid,
     type: payload.type ?? payload.card_type ?? payload.cardType ?? payload.role ?? payload.battle_role ?? payload.battleRole ?? payload.faction ?? payload.class,
@@ -181,6 +202,7 @@ function normalizeRow(row, columns) {
     flavor: String(readValue(data, flavorColumns, 'A discovered Library card from the connected database.')),
     imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
     imageUrl: imageUrlFromValue(imageValue),
+    crop: normalizeCrop(readValue(data, cropColumns, data.crop || {})),
   };
 }
 
