@@ -1,9 +1,10 @@
 /* ============================================================================
    Battle Results Route
-   Phase 10E.2 responsibility: auto-settle battle rewards while preserving a
-   manual reward reveal moment. Settlement and reveal are intentionally separate.
+   Phase 10F.2 responsibility: show card-frame thumbnails on Battle Results lead
+   card and squad rows while preserving reward settlement and reveal behavior.
    ============================================================================ */
 
+import { renderCardFrame } from '../components/CardFrame.js';
 import { refreshTopBarResources } from '../components/TopBar.js';
 import { getEncounterById } from '../data/mockBattle.js';
 import { claimBattleRewards } from '../services/battleRewardClaim.js';
@@ -32,6 +33,19 @@ function escapeHtml(value) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(Number(value) || 0, min), max);
+}
+
+function renderBattleCardThumb(card) {
+  return `
+    <div class="battle-card-thumb-frame" aria-hidden="true">
+      ${renderCardFrame(card, {
+        showOwnership: false,
+        showStats: false,
+        density: 'thumbnail',
+        context: 'battle-results',
+      })}
+    </div>
+  `;
 }
 
 function getRewardRevealKey(attemptId) {
@@ -88,9 +102,10 @@ function renderLeadCard(card) {
   }
 
   return `
-    <section class="battle-lead-card glass-panel">
+    <section class="battle-lead-card battle-lead-card-with-thumb glass-panel">
       <span class="battle-mvp-badge">Lead Card</span>
-      <div>
+      ${renderBattleCardThumb(card)}
+      <div class="battle-lead-copy">
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <h2>${escapeHtml(card.name)}</h2>
         <p>Led the squad with ${escapeHtml(card.battlePower || 0)} battle power.</p>
@@ -136,8 +151,9 @@ function renderSquadRows(cards = [], note = 'Will gain XP') {
   }
 
   return cards.map((card) => `
-    <div class="battle-card-row battle-card-row-selected">
-      <div>
+    <div class="battle-card-row battle-card-row-with-thumb battle-card-row-selected">
+      ${renderBattleCardThumb(card)}
+      <div class="battle-card-row-copy">
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <strong>${escapeHtml(card.name)}</strong>
         <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
