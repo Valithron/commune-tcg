@@ -1,7 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 10D.1 responsibility: keep player/admin routes separate while loading
-   compact battle encounter presentation overrides after the shared battle CSS.
+   Phase 10F.1 responsibility: keep player/admin routes separate while loading
+   compact battle encounter and squad-thumbnail presentation overrides.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -20,6 +20,7 @@ import './styles/card-standard-tuner.css';
 
 import './styles/battle.css';
 import './styles/battle-encounter-compact.css';
+import './styles/battle-squad-thumbnails.css';
 import './styles/phase4.css';
 
 import { renderAppShell } from './components/AppShell.js';
