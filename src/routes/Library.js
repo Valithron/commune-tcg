@@ -6,18 +6,6 @@
 import { loadLibraryCards } from '../data/libraryData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
 
-function renderSourceNote(library) {
-  const sourceLabel = library.source === 'backend'
-    ? `Live D1${library.table ? ` · ${library.table}` : ''}`
-    : 'Mock fallback';
-
-  return `
-    <div class="empty-note">
-      Source: ${sourceLabel}${library.warnings?.length ? ` · ${library.warnings[0]}` : ''}
-    </div>
-  `;
-}
-
 export async function renderLibrary() {
   const library = await loadLibraryCards();
 
@@ -31,8 +19,6 @@ export async function renderLibrary() {
         <a class="button button-secondary" href="#/pull">Start Pulling</a>
       </div>
     </section>
-
-    ${renderSourceNote(library)}
 
     <section>
       <div class="section-heading">
