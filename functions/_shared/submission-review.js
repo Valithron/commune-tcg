@@ -1,9 +1,9 @@
 /* ============================================================================
    Submission Review Helper
-   Phase 9.4 patch responsibility: make approval insertion into cards idempotent
-   and keep approved cards unowned without relying on NULL owner_user_id.
+   Phase 10F.4 responsibility: review submitted cards and roll approval values.
    ============================================================================ */
 
+import { rollApprovalProfile } from './approval-rolls.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
 
 const temporaryReviewerId = 'temporary-admin-sterling';
@@ -29,7 +29,10 @@ function buildApprovedCardId(submission) {
   return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
-function buildApprovedCardJson(submission, now) {
+function buildApprovedCardJson(submission, now, approvalProfile) {
+  const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
+  const stats = approvalProfile?.stats || { pow: 1, def: 1, spd: 1 };
+
   return JSON.stringify({
     id: buildApprovedCardId(submission),
     name: submission.cardName,
@@ -38,11 +41,13 @@ function buildApprovedCardJson(submission, now) {
     type: submission.cardType,
     card_type: submission.cardType,
     category: titleCase(submission.cardType),
-    rarity: submission.raritySuggestion,
-    stats: submission.stats,
-    pow: submission.stats.pow,
-    def: submission.stats.def,
-    spd: submission.stats.spd,
+    rarity: approvalProfile?.rarity || 'common',
+    rarity_source: 'approval_random_roll',
+    rarity_suggestion: submission.raritySuggestion,
+    stats,
+    pow: stats.pow,
+    def: stats.def,
+    spd: stats.spd,
     flavor: submission.flavorText,
     flavor_text: submission.flavorText,
     ability: submission.abilityText || '',
@@ -50,6 +55,10 @@ function buildApprovedCardJson(submission, now) {
     abilityIcon: '✦',
     image_key: submission.imageKey,
     imageKey: submission.imageKey,
+    crop: cropJson,
+    crop_json: cropJson,
+    image_crop: cropJson,
+    imageCrop: cropJson,
     source: 'card_submissions',
     source_submission_id: submission.id,
     approved_by: temporaryReviewerId,
@@ -57,9 +66,9 @@ function buildApprovedCardJson(submission, now) {
   });
 }
 
-async function upsertApprovedLibraryCard(env, submission, now) {
+async function upsertApprovedLibraryCard(env, submission, now, approvalProfile) {
   const approvedCardId = buildApprovedCardId(submission);
-  const cardJson = buildApprovedCardJson(submission, now);
+  const cardJson = buildApprovedCardJson(submission, now, approvalProfile);
 
   await env.DB.prepare(`
     INSERT OR IGNORE INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
@@ -92,8 +101,6 @@ async function upsertApprovedLibraryCard(env, submission, now) {
 }
 
 async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, now) {
-  const nextStatus = statusFromAction(action);
-
   await env.DB.prepare(`
     UPDATE card_submissions
     SET moderation_status = ?,
@@ -104,7 +111,7 @@ async function updateSubmissionReview(env, submission, action, reviewNotes, appr
         updated_at = ?
     WHERE id = ?
   `).bind(
-    nextStatus,
+    statusFromAction(action),
     reviewNotes,
     approvedCardId || submission.approvedCardId || '',
     now,
@@ -120,21 +127,13 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
   const normalizedAction = String(action || '').trim().toLowerCase();
 
   if (!allowedActions.has(normalizedAction)) {
-    return {
-      ok: false,
-      status: 400,
-      error: 'Unsupported review action.',
-    };
+    return { ok: false, status: 400, error: 'Unsupported review action.' };
   }
 
   const submission = await getSubmissionById(env, id);
 
   if (!submission) {
-    return {
-      ok: false,
-      status: 404,
-      error: 'Submission was not found.',
-    };
+    return { ok: false, status: 404, error: 'Submission was not found.' };
   }
 
   if (!['pending_review', 'needs_changes'].includes(submission.moderationStatus)) {
@@ -149,9 +148,11 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
   const now = new Date().toISOString();
   const cleanedNotes = cleanText(reviewNotes);
   let approvedCardId = submission.approvedCardId || '';
+  let approvalProfile = null;
 
   if (normalizedAction === 'approve') {
-    approvedCardId = await upsertApprovedLibraryCard(env, submission, now);
+    approvalProfile = rollApprovalProfile();
+    approvedCardId = await upsertApprovedLibraryCard(env, submission, now, approvalProfile);
   }
 
   await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, now);
@@ -162,6 +163,7 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '' }) {
     status: 200,
     action: normalizedAction,
     approvedCardId,
+    approvalProfile,
     submission: updatedSubmission,
     reviewerId: temporaryReviewerId,
   };
