@@ -1,0 +1,126 @@
+/* ============================================================================
+   Battle Encounter Compact Overrides
+   Phase 10D.1 responsibility: make encounter selection cards shorter and clearer
+   without changing battle mechanics or the shared battle styling.
+   ============================================================================ */
+
+.encounter-grid-polished {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.encounter-card-compact {
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.encounter-card-main {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.encounter-card-copy {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.encounter-card-copy h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  line-height: 1.05;
+}
+
+.encounter-portrait-compact {
+  min-height: 4.75rem;
+  width: 4.75rem;
+}
+
+.encounter-portrait-compact span {
+  font-size: 2.35rem;
+}
+
+.encounter-quick-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1.2fr;
+  gap: var(--space-2);
+}
+
+.encounter-quick-grid > div {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.encounter-quick-grid span,
+.encounter-reward-strip span {
+  color: var(--color-functional);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.encounter-quick-grid strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+}
+
+.encounter-reward-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.encounter-reward-strip span {
+  padding: 0.45rem 0.62rem;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: var(--radius-full);
+  background: rgba(212, 175, 55, 0.08);
+  color: var(--color-primary);
+}
+
+@media (min-width: 700px) {
+  .encounter-grid-polished {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .encounter-card-main {
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+  }
+
+  .encounter-portrait-compact {
+    min-height: 4.2rem;
+    width: 4.2rem;
+  }
+
+  .encounter-card-topline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .encounter-quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .encounter-quick-grid strong {
+    font-size: 0.88rem;
+  }
+}
