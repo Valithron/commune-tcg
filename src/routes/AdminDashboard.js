@@ -1,6 +1,6 @@
 /* ============================================================================
    Admin Dashboard Route
-   Phase 4.5 responsibility: submission review queue inside isolated admin shell.
+   Phase 10F.4 responsibility: submission review queue inside isolated admin shell.
    Review transitions happen server-side.
    ============================================================================ */
 
@@ -22,6 +22,10 @@ function formatStatus(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function formatRarity(value) {
+  return String(value || 'random') === 'random' ? 'Rarity rolls on approval' : formatStatus(value);
+}
+
 function isReviewableStatus(value) {
   return ['pending_review', 'needs_changes'].includes(String(value || '').toLowerCase());
 }
@@ -32,7 +36,7 @@ function mapBackendSubmission(submission) {
     name: submission.cardName,
     submitter: submission.submitterDisplayName,
     category: submission.cardType,
-    rarity: submission.raritySuggestion,
+    rarity: formatRarity(submission.raritySuggestion),
     moderationStatus: submission.moderationStatus,
     status: formatStatus(submission.moderationStatus),
     source: 'backend',
@@ -40,36 +44,19 @@ function mapBackendSubmission(submission) {
 }
 
 function mapMockSubmission(submission) {
-  return {
-    ...submission,
-    source: 'mock',
-  };
+  return { ...submission, source: 'mock' };
 }
 
 async function loadAdminSubmissions() {
   try {
     const routes = getApiRoutes();
     const payload = await fetchJson(routes.adminSubmissions);
-
     if (!payload?.ok || !Array.isArray(payload.submissions)) {
-      return {
-        submissions: mockSubmissions.map(mapMockSubmission),
-        source: 'mock',
-        warnings: payload?.warnings || ['No backend submissions were returned.'],
-      };
+      return { submissions: mockSubmissions.map(mapMockSubmission), source: 'mock', warnings: payload?.warnings || ['No backend submissions were returned.'] };
     }
-
-    return {
-      submissions: payload.submissions.map(mapBackendSubmission),
-      source: 'backend',
-      warnings: payload.warnings || [],
-    };
+    return { submissions: payload.submissions.map(mapBackendSubmission), source: 'backend', warnings: payload.warnings || [] };
   } catch (error) {
-    return {
-      submissions: mockSubmissions.map(mapMockSubmission),
-      source: 'mock',
-      warnings: [error.message],
-    };
+    return { submissions: mockSubmissions.map(mapMockSubmission), source: 'mock', warnings: [error.message] };
   }
 }
 
@@ -82,10 +69,7 @@ function renderSubmissionRow(submission) {
     <em>${escapeHtml(submission.status)}</em>
   `;
 
-  if (submission.source !== 'backend') {
-    return `<article class="admin-row">${content}</article>`;
-  }
-
+  if (submission.source !== 'backend') return `<article class="admin-row">${content}</article>`;
   return `<a class="admin-row" href="#/admin/submission/${encodeURIComponent(submission.id)}">${content}</a>`;
 }
 
@@ -109,12 +93,7 @@ export async function renderAdminDashboard() {
     </section>
 
     <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Overview</span>
-          <h2 class="section-title">Admin Snapshot</h2>
-        </div>
-      </div>
+      <div class="section-heading"><div><span class="section-kicker">Overview</span><h2 class="section-title">Admin Snapshot</h2></div></div>
       <div class="admin-stat-grid">
         <div class="stat-panel"><span class="stat-label">Cards</span><span class="stat-value">${mockAdminStats.totalCards}</span></div>
         <div class="stat-panel"><span class="stat-label">Pending</span><span class="stat-value">${pendingCount}</span></div>
@@ -126,10 +105,7 @@ export async function renderAdminDashboard() {
 
     <section>
       <div class="section-heading">
-        <div>
-          <span class="section-kicker">Moderation</span>
-          <h2 class="section-title">Submission Queue</h2>
-        </div>
+        <div><span class="section-kicker">Moderation</span><h2 class="section-title">Submission Queue</h2></div>
         <span class="status-pill">${escapeHtml(sourceLabel)}</span>
       </div>
       <div class="admin-table">
@@ -140,9 +116,7 @@ export async function renderAdminDashboard() {
     <section class="glass-panel admin-panel">
       <span class="section-kicker">Approval Checklist</span>
       <h2 class="section-title">Before a card enters pulls</h2>
-      <div class="admin-checklist">
-        ${adminChecklist.map((item) => `<div>${escapeHtml(item)}</div>`).join('')}
-      </div>
+      <div class="admin-checklist">${adminChecklist.map((item) => `<div>${escapeHtml(item)}</div>`).join('')}</div>
     </section>
 
     <section class="glass-panel admin-panel">
