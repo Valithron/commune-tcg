@@ -1,9 +1,10 @@
 /* ============================================================================
    Squad Builder Route
-   Phase 10C responsibility: player-facing squad slot tray. Mechanics stay the
-   same: owned cards, route selection, saved squad loading, and save action.
+   Phase 10F.1 responsibility: player-facing squad slot tray plus thumbnail card
+   rows in Available Cards. Mechanics stay the same.
    ============================================================================ */
 
+import { renderCardFrame } from '../components/CardFrame.js';
 import { getEncounterById } from '../data/mockBattle.js';
 import {
   battleSquadMaxSize,
@@ -30,6 +31,19 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function renderBattleCardThumb(card) {
+  return `
+    <div class="battle-card-thumb-frame" aria-hidden="true">
+      ${renderCardFrame(card, {
+        showOwnership: false,
+        showStats: false,
+        density: 'thumbnail',
+        context: 'battle-squad',
+      })}
+    </div>
+  `;
+}
+
 function getSavedSquadLabel(selectionInput) {
   if (selectionInput.source === 'saved-squad') {
     return 'Saved squad loaded';
@@ -51,13 +65,15 @@ function renderBattleCardRow(card, { selected = false, href = '', disabled = fal
   const hrefAttribute = tag === 'a' ? ` href="${href}"` : '';
   const classes = [
     'battle-card-row',
+    'battle-card-row-with-thumb',
     selected ? 'battle-card-row-selected' : '',
     disabled ? 'battle-card-row-disabled' : '',
   ].filter(Boolean).join(' ');
 
   return `
     <${tag} class="${classes}"${hrefAttribute}>
-      <div>
+      ${renderBattleCardThumb(card)}
+      <div class="battle-card-row-copy">
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <strong>${escapeHtml(card.name)}</strong>
         <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
