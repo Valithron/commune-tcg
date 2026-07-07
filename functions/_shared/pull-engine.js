@@ -26,80 +26,14 @@ const pullHistorySql = `
   )
 `;
 
-function clampPullCount(value) {
-  const parsed = Number(value);
-  return parsed === 5 ? 5 : 1;
-}
-
-function randomFloat() {
-  const values = new Uint32Array(1);
-  crypto.getRandomValues(values);
-  return values[0] / 4294967295;
-}
-
-function chooseWeightedRarity(rarityOdds) {
-  const totalWeight = rarityOdds.reduce((total, entry) => total + entry.weight, 0);
-  let roll = randomFloat() * totalWeight;
-
-  for (const entry of rarityOdds) {
-    roll -= entry.weight;
-
-    if (roll <= 0) {
-      return entry.rarity;
-    }
-  }
-
-  return rarityOdds[0]?.rarity || 'common';
-}
-
-function chooseRandomCard(cards) {
-  if (!cards.length) {
-    return null;
-  }
-
-  return cards[Math.floor(randomFloat() * cards.length)];
-}
-
-function chooseCardForRarity(cards, rarity) {
-  const matching = cards.filter((card) => card.rarity === rarity);
-  const fromRarity = chooseRandomCard(matching);
-
-  if (fromRarity) {
-    return {
-      card: fromRarity,
-      fallbackUsed: false,
-    };
-  }
-
-  return {
-    card: chooseRandomCard(cards),
-    fallbackUsed: true,
-  };
-}
-
-function buildId(prefix) {
-  return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8);
-}
-
-function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
+function clampPullCount(value) { return Number(value) === 5 ? 5 : 1; }
+function randomFloat() { const values = new Uint32Array(1); crypto.getRandomValues(values); return values[0] / 4294967295; }
+function buildId(prefix) { return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8); }
+function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
+function cleanText(value, maxLength = 120) { return String(value || '').trim().slice(0, maxLength); }
 
 async function tableExists(env, tableName) {
-  const row = await env.DB.prepare(`
-    SELECT name FROM sqlite_master
-    WHERE type = 'table' AND name = ?
-    LIMIT 1
-  `).bind(tableName).first();
-
+  const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first();
   return Boolean(row);
 }
 
@@ -124,62 +58,18 @@ async function readUserResources(env) {
 
 export async function readPullResources(env) {
   const exists = await tableExists(env, 'user_resources');
-
-  if (!exists) {
-    return {
-      userId: temporaryPullUserId,
-      pullTickets: temporaryStartingTickets,
-      gold: 0,
-      bootstrapped: false,
-      tableExists: false,
-      note: 'Live pull resources have not been created yet.',
-    };
-  }
-
+  if (!exists) return { userId: temporaryPullUserId, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: false, note: 'Live pull resources have not been created yet.' };
   const resources = await readUserResources(env);
-
-  if (!resources) {
-    return {
-      userId: temporaryPullUserId,
-      pullTickets: temporaryStartingTickets,
-      gold: 0,
-      bootstrapped: false,
-      tableExists: true,
-      note: 'Sterling resources row has not been created yet.',
-    };
-  }
-
-  return {
-    userId: resources.userId,
-    pullTickets: Number(resources.pullTickets),
-    gold: Number(resources.gold || 0),
-    createdAt: resources.createdAt,
-    updatedAt: resources.updatedAt,
-    bootstrapped: true,
-    tableExists: true,
-    note: '',
-  };
+  if (!resources) return { userId: temporaryPullUserId, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: true, note: 'Sterling resources row has not been created yet.' };
+  return { userId: resources.userId, pullTickets: Number(resources.pullTickets), gold: Number(resources.gold || 0), createdAt: resources.createdAt, updatedAt: resources.updatedAt, bootstrapped: true, tableExists: true, note: '' };
 }
 
 async function readOwnedCardSummary(env, ownedCardId) {
-  if (!ownedCardId) {
-    return null;
-  }
-
-  const row = await env.DB.prepare(`
-    SELECT id, owner_user_id, card_json
-    FROM cards
-    WHERE id = ?
-    LIMIT 1
-  `).bind(ownedCardId).first();
-
-  if (!row) {
-    return null;
-  }
-
+  if (!ownedCardId) return null;
+  const row = await env.DB.prepare(`SELECT id, owner_user_id, card_json FROM cards WHERE id = ? LIMIT 1`).bind(ownedCardId).first();
+  if (!row) return null;
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
-
   return {
     ownedCardId: row.id,
     ownerUserId: row.owner_user_id || '',
@@ -187,23 +77,16 @@ async function readOwnedCardSummary(env, ownedCardId) {
     cardTitle: payload.name || payload.card_name || payload.title || 'Unknown card',
     actualRarity: payload.rarity || 'common',
     characterId: payload.character_id || payload.characterId || payload.character || '',
+    creatorDisplayName: payload.creatorDisplayName || payload.creator_display_name || payload.creator || '',
+    creatorUserId: payload.creatorUserId || payload.creator_user_id || '',
   };
 }
 
 async function hydrateHistoryResult(env, result, userId) {
   const ownerUserId = result.ownerUserId || userId || temporaryPullUserId;
   const alreadySemantic = result.cardTitle && result.ownerDisplayName;
-
-  if (alreadySemantic) {
-    return {
-      ...result,
-      ownerUserId,
-      ownerDisplayName: result.ownerDisplayName,
-    };
-  }
-
+  if (alreadySemantic) return { ...result, ownerUserId, ownerDisplayName: result.ownerDisplayName };
   const ownedSummary = await readOwnedCardSummary(env, result.ownedCardId);
-
   return {
     ...result,
     ownerUserId: result.ownerUserId || ownedSummary?.ownerUserId || ownerUserId,
@@ -211,21 +94,15 @@ async function hydrateHistoryResult(env, result, userId) {
     cardTitle: result.cardTitle || ownedSummary?.cardTitle || result.sourceCardTitle || 'Unknown card',
     actualRarity: result.actualRarity || ownedSummary?.actualRarity || result.selectedRarity || 'common',
     characterId: result.characterId || ownedSummary?.characterId || '',
+    creatorDisplayName: result.creatorDisplayName || ownedSummary?.creatorDisplayName || '',
+    creatorUserId: result.creatorUserId || ownedSummary?.creatorUserId || '',
     historyHydrated: Boolean(ownedSummary),
   };
 }
 
 export async function readPullHistory(env, { limit = 20 } = {}) {
   const exists = await tableExists(env, 'pull_history');
-
-  if (!exists) {
-    return {
-      tableExists: false,
-      totalReturned: 0,
-      pulls: [],
-    };
-  }
-
+  if (!exists) return { tableExists: false, totalReturned: 0, pulls: [] };
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const result = await env.DB.prepare(`
     SELECT id, user_id AS userId, pull_count AS pullCount, ticket_cost AS ticketCost, result_json AS resultJson, created_at AS createdAt
@@ -236,47 +113,43 @@ export async function readPullHistory(env, { limit = 20 } = {}) {
   `).bind(temporaryPullUserId, safeLimit).all();
 
   const pulls = [];
-
   for (const row of result.results || []) {
     let rawResults = [];
-
-    try {
-      rawResults = JSON.parse(row.resultJson || '[]');
-    } catch {
-      rawResults = [];
-    }
-
+    try { rawResults = JSON.parse(row.resultJson || '[]'); } catch { rawResults = []; }
     const results = [];
-
-    for (const rawResult of rawResults) {
-      results.push(await hydrateHistoryResult(env, rawResult, row.userId));
-    }
-
-    pulls.push({
-      id: row.id,
-      userId: row.userId,
-      ownerUserId: row.userId,
-      ownerDisplayName: row.userId === temporaryPullUserId ? temporaryPullUserDisplayName : row.userId,
-      pullCount: Number(row.pullCount),
-      ticketCost: Number(row.ticketCost),
-      results,
-      createdAt: row.createdAt,
-    });
+    for (const rawResult of rawResults) results.push(await hydrateHistoryResult(env, rawResult, row.userId));
+    pulls.push({ id: row.id, userId: row.userId, ownerUserId: row.userId, ownerDisplayName: row.userId === temporaryPullUserId ? temporaryPullUserDisplayName : row.userId, pullCount: Number(row.pullCount), ticketCost: Number(row.ticketCost), results, createdAt: row.createdAt });
   }
+  return { tableExists: true, totalReturned: pulls.length, pulls };
+}
 
-  return {
-    tableExists: true,
-    totalReturned: pulls.length,
-    pulls,
-  };
+function chooseWeightedRarity(rarityOdds) {
+  const totalWeight = rarityOdds.reduce((total, entry) => total + entry.weight, 0);
+  let roll = randomFloat() * totalWeight;
+  for (const entry of rarityOdds) { roll -= entry.weight; if (roll <= 0) return entry.rarity; }
+  return rarityOdds[0]?.rarity || 'common';
+}
+
+function chooseRandomCard(cards) { return cards.length ? cards[Math.floor(randomFloat() * cards.length)] : null; }
+function chooseCardForRarity(cards, rarity) {
+  const fromRarity = chooseRandomCard(cards.filter((card) => card.rarity === rarity));
+  return fromRarity ? { card: fromRarity, fallbackUsed: false } : { card: chooseRandomCard(cards), fallbackUsed: true };
+}
+
+function creatorFields(baseCard) {
+  const creatorDisplayName = cleanText(baseCard.creatorDisplayName || baseCard.creator || '');
+  const creatorUserId = cleanText(baseCard.creatorUserId || '');
+  return { creatorDisplayName, creatorUserId };
 }
 
 function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
+  const creator = creatorFields(baseCard);
   return JSON.stringify({
     id: ownedCardId,
     name: baseCard.name,
     character: baseCard.character,
     character_id: baseCard.characterId,
+    cid: baseCard.characterId,
     type: baseCard.type,
     card_type: baseCard.type,
     category: baseCard.category,
@@ -293,6 +166,11 @@ function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
     flavor_text: baseCard.flavor,
     image_key: baseCard.imageKey,
     imageKey: baseCard.imageKey,
+    creator: creator.creatorDisplayName,
+    creator_display_name: creator.creatorDisplayName,
+    creatorDisplayName: creator.creatorDisplayName,
+    creator_user_id: creator.creatorUserId,
+    creatorUserId: creator.creatorUserId,
     owned: true,
     owner_user_id: temporaryPullUserId,
     ownerDisplayName: temporaryPullUserDisplayName,
@@ -310,39 +188,17 @@ function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
 
 function simulateSelections(cards, count, rarityOdds) {
   const results = [];
-
   for (let index = 0; index < count; index += 1) {
     const selectedRarity = chooseWeightedRarity(rarityOdds);
     const selection = chooseCardForRarity(cards, selectedRarity);
-
-    if (selection.card) {
-      results.push({
-        index: index + 1,
-        selectedRarity,
-        actualRarity: selection.card.rarity,
-        fallbackUsed: selection.fallbackUsed,
-        baseCard: selection.card,
-      });
-    }
+    if (selection.card) results.push({ index: index + 1, selectedRarity, actualRarity: selection.card.rarity, fallbackUsed: selection.fallbackUsed, baseCard: selection.card });
   }
-
   return results;
 }
 
 function buildHistoryResult(result) {
-  return {
-    index: result.index,
-    ownerUserId: temporaryPullUserId,
-    ownerDisplayName: temporaryPullUserDisplayName,
-    cardTitle: result.baseCard.name,
-    actualRarity: result.actualRarity,
-    selectedRarity: result.selectedRarity,
-    fallbackUsed: result.fallbackUsed,
-    characterId: result.baseCard.characterId,
-    sourceCardId: result.baseCard.id,
-    sourceRowId: result.baseCard.sourceRowId,
-    ownedCardId: result.ownedCardId,
-  };
+  const creator = creatorFields(result.baseCard);
+  return { index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId };
 }
 
 export async function resolvePull(env, { count }) {
@@ -351,90 +207,35 @@ export async function resolvePull(env, { count }) {
   const option = pullOptions[pullCount] || pullOptions[1];
   const ticketCost = option.ticketCost;
   const rarityOdds = getRarityOddsPercentages();
-
   await ensurePullSchema(env, now);
 
   const resources = await readUserResources(env);
-
-  if (!resources || Number(resources.pullTickets) < ticketCost) {
-    return {
-      ok: false,
-      status: 409,
-      error: 'Not enough pull tickets.',
-      resources,
-      ticketCost,
-    };
-  }
+  if (!resources || Number(resources.pullTickets) < ticketCost) return { ok: false, status: 409, error: 'Not enough pull tickets.', resources, ticketCost };
 
   const pool = await readPullPool(env);
-
-  if (!pool.cards.length) {
-    return {
-      ok: false,
-      status: 409,
-      error: 'No pull-eligible cards are available.',
-      poolReadiness: pool.readiness,
-    };
-  }
+  if (!pool.cards.length) return { ok: false, status: 409, error: 'No pull-eligible cards are available.', poolReadiness: pool.readiness };
 
   const pullId = buildId('pull');
   const selections = simulateSelections(pool.cards, pullCount, rarityOdds);
   const grantedResults = selections.map((selection) => {
     const ownedCardId = buildId('owned');
-    const ownedCard = {
-      ...selection.baseCard,
-      id: ownedCardId,
-      ownerUserId: temporaryPullUserId,
-      ownerDisplayName: temporaryPullUserDisplayName,
-      owned: true,
-      level: 1,
-      xp: 0,
-      copies: 1,
-    };
-
-    return {
-      ...selection,
-      ownedCardId,
-      ownedCard,
-    };
+    const creator = creatorFields(selection.baseCard);
+    const ownedCard = { ...selection.baseCard, id: ownedCardId, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, owned: true, level: 1, xp: 0, copies: 1 };
+    return { ...selection, ownedCardId, ownedCard };
   });
 
   const historyResults = grantedResults.map(buildHistoryResult);
-
   const statements = [
-    env.DB.prepare(`
-      UPDATE user_resources
-      SET pull_tickets = pull_tickets - ?, updated_at = ?
-      WHERE user_id = ? AND pull_tickets >= ?
-    `).bind(ticketCost, now, temporaryPullUserId, ticketCost),
+    env.DB.prepare(`UPDATE user_resources SET pull_tickets = pull_tickets - ?, updated_at = ? WHERE user_id = ? AND pull_tickets >= ?`).bind(ticketCost, now, temporaryPullUserId, ticketCost),
     ...grantedResults.map((result) => env.DB.prepare(`
       INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(
-      result.ownedCardId,
-      temporaryPullUserId,
-      result.baseCard.characterId,
-      buildOwnedCardJson({ baseCard: result.baseCard, ownedCardId: result.ownedCardId, pullId, now }),
-      now,
-      now
-    )),
-    env.DB.prepare(`
-      INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(
-      pullId,
-      temporaryPullUserId,
-      pullCount,
-      ticketCost,
-      JSON.stringify(historyResults),
-      now
-    ),
+    `).bind(result.ownedCardId, temporaryPullUserId, result.baseCard.characterId, buildOwnedCardJson({ baseCard: result.baseCard, ownedCardId: result.ownedCardId, pullId, now }), now, now)),
+    env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(pullId, temporaryPullUserId, pullCount, ticketCost, JSON.stringify(historyResults), now),
   ];
 
   await env.DB.batch(statements);
-
   const updatedResources = await readUserResources(env);
-
   return {
     ok: true,
     status: 200,
@@ -445,23 +246,7 @@ export async function resolvePull(env, { count }) {
     ticketCost,
     ticketsBefore: Number(resources.pullTickets),
     ticketsAfter: Number(updatedResources.pullTickets),
-    results: grantedResults.map((result) => ({
-      index: result.index,
-      ownerUserId: temporaryPullUserId,
-      ownerDisplayName: temporaryPullUserDisplayName,
-      cardTitle: result.baseCard.name,
-      selectedRarity: result.selectedRarity,
-      actualRarity: result.actualRarity,
-      fallbackUsed: result.fallbackUsed,
-      sourceCard: result.baseCard,
-      ownedCard: result.ownedCard,
-      ownedCardId: result.ownedCardId,
-    })),
-    poolSummary: {
-      eligibleCount: pool.eligibleCount,
-      approvedSubmissionCount: pool.approvedSubmissionCount,
-      byRarity: pool.byRarity,
-      readiness: pool.readiness,
-    },
+    results: grantedResults.map((result) => ({ index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, selectedRarity: result.selectedRarity, actualRarity: result.actualRarity, fallbackUsed: result.fallbackUsed, sourceCard: result.baseCard, ownedCard: result.ownedCard, ownedCardId: result.ownedCardId })),
+    poolSummary: { eligibleCount: pool.eligibleCount, approvedSubmissionCount: pool.approvedSubmissionCount, byRarity: pool.byRarity, readiness: pool.readiness },
   };
 }
