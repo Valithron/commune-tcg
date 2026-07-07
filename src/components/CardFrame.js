@@ -29,9 +29,40 @@ function renderStats(stats = {}) {
   `).join('');
 }
 
+function toCropNumber(value, fallback, min, max) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(parsed, min), max);
+}
+
+function normalizeCrop(card) {
+  const rawCrop = card.crop || card.imageCrop || {};
+  const parsedCrop = typeof rawCrop === 'string' ? JSON.parse(rawCrop || '{}') : rawCrop;
+  const crop = parsedCrop?.crop || parsedCrop?.imageCrop || parsedCrop || {};
+
+  return {
+    x: toCropNumber(crop.x ?? crop.left, 50, 0, 100),
+    y: toCropNumber(crop.y ?? crop.top, 50, 0, 100),
+    zoom: toCropNumber(crop.zoom ?? crop.z ?? crop.scale, 1, 1, 3),
+  };
+}
+
 function renderCardArt(card) {
   if (card.imageUrl) {
-    return `<img class="card-art-image" src="${escapeHtml(card.imageUrl)}" alt="" loading="lazy" />`;
+    let crop = { x: 50, y: 50, zoom: 1 };
+
+    try {
+      crop = normalizeCrop(card);
+    } catch {
+      crop = { x: 50, y: 50, zoom: 1 };
+    }
+
+    const cropStyle = `object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;`;
+    return `<img class="card-art-image" src="${escapeHtml(card.imageUrl)}" alt="" loading="lazy" style="${escapeHtml(cropStyle)}" />`;
   }
 
   return `<span class="card-art-symbol">${escapeHtml(card.symbol || '◆')}</span>`;
