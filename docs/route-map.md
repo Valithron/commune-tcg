@@ -20,7 +20,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Compare squad power, rewards, and difficulty before choosing an encounter |
-| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill three squad slots, and save the current squad |
+| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill squad slots, and pick cards from thumbnail rows |
 | `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Auto-settle rewards safely, then let the player reveal them manually |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
@@ -65,7 +65,7 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 | `/api/pulls` | `functions/api/pulls.js` | Resolve pulls and write owned cards/history |
 | `/api/pull-history` | `functions/api/pull-history.js` | Read pull history |
 | `/api/pull-resources` | `functions/api/pull-resources.js` | Read pull tickets and gold resources |
-| `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle card and table diagnostics |
+| `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle cards, normalized image fields, and table diagnostics |
 | `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write battle simulation |
 | `/api/battle-squad` | `functions/api/battle-squad.js` | Read and save one preferred backend-owned battle squad |
 | `/api/battle-attempt` | `functions/api/battle-attempt.js` | Read whether a battle attempt has already resolved |
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10E.2 keeps the same protected attempt route, but separates reward settlement from reward reveal. Battle Results quietly settles unclaimed rewards in the backend, then leaves the player-facing reward reveal behind the Reveal Rewards button. Manual reveal and fallback settlement share the same reward claim helper.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.1 keeps battle selection mechanics unchanged, but the Squad Builder Available Cards list now uses canonical card-frame thumbnails on the left side of each row. Battle inventory also normalizes image fields so battle UI can reuse the same card art path as Vault.
