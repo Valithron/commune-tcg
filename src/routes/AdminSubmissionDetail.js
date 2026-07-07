@@ -86,7 +86,7 @@ function renderReviewControls(submission) {
   const creatorDisplayName = getCreatorDisplayName(submission);
 
   return `
-    <section class="glass-panel admin-panel" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
+    <section class="glass-panel admin-panel admin-card-editor-form" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
       <span class="section-kicker">Review Actions</span>
       <h2 class="section-title">Server-owned review</h2>
       <p class="hero-copy">Approve creates an unowned Library card row. Rarity and POW/DEF/SPD are rolled by the server during approval.</p>
