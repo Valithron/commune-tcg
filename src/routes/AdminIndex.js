@@ -11,6 +11,11 @@ const adminSections = [
     copy: 'Run the real Phase 5 battle reward path from an admin button and view applied gold and XP.',
   },
   {
+    href: '#/admin/cards',
+    title: 'Card Editor',
+    copy: 'Edit Library card text, stats, images, crop values, and delete card rows from the pool.',
+  },
+  {
     href: '#/admin/submissions',
     title: 'Submissions Review',
     copy: 'Review submitted cards and approve them into the Library pipeline.',
