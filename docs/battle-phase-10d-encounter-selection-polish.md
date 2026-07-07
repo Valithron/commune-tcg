@@ -22,6 +22,19 @@ existing token colors
 
 The layout borrows from the Stitch encounter mockup, but does not switch to the charcoal-gray palette.
 
+## 10D.1 compact-card cleanup
+
+After visual review, the first vertical card version was too tall and cramped on mobile.
+
+10D.1 tightens the design:
+
+```text
+removes encounter flavor descriptions from player cards
+uses compact fight-card layout
+keeps portrait, name, tags, power comparison, rewards, and CTA
+adds a narrow override stylesheet instead of rewriting shared battle CSS
+```
+
 ## What changed
 
 Files:
@@ -29,6 +42,8 @@ Files:
 ```text
 src/routes/EncounterSelect.js
 src/styles/battle.css
+src/styles/battle-encounter-compact.css
+src/main.js
 docs/battle-phase-10d-encounter-selection-polish.md
 ```
 
@@ -39,7 +54,7 @@ Choose Encounter now has:
 ```text
 current squad count
 current squad power
-polished encounter cards
+compact encounter cards
 difficulty pills
 enemy type pill
 simple portrait panel
@@ -86,11 +101,13 @@ heavy animation system
 
 1. Open `#/battle/encounters`.
 2. Confirm the hero shows current squad count and squad power.
-3. Confirm encounter cards show difficulty labels.
-4. Confirm encounter cards show recommended power and your power.
-5. Confirm encounter cards show Gold and Squad XP rewards.
-6. Click Select Encounter.
-7. Confirm Squad Builder opens for that encounter.
-8. Start Battle.
-9. Confirm Battle Results still resolves and claims rewards normally.
-10. Confirm no stamina, drops, tickets, or new reward types appear.
+3. Confirm encounter cards are compact and not tall poster cards.
+4. Confirm encounter flavor descriptions are not shown on the player cards.
+5. Confirm encounter cards show difficulty labels.
+6. Confirm encounter cards show recommended power and your power.
+7. Confirm encounter cards show Gold and Squad XP rewards.
+8. Click Select Encounter.
+9. Confirm Squad Builder opens for that encounter.
+10. Start Battle.
+11. Confirm Battle Results still resolves and claims rewards normally.
+12. Confirm no stamina, drops, tickets, or new reward types appear.
