@@ -21,7 +21,7 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Choose enemy encounter |
 | `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, edit your cards, and save the current squad |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Claim battle rewards once for the selected squad |
+| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Show the polished reward screen and claim rewards once for the selected squad |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -75,4 +75,4 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 
 ## Routing implementation note
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10A keeps the same routes and mechanics, but removes backend/debug presentation from player-facing battle screens. Technical identifiers and endpoint details remain available in the admin area and API diagnostics.
+The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10B keeps the same mechanics and routes, but makes the Battle Results screen more like a navy-and-gold reward screen with a Lead Card panel, Rewards Acquired section, squad XP progression rows, and a Battle Again route that creates a fresh protected attempt.
