@@ -13,6 +13,28 @@ const allowedMimeTypes = new Map([
 const allowedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
 const allowedCharacters = new Set(['sterling', 'cydney', 'ryan', 'gabi', 'cooper', 'kenly', 'ashley']);
 const allowedTypes = new Set(['support', 'battle', 'craft', 'magic', 'alchemy', 'training', 'defense', 'utility']);
+const flavorColumns = [
+  'flavor',
+  'flavour',
+  'flavor_text',
+  'flavour_text',
+  'flavorText',
+  'flavourText',
+  'card_flavor',
+  'cardFlavor',
+  'card_flavor_text',
+  'cardFlavorText',
+  'description',
+  'desc',
+  'summary',
+  'lore',
+  'story',
+  'backstory',
+  'flavorCopy',
+  'flavourCopy',
+];
+const nestedFlavorContainers = ['card_json', 'card', 'data', 'payload', 'copy', 'text', 'content', 'details', 'metadata', 'meta'];
+const nestedTextKeys = ['text', 'value', 'content', 'copy', 'body', 'html', 'markdown', ...flavorColumns];
 
 function cleanText(value, maxLength = 500) {
   return String(value || '').trim().slice(0, maxLength);
@@ -61,6 +83,108 @@ function safeParseJson(value) {
   } catch {
     return null;
   }
+}
+
+function cleanTextValue(value, depth = 0) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanTextValue(item, depth + 1)).filter(Boolean).join(' ').trim();
+  }
+
+  if (typeof value === 'object' && depth < 4) {
+    for (const key of nestedTextKeys) {
+      const text = cleanTextValue(value[key], depth + 1);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function sourceObject(value) {
+  const parsed = safeParseJson(value);
+
+  if (parsed && typeof parsed === 'object') {
+    return parsed;
+  }
+
+  if (value && typeof value === 'object') {
+    return value;
+  }
+
+  return null;
+}
+
+function readTextValue(row, candidates) {
+  const keys = Array.isArray(candidates) ? candidates : [candidates];
+
+  for (const key of keys) {
+    if (key && row[key] !== undefined && row[key] !== null && row[key] !== '') {
+      const text = cleanTextValue(row[key]);
+
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorTextFromSource(source, depth = 0) {
+  if (depth > 4) {
+    return '';
+  }
+
+  const object = sourceObject(source);
+
+  if (!object) {
+    return '';
+  }
+
+  const direct = readTextValue(object, flavorColumns);
+
+  if (direct) {
+    return direct;
+  }
+
+  for (const key of nestedFlavorContainers) {
+    const nested = object[key];
+
+    if (nested === undefined || nested === null || nested === '') {
+      continue;
+    }
+
+    const text = resolveFlavorTextFromSource(nested, depth + 1);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
+}
+
+function resolveFlavorText(...sources) {
+  for (const source of sources) {
+    const text = resolveFlavorTextFromSource(source);
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
 }
 
 function isLikelyUrl(value) {
@@ -122,7 +246,7 @@ function normalizeCardRow(row) {
       def: toStat(payload.def ?? stats.def, 1),
       spd: toStat(payload.spd ?? stats.spd, 1),
     },
-    flavor: payload.flavor || payload.flavor_text || '',
+    flavor: resolveFlavorText(payload, row),
     ability: payload.ability || payload.ability_text || payload.abilityText || '',
     abilityIcon: payload.abilityIcon || payload.ability_icon || '✦',
     imageKey: isLikelyUrl(imageKey) ? '' : String(imageKey || ''),
@@ -152,6 +276,7 @@ function buildCardJson(existingPayload, fields) {
     spd: fields.stats.spd,
     flavor: fields.flavorText,
     flavor_text: fields.flavorText,
+    flavorText: fields.flavorText,
     ability: fields.abilityText,
     ability_text: fields.abilityText,
     abilityIcon: existingPayload.abilityIcon || existingPayload.ability_icon || '✦',
@@ -252,7 +377,7 @@ function fieldsFromPayload(payload, existingCard, storedImageKey = '') {
       def: toStat(payload.def ?? existingCard.stats.def, 1),
       spd: toStat(payload.spd ?? existingCard.stats.spd, 1),
     },
-    flavorText: cleanText(payload.flavor_text || payload.flavor || existingCard.flavor, 500),
+    flavorText: cleanText(resolveFlavorText(payload, existingCard), 500),
     abilityText: cleanText(payload.ability_text || payload.ability || existingCard.ability, 500),
     imageKey,
     crop: {
