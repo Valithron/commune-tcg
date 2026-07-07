@@ -1,7 +1,7 @@
 /* ============================================================================
-   Battle Squad Thumbnail Rows
-   Phase 10F.1 responsibility: show compact card-frame thumbnails in Squad
-   Builder available-card rows without changing selection mechanics.
+   Battle Card Thumbnail Rows
+   Phase 10F.2 responsibility: show compact card-frame thumbnails in Squad
+   Builder and Battle Results rows without changing selection or reward mechanics.
    ============================================================================ */
 
 .battle-card-row-with-thumb {
@@ -35,16 +35,31 @@
   display: none;
 }
 
-.battle-card-row-copy {
+.battle-card-row-copy,
+.battle-lead-copy {
   min-width: 0;
 }
 
-.battle-card-row-copy strong {
+.battle-card-row-copy strong,
+.battle-lead-copy h2 {
   overflow-wrap: anywhere;
 }
 
+.battle-lead-card-with-thumb {
+  grid-template-columns: 4.25rem minmax(0, 1fr) auto;
+}
+
+.battle-lead-card-with-thumb .battle-mvp-badge {
+  grid-column: 1 / -1;
+}
+
+.battle-lead-card-with-thumb .battle-card-thumb-frame {
+  align-self: center;
+}
+
 @media (max-width: 420px) {
-  .battle-card-row-with-thumb {
+  .battle-card-row-with-thumb,
+  .battle-lead-card-with-thumb {
     grid-template-columns: 3.7rem minmax(0, 1fr) auto;
     gap: var(--space-2);
     min-height: 5.1rem;
@@ -64,7 +79,8 @@
     min-height: 3.05rem;
   }
 
-  .battle-card-row-with-thumb .battle-card-stat-stack {
+  .battle-card-row-with-thumb .battle-card-stat-stack,
+  .battle-lead-card-with-thumb .battle-lead-stat {
     min-width: 4.25rem;
   }
 }
