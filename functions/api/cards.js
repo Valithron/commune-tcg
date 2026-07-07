@@ -22,6 +22,30 @@ const nameColumns = ['name', 'card_name', 'title'];
 const characterColumns = ['character', 'character_id', 'characterId', 'cid', 'person', 'commune_member'];
 const typeColumns = ['type', 'card_type', 'cardType', 'role', 'battle_role', 'battleRole', 'faction', 'class'];
 const categoryColumns = ['category', 'class', 'faction'];
+const creatorColumns = [
+  'creator',
+  'creator_name',
+  'creatorName',
+  'creator_display_name',
+  'creatorDisplayName',
+  'creator_user_id',
+  'creatorUserId',
+  'created_by',
+  'createdBy',
+  'submitter_display_name',
+  'submitterDisplayName',
+  'submitter_user_id',
+  'submitterUserId',
+  'submitted_by',
+  'submittedBy',
+  'artist',
+  'artist_name',
+  'artistName',
+  'author',
+  'username',
+  'userName',
+];
+const dateColumns = ['created_at', 'createdAt', 'approved_at', 'approvedAt', 'updated_at', 'updatedAt'];
 const abilityColumns = ['ability', 'ability_text', 'abilityText', 'effect', 'mechanic'];
 const abilityIconColumns = ['ability_icon', 'abilityIcon', 'icon', 'symbol'];
 const rarityColumns = ['rarity', 'tier'];
@@ -276,8 +300,10 @@ function flattenCardPayload(row) {
     flavor,
     character: payload.character ?? payload.character_id ?? payload.characterId ?? payload.cid,
     type: payload.type ?? payload.card_type ?? payload.cardType ?? payload.role ?? payload.battle_role ?? payload.battleRole ?? payload.faction ?? payload.class,
+    creator: payload.creatorDisplayName ?? payload.creator_display_name ?? payload.creatorName ?? payload.creator_name ?? payload.creator ?? payload.createdBy ?? payload.created_by ?? payload.submitterDisplayName ?? payload.submitter_display_name ?? payload.submittedBy ?? payload.submitted_by ?? payload.artistName ?? payload.artist_name ?? payload.artist ?? payload.author,
     ability: payload.ability ?? payload.ability_text ?? payload.abilityText ?? payload.effect ?? payload.mechanic,
     abilityIcon: payload.abilityIcon ?? payload.ability_icon ?? payload.icon,
+    createdAt: payload.createdAt ?? payload.created_at ?? payload.approvedAt ?? payload.approved_at ?? payload.updatedAt ?? payload.updated_at,
   };
 }
 
@@ -309,12 +335,17 @@ function normalizeRow(row, columns) {
   const id = String(readValue(data, [idColumn, 'id', 'card_id', 'uuid', 'slug'], slugify(name)));
   const imageValue = String(readValue(data, imageColumns, ''));
   const flavor = resolveFlavorText(data, row) || 'A discovered Library card from the connected database.';
+  const creator = String(readValue(data, creatorColumns, ''));
+  const createdAt = String(readValue(data, dateColumns, ''));
 
   return {
     id,
     name,
     character: String(readValue(data, characterColumns, '')),
     type: String(readValue(data, typeColumns, 'Type')),
+    creator,
+    creatorDisplayName: creator,
+    createdAt,
     ability: String(readValue(data, abilityColumns, '')),
     abilityIcon: String(readValue(data, abilityIconColumns, '✦')),
     category: String(readValue(data, categoryColumns, 'Library')),
