@@ -1,7 +1,7 @@
 /* ============================================================================
    Commune TCG Gacha - App Bootstrap
-   Phase 10F.1 responsibility: keep player/admin routes separate while loading
-   compact battle encounter and squad-thumbnail presentation overrides.
+   Phase 10F.3 responsibility: keep player/admin routes separate, load battle
+   presentation overrides, and reset scroll on route changes.
    ============================================================================ */
 
 import './styles/tokens.css';
@@ -144,6 +144,28 @@ function getFallbackPath(path) {
   return path.startsWith('/admin') ? '/admin' : '/home';
 }
 
+function scrollRouteToTop() {
+  const mainContent = document.querySelector('#main-content');
+  const scrollingElement = document.scrollingElement || document.documentElement;
+
+  if (scrollingElement) {
+    scrollingElement.scrollTop = 0;
+  }
+
+  document.body.scrollTop = 0;
+  appRoot.scrollTop = 0;
+
+  if (mainContent) {
+    mainContent.scrollTop = 0;
+  }
+
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  });
+}
+
 function renderError(error, shell) {
   const fallbackHref = shell === 'admin' ? '#/admin' : '#/home';
   const fallbackLabel = shell === 'admin' ? 'Back to Admin' : 'Back Home';
@@ -191,6 +213,7 @@ async function render() {
     }
 
     appRoot.innerHTML = await renderShell(matchedRoute, content);
+    scrollRouteToTop();
 
     fitCardTitles(appRoot);
 
@@ -223,6 +246,7 @@ async function render() {
     }
   } catch (error) {
     appRoot.innerHTML = await renderShell(matchedRoute, renderError(error, matchedRoute.shell));
+    scrollRouteToTop();
   }
 }
 
