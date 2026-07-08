@@ -15,6 +15,7 @@ export const cardMechanicsVersion = 'card-mechanics-v2';
 export const defaultBaseStats = Object.freeze({ pow: 1, def: 1, spd: 1 });
 export const emptyStatBonus = Object.freeze({ pow: 0, def: 0, spd: 0 });
 export const defaultProgressionRules = Object.freeze({ levelCap: 30, maxLevel: 30, growthPerLevel: 2 });
+export const defaultOwnedStatBudgetRange = Object.freeze({ min: 28, max: 32 });
 
 const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -40,6 +41,18 @@ function toBoolean(value, fallback = false) {
 
 function cleanText(value, maxLength = 120) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+function normalizeBudgetRange(value = {}, fallback = defaultOwnedStatBudgetRange) {
+  const range = sourceObject(value);
+  const safeFallback = { ...defaultOwnedStatBudgetRange, ...sourceObject(fallback) };
+  const min = toNumber(range.min ?? range.minimum ?? range.low, safeFallback.min);
+  const max = toNumber(range.max ?? range.maximum ?? range.high, safeFallback.max);
+
+  return {
+    min: Math.min(min, max),
+    max: Math.max(min, max),
+  };
 }
 
 export function normalizeRarity(value) {
@@ -141,11 +154,17 @@ export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} 
   const sourceCard = sourceObject(source);
   const baseStats = normalizeBaseStats(profile.stats || profile.baseStats || profile.base_stats || sourceCard);
   const raritySource = cleanText(profile.raritySource || profile.rarity_source || 'approval_cascading_roll');
-  const statsSource = cleanText(profile.statsSource || profile.stats_source || 'rarity_stat_budget');
+  const statsSource = cleanText(profile.statsSource || profile.stats_source || 'approval_static_rarity_budget');
   const rarity = normalizeRarity(profile.rarity || sourceCard.rarity || 'common');
   const progressionRules = normalizeProgressionRules(profile.progressionRules || profile.progression_rules || profile);
   const originRarity = normalizeRarity(profile.originRarity || profile.origin_rarity || rarity);
   const originBonusPercent = normalizeOriginBonusPercent(profile);
+  const statBudget = toNumber(profile.statBudget ?? profile.stat_budget, baseStats.pow + baseStats.def + baseStats.spd);
+  const staticStatBudget = toNumber(profile.staticStatBudget ?? profile.static_stat_budget, statBudget);
+  const ownedStatBudgetRange = normalizeBudgetRange(
+    profile.ownedStatBudgetRange || profile.owned_stat_budget_range,
+    { min: staticStatBudget - progressionRules.growthPerLevel, max: staticStatBudget + progressionRules.growthPerLevel }
+  );
 
   return {
     mechanicsVersion: cardMechanicsVersion,
@@ -159,7 +178,10 @@ export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} 
     pow: baseStats.pow,
     def: baseStats.def,
     spd: baseStats.spd,
-    statBudget: toNumber(profile.statBudget ?? profile.stat_budget, baseStats.pow + baseStats.def + baseStats.spd),
+    statBudget,
+    staticStatBudget,
+    ownedStatBudgetRange,
+    copyStatBudgetVariance: toNumber(profile.copyStatBudgetVariance ?? profile.copy_stat_budget_variance, progressionRules.growthPerLevel),
     statArchetype: cleanText(profile.statArchetype || profile.stat_archetype || sourceCard.cardType || sourceCard.card_type || 'balanced', 60),
     progressionRules,
     levelCap: progressionRules.levelCap,
