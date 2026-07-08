@@ -28,7 +28,7 @@ import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
 import { renderHome } from './routes/Home.js';
-import { renderPull } from './routes/Pull.js';
+import { initPull, renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
 import { renderPullResults } from './routes/PullResults.js';
 import { renderPullHistory } from './routes/PullHistory.js';
@@ -219,6 +219,10 @@ async function render() {
     scrollRouteToTop();
 
     fitCardTitles(appRoot);
+
+    if (matchedRoute.pattern === '/pull' || matchedRoute.pattern === '/pull/confirm') {
+      initPull(appRoot);
+    }
 
     if (matchedRoute.pattern === '/library') {
       initLibraryControls(appRoot);
