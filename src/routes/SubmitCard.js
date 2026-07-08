@@ -6,29 +6,35 @@
 import { getApiRoutes } from '../services/apiClient.js';
 import { initSubmitImageCropper, validateSubmitImage } from './submitCardCrop.js';
 
+const cardTypes = [
+  ['flame', 'Flame'],
+  ['tide', 'Tide'],
+  ['bloom', 'Bloom'],
+  ['volt', 'Volt'],
+  ['shadow', 'Shadow'],
+  ['radiant', 'Radiant'],
+  ['neutral', 'Neutral'],
+];
+
 function showSubmitStatus(status, message) {
   status.hidden = false;
   status.textContent = message;
 }
 
-function renderTypeOptions(selected = 'neutral') {
-  const types = [
-    ['flame', 'Flame'],
-    ['tide', 'Tide'],
-    ['bloom', 'Bloom'],
-    ['volt', 'Volt'],
-    ['shadow', 'Shadow'],
-    ['radiant', 'Radiant'],
-    ['neutral', 'Neutral'],
-  ];
-
-  return types.map(([value, label]) => `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`).join('');
+function renderTypeCheckboxes(selected = ['neutral']) {
+  const selectedSet = new Set(selected);
+  return cardTypes.map(([value, label]) => `
+    <label class="filter-pill">
+      <input name="type_suggestions" type="checkbox" value="${value}"${selectedSet.has(value) ? ' checked' : ''} />
+      <span>${label}</span>
+    </label>
+  `).join('');
 }
 
 export function renderSubmitCard() {
   return `
     <section class="submit-page">
-      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a pending template candidate. You may suggest a target rarity and type, but final rarity, type, and stats are controlled during admin approval.</p></div>
+      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a pending template candidate. You may suggest up to 3 types and a target rarity, but final rarity, type pool, and stats are controlled during admin approval.</p></div>
       <form class="glass-panel submit-form submit-card-form" aria-label="Card submission form" data-submit-card-form>
         <label class="submit-art-field">
           <span>Card Illustration</span>
@@ -46,7 +52,10 @@ export function renderSubmitCard() {
         </label>
         <label><span>Card Title</span><input name="card_name" maxlength="25" placeholder="e.g., Celestial Arbiter" required /></label>
         <label><span>Suggested Character</span><select name="character_id" required><option value="sterling">Sterling</option><option value="cydney">Cydney</option><option value="ryan">Ryan</option><option value="gabi">Gabi</option><option value="cooper">Cooper</option><option value="kenly">Kenly</option><option value="ashley">Ashley</option></select></label>
-        <label><span>Suggested Type</span><select name="card_type" required>${renderTypeOptions('neutral')}</select></label>
+        <fieldset class="review-notes-label" data-type-suggestions>
+          <legend>Suggested Types <small>(choose up to 3)</small></legend>
+          <div class="filter-row">${renderTypeCheckboxes(['neutral'])}</div>
+        </fieldset>
         <label><span>Target Rarity</span><select name="rarity_suggestion" required><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare" selected>Rare</option><option value="legendary">Legendary</option><option value="mythic">Mythic</option></select></label>
         <label><span>Lore / Flavor Text</span><textarea name="flavor_text" maxlength="220" required placeholder="In the silence between stars, the Arbiter watches..."></textarea></label>
         <input name="ability_text" type="hidden" value="" />
@@ -65,10 +74,24 @@ export function initSubmitCardForm(root) {
 
   initSubmitImageCropper(form, status);
 
+  form.querySelectorAll('[name="type_suggestions"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      const checked = [...form.querySelectorAll('[name="type_suggestions"]:checked')];
+      if (checked.length > 3) {
+        checkbox.checked = false;
+        showSubmitStatus(status, 'Choose up to 3 suggested types.');
+      }
+    });
+  });
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     showSubmitStatus(status, 'Submitting card for review...');
     try {
+      const checkedTypes = [...form.querySelectorAll('[name="type_suggestions"]:checked')];
+      if (!checkedTypes.length) throw new Error('Choose at least one suggested type.');
+      if (checkedTypes.length > 3) throw new Error('Choose up to 3 suggested types.');
+
       const imageValidationError = validateSubmitImage(form);
       if (imageValidationError) throw new Error(imageValidationError);
 
@@ -78,7 +101,7 @@ export function initSubmitCardForm(root) {
       showSubmitStatus(status, 'Submitted to Commune: ' + payload.submission.cardName);
       form.reset();
       form.querySelector('[name="rarity_suggestion"]').value = 'rare';
-      form.querySelector('[name="card_type"]').value = 'neutral';
+      form.querySelectorAll('[name="type_suggestions"]').forEach((checkbox) => { checkbox.checked = checkbox.value === 'neutral'; });
       form.querySelector('[name="crop_json"]').value = JSON.stringify({ x: 50, y: 50, zoom: 1 });
     } catch (error) {
       showSubmitStatus(status, error.message);
