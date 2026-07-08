@@ -1,3 +1,9 @@
+import {
+  getCardTypeSummary,
+  getTypeStatWeights,
+  normalizeCardType,
+} from './type-config.js';
+
 const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
 export const rarityProgressionConfig = Object.freeze({
@@ -76,14 +82,6 @@ const targetConfirmationTables = Object.freeze({
   ],
 });
 
-const statArchetypeWeights = Object.freeze({
-  aggressor: { pow: 1.4, def: 0.85, spd: 0.95 },
-  guardian: { pow: 0.9, def: 1.45, spd: 0.85 },
-  swift: { pow: 0.95, def: 0.85, spd: 1.45 },
-  mystic: { pow: 1.15, def: 0.95, spd: 1.1 },
-  balanced: { pow: 1, def: 1, spd: 1 },
-});
-
 function unit() {
   try {
     const values = new Uint32Array(1);
@@ -123,13 +121,8 @@ function normalizeFinalOverride(value) {
   return normalizeApprovalRarity(raw, '');
 }
 
-function inferStatArchetype(source = {}) {
-  const raw = cleanText(source.statArchetype || source.stat_archetype || source.cardType || source.card_type || source.type).toLowerCase();
-  if (['aggressor', 'battle', 'attack', 'attacker', 'striker'].includes(raw)) return 'aggressor';
-  if (['guardian', 'defense', 'defender', 'tank'].includes(raw)) return 'guardian';
-  if (['swift', 'training', 'speed', 'scout', 'utility'].includes(raw)) return 'swift';
-  if (['mystic', 'magic', 'alchemy', 'support'].includes(raw)) return 'mystic';
-  return 'balanced';
+function resolveCardType(source = {}) {
+  return normalizeCardType(source.cardType || source.card_type || source.type || source.element || source.statArchetype || source.stat_archetype || 'neutral');
 }
 
 function rollRarityFromTarget(targetRarity) {
@@ -147,8 +140,9 @@ function rollRarityFromTarget(targetRarity) {
   return { rarity: 'common', targetRarity: target, attempts };
 }
 
-export function allocateStatBudget(totalBudget, archetype = 'balanced') {
-  const weights = statArchetypeWeights[archetype] || statArchetypeWeights.balanced;
+export function allocateStatBudget(totalBudget, cardType = 'neutral') {
+  const normalizedType = normalizeCardType(cardType);
+  const weights = getTypeStatWeights(normalizedType);
   const jittered = Object.fromEntries(
     Object.entries(weights).map(([stat, weight]) => [stat, weight * (0.9 + unit() * 0.2)])
   );
@@ -178,12 +172,24 @@ export function allocateStatBudget(totalBudget, archetype = 'balanced') {
 }
 
 function buildStatsForBudget(totalBudget, source = {}) {
-  const statArchetype = inferStatArchetype(source);
+  const cardType = resolveCardType(source);
+  const typeSummary = getCardTypeSummary(cardType);
 
   return {
     statBudget: totalBudget,
-    statArchetype,
-    stats: allocateStatBudget(totalBudget, statArchetype),
+    cardType,
+    card_type: cardType,
+    type: cardType,
+    typeLabel: typeSummary.label,
+    type_label: typeSummary.label,
+    typeColor: typeSummary.color,
+    type_color: typeSummary.color,
+    typeIdentity: typeSummary.coreIdentity,
+    type_identity: typeSummary.coreIdentity,
+    typeStatBias: typeSummary.statBias,
+    type_stat_bias: typeSummary.statBias,
+    statArchetype: cardType,
+    stats: allocateStatBudget(totalBudget, cardType),
   };
 }
 
@@ -236,6 +242,17 @@ export function rollApprovalProfile({ targetRarity = 'rare', finalRarityOverride
     copyStatBudgetVariance: config.growthPerLevel,
     copy_stat_budget_variance: config.growthPerLevel,
     statBudget: statRoll.statBudget,
+    cardType: statRoll.cardType,
+    card_type: statRoll.cardType,
+    type: statRoll.cardType,
+    typeLabel: statRoll.typeLabel,
+    type_label: statRoll.typeLabel,
+    typeColor: statRoll.typeColor,
+    type_color: statRoll.typeColor,
+    typeIdentity: statRoll.typeIdentity,
+    type_identity: statRoll.typeIdentity,
+    typeStatBias: statRoll.typeStatBias,
+    type_stat_bias: statRoll.typeStatBias,
     statArchetype: statRoll.statArchetype,
     stats: statRoll.stats,
     progressionRules: {
