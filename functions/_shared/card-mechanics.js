@@ -6,9 +6,11 @@
 
    Keep this file small and backward-compatible. Existing renderers still read
    rarity, stats, pow, def, and spd directly while newer paths can read
-   baseStats, copyTraits, progression, progressionRules, origin bonus, and
+   baseStats, copyTraits, progression, progressionRules, origin bonus, type, and
    effective stats.
    ============================================================================ */
+
+import { getCardTypeSummary, normalizeCardType } from './type-config.js';
 
 export const cardMechanicsVersion = 'card-mechanics-v2';
 
@@ -53,6 +55,19 @@ function normalizeBudgetRange(value = {}, fallback = defaultOwnedStatBudgetRange
     min: Math.min(min, max),
     max: Math.max(min, max),
   };
+}
+
+function resolveTypeSummary(profile = {}, sourceCard = {}) {
+  return getCardTypeSummary(
+    profile.cardType
+      || profile.card_type
+      || profile.type
+      || sourceCard.cardType
+      || sourceCard.card_type
+      || sourceCard.type
+      || sourceCard.element
+      || 'neutral'
+  );
 }
 
 export function normalizeRarity(value) {
@@ -152,6 +167,7 @@ function calculateLevelBonus(progression, progressionRules) {
 export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} } = {}) {
   const profile = sourceObject(approvalProfile);
   const sourceCard = sourceObject(source);
+  const typeSummary = resolveTypeSummary(profile, sourceCard);
   const baseStats = normalizeBaseStats(profile.stats || profile.baseStats || profile.base_stats || sourceCard);
   const raritySource = cleanText(profile.raritySource || profile.rarity_source || 'approval_cascading_roll');
   const statsSource = cleanText(profile.statsSource || profile.stats_source || 'approval_static_rarity_budget');
@@ -173,6 +189,17 @@ export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} 
     raritySource,
     statsSource,
     traitSource: 'approval',
+    cardType: typeSummary.type,
+    card_type: typeSummary.type,
+    type: typeSummary.type,
+    typeLabel: typeSummary.label,
+    type_label: typeSummary.label,
+    typeColor: typeSummary.color,
+    type_color: typeSummary.color,
+    typeIdentity: typeSummary.coreIdentity,
+    type_identity: typeSummary.coreIdentity,
+    typeStatBias: typeSummary.statBias,
+    type_stat_bias: typeSummary.statBias,
     baseStats,
     stats: { ...baseStats },
     pow: baseStats.pow,
@@ -182,7 +209,7 @@ export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} 
     staticStatBudget,
     ownedStatBudgetRange,
     copyStatBudgetVariance: toNumber(profile.copyStatBudgetVariance ?? profile.copy_stat_budget_variance, progressionRules.growthPerLevel),
-    statArchetype: cleanText(profile.statArchetype || profile.stat_archetype || sourceCard.cardType || sourceCard.card_type || 'balanced', 60),
+    statArchetype: normalizeCardType(profile.statArchetype || profile.stat_archetype || typeSummary.type),
     progressionRules,
     levelCap: progressionRules.levelCap,
     maxLevel: progressionRules.maxLevel,
