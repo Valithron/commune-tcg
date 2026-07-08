@@ -6,7 +6,7 @@ This document captures the current game model, design laws, open questions, and 
 
 ## Current Project Framing
 
-Commune TCG is best understood as a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social/anime themed worldbuilding.
+**Commune TCG is best understood as a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social/anime themed worldbuilding.**
 
 It is not currently intended to become a deep competitive tabletop TCG. The current target is a casual-to-midcore daily game where players collect different versions of Commune characters, build small squads, battle daily encounters and seasonal bosses, upgrade favorite cards, and grow a personal vault.
 
