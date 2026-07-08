@@ -190,17 +190,26 @@ export function initPull(root) {
     window.history.replaceState(null, '', `#/pull?${params.toString()}`);
   }
 
-  function openSheet(nextCount = selectedCount) {
+  function runOpenAnimation() {
     window.clearTimeout(closeTimer);
-    updateSelection(nextCount);
     overlay.hidden = false;
-    overlay.classList.remove('is-closing');
-    overlay.classList.add('is-open');
+    overlay.classList.remove('is-open');
+    overlay.classList.add('is-closing');
     overlay.setAttribute('aria-hidden', 'false');
     sheet.style.transform = '';
     overlay.style.opacity = '';
+
+    window.requestAnimationFrame(() => {
+      overlay.classList.remove('is-closing');
+      overlay.classList.add('is-open');
+      overlay.focus({ preventScroll: true });
+    });
+  }
+
+  function openSheet(nextCount = selectedCount) {
+    updateSelection(nextCount);
     setPullHash(false);
-    window.requestAnimationFrame(() => overlay.focus({ preventScroll: true }));
+    runOpenAnimation();
   }
 
   function closeSheet(updateHash = true) {
@@ -327,11 +336,6 @@ export function initPull(root) {
   updateSelection(selectedCount);
 
   if (overlay.classList.contains('is-open')) {
-    overlay.classList.remove('is-open');
-    overlay.hidden = false;
-    window.requestAnimationFrame(() => {
-      overlay.classList.add('is-open');
-      overlay.focus({ preventScroll: true });
-    });
+    runOpenAnimation();
   }
 }
