@@ -11,10 +11,24 @@ function showSubmitStatus(status, message) {
   status.textContent = message;
 }
 
+function renderTypeOptions(selected = 'neutral') {
+  const types = [
+    ['flame', 'Flame'],
+    ['tide', 'Tide'],
+    ['bloom', 'Bloom'],
+    ['volt', 'Volt'],
+    ['shadow', 'Shadow'],
+    ['radiant', 'Radiant'],
+    ['neutral', 'Neutral'],
+  ];
+
+  return types.map(([value, label]) => `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`).join('');
+}
+
 export function renderSubmitCard() {
   return `
     <section class="submit-page">
-      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a pending template candidate. You may suggest a target rarity, but final rarity, type, and stats are controlled during admin approval.</p></div>
+      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a pending template candidate. You may suggest a target rarity and type, but final rarity, type, and stats are controlled during admin approval.</p></div>
       <form class="glass-panel submit-form submit-card-form" aria-label="Card submission form" data-submit-card-form>
         <label class="submit-art-field">
           <span>Card Illustration</span>
@@ -32,9 +46,9 @@ export function renderSubmitCard() {
         </label>
         <label><span>Card Title</span><input name="card_name" maxlength="25" placeholder="e.g., Celestial Arbiter" required /></label>
         <label><span>Suggested Character</span><select name="character_id" required><option value="sterling">Sterling</option><option value="cydney">Cydney</option><option value="ryan">Ryan</option><option value="gabi">Gabi</option><option value="cooper">Cooper</option><option value="kenly">Kenly</option><option value="ashley">Ashley</option></select></label>
+        <label><span>Suggested Type</span><select name="card_type" required>${renderTypeOptions('neutral')}</select></label>
         <label><span>Target Rarity</span><select name="rarity_suggestion" required><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare" selected>Rare</option><option value="legendary">Legendary</option><option value="mythic">Mythic</option></select></label>
         <label><span>Lore / Flavor Text</span><textarea name="flavor_text" maxlength="220" required placeholder="In the silence between stars, the Arbiter watches..."></textarea></label>
-        <input name="card_type" type="hidden" value="neutral" />
         <input name="ability_text" type="hidden" value="" />
         <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
         <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
