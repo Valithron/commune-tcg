@@ -6,13 +6,15 @@
 
    Keep this file small and backward-compatible. Existing renderers still read
    rarity, stats, pow, def, and spd directly while newer paths can read
-   baseStats, copyTraits, progression, and effective stats.
+   baseStats, copyTraits, progression, progressionRules, origin bonus, and
+   effective stats.
    ============================================================================ */
 
-export const cardMechanicsVersion = 'card-mechanics-v1';
+export const cardMechanicsVersion = 'card-mechanics-v2';
 
 export const defaultBaseStats = Object.freeze({ pow: 1, def: 1, spd: 1 });
 export const emptyStatBonus = Object.freeze({ pow: 0, def: 0, spd: 0 });
+export const defaultProgressionRules = Object.freeze({ levelCap: 30, maxLevel: 30, growthPerLevel: 2 });
 
 const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -104,16 +106,51 @@ export function normalizeProgression(progression = {}) {
   };
 }
 
+export function normalizeProgressionRules(source = {}) {
+  const rules = sourceObject(source.progressionRules || source.progression_rules || source);
+
+  return {
+    levelCap: toNumber(rules.levelCap ?? rules.level_cap ?? rules.maxLevel ?? rules.max_level, defaultProgressionRules.levelCap),
+    maxLevel: toNumber(rules.maxLevel ?? rules.max_level ?? rules.levelCap ?? rules.level_cap, defaultProgressionRules.maxLevel),
+    growthPerLevel: toNumber(rules.growthPerLevel ?? rules.growth_per_level, defaultProgressionRules.growthPerLevel),
+  };
+}
+
+export function normalizeOriginBonusPercent(source = {}) {
+  const data = sourceObject(source);
+  return Math.max(0, toNumber(data.originBonusPercent ?? data.origin_bonus_percent, 0));
+}
+
+function calculateLevelBonus(progression, progressionRules) {
+  const level = Math.max(1, Math.min(progression.level, progressionRules.maxLevel || progressionRules.levelCap || 1));
+  const totalGrowth = Math.max(0, level - 1) * Math.max(0, progressionRules.growthPerLevel || 0);
+  if (!totalGrowth) return emptyStatBonus;
+
+  const each = Math.floor(totalGrowth / 3);
+  const remainder = totalGrowth - each * 3;
+
+  return {
+    pow: each + (remainder > 0 ? 1 : 0),
+    def: each + (remainder > 1 ? 1 : 0),
+    spd: each,
+  };
+}
+
 export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} } = {}) {
   const profile = sourceObject(approvalProfile);
   const sourceCard = sourceObject(source);
   const baseStats = normalizeBaseStats(profile.stats || profile.baseStats || profile.base_stats || sourceCard);
-  const raritySource = cleanText(profile.raritySource || profile.rarity_source || 'approval_random_roll');
-  const statsSource = cleanText(profile.statsSource || profile.stats_source || 'approval_random_roll');
+  const raritySource = cleanText(profile.raritySource || profile.rarity_source || 'approval_cascading_roll');
+  const statsSource = cleanText(profile.statsSource || profile.stats_source || 'rarity_stat_budget');
+  const rarity = normalizeRarity(profile.rarity || sourceCard.rarity || 'common');
+  const progressionRules = normalizeProgressionRules(profile.progressionRules || profile.progression_rules || profile);
+  const originRarity = normalizeRarity(profile.originRarity || profile.origin_rarity || rarity);
+  const originBonusPercent = normalizeOriginBonusPercent(profile);
 
   return {
     mechanicsVersion: cardMechanicsVersion,
-    rarity: normalizeRarity(profile.rarity || sourceCard.rarity || 'common'),
+    rarity,
+    targetRarity: normalizeRarity(profile.targetRarity || profile.target_rarity || sourceCard.raritySuggestion || sourceCard.rarity_suggestion || rarity),
     raritySource,
     statsSource,
     traitSource: 'approval',
@@ -122,6 +159,15 @@ export function buildApprovedTemplateTraits({ approvalProfile = {}, source = {} 
     pow: baseStats.pow,
     def: baseStats.def,
     spd: baseStats.spd,
+    statBudget: toNumber(profile.statBudget ?? profile.stat_budget, baseStats.pow + baseStats.def + baseStats.spd),
+    statArchetype: cleanText(profile.statArchetype || profile.stat_archetype || sourceCard.cardType || sourceCard.card_type || 'balanced', 60),
+    progressionRules,
+    levelCap: progressionRules.levelCap,
+    maxLevel: progressionRules.maxLevel,
+    growthPerLevel: progressionRules.growthPerLevel,
+    originRarity,
+    originBonusPercent,
+    originBonusMultiplier: 1 + originBonusPercent / 100,
   };
 }
 
@@ -133,16 +179,18 @@ export function buildOwnedCopyTraits({ copyTraits = {}, progression = {}, mintNu
   };
 }
 
-export function calculateEffectiveStats({ baseStats = {}, copyTraits = {} } = {}) {
+export function calculateEffectiveStats({ baseStats = {}, copyTraits = {}, progression = {}, progressionRules = {}, originBonusPercent = 0 } = {}) {
   const normalizedBaseStats = normalizeBaseStats(baseStats);
   const normalizedCopyTraits = normalizeCopyTraits(copyTraits);
+  const normalizedProgression = normalizeProgression(progression);
+  const normalizedProgressionRules = normalizeProgressionRules(progressionRules);
+  const levelBonus = calculateLevelBonus(normalizedProgression, normalizedProgressionRules);
   const bonus = normalizedCopyTraits.statBonus;
+  const originMultiplier = 1 + Math.max(0, toNumber(originBonusPercent, 0)) / 100;
 
-  // Level scaling is intentionally not applied yet. Progression is stored now
-  // so Battle can opt into a clear formula later without changing saved cards.
   return {
-    pow: normalizedBaseStats.pow + bonus.pow,
-    def: normalizedBaseStats.def + bonus.def,
-    spd: normalizedBaseStats.spd + bonus.spd,
+    pow: Math.round((normalizedBaseStats.pow + levelBonus.pow + bonus.pow) * originMultiplier),
+    def: Math.round((normalizedBaseStats.def + levelBonus.def + bonus.def) * originMultiplier),
+    spd: Math.round((normalizedBaseStats.spd + levelBonus.spd + bonus.spd) * originMultiplier),
   };
 }
