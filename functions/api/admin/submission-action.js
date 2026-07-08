@@ -18,6 +18,7 @@ async function readPayload(request) {
     targetRarity: formData.get('target_rarity'),
     finalRarityOverride: formData.get('final_rarity_override'),
     approvedCardType: formData.get('approved_card_type'),
+    approvedCardTypes: formData.getAll('approved_card_types'),
   };
 }
 
@@ -34,6 +35,7 @@ export async function onRequestPost({ env, request }) {
       targetRarity: payload.targetRarity,
       finalRarityOverride: payload.finalRarityOverride,
       approvedCardType: payload.approvedCardType,
+      approvedCardTypes: payload.approvedCardTypes,
     });
 
     if (!result.ok) {
@@ -47,12 +49,13 @@ export async function onRequestPost({ env, request }) {
       action: result.action,
       approvedCardId: result.approvedCardId || '',
       approvedCardType: result.approvedCardType || '',
+      approvedTypePool: result.approvedTypePool || [],
       approvalProfile: result.approvalProfile || null,
       creatorDisplayName: result.creatorDisplayName || '',
       submission: result.submission,
       warnings: [
         'Temporary reviewer placeholder is used until real admin authorization exists.',
-        'Approval now uses target rarity, optional rarity override, approved type, stat budgets, level caps, and origin bonus metadata.',
+        'Approval now uses target rarity, optional rarity override, approved type pool, stat budgets, level caps, and origin bonus metadata.',
       ],
     });
   } catch (error) {
