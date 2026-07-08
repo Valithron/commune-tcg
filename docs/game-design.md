@@ -175,16 +175,19 @@ Suggested fields:
 
 ### Owned Copy Variation
 
-Pull-time variation should be real but narrow.
+Pull-time variation should be narrow and should not become IV hunting.
 
-The card template controls the allowed identity of the card. The owned card instance may preserve copy-specific traits.
+The card template controls the allowed identity of the card. The owned card instance may preserve copy-specific traits, but two copies of the same card should not feel like one is ruined and the other is perfect.
 
 Current accepted direction:
 
 - Template identity should not change at pull time.
 - If a template has an approved type pool, the owned copy may roll a type from that pool.
-- Base stat rolls may vary within a narrow approved range.
-- Copy traits such as foil, holo, mint, or future special treatments should be copy-specific.
+- Each rarity has a static Level 1 total stat budget.
+- Pull-time total stat budget variance equals that rarity's growth-per-level value.
+- Example: Common has a static Level 1 budget of 30 and growth of +2, so Common rolls 28-32.
+- The variance should be visible through stats, but the UI should not use bad-roll, IV, perfect-roll, or god-roll framing.
+- Copy traits such as foil, holo, mint, or future special treatments should be copy-specific and separate from stat strength.
 - Origin rarity and origin bonus are preserved.
 - Level, XP, locked/favorited status, and progression are owned-copy specific.
 
@@ -218,19 +221,22 @@ Design intent:
 
 ### Current Accepted Rarity and Progression Config
 
-The old implementation's Level 1 stat gaps were too wide at the top. The current first-test direction keeps Common and Uncommon close to the existing values, but tightens Rare, Legendary, and Mythic much closer to the old Rare range.
+The current first-test direction uses a static Level 1 total stat budget for each rarity, with pull-time variance equal to that rarity's growth-per-level value.
 
-| Rarity | Level 1 total stat budget | Max level | Growth per level | Origin bonus |
-| --- | ---: | ---: | ---: | ---: |
-| Common | 24-32 | 30 | +2 total stats | 0% |
-| Uncommon | 38-50 | 40 | +3 total stats | 3% |
-| Rare | 56-70 | 50 | +4 total stats | 5% |
-| Legendary | 64-78 | 60 | +5 total stats | 7% |
-| Mythic | 72-88 | 70 | +6 total stats | 10% |
+Common remains centered at 30. For Uncommon through Mythic, the static budget is the median of the previously accepted Level 1 range.
+
+| Rarity | Static Level 1 budget | Pull-time budget range | Max level | Growth per level | Origin bonus |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Common | 30 | 28-32 | 30 | +2 total stats | 0% |
+| Uncommon | 44 | 41-47 | 40 | +3 total stats | 3% |
+| Rare | 63 | 59-67 | 50 | +4 total stats | 5% |
+| Legendary | 71 | 66-76 | 60 | +5 total stats | 7% |
+| Mythic | 80 | 74-86 | 70 | +6 total stats | 10% |
 
 Design intent:
 
 - Starting stat budget should be only a little better by rarity.
+- Level 1 rarity gaps should be tight, especially between Rare, Legendary, and Mythic.
 - Rarity advantage should come mainly from higher max level, stronger growth, and origin bonus.
 - Future ability strength may also matter, but abilities are not being designed around yet.
 - These numbers are accepted for the first test pass and should be rechecked with a math simulator before evolution is implemented.
@@ -612,13 +618,12 @@ Before adding abilities or deeper systems, the game should first test whether th
 ## Open Questions
 
 1. What should the XP curve look like?
-2. How much stat variance should individual pulled copies have within an approved template range?
-3. How exactly should evolution costs work across duplicates, character shards, universal dust, gold, and other materials?
-4. Should evolved lower-rarity cards use the same current-rarity stat budget as natural cards, relying on origin bonus for natural-card superiority?
-5. How should seasonal bosses reward players?
-6. What should passive farming produce beyond gold, if anything?
-7. What should character mastery/favorite-character progression look like?
-8. Should every card line have its own pool, or should there be a general pool plus limited banners?
+2. How exactly should evolution costs work across duplicates, character shards, universal dust, gold, and other materials?
+3. Should evolved lower-rarity cards use the same current-rarity stat budget as natural cards, relying on origin bonus for natural-card superiority?
+4. How should seasonal bosses reward players?
+5. What should passive farming produce beyond gold, if anything?
+6. What should character mastery/favorite-character progression look like?
+7. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
@@ -630,10 +635,9 @@ Do not implement evolution yet.
 
 Next likely design priorities:
 
-1. Run a math pass on the accepted rarity, growth, origin bonus, and type allocation-bias model.
-2. Define pull-time stat variance bounds.
-3. Define the XP curve.
-4. Define duplicate/shard/evolution costs.
-5. Define the first testable battle model.
-6. Define the vault grouped-copy display model.
-7. Plan the admin mechanics simulator.
+1. Run a math pass on the accepted rarity, growth, origin bonus, type allocation-bias, and narrow pull-time variance model.
+2. Define the XP curve.
+3. Define duplicate/shard/evolution costs.
+4. Define the first testable battle model.
+5. Define the vault grouped-copy display model.
+6. Plan the admin mechanics simulator.
