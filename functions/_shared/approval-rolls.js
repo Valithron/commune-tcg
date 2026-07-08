@@ -7,39 +7,44 @@ export const rarityProgressionConfig = Object.freeze({
     maxLevel: 30,
     growthPerLevel: 2,
     originBonusPercent: 0,
-    statBudget: { min: 24, max: 32 },
+    staticStatBudget: 30,
+    ownedStatBudgetRange: { min: 28, max: 32 },
   },
   uncommon: {
     rarity: 'uncommon',
     levelCap: 40,
     maxLevel: 40,
     growthPerLevel: 3,
-    originBonusPercent: 5,
-    statBudget: { min: 38, max: 50 },
+    originBonusPercent: 3,
+    staticStatBudget: 44,
+    ownedStatBudgetRange: { min: 41, max: 47 },
   },
   rare: {
     rarity: 'rare',
     levelCap: 50,
     maxLevel: 50,
     growthPerLevel: 4,
-    originBonusPercent: 10,
-    statBudget: { min: 58, max: 76 },
+    originBonusPercent: 5,
+    staticStatBudget: 63,
+    ownedStatBudgetRange: { min: 59, max: 67 },
   },
   legendary: {
     rarity: 'legendary',
     levelCap: 60,
     maxLevel: 60,
     growthPerLevel: 5,
-    originBonusPercent: 15,
-    statBudget: { min: 90, max: 115 },
+    originBonusPercent: 7,
+    staticStatBudget: 71,
+    ownedStatBudgetRange: { min: 66, max: 76 },
   },
   mythic: {
     rarity: 'mythic',
     levelCap: 70,
     maxLevel: 70,
     growthPerLevel: 6,
-    originBonusPercent: 20,
-    statBudget: { min: 130, max: 165 },
+    originBonusPercent: 10,
+    staticStatBudget: 80,
+    ownedStatBudgetRange: { min: 74, max: 86 },
   },
 });
 
@@ -120,10 +125,10 @@ function normalizeFinalOverride(value) {
 
 function inferStatArchetype(source = {}) {
   const raw = cleanText(source.statArchetype || source.stat_archetype || source.cardType || source.card_type || source.type).toLowerCase();
-  if (['battle', 'attack', 'attacker', 'aggressor', 'striker'].includes(raw)) return 'aggressor';
-  if (['defense', 'defender', 'guardian', 'tank'].includes(raw)) return 'guardian';
-  if (['training', 'speed', 'scout', 'swift', 'utility'].includes(raw)) return 'swift';
-  if (['magic', 'alchemy', 'support', 'mystic'].includes(raw)) return 'mystic';
+  if (['aggressor', 'battle', 'attack', 'attacker', 'striker'].includes(raw)) return 'aggressor';
+  if (['guardian', 'defense', 'defender', 'tank'].includes(raw)) return 'guardian';
+  if (['swift', 'training', 'speed', 'scout', 'utility'].includes(raw)) return 'swift';
+  if (['mystic', 'magic', 'alchemy', 'support'].includes(raw)) return 'mystic';
   return 'balanced';
 }
 
@@ -142,7 +147,7 @@ function rollRarityFromTarget(targetRarity) {
   return { rarity: 'common', targetRarity: target, attempts };
 }
 
-function allocateBudget(totalBudget, archetype) {
+export function allocateStatBudget(totalBudget, archetype = 'balanced') {
   const weights = statArchetypeWeights[archetype] || statArchetypeWeights.balanced;
   const jittered = Object.fromEntries(
     Object.entries(weights).map(([stat, weight]) => [stat, weight * (0.9 + unit() * 0.2)])
@@ -172,20 +177,37 @@ function allocateBudget(totalBudget, archetype) {
   return stats;
 }
 
-function rollStatsForRarity(rarity, source = {}) {
-  const config = rarityProgressionConfig[rarity] || rarityProgressionConfig.common;
-  const statBudget = integer(config.statBudget.min, config.statBudget.max);
+function buildStatsForBudget(totalBudget, source = {}) {
   const statArchetype = inferStatArchetype(source);
 
   return {
-    statBudget,
+    statBudget: totalBudget,
     statArchetype,
-    stats: allocateBudget(statBudget, statArchetype),
+    stats: allocateStatBudget(totalBudget, statArchetype),
   };
 }
 
 export function getRarityProgressionConfig(rarity) {
   return rarityProgressionConfig[normalizeApprovalRarity(rarity)] || rarityProgressionConfig.common;
+}
+
+export function rollOwnedCopyStatProfile({ rarity = 'common', source = {} } = {}) {
+  const config = getRarityProgressionConfig(rarity);
+  const range = config.ownedStatBudgetRange || { min: config.staticStatBudget, max: config.staticStatBudget };
+  const statBudget = integer(range.min, range.max);
+  const statRoll = buildStatsForBudget(statBudget, source);
+
+  return {
+    statsSource: 'pull_copy_budget_variance',
+    stats_source: 'pull_copy_budget_variance',
+    staticStatBudget: config.staticStatBudget,
+    static_stat_budget: config.staticStatBudget,
+    ownedStatBudgetRange: range,
+    owned_stat_budget_range: range,
+    copyStatBudgetVariance: config.growthPerLevel,
+    copy_stat_budget_variance: config.growthPerLevel,
+    ...statRoll,
+  };
 }
 
 export function rollApprovalProfile({ targetRarity = 'rare', finalRarityOverride = '', source = {} } = {}) {
@@ -195,7 +217,7 @@ export function rollApprovalProfile({ targetRarity = 'rare', finalRarityOverride
     : rollRarityFromTarget(targetRarity);
   const rarity = rarityRoll.rarity;
   const config = getRarityProgressionConfig(rarity);
-  const statRoll = rollStatsForRarity(rarity, source);
+  const statRoll = buildStatsForBudget(config.staticStatBudget, source);
   const raritySource = overrideRarity ? 'admin_manual_override' : 'approval_cascading_roll';
 
   return {
@@ -205,8 +227,14 @@ export function rollApprovalProfile({ targetRarity = 'rare', finalRarityOverride
     raritySource,
     rarity_source: raritySource,
     rarityRoll,
-    statsSource: 'rarity_stat_budget',
-    stats_source: 'rarity_stat_budget',
+    statsSource: 'approval_static_rarity_budget',
+    stats_source: 'approval_static_rarity_budget',
+    staticStatBudget: config.staticStatBudget,
+    static_stat_budget: config.staticStatBudget,
+    ownedStatBudgetRange: config.ownedStatBudgetRange,
+    owned_stat_budget_range: config.ownedStatBudgetRange,
+    copyStatBudgetVariance: config.growthPerLevel,
+    copy_stat_budget_variance: config.growthPerLevel,
     statBudget: statRoll.statBudget,
     statArchetype: statRoll.statArchetype,
     stats: statRoll.stats,
