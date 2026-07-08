@@ -1,3 +1,4 @@
+import { rollOwnedCopyStatProfile } from './approval-rolls.js';
 import { buildOwnedCopyTraits, calculateEffectiveStats, normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
@@ -155,7 +156,15 @@ function creatorFields(baseCard) {
 
 function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
   const creator = creatorFields(baseCard);
-  const baseStats = normalizeBaseStats(baseCard);
+  const templateBaseStats = normalizeBaseStats(baseCard);
+  const ownedStatProfile = rollOwnedCopyStatProfile({
+    rarity: baseCard.rarity,
+    source: {
+      ...baseCard,
+      statArchetype: baseCard.statArchetype || baseCard.stat_archetype || 'balanced',
+    },
+  });
+  const baseStats = ownedStatProfile.stats;
   const ownedTraits = buildOwnedCopyTraits();
   const progressionRules = normalizeProgressionRules(baseCard.progressionRules || baseCard.progression_rules || baseCard);
   const originBonusPercent = toNumber(baseCard.originBonusPercent ?? baseCard.origin_bonus_percent, 0);
@@ -168,7 +177,8 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     originBonusPercent,
   });
   const raritySource = baseCard.raritySource || baseCard.rarity_source || 'legacy';
-  const statsSource = baseCard.statsSource || baseCard.stats_source || raritySource;
+  const templateStatsSource = baseCard.statsSource || baseCard.stats_source || raritySource;
+  const statsSource = ownedStatProfile.statsSource;
   const traitSource = baseCard.traitSource || baseCard.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval');
   const originRarity = baseCard.originRarity || baseCard.origin_rarity || baseCard.rarity;
   const imageKey = readImageKey(baseCard);
@@ -196,12 +206,24 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     mechanicsVersion: ownedTraits.mechanicsVersion,
     traitSource,
     trait_source: traitSource,
+    templateStatsSource,
+    template_stats_source: templateStatsSource,
     statsSource,
     stats_source: statsSource,
-    statBudget: baseCard.statBudget || baseCard.stat_budget || baseStats.pow + baseStats.def + baseStats.spd,
-    stat_budget: baseCard.statBudget || baseCard.stat_budget || baseStats.pow + baseStats.def + baseStats.spd,
-    statArchetype: baseCard.statArchetype || baseCard.stat_archetype || 'balanced',
-    stat_archetype: baseCard.statArchetype || baseCard.stat_archetype || 'balanced',
+    templateBaseStats,
+    template_base_stats: templateBaseStats,
+    templateStatBudget: baseCard.statBudget || baseCard.stat_budget || templateBaseStats.pow + templateBaseStats.def + templateBaseStats.spd,
+    template_stat_budget: baseCard.statBudget || baseCard.stat_budget || templateBaseStats.pow + templateBaseStats.def + templateBaseStats.spd,
+    statBudget: ownedStatProfile.statBudget,
+    stat_budget: ownedStatProfile.statBudget,
+    staticStatBudget: ownedStatProfile.staticStatBudget,
+    static_stat_budget: ownedStatProfile.staticStatBudget,
+    ownedStatBudgetRange: ownedStatProfile.ownedStatBudgetRange,
+    owned_stat_budget_range: ownedStatProfile.ownedStatBudgetRange,
+    copyStatBudgetVariance: ownedStatProfile.copyStatBudgetVariance,
+    copy_stat_budget_variance: ownedStatProfile.copyStatBudgetVariance,
+    statArchetype: ownedStatProfile.statArchetype,
+    stat_archetype: ownedStatProfile.statArchetype,
     baseStats,
     base_stats: baseStats,
     copyTraits: ownedTraits.copyTraits,
