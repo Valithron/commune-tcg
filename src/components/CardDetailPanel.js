@@ -11,6 +11,26 @@ function readCreator(card) {
   return String(card.creatorDisplayName || card.creator_display_name || card.creatorName || card.creator_name || card.creator || card.createdBy || card.created_by || card.submitterDisplayName || card.submitter_display_name || card.artistName || card.artist_name || card.artist || card.author || '').trim();
 }
 
+function readNumber(value, fallback = null) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function renderOptionalMechanicsRows(card) {
+  const maxLevel = readNumber(card.maxLevel ?? card.max_level ?? card.levelCap ?? card.level_cap);
+  const growthPerLevel = readNumber(card.growthPerLevel ?? card.growth_per_level);
+  const originBonus = readNumber(card.originBonusPercent ?? card.origin_bonus_percent);
+  const originRarity = card.originRarity || card.origin_rarity || '';
+  const rows = [];
+
+  if (maxLevel) rows.push(`<div class="detail-row"><span>Max Level</span><strong>${escapeHtml(String(maxLevel))}</strong></div>`);
+  if (growthPerLevel) rows.push(`<div class="detail-row"><span>Growth</span><strong>${escapeHtml('+' + growthPerLevel + ' total stats / level')}</strong></div>`);
+  if (originRarity) rows.push(`<div class="detail-row"><span>Origin Rarity</span><strong>${escapeHtml(titleCase(originRarity))}</strong></div>`);
+  if (originBonus !== null) rows.push(`<div class="detail-row"><span>Origin Bonus</span><strong>${escapeHtml('+' + originBonus + '%')}</strong></div>`);
+
+  return rows.join('');
+}
+
 function renderDetailRows(card, context) {
   const ownershipText = card.owned ? `Owned, ${card.copies} ${card.copies === 1 ? 'copy' : 'copies'}` : 'Not yet owned';
   const contextText = context === 'vault'
@@ -23,6 +43,7 @@ function renderDetailRows(card, context) {
     <div class="detail-row"><span>Category</span><strong>${escapeHtml(card.category)}</strong></div>
     <div class="detail-row"><span>Creator</span><strong>${escapeHtml(creator)}</strong></div>
     <div class="detail-row"><span>Ownership</span><strong>${escapeHtml(ownershipText)}</strong></div>
+    ${renderOptionalMechanicsRows(card)}
     <div class="detail-row"><span>Context</span><strong>${escapeHtml(contextText)}</strong></div>
   `;
 }
