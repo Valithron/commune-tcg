@@ -56,7 +56,7 @@ function renderPullSheet({ selectedCount, resources, sheetOpen }) {
       ${sheetOpen ? '' : 'hidden'}
     >
       <div class="pull-sheet" data-pull-sheet-panel role="dialog" aria-modal="true" aria-labelledby="pull-confirm-title">
-        <div class="pull-sheet-header">
+        <div class="pull-sheet-header" data-pull-swipe-zone>
           <button class="pull-sheet-handle" type="button" data-pull-drag-handle aria-label="Swipe down or tap to close pull confirmation"></button>
           <span class="section-kicker">Confirm Pull</span>
           <h2 id="pull-confirm-title">Choose your pull</h2>
@@ -88,7 +88,7 @@ function renderPullSheet({ selectedCount, resources, sheetOpen }) {
 export async function renderPull({ query = {} } = {}) {
   const resources = await loadResources();
   const selectedCount = clampPullCount(query.count || 5);
-  const sheetOpen = query.closed !== '1';
+  const sheetOpen = query.confirm === '1';
 
   return `
     <section class="hero-panel pull-hero-panel">
@@ -269,47 +269,58 @@ export function initPull(root) {
     });
   }
 
-  if (handle) {
-    let dragState = null;
+  let dragState = null;
 
-    const endDrag = () => {
-      if (!dragState) {
-        return;
-      }
+  function beginDrag(event) {
+    const target = event.target;
+    const isHandle = target === handle || target.closest?.('[data-pull-drag-handle]');
+    const isSwipeZone = target.closest?.('[data-pull-swipe-zone]');
 
-      const shouldClose = dragState.distance > 85;
-      dragState = null;
-      sheet.classList.remove('is-dragging');
-      sheet.style.transform = '';
-      overlay.style.opacity = '';
+    if (!isHandle && !isSwipeZone) {
+      return;
+    }
 
-      if (shouldClose) {
-        closeSheet(true);
-      }
+    dragState = {
+      startY: event.clientY,
+      distance: 0,
     };
+    sheet.classList.add('is-dragging');
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
 
-    handle.addEventListener('pointerdown', (event) => {
-      dragState = {
-        startY: event.clientY,
-        distance: 0,
-      };
-      sheet.classList.add('is-dragging');
-      handle.setPointerCapture?.(event.pointerId);
-    });
+  function moveDrag(event) {
+    if (!dragState) {
+      return;
+    }
 
-    handle.addEventListener('pointermove', (event) => {
-      if (!dragState) {
-        return;
-      }
+    const distance = Math.max(0, event.clientY - dragState.startY);
+    dragState.distance = distance;
+    sheet.style.transform = `translateY(${distance}px)`;
+    overlay.style.opacity = String(Math.max(0.35, 1 - distance / 360));
+  }
 
-      const distance = Math.max(0, event.clientY - dragState.startY);
-      dragState.distance = distance;
-      sheet.style.transform = `translateY(${distance}px)`;
-      overlay.style.opacity = String(Math.max(0.35, 1 - distance / 360));
-    });
+  function endDrag() {
+    if (!dragState) {
+      return;
+    }
 
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('pointercancel', endDrag);
+    const shouldClose = dragState.distance > 80;
+    dragState = null;
+    sheet.classList.remove('is-dragging');
+    sheet.style.transform = '';
+    overlay.style.opacity = '';
+
+    if (shouldClose) {
+      closeSheet(true);
+    }
+  }
+
+  sheet.addEventListener('pointerdown', beginDrag);
+  sheet.addEventListener('pointermove', moveDrag);
+  sheet.addEventListener('pointerup', endDrag);
+  sheet.addEventListener('pointercancel', endDrag);
+
+  if (handle) {
     handle.addEventListener('click', () => closeSheet(true));
   }
 
