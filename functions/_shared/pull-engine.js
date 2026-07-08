@@ -33,6 +33,10 @@ function buildId(prefix) { return prefix + '_' + Date.now() + '_' + crypto.rando
 function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
 function cleanText(value, maxLength = 120) { return String(value || '').trim().slice(0, maxLength); }
 function toNumber(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
+function imageUrlFromKey(key) { const imageKey = String(key || '').trim(); if (!imageKey) return ''; if (/^https?:\/\//i.test(imageKey) || imageKey.startsWith('/')) return imageKey; return `/api/card-image?key=${encodeURIComponent(imageKey)}`; }
+function readImageKey(card) { return card.imageKey || card.image_key || card.image_path || card.image || card.image_url || card.art_url || card.art_key || card.object_key || card.r2_key || ''; }
+function readImageUrl(card, imageKey = readImageKey(card)) { return card.imageUrl || card.image_url || card.artUrl || card.art_url || imageUrlFromKey(imageKey); }
+function readCrop(card) { return card.crop || card.crop_json || card.cropJson || card.image_crop || card.imageCrop || {}; }
 
 async function tableExists(env, tableName) {
   const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first();
@@ -72,6 +76,7 @@ async function readOwnedCardSummary(env, ownedCardId) {
   if (!row) return null;
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
+  const imageKey = readImageKey(payload);
   return {
     ownedCardId: row.id,
     ownerUserId: row.owner_user_id || '',
@@ -81,6 +86,8 @@ async function readOwnedCardSummary(env, ownedCardId) {
     characterId: payload.character_id || payload.characterId || payload.character || '',
     creatorDisplayName: payload.creatorDisplayName || payload.creator_display_name || payload.creator || '',
     creatorUserId: payload.creatorUserId || payload.creator_user_id || '',
+    imageKey,
+    imageUrl: readImageUrl(payload, imageKey),
   };
 }
 
@@ -98,6 +105,8 @@ async function hydrateHistoryResult(env, result, userId) {
     characterId: result.characterId || ownedSummary?.characterId || '',
     creatorDisplayName: result.creatorDisplayName || ownedSummary?.creatorDisplayName || '',
     creatorUserId: result.creatorUserId || ownedSummary?.creatorUserId || '',
+    imageKey: result.imageKey || ownedSummary?.imageKey || '',
+    imageUrl: result.imageUrl || ownedSummary?.imageUrl || '',
     historyHydrated: Boolean(ownedSummary),
   };
 }
@@ -162,6 +171,9 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
   const statsSource = baseCard.statsSource || baseCard.stats_source || raritySource;
   const traitSource = baseCard.traitSource || baseCard.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval');
   const originRarity = baseCard.originRarity || baseCard.origin_rarity || baseCard.rarity;
+  const imageKey = readImageKey(baseCard);
+  const imageUrl = readImageUrl(baseCard, imageKey);
+  const crop = readCrop(baseCard);
 
   return {
     id: ownedCardId,
@@ -217,8 +229,15 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     spd: effectiveStats.spd,
     flavor: baseCard.flavor,
     flavor_text: baseCard.flavor,
-    image_key: baseCard.imageKey,
-    imageKey: baseCard.imageKey,
+    image_key: imageKey,
+    imageKey,
+    image_url: imageUrl,
+    imageUrl,
+    crop,
+    crop_json: crop,
+    cropJson: crop,
+    image_crop: crop,
+    imageCrop: crop,
     creator: creator.creatorDisplayName,
     creator_display_name: creator.creatorDisplayName,
     creatorDisplayName: creator.creatorDisplayName,
@@ -251,7 +270,8 @@ function simulateSelections(cards, count, rarityOdds) {
 
 function buildHistoryResult(result) {
   const creator = creatorFields(result.baseCard);
-  return { index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId };
+  const imageKey = readImageKey(result.baseCard);
+  return { index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, imageKey, imageUrl: readImageUrl(result.baseCard, imageKey), sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId };
 }
 
 export async function resolvePull(env, { count }) {
