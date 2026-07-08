@@ -475,6 +475,32 @@ Initial type matchup balance target:
 
 Abilities are intentionally deferred until type matchups and stat ranges feel good.
 
+### Future Damage Categories
+
+A future battle pass may add two damage categories:
+
+| Damage category | Meaning |
+| --- | --- |
+| Physical | Weapon hits, punches, athletic attacks, martial moves, mundane force |
+| Mystic | Spells, alchemy, holy power, shadow drain, curses, supernatural or symbolic effects |
+
+Current accepted direction:
+
+- Physical and Mystic should be attack or ability tags, not new core stats.
+- Do not add separate Physical Attack, Mystic Attack, Physical Defense, or Mystic Defense stats in the first version.
+- POW, DEF, and SPD remain the core stat model.
+- Damage categories should not be implemented until the first battle model works.
+- Damage categories may later interact with enemy weaknesses, resistances, card abilities, and boss design.
+- Initial future modifiers should be modest if added, such as +10% into a weakness or -10% into a resistance.
+
+Design intent:
+
+- Type answers what elemental or anime identity the card has.
+- Damage category answers how the card applies damage.
+- A Flame card could be Physical or Mystic.
+- A Shadow card could be Physical or Mystic.
+- This keeps Ryan's two-damage-type idea available without disrupting the current stat foundation.
+
 ## Economy
 
 Current or planned currencies:
@@ -665,6 +691,7 @@ Do not add Epic rarity yet.
 Do not overbuild passive farming yet.
 Do not add trading yet.
 Do not implement evolution yet.
+Do not implement Physical and Mystic damage categories yet.
 
 Next likely design priorities:
 
