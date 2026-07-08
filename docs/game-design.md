@@ -234,7 +234,17 @@ This avoids requiring only exact duplicates while still preserving card identity
 
 Types are the matchup identity of a card.
 
-The exact type list is not decided yet.
+The current selected type system is the elemental anime set. Exact labels may be refined later, but the core identities and color mapping are accepted.
+
+| Type | Color | Core identity |
+| --- | --- | --- |
+| Flame | Red | Power, aggression, burst damage |
+| Tide | Blue | Flow, healing, control |
+| Bloom | Green | Growth, sustain, nature |
+| Volt | Yellow | Speed, energy, disruption |
+| Shadow | Black | Defense, drain, corruption, tricks |
+| Radiant | White or gold | Healing, protection, holy or heroic power |
+| Neutral | Tan | Balanced, mundane, flexible, comedy cards |
 
 Current principles:
 
@@ -243,6 +253,7 @@ Current principles:
 - Admin approves the final type or type pool.
 - Owned copies may roll from the approved type pool.
 - Type should help create a card's organic battlefield role.
+- Type colors should be simple and immediately readable in the UI.
 
 ## Battle Model
 
@@ -441,17 +452,18 @@ Before adding abilities or deeper systems, the game should first test whether th
 
 ## Open Questions
 
-1. What is the final type list?
-2. Should Common cards evolve all the way to Legendary, or cap at Rare/Legendary depending on template?
-3. Should Mythic be pull/event-only?
-4. How exactly should stat ranges be derived from rarity, type, character, and template?
-5. Should submitters suggest stat personality, or only type/rarity/flavor?
-6. How much should character identity influence stats?
-7. How much should type influence stats?
-8. How should seasonal bosses reward players?
-9. What should passive farming produce beyond gold, if anything?
-10. What should character mastery/favorite-character progression look like?
-11. Should every card line have its own pool, or should there be a general pool plus limited banners?
+1. Should Common cards evolve all the way to Legendary, or cap at Rare/Legendary depending on template?
+2. Should Mythic be pull/event-only?
+3. How exactly should stat ranges be derived from rarity, type, character, and template?
+4. Should submitters suggest stat personality, or only type/rarity/flavor?
+5. How much should character identity influence stats?
+6. How much should type influence stats?
+7. What should the type matchup chart be?
+8. How strong should type advantage be?
+9. How should seasonal bosses reward players?
+10. What should passive farming produce beyond gold, if anything?
+11. What should character mastery/favorite-character progression look like?
+12. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
@@ -462,9 +474,10 @@ Do not add trading yet.
 
 Next likely design priorities:
 
-1. Define the type system.
-2. Define rarity/stat ranges.
-3. Define native rarity bonuses.
-4. Define duplicate/shard/evolution rules.
-5. Define the first testable battle model.
-6. Define the vault display/filter model.
+1. Define the type matchup chart.
+2. Define how strongly type affects stat tendencies.
+3. Define rarity/stat ranges.
+4. Define native rarity bonuses.
+5. Define duplicate/shard/evolution rules.
+6. Define the first testable battle model.
+7. Define the vault display/filter model.
