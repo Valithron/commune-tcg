@@ -4,9 +4,16 @@ import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js
 
 const temporaryReviewerId = 'temporary-admin-sterling';
 const allowedActions = new Set(['approve', 'needs_changes', 'reject']);
+const allowedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
 
 function cleanText(value, maxLength = 500) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+function normalizeRarityChoice(value, fallback = '') {
+  const cleaned = cleanText(value, 40).toLowerCase();
+  if (!cleaned || cleaned === 'random' || cleaned === 'roll' || cleaned === 'none') return fallback;
+  return allowedRarities.has(cleaned) ? cleaned : fallback;
 }
 
 function titleCase(value) {
@@ -38,7 +45,7 @@ function resolveCreatorDisplayName(submission) {
 
 function buildApprovedCardJson(submission, now, approvalProfile) {
   const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
-  const templateTraits = buildApprovedTemplateTraits({ approvalProfile });
+  const templateTraits = buildApprovedTemplateTraits({ approvalProfile, source: submission });
   const stats = templateTraits.stats;
   const creatorDisplayName = resolveCreatorDisplayName(submission);
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
@@ -71,12 +78,36 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     rarity_source: templateTraits.raritySource,
     raritySource: templateTraits.raritySource,
     rarity_suggestion: submission.raritySuggestion,
+    targetRarity: approvalProfile?.targetRarity || templateTraits.targetRarity,
+    target_rarity: approvalProfile?.targetRarity || templateTraits.targetRarity,
+    finalRarityOverride: approvalProfile?.finalRarityOverride || '',
+    final_rarity_override: approvalProfile?.finalRarityOverride || '',
+    rarityRoll: approvalProfile?.rarityRoll || null,
+    rarity_roll: approvalProfile?.rarityRoll || null,
     traitSource: templateTraits.traitSource,
     trait_source: templateTraits.traitSource,
     statsSource: templateTraits.statsSource,
     stats_source: templateTraits.statsSource,
+    statBudget: templateTraits.statBudget,
+    stat_budget: templateTraits.statBudget,
+    statArchetype: templateTraits.statArchetype,
+    stat_archetype: templateTraits.statArchetype,
     baseStats: templateTraits.baseStats,
     base_stats: templateTraits.baseStats,
+    progressionRules: templateTraits.progressionRules,
+    progression_rules: templateTraits.progressionRules,
+    levelCap: templateTraits.levelCap,
+    level_cap: templateTraits.levelCap,
+    maxLevel: templateTraits.maxLevel,
+    max_level: templateTraits.maxLevel,
+    growthPerLevel: templateTraits.growthPerLevel,
+    growth_per_level: templateTraits.growthPerLevel,
+    originRarity: templateTraits.originRarity,
+    origin_rarity: templateTraits.originRarity,
+    originBonusPercent: templateTraits.originBonusPercent,
+    origin_bonus_percent: templateTraits.originBonusPercent,
+    originBonusMultiplier: templateTraits.originBonusMultiplier,
+    origin_bonus_multiplier: templateTraits.originBonusMultiplier,
     stats,
     pow: stats.pow,
     def: stats.def,
@@ -160,7 +191,7 @@ async function updateSubmissionReview(env, submission, action, reviewNotes, appr
   ).run();
 }
 
-export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '' }) {
+export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '' }) {
   await ensureSubmissionSchema(env);
 
   const normalizedAction = String(action || '').trim().toLowerCase();
@@ -196,7 +227,13 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
   let approvalProfile = null;
 
   if (normalizedAction === 'approve') {
-    approvalProfile = rollApprovalProfile();
+    const approvedTarget = normalizeRarityChoice(targetRarity, normalizeRarityChoice(submission.raritySuggestion, 'rare')) || 'rare';
+    const approvedOverride = normalizeRarityChoice(finalRarityOverride, '');
+    approvalProfile = rollApprovalProfile({
+      targetRarity: approvedTarget,
+      finalRarityOverride: approvedOverride,
+      source: submissionForReview,
+    });
     approvedCardId = await upsertApprovedLibraryCard(env, submissionForReview, now, approvalProfile);
   }
 
