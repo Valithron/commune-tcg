@@ -14,7 +14,7 @@ function showSubmitStatus(status, message) {
 export function renderSubmitCard() {
   return `
     <section class="submit-page">
-      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a template in the <a href="#/library">Library</a>. Ownership is only acquired via <a href="#/pull">Pulls</a>.</p></div>
+      <div class="submit-info-banner"><span>i</span><p>Submitting a card creates a pending template candidate. You may suggest a target rarity, but final rarity and stats are controlled during admin approval.</p></div>
       <form class="glass-panel submit-form submit-card-form" aria-label="Card submission form" data-submit-card-form>
         <label class="submit-art-field">
           <span>Card Illustration</span>
@@ -32,9 +32,9 @@ export function renderSubmitCard() {
         </label>
         <label><span>Card Title</span><input name="card_name" maxlength="25" placeholder="e.g., Celestial Arbiter" required /></label>
         <label><span>Suggested Character</span><select name="character_id" required><option value="sterling">Sterling</option><option value="cydney">Cydney</option><option value="ryan">Ryan</option><option value="gabi">Gabi</option><option value="cooper">Cooper</option><option value="kenly">Kenly</option><option value="ashley">Ashley</option></select></label>
+        <label><span>Target Rarity</span><select name="rarity_suggestion" required><option value="common">Common</option><option value="uncommon">Uncommon</option><option value="rare" selected>Rare</option><option value="legendary">Legendary</option><option value="mythic">Mythic</option></select></label>
         <label><span>Lore / Flavor Text</span><textarea name="flavor_text" maxlength="220" required placeholder="In the silence between stars, the Arbiter watches..."></textarea></label>
         <input name="card_type" type="hidden" value="support" />
-        <input name="rarity_suggestion" type="hidden" value="random" />
         <input name="ability_text" type="hidden" value="" />
         <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
         <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
@@ -63,6 +63,7 @@ export function initSubmitCardForm(root) {
       if (!response.ok || !payload?.ok) throw new Error((Array.isArray(payload?.errors) ? payload.errors.join(' ') : payload?.error) || `Submission failed with ${response.status}`);
       showSubmitStatus(status, 'Submitted to Commune: ' + payload.submission.cardName);
       form.reset();
+      form.querySelector('[name="rarity_suggestion"]').value = 'rare';
       form.querySelector('[name="crop_json"]').value = JSON.stringify({ x: 50, y: 50, zoom: 1 });
     } catch (error) {
       showSubmitStatus(status, error.message);
