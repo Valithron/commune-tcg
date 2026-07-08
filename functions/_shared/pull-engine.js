@@ -1,3 +1,4 @@
+import { buildOwnedCopyTraits, calculateEffectiveStats, normalizeBaseStats } from './card-mechanics.js';
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
 
@@ -142,9 +143,20 @@ function creatorFields(baseCard) {
   return { creatorDisplayName, creatorUserId };
 }
 
-function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
+function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
   const creator = creatorFields(baseCard);
-  return JSON.stringify({
+  const baseStats = normalizeBaseStats(baseCard);
+  const ownedTraits = buildOwnedCopyTraits();
+  const effectiveStats = calculateEffectiveStats({
+    baseStats,
+    copyTraits: ownedTraits.copyTraits,
+    progression: ownedTraits.progression,
+  });
+  const raritySource = baseCard.raritySource || baseCard.rarity_source || 'legacy';
+  const statsSource = baseCard.statsSource || baseCard.stats_source || raritySource;
+  const traitSource = baseCard.traitSource || baseCard.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval');
+
+  return {
     id: ownedCardId,
     name: baseCard.name,
     character: baseCard.character,
@@ -154,14 +166,26 @@ function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
     card_type: baseCard.type,
     category: baseCard.category,
     rarity: baseCard.rarity,
+    rarity_source: raritySource,
+    raritySource,
     symbol: baseCard.symbol,
     ability: baseCard.ability,
     ability_text: baseCard.ability,
     abilityIcon: baseCard.abilityIcon,
-    stats: baseCard.stats,
-    pow: baseCard.stats.pow,
-    def: baseCard.stats.def,
-    spd: baseCard.stats.spd,
+    mechanicsVersion: ownedTraits.mechanicsVersion,
+    traitSource,
+    trait_source: traitSource,
+    statsSource,
+    stats_source: statsSource,
+    baseStats,
+    base_stats: baseStats,
+    copyTraits: ownedTraits.copyTraits,
+    copy_traits: ownedTraits.copyTraits,
+    progression: ownedTraits.progression,
+    stats: effectiveStats,
+    pow: effectiveStats.pow,
+    def: effectiveStats.def,
+    spd: effectiveStats.spd,
     flavor: baseCard.flavor,
     flavor_text: baseCard.flavor,
     image_key: baseCard.imageKey,
@@ -174,16 +198,16 @@ function buildOwnedCardJson({ baseCard, ownedCardId, pullId, now }) {
     owned: true,
     owner_user_id: temporaryPullUserId,
     ownerDisplayName: temporaryPullUserDisplayName,
-    level: 1,
-    xp: 0,
-    copies: 1,
+    level: ownedTraits.progression.level,
+    xp: ownedTraits.progression.xp,
+    copies: ownedTraits.progression.copies,
     source: 'pull',
     source_pool_card_id: baseCard.sourceRowId || baseCard.id,
     source_card_id: baseCard.id,
     source_submission_id: baseCard.sourceSubmissionId || '',
     pull_id: pullId,
     pulled_at: now,
-  });
+  };
 }
 
 function simulateSelections(cards, count, rarityOdds) {
@@ -219,8 +243,7 @@ export async function resolvePull(env, { count }) {
   const selections = simulateSelections(pool.cards, pullCount, rarityOdds);
   const grantedResults = selections.map((selection) => {
     const ownedCardId = buildId('owned');
-    const creator = creatorFields(selection.baseCard);
-    const ownedCard = { ...selection.baseCard, id: ownedCardId, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, owned: true, level: 1, xp: 0, copies: 1 };
+    const ownedCard = buildOwnedCardPayload({ baseCard: selection.baseCard, ownedCardId, pullId, now });
     return { ...selection, ownedCardId, ownedCard };
   });
 
@@ -230,7 +253,7 @@ export async function resolvePull(env, { count }) {
     ...grantedResults.map((result) => env.DB.prepare(`
       INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(result.ownedCardId, temporaryPullUserId, result.baseCard.characterId, buildOwnedCardJson({ baseCard: result.baseCard, ownedCardId: result.ownedCardId, pullId, now }), now, now)),
+    `).bind(result.ownedCardId, temporaryPullUserId, result.baseCard.characterId, JSON.stringify(result.ownedCard), now, now)),
     env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(pullId, temporaryPullUserId, pullCount, ticketCost, JSON.stringify(historyResults), now),
   ];
 
