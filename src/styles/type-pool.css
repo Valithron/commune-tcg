@@ -1,0 +1,110 @@
+/* ============================================================================
+   Type Pool Controls
+   Purpose: compact chip UI for submitter suggested types and admin approved
+   type pools. Native checkboxes stay accessible but are visually replaced by
+   small selectable chips.
+   ============================================================================ */
+
+[data-type-suggestions],
+[data-review-approved-type-pool] {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  background: rgba(7, 10, 24, 0.28);
+}
+
+[data-type-suggestions] legend,
+[data-review-approved-type-pool] legend {
+  padding: 0 0.35rem;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+[data-type-suggestions] legend small,
+[data-review-approved-type-pool] legend small {
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+[data-type-suggestions] .filter-row,
+[data-review-approved-type-pool] .filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+[data-type-suggestions] .filter-pill,
+[data-review-approved-type-pool] .filter-pill {
+  position: relative;
+  display: block;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-type-suggestions] .filter-pill input,
+[data-review-approved-type-pool] .filter-pill input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-type-suggestions] .filter-pill span,
+[data-review-approved-type-pool] .filter-pill span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  padding: 0.42rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+[data-type-suggestions] .filter-pill input:checked + span,
+[data-review-approved-type-pool] .filter-pill input:checked + span {
+  border-color: rgba(212, 175, 55, 0.82);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(45, 156, 219, 0.13));
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.16), 0 0.65rem 1.2rem rgba(0, 0, 0, 0.18);
+}
+
+[data-type-suggestions] .filter-pill input:focus-visible + span,
+[data-review-approved-type-pool] .filter-pill input:focus-visible + span {
+  outline: 2px solid var(--color-functional);
+  outline-offset: 2px;
+}
+
+[data-type-suggestions] .filter-pill:active span,
+[data-review-approved-type-pool] .filter-pill:active span {
+  transform: scale(0.98);
+}
+
+@media (min-width: 420px) {
+  [data-type-suggestions] .filter-row,
+  [data-review-approved-type-pool] .filter-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
