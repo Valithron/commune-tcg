@@ -11,23 +11,9 @@ import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 const rarityOptions = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 const typeOptions = ['flame', 'tide', 'bloom', 'volt', 'shadow', 'radiant', 'neutral'];
 
-function formatStatus(value) {
-  return titleCase(String(value || 'pending_review').replaceAll('_', ' '));
-}
-
-function formatBytes(value) {
-  const bytes = Number(value || 0);
-  if (!Number.isFinite(bytes) || bytes <= 0) return 'Unknown';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function normalizeRarity(value, fallback = 'rare') {
-  const rarity = String(value || fallback).trim().toLowerCase();
-  return rarityOptions.includes(rarity) ? rarity : fallback;
-}
-
+function formatStatus(value) { return titleCase(String(value || 'pending_review').replaceAll('_', ' ')); }
+function formatBytes(value) { const bytes = Number(value || 0); if (!Number.isFinite(bytes) || bytes <= 0) return 'Unknown'; if (bytes < 1024) return `${bytes} B`; if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`; return `${(bytes / 1024 / 1024).toFixed(1)} MB`; }
+function normalizeRarity(value, fallback = 'rare') { const rarity = String(value || fallback).trim().toLowerCase(); return rarityOptions.includes(rarity) ? rarity : fallback; }
 function normalizeType(value, fallback = 'neutral') {
   const type = String(value || fallback).trim().toLowerCase();
   if (typeOptions.includes(type)) return type;
@@ -39,34 +25,23 @@ function normalizeType(value, fallback = 'neutral') {
   if (['dark'].includes(type)) return 'shadow';
   return fallback;
 }
-
-function formatRarityReview(value) {
-  return String(value || 'random') === 'random' ? 'Random on approval' : titleCase(value);
+function normalizeTypePool(value, fallback = ['neutral']) {
+  const raw = Array.isArray(value) && value.length ? value : fallback;
+  const normalized = [];
+  raw.forEach((item) => {
+    const type = normalizeType(item, '');
+    if (type && typeOptions.includes(type) && !normalized.includes(type)) normalized.push(type);
+  });
+  return normalized.length ? normalized.slice(0, 3) : ['neutral'];
 }
-
-function isReviewable(submission) {
-  return ['pending_review', 'needs_changes'].includes(submission.moderationStatus);
-}
-
-function getPayloadError(payload, response) {
-  const parts = [payload?.error, payload?.detail].filter(Boolean);
-  return parts.join(': ') || `Review action failed with ${response.status}`;
-}
-
-function getCreatorDisplayName(submission) {
-  return String(
-    submission.creatorDisplayName
-      || submission.creatorDisplayNameOverride
-      || submission.submitterDisplayName
-      || submission.creatorDisplayName
-      || submission.submitterUserId
-      || 'Unknown'
-  ).trim();
-}
+function formatTypePool(pool) { return normalizeTypePool(pool).map(titleCase).join(', '); }
+function formatRarityReview(value) { return String(value || 'random') === 'random' ? 'Random on approval' : titleCase(value); }
+function isReviewable(submission) { return ['pending_review', 'needs_changes'].includes(submission.moderationStatus); }
+function getPayloadError(payload, response) { const parts = [payload?.error, payload?.detail].filter(Boolean); return parts.join(': ') || `Review action failed with ${response.status}`; }
+function getCreatorDisplayName(submission) { return String(submission.creatorDisplayName || submission.creatorDisplayNameOverride || submission.submitterDisplayName || submission.creatorDisplayName || submission.submitterUserId || 'Unknown').trim(); }
 
 function submissionToPreviewCard(submission) {
-  const type = normalizeType(submission.cardType, 'neutral');
-
+  const type = normalizeTypePool(submission.typeSuggestions || [submission.cardType])[0];
   return {
     id: submission.id,
     name: submission.cardName,
@@ -91,17 +66,16 @@ function submissionToPreviewCard(submission) {
   };
 }
 
-function renderDetailRow(label, value) {
-  return `<div class="detail-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || 'Not set')}</strong></div>`;
-}
-
-function renderRarityOptions(selected, includeRoll = false) {
-  const options = includeRoll ? ['roll', ...rarityOptions] : rarityOptions;
-  return options.map((rarity) => `<option value="${escapeHtml(rarity)}"${rarity === selected ? ' selected' : ''}>${escapeHtml(rarity === 'roll' ? 'Roll from target' : titleCase(rarity))}</option>`).join('');
-}
-
-function renderTypeOptions(selected) {
-  return typeOptions.map((type) => `<option value="${escapeHtml(type)}"${type === selected ? ' selected' : ''}>${escapeHtml(titleCase(type))}</option>`).join('');
+function renderDetailRow(label, value) { return `<div class="detail-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || 'Not set')}</strong></div>`; }
+function renderRarityOptions(selected, includeRoll = false) { const options = includeRoll ? ['roll', ...rarityOptions] : rarityOptions; return options.map((rarity) => `<option value="${escapeHtml(rarity)}"${rarity === selected ? ' selected' : ''}>${escapeHtml(rarity === 'roll' ? 'Roll from target' : titleCase(rarity))}</option>`).join(''); }
+function renderTypeCheckboxes(selectedPool) {
+  const selected = new Set(normalizeTypePool(selectedPool));
+  return typeOptions.map((type) => `
+    <label class="filter-pill">
+      <input data-review-approved-type type="checkbox" value="${escapeHtml(type)}"${selected.has(type) ? ' checked' : ''} />
+      <span>${escapeHtml(titleCase(type))}</span>
+    </label>
+  `).join('');
 }
 
 function renderReviewControls(submission) {
@@ -117,39 +91,28 @@ function renderReviewControls(submission) {
 
   const creatorDisplayName = getCreatorDisplayName(submission);
   const suggestedTarget = normalizeRarity(submission.raritySuggestion, 'rare');
-  const suggestedType = normalizeType(submission.cardType, 'neutral');
+  const suggestedPool = normalizeTypePool(submission.typeSuggestions || [submission.cardType]);
+  const approvedPool = normalizeTypePool(submission.approvedTypePool?.length ? submission.approvedTypePool : suggestedPool);
 
   return `
     <section class="glass-panel admin-panel admin-card-editor-form" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
       <span class="section-kicker">Review Actions</span>
       <h2 class="section-title">Server-owned review</h2>
-      <p class="hero-copy">Approve creates an unowned Library card row. Admin-approved type controls stat allocation; target rarity controls the cascading roll table.</p>
-      <label class="review-notes-label">
-        <span>Creator</span>
-        <input data-review-creator maxlength="120" value="${escapeHtml(creatorDisplayName)}" placeholder="Visible creator name" />
-      </label>
-      <label class="review-notes-label">
-        <span>Approved Type</span>
-        <select data-review-approved-type>${renderTypeOptions(suggestedType)}</select>
-      </label>
-      <label class="review-notes-label">
-        <span>Approval Roll Target</span>
-        <select data-review-target-rarity>${renderRarityOptions(suggestedTarget)}</select>
-      </label>
-      <label class="review-notes-label">
-        <span>Final Rarity Override</span>
-        <select data-review-final-rarity>${renderRarityOptions('roll', true)}</select>
-      </label>
-      <label class="review-notes-label">
-        <span>Review Notes</span>
-        <textarea data-review-notes maxlength="500" placeholder="Optional note for this review action."></textarea>
-      </label>
+      <p class="hero-copy">Approve creates an unowned Library card row. Admin-approved type pool controls pull-time type rolls and stat allocation.</p>
+      <label class="review-notes-label"><span>Creator</span><input data-review-creator maxlength="120" value="${escapeHtml(creatorDisplayName)}" placeholder="Visible creator name" /></label>
+      <fieldset class="review-notes-label" data-review-approved-type-pool>
+        <legend>Approved Type Pool <small>(choose 1 to 3)</small></legend>
+        <div class="filter-row">${renderTypeCheckboxes(approvedPool)}</div>
+      </fieldset>
+      <label class="review-notes-label"><span>Approval Roll Target</span><select data-review-target-rarity>${renderRarityOptions(suggestedTarget)}</select></label>
+      <label class="review-notes-label"><span>Final Rarity Override</span><select data-review-final-rarity>${renderRarityOptions('roll', true)}</select></label>
+      <label class="review-notes-label"><span>Review Notes</span><textarea data-review-notes maxlength="500" placeholder="Optional note for this review action."></textarea></label>
       <div class="action-row">
         <button class="button button-primary" type="button" data-review-action="approve">Approve to Library</button>
         <button class="button button-secondary" type="button" data-review-action="needs_changes">Needs Changes</button>
         <button class="button button-secondary" type="button" data-review-action="reject">Reject</button>
       </div>
-      <div class="empty-note" data-review-status>Ready for review action. Creator, approved type, target rarity, and optional final override will be saved with the action.</div>
+      <div class="empty-note" data-review-status>Ready for review action. Creator, approved type pool, target rarity, and optional final override will be saved with the action.</div>
     </section>
   `;
 }
@@ -163,29 +126,22 @@ async function loadSubmission(submissionId) {
 
 export async function renderAdminSubmissionDetail({ params }) {
   const submissionId = params.submissionId;
-
   try {
     const submission = await loadSubmission(submissionId);
     const previewCard = submissionToPreviewCard(submission);
     const creatorDisplayName = getCreatorDisplayName(submission);
-    const suggestedType = normalizeType(submission.cardType, 'neutral');
+    const suggestedPool = normalizeTypePool(submission.typeSuggestions || [submission.cardType]);
+    const approvedPool = normalizeTypePool(submission.approvedTypePool?.length ? submission.approvedTypePool : suggestedPool);
 
     return `
       <section class="hero-panel">
         <span class="section-kicker">Admin Review</span>
         <h2 class="hero-title">Submission Detail</h2>
-        <p class="hero-copy">Approved submissions become Library cards. Target rarity and type are submitter suggestions; final rarity, approved type, battle stats, level cap, and origin metadata are assigned only when you approve.</p>
-        <div class="action-row">
-          <a class="button button-secondary" href="#/admin">Back to Admin</a>
-          <a class="button button-secondary" href="${escapeHtml(submission.imageUrl)}" target="_blank" rel="noreferrer">Open Image</a>
-        </div>
+        <p class="hero-copy">Approved submissions become Library cards. Target rarity and type pool are submitter suggestions; final rarity, approved type pool, battle stats, level cap, and origin metadata are assigned only when you approve.</p>
+        <div class="action-row"><a class="button button-secondary" href="#/admin">Back to Admin</a><a class="button button-secondary" href="${escapeHtml(submission.imageUrl)}" target="_blank" rel="noreferrer">Open Image</a></div>
       </section>
-
       <section class="detail-layout">
-        <div class="detail-card-stage">
-          ${renderCardFrame(previewCard, { density: 'showcase', context: 'library', showOwnership: false, showStats: false })}
-        </div>
-
+        <div class="detail-card-stage">${renderCardFrame(previewCard, { density: 'showcase', context: 'library', showOwnership: false, showStats: false })}</div>
         <article class="detail-panel">
           <span class="section-kicker">${escapeHtml(formatStatus(submission.moderationStatus))}</span>
           <h2 class="detail-title">${escapeHtml(submission.cardName)}</h2>
@@ -195,9 +151,10 @@ export async function renderAdminSubmissionDetail({ params }) {
             ${renderDetailRow('Submitter', submission.submitterDisplayName)}
             ${renderDetailRow('Creator', creatorDisplayName)}
             ${renderDetailRow('Character', titleCase(submission.characterId))}
-            ${renderDetailRow('Suggested Type', titleCase(suggestedType))}
+            ${renderDetailRow('Suggested Type Pool', formatTypePool(suggestedPool))}
+            ${renderDetailRow('Approved Type Pool', submission.approvedTypePool?.length ? formatTypePool(approvedPool) : 'Not approved')}
             ${renderDetailRow('Target Rarity', formatRarityReview(submission.raritySuggestion))}
-            ${renderDetailRow('Approval Stats', 'Generated from approved rarity budget and approved type bias')}
+            ${renderDetailRow('Approval Stats', 'Generated from approved rarity budget and primary approved type bias')}
             ${renderDetailRow('Flavor', submission.flavorText)}
             ${renderDetailRow('Ability', submission.abilityText || 'None')}
             ${renderDetailRow('Review Notes', submission.reviewNotes || 'None')}
@@ -210,39 +167,43 @@ export async function renderAdminSubmissionDetail({ params }) {
           </div>
         </article>
       </section>
-
       ${renderReviewControls(submission)}
     `;
   } catch (error) {
-    return `
-      <section class="hero-panel">
-        <span class="section-kicker">Admin Review</span>
-        <h2 class="hero-title">Submission not found.</h2>
-        <p class="hero-copy">${escapeHtml(error.message)}</p>
-        <div class="action-row"><a class="button button-secondary" href="#/admin">Back to Admin</a></div>
-      </section>
-    `;
+    return `<section class="hero-panel"><span class="section-kicker">Admin Review</span><h2 class="hero-title">Submission not found.</h2><p class="hero-copy">${escapeHtml(error.message)}</p><div class="action-row"><a class="button button-secondary" href="#/admin">Back to Admin</a></div></section>`;
   }
 }
 
 export function initAdminSubmissionDetail(root) {
   const panel = root.querySelector('[data-submission-review-panel]');
   if (!panel) return;
-
   const status = panel.querySelector('[data-review-status]');
   const notes = panel.querySelector('[data-review-notes]');
   const creator = panel.querySelector('[data-review-creator]');
-  const approvedType = panel.querySelector('[data-review-approved-type]');
   const targetRarity = panel.querySelector('[data-review-target-rarity]');
   const finalRarity = panel.querySelector('[data-review-final-rarity]');
+  const typeCheckboxes = [...panel.querySelectorAll('[data-review-approved-type]')];
+
+  typeCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      const checked = typeCheckboxes.filter((box) => box.checked);
+      if (checked.length > 3) {
+        checkbox.checked = false;
+        status.textContent = 'Choose 1 to 3 approved types.';
+      }
+    });
+  });
 
   panel.querySelectorAll('[data-review-action]').forEach((button) => {
     button.addEventListener('click', async () => {
       const action = button.getAttribute('data-review-action');
       const creatorDisplayName = creator?.value?.trim() || '';
+      const approvedCardTypes = typeCheckboxes.filter((box) => box.checked).map((box) => box.value);
       status.textContent = 'Applying review action and saving mechanics...';
 
       try {
+        if (action === 'approve' && !approvedCardTypes.length) throw new Error('Choose at least one approved type.');
+        if (approvedCardTypes.length > 3) throw new Error('Choose up to 3 approved types.');
         const routes = getApiRoutes();
         const response = await fetch(routes.adminSubmissionAction, {
           method: 'POST',
@@ -252,18 +213,19 @@ export function initAdminSubmissionDetail(root) {
             action,
             reviewNotes: notes.value,
             creatorDisplayName,
-            approvedCardType: approvedType?.value || 'neutral',
+            approvedCardType: approvedCardTypes[0] || 'neutral',
+            approvedCardTypes,
             targetRarity: targetRarity?.value || '',
             finalRarityOverride: finalRarity?.value === 'roll' ? '' : finalRarity?.value || '',
           }),
         });
         const payload = await response.json().catch(() => null);
         if (!response.ok || !payload?.ok) throw new Error(getPayloadError(payload, response));
-
         const roll = payload.approvalProfile;
         const creatorMessage = payload.creatorDisplayName ? ` Creator saved as ${payload.creatorDisplayName}.` : ' Creator saved.';
+        const typeMessage = payload.approvedTypePool?.length ? payload.approvedTypePool.map(titleCase).join('/') : titleCase(roll?.cardType || approvedCardTypes[0] || 'neutral');
         status.textContent = roll
-          ? `Approved: ${titleCase(roll.rarity)} ${titleCase(roll.cardType || approvedType?.value || 'neutral')} from ${titleCase(roll.targetRarity)} target · budget ${roll.statBudget} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd} · max Lv ${roll.maxLevel} · origin +${roll.originBonusPercent}%.${creatorMessage}`
+          ? `Approved: ${titleCase(roll.rarity)} ${typeMessage} from ${titleCase(roll.targetRarity)} target · budget ${roll.statBudget} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd} · max Lv ${roll.maxLevel} · origin +${roll.originBonusPercent}%.${creatorMessage}`
           : 'Review action applied: ' + action.replaceAll('_', ' ') + '.' + creatorMessage;
         window.setTimeout(() => window.location.reload(), 900);
       } catch (error) {
