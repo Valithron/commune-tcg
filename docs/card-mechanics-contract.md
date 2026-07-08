@@ -6,9 +6,50 @@ This document defines the current trait ownership model for the Gacha branch.
 
 Approval controls balance. Pulling controls ownership and collectible variation.
 
-That means base rarity and base POW/DEF/SPD are template traits. They are created when an admin approves a submitted card, not when a player pulls the card.
+Users may suggest a target rarity at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity.
 
 Pulling must not reroll base rarity or base POW/DEF/SPD unless the game is intentionally redesigned around variable copies.
+
+## Rarity assignment
+
+Submission stores `rarity_suggestion` as the user's requested target rarity.
+
+Approval uses one of two paths:
+
+1. Cascading target roll from the approved target rarity.
+2. Admin final rarity override.
+
+Current cascading confirmation chances:
+
+```text
+Common target:    100% Common
+Uncommon target:  45% Uncommon -> 100% Common
+Rare target:      20% Rare -> 55% Uncommon -> 100% Common
+Legendary target:  8% Legendary -> 25% Rare -> 55% Uncommon -> 100% Common
+Mythic target:     3% Mythic -> 12% Legendary -> 35% Rare -> 65% Uncommon -> 100% Common
+```
+
+Admin override skips the cascading roll and directly assigns the selected final rarity.
+
+## Stat budget and progression config
+
+Approved rarity determines the level 1 stat budget and progression metadata.
+
+```text
+Common:    24-32 total stats,  max level 30, +2 total stats per level,  0% origin bonus
+Uncommon:  38-50 total stats,  max level 40, +3 total stats per level,  5% origin bonus
+Rare:      58-76 total stats,  max level 50, +4 total stats per level, 10% origin bonus
+Legendary: 90-115 total stats, max level 60, +5 total stats per level, 15% origin bonus
+Mythic:    130-165 total stats,max level 70, +6 total stats per level, 20% origin bonus
+```
+
+The system distributes the stat budget into POW/DEF/SPD using a small archetype bias inferred from card type:
+
+- battle -> aggressor
+- defense -> guardian
+- training/utility -> swift
+- support/magic/alchemy -> mystic
+- otherwise -> balanced
 
 ## Template traits
 
@@ -22,7 +63,14 @@ Current template traits:
 - type/category
 - art/crop data
 - rarity
+- targetRarity
+- raritySource
 - baseStats
+- statBudget
+- statArchetype
+- progressionRules
+- originRarity
+- originBonusPercent
 - stats, kept for backward compatibility
 - top-level pow/def/spd, kept for backward compatibility
 - ability/mechanic text
@@ -33,25 +81,32 @@ Approved cards should include:
 ```json
 {
   "rarity": "rare",
-  "raritySource": "approval_random_roll",
-  "rarity_source": "approval_random_roll",
+  "targetRarity": "mythic",
+  "raritySource": "approval_cascading_roll",
   "traitSource": "approval",
-  "trait_source": "approval",
-  "statsSource": "approval_random_roll",
-  "stats_source": "approval_random_roll",
+  "statsSource": "rarity_stat_budget",
+  "statBudget": 66,
+  "statArchetype": "mystic",
   "baseStats": {
-    "pow": 6,
-    "def": 4,
-    "spd": 5
+    "pow": 24,
+    "def": 20,
+    "spd": 22
   },
+  "progressionRules": {
+    "levelCap": 50,
+    "maxLevel": 50,
+    "growthPerLevel": 4
+  },
+  "originRarity": "rare",
+  "originBonusPercent": 10,
   "stats": {
-    "pow": 6,
-    "def": 4,
-    "spd": 5
+    "pow": 24,
+    "def": 20,
+    "spd": 22
   },
-  "pow": 6,
-  "def": 4,
-  "spd": 5
+  "pow": 24,
+  "def": 20,
+  "spd": 22
 }
 ```
 
@@ -71,6 +126,8 @@ Current owned copy traits:
 - pulled_at
 - copyTraits
 - progression
+- copied progressionRules
+- copied origin metadata
 
 Pulled cards should include:
 
@@ -78,9 +135,9 @@ Pulled cards should include:
 {
   "rarity": "rare",
   "baseStats": {
-    "pow": 6,
-    "def": 4,
-    "spd": 5
+    "pow": 24,
+    "def": 20,
+    "spd": 22
   },
   "copyTraits": {
     "foil": false,
@@ -98,24 +155,32 @@ Pulled cards should include:
     "xp": 0,
     "copies": 1
   },
+  "progressionRules": {
+    "levelCap": 50,
+    "maxLevel": 50,
+    "growthPerLevel": 4
+  },
+  "originRarity": "rare",
+  "originBonusPercent": 10,
   "stats": {
-    "pow": 6,
-    "def": 4,
-    "spd": 5
+    "pow": 26,
+    "def": 22,
+    "spd": 24
   }
 }
 ```
 
-## Effective battle stats
+## Effective stats
 
-Effective stats should eventually be calculated from:
+Effective stats are calculated from:
 
 - baseStats
-- progression
+- progression.level
+- progressionRules.growthPerLevel
 - copyTraits.statBonus
-- future equipment, buffs, debuffs, or battle modifiers
+- originBonusPercent
 
-Current implementation does not apply level scaling. It only preserves the data structure and calculates effective stats as baseStats plus copyTraits.statBonus.
+Current level-growth implementation distributes total growth across POW/DEF/SPD. Ability scaling, evolution formulas, equipment, buffs, and debuffs are not implemented yet.
 
 ## Compatibility rule
 
@@ -132,12 +197,14 @@ Do not remove these fields yet:
 
 CardFrame, Library, Vault, and Battle still rely on those legacy-safe fields.
 
-## Open decisions
+## Not implemented yet
 
 These are intentionally not settled in this pass:
 
-- Whether foil/holo should visually display immediately
-- Whether mint numbers should be real sequential serials
-- Whether copy-specific stat variance should exist at all
-- Whether rarity should drive stat budget, ability strength, or both
-- How progression should scale battle stats
+- Rarity evolution / promotion
+- Duplicate merge versus separate copy rules
+- Wild shards or duplicate substitute resources
+- Foil/holo visual display
+- Real sequential mint numbers
+- Ability strength by rarity
+- XP curve and battle reward tuning
