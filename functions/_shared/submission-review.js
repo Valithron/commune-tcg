@@ -1,4 +1,5 @@
 import { rollApprovalProfile } from './approval-rolls.js';
+import { buildApprovedTemplateTraits } from './card-mechanics.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
 
 const temporaryReviewerId = 'temporary-admin-sterling';
@@ -37,7 +38,8 @@ function resolveCreatorDisplayName(submission) {
 
 function buildApprovedCardJson(submission, now, approvalProfile) {
   const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
-  const stats = approvalProfile?.stats || { pow: 1, def: 1, spd: 1 };
+  const templateTraits = buildApprovedTemplateTraits({ approvalProfile });
+  const stats = templateTraits.stats;
   const creatorDisplayName = resolveCreatorDisplayName(submission);
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
   const creatorDisplayNameOverride = cleanText(submission.creatorDisplayNameOverride || '', 120);
@@ -64,9 +66,17 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     submitter_display_name: submitterDisplayName,
     submitterUserId: creatorUserId,
     submitter_user_id: creatorUserId,
-    rarity: approvalProfile?.rarity || 'common',
-    rarity_source: 'approval_random_roll',
+    mechanicsVersion: templateTraits.mechanicsVersion,
+    rarity: templateTraits.rarity,
+    rarity_source: templateTraits.raritySource,
+    raritySource: templateTraits.raritySource,
     rarity_suggestion: submission.raritySuggestion,
+    traitSource: templateTraits.traitSource,
+    trait_source: templateTraits.traitSource,
+    statsSource: templateTraits.statsSource,
+    stats_source: templateTraits.statsSource,
+    baseStats: templateTraits.baseStats,
+    base_stats: templateTraits.baseStats,
     stats,
     pow: stats.pow,
     def: stats.def,
