@@ -16,6 +16,20 @@ function readNumber(value, fallback = null) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function pluralizeCopy(count) {
+  return `${count} ${count === 1 ? 'copy' : 'copies'}`;
+}
+
+function readOwnershipText(card, context) {
+  if (context === 'library') {
+    const userOwnedCopies = readNumber(card.userOwnedCopies ?? card.ownedCopies ?? 0, 0) || 0;
+    return userOwnedCopies > 0 ? `Owned, ${pluralizeCopy(userOwnedCopies)}` : 'Not yet owned';
+  }
+
+  const copies = readNumber(card.copies, 0) || 0;
+  return card.owned ? `Owned, ${pluralizeCopy(copies || 1)}` : 'Not yet owned';
+}
+
 function renderOptionalMechanicsRows(card) {
   const maxLevel = readNumber(card.maxLevel ?? card.max_level ?? card.levelCap ?? card.level_cap);
   const growthPerLevel = readNumber(card.growthPerLevel ?? card.growth_per_level);
@@ -32,10 +46,10 @@ function renderOptionalMechanicsRows(card) {
 }
 
 function renderDetailRows(card, context) {
-  const ownershipText = card.owned ? `Owned, ${card.copies} ${card.copies === 1 ? 'copy' : 'copies'}` : 'Not yet owned';
+  const ownershipText = readOwnershipText(card, context);
   const contextText = context === 'vault'
     ? 'Vault view tracks player-specific progress such as level, copies, and future upgrade state.'
-    : 'Library view describes the global card template before player-specific ownership is applied.';
+    : 'Library view describes the global card template and whether the current user owns pulled copies.';
   const creator = readCreator(card) || 'Unknown';
 
   return `
