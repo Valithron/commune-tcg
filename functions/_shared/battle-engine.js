@@ -31,9 +31,14 @@ const battleHistorySql = `
   )
 `;
 
+const imageColumns = ['image_key', 'imageKey', 'image_path', 'image', 'image_url', 'art_url', 'art_key', 'object_key', 'r2_key'];
+
 function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
 function toNumber(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
 function sumStats(stats = {}) { return toNumber(stats.pow, 0) + toNumber(stats.def, 0) + toNumber(stats.spd, 0); }
+function readValue(row, candidates, fallback = '') { for (const key of candidates) { if (key && row?.[key] !== undefined && row[key] !== null && row[key] !== '') return row[key]; } return fallback; }
+function isLikelyUrl(value) { return /^https?:\/\//i.test(String(value || '')) || String(value || '').startsWith('/'); }
+function imageUrlFromValue(value) { const imageValue = String(value || '').trim(); if (!imageValue) return ''; if (isLikelyUrl(imageValue)) return imageValue; return `/api/card-image?key=${encodeURIComponent(imageValue)}`; }
 
 function normalizeRarity(value) {
   const rarity = String(value || 'common').trim().toLowerCase();
@@ -51,32 +56,17 @@ function hasMechanicsStats(payload = {}) { return Boolean(payload.baseStats || p
 
 function readEffectiveStats(payload, legacyStats) {
   if (!hasMechanicsStats(payload)) return legacyStats;
-
-  const topLevelProgression = {
-    ...normalizeProgression(payload.progression || {}),
-    level: toNumber(payload.level ?? payload.card_level ?? payload.progression?.level, 1),
-    xp: toNumber(payload.xp ?? payload.experience ?? payload.progression?.xp, 0),
-    copies: toNumber(payload.copies ?? payload.progression?.copies, 1),
-  };
-
-  return calculateEffectiveStats({
-    baseStats: normalizeBaseStats(payload.baseStats || payload.base_stats || payload, legacyStats),
-    copyTraits: normalizeCopyTraits(payload.copyTraits || payload.copy_traits || {}),
-    progression: topLevelProgression,
-    progressionRules: readProgressionRules(payload),
-    originBonusPercent: payload.originBonusPercent ?? payload.origin_bonus_percent ?? 0,
-  });
+  const topLevelProgression = { ...normalizeProgression(payload.progression || {}), level: toNumber(payload.level ?? payload.card_level ?? payload.progression?.level, 1), xp: toNumber(payload.xp ?? payload.experience ?? payload.progression?.xp, 0), copies: toNumber(payload.copies ?? payload.progression?.copies, 1) };
+  return calculateEffectiveStats({ baseStats: normalizeBaseStats(payload.baseStats || payload.base_stats || payload, legacyStats), copyTraits: normalizeCopyTraits(payload.copyTraits || payload.copy_traits || {}), progression: topLevelProgression, progressionRules: readProgressionRules(payload), originBonusPercent: payload.originBonusPercent ?? payload.origin_bonus_percent ?? 0 });
 }
 
 function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const rawStats = payload.stats || payload.statBlock || {};
-  const legacyStats = {
-    pow: toNumber(payload.pow ?? rawStats.pow ?? rawStats.power ?? rawStats.attack ?? rawStats.atk ?? rawStats.strength, 1),
-    def: toNumber(payload.def ?? rawStats.def ?? rawStats.defense ?? rawStats.health ?? rawStats.hp, 1),
-    spd: toNumber(payload.spd ?? rawStats.spd ?? rawStats.speed ?? rawStats.agility, 1),
-  };
+  const imageValue = String(readValue(payload, imageColumns, ''));
+  const crop = payload.crop || payload.crop_json || payload.cropJson || payload.image_crop || payload.imageCrop || {};
+  const legacyStats = { pow: toNumber(payload.pow ?? rawStats.pow ?? rawStats.power ?? rawStats.attack ?? rawStats.atk ?? rawStats.strength, 1), def: toNumber(payload.def ?? rawStats.def ?? rawStats.defense ?? rawStats.health ?? rawStats.hp, 1), spd: toNumber(payload.spd ?? rawStats.spd ?? rawStats.speed ?? rawStats.agility, 1) };
   const effectiveStats = readEffectiveStats(payload, legacyStats);
   const maxLevel = readMaxLevel(payload);
   const cardType = normalizeCardType(payload.selectedType || payload.selected_type || payload.type || payload.card_type || payload.role || 'neutral');
@@ -85,6 +75,7 @@ function flattenCardPayload(row) {
   const xp = toNumber(payload.xp ?? payload.experience ?? payload.experience_points ?? payload.experiencePoints ?? payload.progression?.xp, 0);
   const legacyBattlePower = sumStats(legacyStats) + level;
   const effectiveBattlePower = sumStats(effectiveStats);
+  const mechanicsStats = hasMechanicsStats(payload);
 
   return {
     parsed,
@@ -109,23 +100,26 @@ function flattenCardPayload(row) {
       max_level: maxLevel,
       levelCap: maxLevel,
       copies: toNumber(payload.copies ?? payload.copy_count ?? payload.copyCount ?? payload.quantity ?? payload.progression?.copies, 1),
+      imageKey: isLikelyUrl(imageValue) ? '' : imageValue,
+      imageUrl: imageUrlFromValue(imageValue),
+      crop,
+      cropJson: crop,
+      imageCrop: crop,
       stats: effectiveStats,
       rawStats: legacyStats,
       effectiveStats,
       effective_stats: effectiveStats,
       baseStats: normalizeBaseStats(payload.baseStats || payload.base_stats || payload, legacyStats),
-      battlePower: hasMechanicsStats(payload) ? effectiveBattlePower : legacyBattlePower,
-      baseBattlePower: hasMechanicsStats(payload) ? effectiveBattlePower : legacyBattlePower,
-      battlePowerSource: hasMechanicsStats(payload) ? 'effective_stats' : 'legacy_stats_plus_level',
+      battlePower: mechanicsStats ? effectiveBattlePower : legacyBattlePower,
+      baseBattlePower: mechanicsStats ? effectiveBattlePower : legacyBattlePower,
+      battlePowerSource: mechanicsStats ? 'effective_stats' : 'legacy_stats_plus_level',
       createdAt: row.created_at ?? null,
       updatedAt: row.updated_at ?? null,
     },
   };
 }
 
-function hasExplicitStat(payload, stats) {
-  return [payload.pow, payload.power, payload.attack, payload.atk, payload.strength, payload.def, payload.defense, payload.health, payload.hp, payload.spd, payload.speed, payload.agility, stats.pow, stats.power, stats.attack, stats.atk, stats.strength, stats.def, stats.defense, stats.health, stats.hp, stats.spd, stats.speed, stats.agility].some((value) => value !== undefined && value !== null && value !== '');
-}
+function hasExplicitStat(payload, stats) { return [payload.pow, payload.power, payload.attack, payload.atk, payload.strength, payload.def, payload.defense, payload.health, payload.hp, payload.spd, payload.speed, payload.agility, stats.pow, stats.power, stats.attack, stats.atk, stats.strength, stats.def, stats.defense, stats.health, stats.hp, stats.spd, stats.speed, stats.agility].some((value) => value !== undefined && value !== null && value !== ''); }
 
 export function normalizeOwnedBattleCard(row) {
   const { parsed, payload, rawStats, normalized } = flattenCardPayload(row);
@@ -133,13 +127,7 @@ export function normalizeOwnedBattleCard(row) {
   if (!parsed) reasons.push('invalid-card-json');
   if (payload.canBattle === false || payload.battleEligible === false || payload.disabled === true) reasons.push('explicitly-disabled');
   if (!Object.values(normalized.stats).every(Number.isFinite)) reasons.push('invalid-normalized-stats');
-
-  return {
-    ...normalized,
-    eligible: reasons.length === 0,
-    reasons,
-    explicitStatsMapped: parsed ? hasExplicitStat(payload, rawStats) : false,
-  };
+  return { ...normalized, eligible: reasons.length === 0, reasons, explicitStatsMapped: parsed ? hasExplicitStat(payload, rawStats) : false };
 }
 
 function applyEncounterMatchup(card, encounter) {
@@ -148,29 +136,11 @@ function applyEncounterMatchup(card, encounter) {
   const baseBattlePower = Math.max(0, Math.round(Number(card.baseBattlePower ?? card.battlePower ?? 0)));
   const matchupMultiplier = 1 + matchup.modifier;
   const adjustedBattlePower = Math.max(0, Math.round(baseBattlePower * matchupMultiplier));
-
-  return {
-    ...card,
-    enemyType,
-    enemy_type: enemyType,
-    matchup,
-    matchupResult: matchup.result,
-    matchupModifier: matchup.modifier,
-    matchupMultiplier,
-    baseBattlePower,
-    battlePower: adjustedBattlePower,
-    adjustedBattlePower,
-    battlePowerSource: `${card.battlePowerSource || 'effective_stats'}_with_type_matchup`,
-  };
+  return { ...card, enemyType, enemy_type: enemyType, matchup, matchupResult: matchup.result, matchupModifier: matchup.modifier, matchupMultiplier, baseBattlePower, battlePower: adjustedBattlePower, adjustedBattlePower, battlePowerSource: `${card.battlePowerSource || 'effective_stats'}_with_type_matchup` };
 }
 
 function ownerWhere() { return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`; }
-
-export async function readOwnedBattleRows(env, ownerUserId) {
-  const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} AND CAST(owner_user_id AS TEXT) = ? ORDER BY updated_at DESC, created_at DESC LIMIT 500`).bind(ownerUserId).all();
-  return result.results || [];
-}
-
+export async function readOwnedBattleRows(env, ownerUserId) { const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} AND CAST(owner_user_id AS TEXT) = ? ORDER BY updated_at DESC, created_at DESC LIMIT 500`).bind(ownerUserId).all(); return result.results || []; }
 export function getBattleEncounterById(encounterId) { return mockBattleEncounters.find((encounter) => encounter.id === encounterId) || null; }
 export function parseSquadCardIds(value) { if (Array.isArray(value)) return value.map((id) => String(id).trim()).filter(Boolean); return String(value || '').split(',').map((id) => id.trim()).filter(Boolean); }
 function buildCardLookup(cards) { return cards.reduce((lookup, card) => { lookup.set(card.id, card); lookup.set(card.sourceRowId, card); return lookup; }, new Map()); }
@@ -197,14 +167,7 @@ function sanitizeForId(value) { return String(value || '').toLowerCase().replace
 function buildSimulationId(ownerUserId, encounterId, squad) { const squadKey = squad.map((card) => sanitizeForId(card.sourceRowId || card.id)).join('-') || 'no-squad'; return `sim-${sanitizeForId(ownerUserId)}-${sanitizeForId(encounterId)}-${squadKey}`; }
 function buildId(prefix) { return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8); }
 function buildRewardPreview(encounter, victory, squad) { return calculateBattleRewardPreview({ encounter, victory, squadSize: squad.length }); }
-
-function buildXpPreview(squad, xpPerCard) {
-  return squad.map((card) => {
-    const maxLevel = normalizeBattleMaxLevel(card.maxLevel ?? card.max_level ?? card.levelCap, 30);
-    const preview = previewLevelFromXp({ currentLevel: card.level, currentXp: card.xp, gainedXp: xpPerCard, maxLevel });
-    return { cardId: card.id, sourceRowId: card.sourceRowId, cardTitle: card.name, previousLevel: card.level, previousXp: card.xp, maxLevel, gainedXp: xpPerCard, nextXpPreview: preview.nextXpPreview, nextLevelPreview: preview.nextLevelPreview, xpIntoCurrentLevelPreview: preview.xpIntoCurrentLevelPreview, xpToNextLevelPreview: preview.xpToNextLevelPreview, levelsGained: preview.levelsGained, maxLevelReached: preview.maxLevelReached, levelPreviewStatus: 'phase-6-effective-stats-matchup-preview', writes: [] };
-  });
-}
+function buildXpPreview(squad, xpPerCard) { return squad.map((card) => { const maxLevel = normalizeBattleMaxLevel(card.maxLevel ?? card.max_level ?? card.levelCap, 30); const preview = previewLevelFromXp({ currentLevel: card.level, currentXp: card.xp, gainedXp: xpPerCard, maxLevel }); return { cardId: card.id, sourceRowId: card.sourceRowId, cardTitle: card.name, previousLevel: card.level, previousXp: card.xp, maxLevel, gainedXp: xpPerCard, nextXpPreview: preview.nextXpPreview, nextLevelPreview: preview.nextLevelPreview, xpIntoCurrentLevelPreview: preview.xpIntoCurrentLevelPreview, xpToNextLevelPreview: preview.xpToNextLevelPreview, levelsGained: preview.levelsGained, maxLevelReached: preview.maxLevelReached, levelPreviewStatus: 'phase-6-effective-stats-matchup-preview', writes: [] }; }); }
 
 function buildCombatLog({ encounter, squad, squadPower, enemyPower, victory, margin }) {
   const leader = squad[0]?.name || 'Selected squad';
