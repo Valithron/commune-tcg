@@ -15,6 +15,8 @@ async function readPayload(request) {
     action: formData.get('action'),
     reviewNotes: formData.get('review_notes'),
     creatorDisplayName: formData.get('creator_display_name'),
+    targetRarity: formData.get('target_rarity'),
+    finalRarityOverride: formData.get('final_rarity_override'),
   };
 }
 
@@ -28,6 +30,8 @@ export async function onRequestPost({ env, request }) {
       action: payload.action,
       reviewNotes: payload.reviewNotes,
       creatorDisplayName: payload.creatorDisplayName,
+      targetRarity: payload.targetRarity,
+      finalRarityOverride: payload.finalRarityOverride,
     });
 
     if (!result.ok) {
@@ -37,7 +41,7 @@ export async function onRequestPost({ env, request }) {
     return jsonResponse({
       ok: true,
       source: 'D1 card_submissions + cards',
-      phase: '10F.4',
+      phase: 'card-mechanics-v2',
       action: result.action,
       approvedCardId: result.approvedCardId || '',
       approvalProfile: result.approvalProfile || null,
@@ -45,7 +49,7 @@ export async function onRequestPost({ env, request }) {
       submission: result.submission,
       warnings: [
         'Temporary reviewer placeholder is used until real admin authorization exists.',
-        'Pull eligibility is not implemented yet.',
+        'Approval now uses target rarity, optional manual override, stat budgets, level caps, and origin bonus metadata.',
       ],
     });
   } catch (error) {
