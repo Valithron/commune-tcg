@@ -46,6 +46,7 @@ export async function onRequestPost({ env, request }) {
       phase: 'card-mechanics-v2',
       action: result.action,
       approvedCardId: result.approvedCardId || '',
+      approvedCardType: result.approvedCardType || '',
       approvalProfile: result.approvalProfile || null,
       creatorDisplayName: result.creatorDisplayName || '',
       submission: result.submission,
