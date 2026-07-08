@@ -173,6 +173,23 @@ Suggested fields:
 - Locked/favorited status
 - Created/pulled timestamp
 
+### Owned Copy Variation
+
+Pull-time variation should be real but narrow.
+
+The card template controls the allowed identity of the card. The owned card instance may preserve copy-specific traits.
+
+Current accepted direction:
+
+- Template identity should not change at pull time.
+- If a template has an approved type pool, the owned copy may roll a type from that pool.
+- Base stat rolls may vary within a narrow approved range.
+- Copy traits such as foil, holo, mint, or future special treatments should be copy-specific.
+- Origin rarity and origin bonus are preserved.
+- Level, XP, locked/favorited status, and progression are owned-copy specific.
+
+Duplicates should be stored with enough internal detail to preserve copy-specific traits, but the UI should group normal duplicates together unless a copy is special, locked, leveled, favorited, foil/holo, or otherwise unusual.
+
 ## Rarity Model
 
 Current rarity tiers:
@@ -199,24 +216,59 @@ Design intent:
 - A native Legendary should still feel more special than an evolved Legendary.
 - Mythic should remain exceptional.
 
+### Current Accepted Rarity and Progression Config
+
+The old implementation's Level 1 stat gaps were too wide at the top. The current first-test direction keeps Common and Uncommon close to the existing values, but tightens Rare, Legendary, and Mythic much closer to the old Rare range.
+
+| Rarity | Level 1 total stat budget | Max level | Growth per level | Origin bonus |
+| --- | ---: | ---: | ---: | ---: |
+| Common | 24-32 | 30 | +2 total stats | 0% |
+| Uncommon | 38-50 | 40 | +3 total stats | 3% |
+| Rare | 56-70 | 50 | +4 total stats | 5% |
+| Legendary | 64-78 | 60 | +5 total stats | 7% |
+| Mythic | 72-88 | 70 | +6 total stats | 10% |
+
+Design intent:
+
+- Starting stat budget should be only a little better by rarity.
+- Rarity advantage should come mainly from higher max level, stronger growth, and origin bonus.
+- Future ability strength may also matter, but abilities are not being designed around yet.
+- These numbers are accepted for the first test pass and should be rechecked with a math simulator before evolution is implemented.
+
+### Rarity Assignment at Approval
+
+Submission stores a submitter-facing target rarity, but submitters do not choose POW, DEF, SPD, final rarity, or final power.
+
+Approval uses:
+
+1. Cascading target roll, or
+2. Admin manual final rarity override.
+
+Current direction:
+
+- The cascading rarity system is good and should remain.
+- Admin final rarity override should remain available.
+- Public submitters should not see cascading roll odds.
+- Admins may see the cascade table or internal roll details because it helps with review and debugging.
+
 ### Current Recommendation
 
-Normal evolution should probably cap at Legendary.
+Normal evolution should cap at Legendary.
 
-Mythic should likely be obtainable only through:
+Mythic should be obtainable only through:
 
 - Pulls
-- Special events
-- Major achievements
-- Rare line-completion rewards
+- Special events, if added later
+- Major achievements, if added later
+- Rare line-completion rewards, if added later
 
-This is not fully settled yet.
+There should be no normal Legendary-to-Mythic evolution path.
 
 ## Duplicate and Shard Model
 
 Duplicates should be useful, not purely disappointing.
 
-Possible material hierarchy:
+Current accepted material hierarchy:
 
 - Exact duplicate: strongest upgrade material.
 - Same-character shard: medium-strength upgrade material.
@@ -227,6 +279,7 @@ Example design direction:
 - Exact duplicates can substitute for multiple shards.
 - Character shards help upgrade any card of that character.
 - Universal dust can fill gaps at a worse exchange rate.
+- Normal duplicates should be grouped in the UI, but internally preserved well enough to avoid losing special copy traits.
 
 This avoids requiring only exact duplicates while still preserving card identity.
 
@@ -242,7 +295,7 @@ The current selected type system is the elemental anime set. Exact labels may be
 | Tide | Blue | Flow, healing, control |
 | Bloom | Green | Growth, sustain, nature |
 | Volt | Yellow | Speed, energy, disruption |
-| Shadow | Black | Defense, drain, corruption, tricks |
+| Shadow | Black | Evil defense, drain, corruption, sacrifice, tricks |
 | Radiant | White or gold | Healing, protection, holy or heroic power |
 | Neutral | Tan | Balanced, mundane, flexible, comedy cards |
 
@@ -254,6 +307,7 @@ Current principles:
 - Owned copies may roll from the approved type pool.
 - Type should help create a card's organic battlefield role.
 - Type colors should be simple and immediately readable in the UI.
+- The older archetype inference model should be removed. The 7-type system is the source of stat identity.
 
 ### Type Matchup Modifier
 
@@ -308,28 +362,33 @@ Reasoning summary:
 
 Types should influence stat identity modestly, while rarity, level, and native rarity still do most of the power work.
 
+Important implementation direction:
+
+- Type stat percentages should be treated as stat-budget allocation bias, not final stat multipliers.
+- Type should change how the total stat budget is distributed across POW, DEF, and SPD.
+- Type should not usually increase the final total stat budget by itself.
+
 Current accepted rule of thumb:
 
-- Primary stat boost: about +10%.
-- Secondary stat boost: about +5%.
-- Tradeoff penalty: about -5% when needed.
-- Neutral: no bonus and no penalty.
+- Primary stat bias: about +10% toward that stat's share of the budget.
+- Secondary stat bias: about +5% toward that stat's share of the budget.
+- Tradeoff bias: about -5% away from that stat's share of the budget when needed.
+- Neutral: no bias.
 
-| Type | POW | DEF | SPD | Notes |
+| Type | POW tendency | DEF tendency | SPD tendency | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Flame | +10% | -5% | 0% | Harder-hitting, slightly more fragile |
 | Tide | 0% | +5% | +5% | Flexible, evasive, control/support flavor |
-| Bloom | 0% | +10% | -5% | Durable, slower, sustain flavor |
+| Bloom | 0% | +10% | -5% | Defensive sustain, healing/support identity later |
 | Volt | +5% | -5% | +10% | Fast, tempo-oriented, more fragile |
-| Shadow | 0% | +10% | -5% | Defensive, corruptive, sturdy dark-type feel |
+| Shadow | 0% | +10% | -5% | Evil defense, tricky survival, drain/sacrifice identity later |
 | Radiant | +5% | +5% | 0% | Balanced, heroic, support-capable |
 | Neutral | 0% | 0% | 0% | Stable, flexible, no special stat bend |
 
-Design intent:
+Bloom and Shadow can share a defensive stat bias for the first test version. Their deeper differentiation should come later through abilities and mechanics:
 
-- Type should shape how a card feels without overpowering rarity, level, or matchup advantage.
-- Type identity should be noticeable but not so large that it overwhelms the rest of the card model.
-- Shadow is currently using the more conservative version with no POW bonus and a DEF-focused identity.
+- Bloom: healing, sustain, growth, protection.
+- Shadow: drain, sacrifice, corruption, dirty survival.
 
 ## Battle Model
 
@@ -516,6 +575,24 @@ If trading is ever added, safer alternatives should be considered first:
 - No Mythic trading
 - Cooldowns before trading newly pulled cards
 
+## Admin Mechanics Simulator
+
+An admin mechanics simulator is a good planned tool before implementing evolution.
+
+First version should simulate:
+
+- Rarity
+- Origin rarity
+- Level
+- Type
+- Stat budget
+- Type stat allocation bias
+- Origin bonus
+- Effective POW, DEF, and SPD
+- Comparison against another card
+
+First version should not include abilities, evolution costs, shards, or XP unless those systems are already mathematically settled.
+
 ## User-Testing Priority
 
 Before adding abilities or deeper systems, the game should first test whether this spine feels good:
@@ -534,15 +611,14 @@ Before adding abilities or deeper systems, the game should first test whether th
 
 ## Open Questions
 
-1. Should Common cards evolve all the way to Legendary, or cap at Rare/Legendary depending on template?
-2. Should Mythic be pull/event-only?
-3. How exactly should stat ranges be derived from rarity, type, character, and template?
-4. Should submitters suggest stat personality, or only type/rarity/flavor?
-5. How much should character identity influence stats?
-6. How should seasonal bosses reward players?
-7. What should passive farming produce beyond gold, if anything?
-8. What should character mastery/favorite-character progression look like?
-9. Should every card line have its own pool, or should there be a general pool plus limited banners?
+1. What should the XP curve look like?
+2. How much stat variance should individual pulled copies have within an approved template range?
+3. How exactly should evolution costs work across duplicates, character shards, universal dust, gold, and other materials?
+4. Should evolved lower-rarity cards use the same current-rarity stat budget as natural cards, relying on origin bonus for natural-card superiority?
+5. How should seasonal bosses reward players?
+6. What should passive farming produce beyond gold, if anything?
+7. What should character mastery/favorite-character progression look like?
+8. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
@@ -550,11 +626,14 @@ Do not build abilities yet.
 Do not add Epic rarity yet.
 Do not overbuild passive farming yet.
 Do not add trading yet.
+Do not implement evolution yet.
 
 Next likely design priorities:
 
-1. Define rarity/stat ranges.
-2. Define native rarity bonuses.
-3. Define duplicate/shard/evolution rules.
-4. Define the first testable battle model.
-5. Define the vault display/filter model.
+1. Run a math pass on the accepted rarity, growth, origin bonus, and type allocation-bias model.
+2. Define pull-time stat variance bounds.
+3. Define the XP curve.
+4. Define duplicate/shard/evolution costs.
+5. Define the first testable battle model.
+6. Define the vault grouped-copy display model.
+7. Plan the admin mechanics simulator.
