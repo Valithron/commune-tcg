@@ -31,13 +31,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.10, def: 0.95, spd: 1.00 },
     statBias: { pow: 10, def: -5, spd: 0 },
     matchups: {
-      flame: 'neutral',
-      tide: 'disadvantage',
-      bloom: 'advantage',
-      volt: 'neutral',
-      shadow: 'advantage',
-      radiant: 'disadvantage',
-      neutral: 'neutral',
+      flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral',
     },
   },
   tide: {
@@ -48,13 +42,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.00, def: 1.05, spd: 1.05 },
     statBias: { pow: 0, def: 5, spd: 5 },
     matchups: {
-      flame: 'advantage',
-      tide: 'neutral',
-      bloom: 'disadvantage',
-      volt: 'disadvantage',
-      shadow: 'neutral',
-      radiant: 'advantage',
-      neutral: 'neutral',
+      flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral',
     },
   },
   bloom: {
@@ -65,13 +53,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.00, def: 1.10, spd: 0.95 },
     statBias: { pow: 0, def: 10, spd: -5 },
     matchups: {
-      flame: 'disadvantage',
-      tide: 'advantage',
-      bloom: 'neutral',
-      volt: 'advantage',
-      shadow: 'disadvantage',
-      radiant: 'neutral',
-      neutral: 'neutral',
+      flame: 'disadvantage', tide: 'advantage', bloom: 'neutral', volt: 'advantage', shadow: 'disadvantage', radiant: 'neutral', neutral: 'neutral',
     },
   },
   volt: {
@@ -82,13 +64,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.05, def: 0.95, spd: 1.10 },
     statBias: { pow: 5, def: -5, spd: 10 },
     matchups: {
-      flame: 'neutral',
-      tide: 'advantage',
-      bloom: 'disadvantage',
-      volt: 'neutral',
-      shadow: 'disadvantage',
-      radiant: 'advantage',
-      neutral: 'neutral',
+      flame: 'neutral', tide: 'advantage', bloom: 'disadvantage', volt: 'neutral', shadow: 'disadvantage', radiant: 'advantage', neutral: 'neutral',
     },
   },
   shadow: {
@@ -99,13 +75,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.00, def: 1.10, spd: 0.95 },
     statBias: { pow: 0, def: 10, spd: -5 },
     matchups: {
-      flame: 'disadvantage',
-      tide: 'neutral',
-      bloom: 'advantage',
-      volt: 'advantage',
-      shadow: 'neutral',
-      radiant: 'disadvantage',
-      neutral: 'neutral',
+      flame: 'disadvantage', tide: 'neutral', bloom: 'advantage', volt: 'advantage', shadow: 'neutral', radiant: 'disadvantage', neutral: 'neutral',
     },
   },
   radiant: {
@@ -116,13 +86,7 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.05, def: 1.05, spd: 1.00 },
     statBias: { pow: 5, def: 5, spd: 0 },
     matchups: {
-      flame: 'advantage',
-      tide: 'disadvantage',
-      bloom: 'neutral',
-      volt: 'disadvantage',
-      shadow: 'advantage',
-      radiant: 'neutral',
-      neutral: 'neutral',
+      flame: 'advantage', tide: 'disadvantage', bloom: 'neutral', volt: 'disadvantage', shadow: 'advantage', radiant: 'neutral', neutral: 'neutral',
     },
   },
   neutral: {
@@ -133,74 +97,28 @@ export const communeCardTypes = Object.freeze({
     statWeights: { pow: 1.00, def: 1.00, spd: 1.00 },
     statBias: { pow: 0, def: 0, spd: 0 },
     matchups: {
-      flame: 'neutral',
-      tide: 'neutral',
-      bloom: 'neutral',
-      volt: 'neutral',
-      shadow: 'neutral',
-      radiant: 'neutral',
-      neutral: 'neutral',
+      flame: 'neutral', tide: 'neutral', bloom: 'neutral', volt: 'neutral', shadow: 'neutral', radiant: 'neutral', neutral: 'neutral',
     },
   },
 });
 
 const typeAliases = Object.freeze({
-  fire: 'flame',
-  ember: 'flame',
-  burn: 'flame',
-  battle: 'flame',
-  attack: 'flame',
-  attacker: 'flame',
-  aggressor: 'flame',
-  striker: 'flame',
-
-  water: 'tide',
-  aqua: 'tide',
-  ocean: 'tide',
-  flow: 'tide',
-
-  nature: 'bloom',
-  earth: 'bloom',
-  plant: 'bloom',
-  garden: 'bloom',
-  defense: 'bloom',
-  defender: 'bloom',
-  guardian: 'bloom',
-  tank: 'bloom',
-
-  lightning: 'volt',
-  electric: 'volt',
-  electricity: 'volt',
-  energy: 'volt',
-  speed: 'volt',
-  swift: 'volt',
-  training: 'volt',
-  scout: 'volt',
-
-  dark: 'shadow',
-  darkness: 'shadow',
-  corrupt: 'shadow',
-  corruption: 'shadow',
-
-  light: 'radiant',
-  holy: 'radiant',
-  divine: 'radiant',
-  support: 'radiant',
-  magic: 'radiant',
-  mystic: 'radiant',
-
-  mundane: 'neutral',
-  comedy: 'neutral',
-  utility: 'neutral',
-  craft: 'neutral',
-  alchemy: 'neutral',
-  balanced: 'neutral',
-  none: 'neutral',
-  random: 'neutral',
+  fire: 'flame', ember: 'flame', burn: 'flame', battle: 'flame', attack: 'flame', attacker: 'flame', aggressor: 'flame', striker: 'flame',
+  water: 'tide', aqua: 'tide', ocean: 'tide', flow: 'tide',
+  nature: 'bloom', earth: 'bloom', plant: 'bloom', garden: 'bloom', defense: 'bloom', defender: 'bloom', guardian: 'bloom', tank: 'bloom',
+  lightning: 'volt', electric: 'volt', electricity: 'volt', energy: 'volt', speed: 'volt', swift: 'volt', training: 'volt', scout: 'volt',
+  dark: 'shadow', darkness: 'shadow', corrupt: 'shadow', corruption: 'shadow',
+  light: 'radiant', holy: 'radiant', divine: 'radiant', support: 'radiant', magic: 'radiant', mystic: 'radiant',
+  mundane: 'neutral', comedy: 'neutral', utility: 'neutral', craft: 'neutral', alchemy: 'neutral', balanced: 'neutral', none: 'neutral', random: 'neutral',
 });
 
 function cleanText(value, maxLength = 80) {
   return String(value || '').trim().toLowerCase().slice(0, maxLength);
+}
+
+function safeParseJson(value) {
+  if (!value || typeof value !== 'string') return null;
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 export function normalizeCardType(value, fallback = 'neutral') {
@@ -214,6 +132,29 @@ export function normalizeCardType(value, fallback = 'neutral') {
   if (raw.includes('shadow') || raw.includes('dark')) return 'shadow';
   if (raw.includes('radiant') || raw.includes('holy') || raw.includes('light')) return 'radiant';
   return communeCardTypes[fallback] ? fallback : 'neutral';
+}
+
+export function normalizeCardTypePool(value, fallback = ['neutral'], { max = 3 } = {}) {
+  const parsed = typeof value === 'string' && value.trim().startsWith('[') ? safeParseJson(value) : null;
+  const rawList = Array.isArray(value)
+    ? value
+    : Array.isArray(parsed)
+      ? parsed
+      : typeof value === 'string' && value.includes(',')
+        ? value.split(',')
+        : value
+          ? [value]
+          : fallback;
+  const normalized = [];
+
+  for (const item of rawList) {
+    const type = normalizeCardType(item, '');
+    if (type && communeCardTypes[type] && !normalized.includes(type)) normalized.push(type);
+    if (normalized.length >= max) break;
+  }
+
+  if (normalized.length) return normalized;
+  return normalizeCardTypePool(fallback, ['neutral'], { max });
 }
 
 export function getCardTypeConfig(value) {
@@ -251,4 +192,8 @@ export function getCardTypeSummary(value) {
     statBias: { ...config.statBias },
     statWeights: { ...config.statWeights },
   };
+}
+
+export function summarizeCardTypePool(value) {
+  return normalizeCardTypePool(value).map(getCardTypeSummary);
 }
