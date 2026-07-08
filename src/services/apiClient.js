@@ -23,6 +23,7 @@ const apiRoutes = {
   battleHistory: '/api/battle-history',
   submissions: '/api/submissions',
   adminCards: '/api/admin/cards',
+  adminCardMechanics: '/api/admin/card-mechanics',
   adminSubmissions: '/api/admin/submissions',
   adminSubmission: '/api/admin/submission',
   adminSubmissionAction: '/api/admin/submission-action',
