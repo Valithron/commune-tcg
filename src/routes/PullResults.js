@@ -93,7 +93,7 @@ export async function renderPullResults({ query }) {
       <h2 class="hero-title">${headline}</h2>
       <p class="hero-copy">Phase 10.4 shows live pull failures directly so tickets and Vault state stay clear.</p>
       <div class="action-row">
-        <a class="button button-primary" href="#/pull/confirm?count=${count}">Pull Again</a>
+        <a class="button button-primary" href="#/pull?count=${count}">Pull Again</a>
         <a class="button button-secondary" href="#/pull">Back to Pull</a>
         <a class="button button-secondary" href="#/vault">Go to Vault</a>
       </div>
