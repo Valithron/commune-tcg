@@ -33,6 +33,7 @@ function validateSubmission(fields, file) {
   if (!fields.flavorText) errors.push('Flavor text is required.');
   if (!fields.characterId) errors.push('Character is required.');
   if (!fields.cardType) errors.push('Card type is required.');
+  if (!fields.raritySuggestion || fields.raritySuggestion === 'random') errors.push('Target rarity is required.');
   const imageError = validateImage(file);
   if (imageError) errors.push(imageError);
   return errors;
@@ -43,7 +44,7 @@ function buildFields(formData) {
     cardName: cleanText(formData.get('card_name'), 25),
     characterId: normalizeChoice(formData.get('character_id'), allowedCharacters, 'sterling'),
     cardType: normalizeChoice(formData.get('card_type'), allowedTypes, 'support'),
-    raritySuggestion: normalizeChoice(formData.get('rarity_suggestion'), allowedRarities, 'random'),
+    raritySuggestion: normalizeChoice(formData.get('rarity_suggestion'), allowedRarities, 'rare'),
     pow: 1,
     def: 1,
     spd: 1,
@@ -58,7 +59,7 @@ export async function onRequestGet({ env, request }) {
   const url = new URL(request.url);
   try {
     const submissions = await listSubmissions(env, { status: url.searchParams.get('status') || '', limit: url.searchParams.get('limit') || 100 });
-    return jsonResponse({ ok: true, source: 'D1 card_submissions', phase: '10F.4', readOnly: true, submissions, totalReturned: submissions.length, warnings: ['GET /api/submissions is read-only. POST creates pending-review submissions.'] });
+    return jsonResponse({ ok: true, source: 'D1 card_submissions', phase: 'card-mechanics-v2', readOnly: true, submissions, totalReturned: submissions.length, warnings: ['GET /api/submissions is read-only. POST creates pending-review submissions.'] });
   } catch (error) {
     return errorResponse('Failed to read submissions.', 500, error.message);
   }
@@ -81,7 +82,7 @@ export async function onRequestPost({ env, request }) {
     await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { submissionId: id, originalName: cleanText(imageFile.name, 160), creatorUserId: currentUser.id } });
     const submission = { id, submitterUserId: currentUser.id, submitterDisplayName: currentUser.displayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
     try { await insertSubmission(env, submission); } catch (error) { await env.CARD_IMAGES.delete(imageKey).catch(() => null); throw error; }
-    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: '10F.4', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Rarity and POW/DEF/SPD are generated during approval.'] }, { status: 201 });
+    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: 'card-mechanics-v2', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Target rarity is a suggestion; final rarity, stats, level cap, and origin metadata are controlled during admin approval.'] }, { status: 201 });
   } catch (error) {
     return errorResponse('Failed to create submission.', 500, error.message);
   }
