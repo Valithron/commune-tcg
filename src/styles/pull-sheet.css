@@ -11,6 +11,37 @@
   margin: 0 0 var(--space-3);
 }
 
+.pull-sheet-odds-panel .detail-row {
+  border-color: currentColor;
+  border-width: 1px;
+  color: var(--color-text-muted);
+}
+
+.pull-sheet-odds-panel .detail-row span,
+.pull-sheet-odds-panel .detail-row strong {
+  color: currentColor;
+}
+
+.pull-sheet-odds-panel .detail-row:nth-child(1) {
+  color: var(--rarity-common);
+}
+
+.pull-sheet-odds-panel .detail-row:nth-child(2) {
+  color: var(--rarity-uncommon);
+}
+
+.pull-sheet-odds-panel .detail-row:nth-child(3) {
+  color: var(--rarity-rare);
+}
+
+.pull-sheet-odds-panel .detail-row:nth-child(4) {
+  color: var(--rarity-legendary);
+}
+
+.pull-sheet-odds-panel .detail-row:nth-child(5) {
+  color: var(--rarity-mythic);
+}
+
 .pull-orb-image-button {
   display: grid;
   place-items: center;
