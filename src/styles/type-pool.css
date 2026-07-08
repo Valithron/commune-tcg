@@ -65,14 +65,15 @@
 
 [data-type-suggestions] .filter-pill span,
 [data-review-approved-type-pool] .filter-pill span {
+  --type-chip-color: rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 2.15rem;
   padding: 0.42rem 0.55rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--type-chip-color) 72%, transparent);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.045);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--type-chip-color) 13%, transparent), rgba(255, 255, 255, 0.035));
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 0.66rem;
@@ -83,17 +84,52 @@
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
+[data-type-suggestions] .filter-pill input[value='flame'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='flame'] + span {
+  --type-chip-color: #E85D4F;
+}
+
+[data-type-suggestions] .filter-pill input[value='tide'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='tide'] + span {
+  --type-chip-color: #2F80ED;
+}
+
+[data-type-suggestions] .filter-pill input[value='bloom'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='bloom'] + span {
+  --type-chip-color: #45B36B;
+}
+
+[data-type-suggestions] .filter-pill input[value='volt'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='volt'] + span {
+  --type-chip-color: #F2C94C;
+}
+
+[data-type-suggestions] .filter-pill input[value='shadow'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='shadow'] + span {
+  --type-chip-color: #5B3A8E;
+}
+
+[data-type-suggestions] .filter-pill input[value='radiant'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='radiant'] + span {
+  --type-chip-color: #F6D77A;
+}
+
+[data-type-suggestions] .filter-pill input[value='neutral'] + span,
+[data-review-approved-type-pool] .filter-pill input[value='neutral'] + span {
+  --type-chip-color: #A99A86;
+}
+
 [data-type-suggestions] .filter-pill input:checked + span,
 [data-review-approved-type-pool] .filter-pill input:checked + span {
-  border-color: rgba(212, 175, 55, 0.82);
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(45, 156, 219, 0.13));
+  border-color: var(--type-chip-color);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--type-chip-color) 28%, transparent), rgba(45, 156, 219, 0.08));
   color: var(--color-text);
-  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.16), 0 0.65rem 1.2rem rgba(0, 0, 0, 0.18);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--type-chip-color) 34%, transparent), 0 0.65rem 1.2rem rgba(0, 0, 0, 0.18);
 }
 
 [data-type-suggestions] .filter-pill input:focus-visible + span,
 [data-review-approved-type-pool] .filter-pill input:focus-visible + span {
-  outline: 2px solid var(--color-functional);
+  outline: 2px solid var(--type-chip-color);
   outline-offset: 2px;
 }
 
