@@ -16,6 +16,11 @@ const adminSections = [
     copy: 'Edit Library card text, stats, images, crop values, and delete card rows from the pool.',
   },
   {
+    href: '#/admin/card-mechanics',
+    title: 'Card Mechanics Repair',
+    copy: 'Audit placeholder 1/1/1 stats, reroll template mechanics, and clear pulled test copies.',
+  },
+  {
     href: '#/admin/submissions',
     title: 'Submissions Review',
     copy: 'Review submitted cards and approve them into the Library pipeline.',
