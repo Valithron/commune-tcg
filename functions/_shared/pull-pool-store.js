@@ -4,6 +4,8 @@
    diagnostics and no-write simulation.
    ============================================================================ */
 
+import { normalizeBaseStats } from './card-mechanics.js';
+
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
 function safeParseJson(value) {
@@ -28,11 +30,6 @@ function imageUrlFromKey(key) {
   return `/api/card-image?key=${encodeURIComponent(imageKey)}`;
 }
 
-function toNumber(value, fallback) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 function readCreatorDisplayName(payload) {
   return String(payload.creatorDisplayName || payload.creator_display_name || payload.creatorName || payload.creator_name || payload.creator || payload.createdBy || payload.created_by || payload.submitterDisplayName || payload.submitter_display_name || payload.artistName || payload.artist_name || payload.artist || payload.author || '').trim();
 }
@@ -44,10 +41,13 @@ function readCreatorUserId(payload) {
 export function normalizeCardRow(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
-  const stats = payload.stats || payload.statBlock || {};
+  const baseStats = normalizeBaseStats(payload);
   const imageKey = payload.image_key || payload.imageKey || payload.image_path || payload.art_key || payload.object_key || '';
   const creatorDisplayName = readCreatorDisplayName(payload);
   const creatorUserId = readCreatorUserId(payload);
+  const raritySource = String(payload.raritySource || payload.rarity_source || 'legacy').trim();
+  const statsSource = String(payload.statsSource || payload.stats_source || raritySource || 'legacy').trim();
+  const traitSource = String(payload.traitSource || payload.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval')).trim();
 
   return {
     id: String(payload.id || row.id),
@@ -58,14 +58,14 @@ export function normalizeCardRow(row) {
     type: String(payload.type || payload.card_type || payload.role || 'Type'),
     category: String(payload.category || payload.card_type || payload.type || 'Library'),
     rarity: normalizeRarity(payload.rarity || payload.tier),
+    raritySource,
+    statsSource,
+    traitSource,
     symbol: String(payload.symbol || payload.icon || '◆'),
     ability: String(payload.ability || payload.ability_text || payload.effect || ''),
     abilityIcon: String(payload.abilityIcon || payload.ability_icon || payload.icon || '✦'),
-    stats: {
-      pow: toNumber(payload.pow ?? stats.pow ?? stats.power ?? stats.attack, 1),
-      def: toNumber(payload.def ?? stats.def ?? stats.defense ?? stats.health, 1),
-      spd: toNumber(payload.spd ?? stats.spd ?? stats.speed ?? stats.agility, 1),
-    },
+    baseStats,
+    stats: { ...baseStats },
     flavor: String(payload.flavor || payload.flavor_text || payload.description || 'A pull-eligible Library card.'),
     imageKey,
     imageUrl: imageUrlFromKey(imageKey),
