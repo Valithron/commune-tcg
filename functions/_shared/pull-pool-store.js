@@ -5,7 +5,7 @@
    ============================================================================ */
 
 import { normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
-import { getCardTypeSummary, normalizeCardType } from './type-config.js';
+import { getCardTypeSummary, normalizeCardType, normalizeCardTypePool } from './type-config.js';
 
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -72,11 +72,10 @@ export function normalizeCardRow(row) {
   const statBudget = toNumber(payload.statBudget ?? payload.stat_budget, baseStats.pow + baseStats.def + baseStats.spd);
   const growthPerLevel = progressionRules.growthPerLevel;
   const staticStatBudget = toNumber(payload.staticStatBudget ?? payload.static_stat_budget, statBudget);
-  const ownedStatBudgetRange = normalizeBudgetRange(
-    payload.ownedStatBudgetRange || payload.owned_stat_budget_range,
-    { min: staticStatBudget - growthPerLevel, max: staticStatBudget + growthPerLevel }
-  );
-  const cardType = normalizeCardType(payload.type || payload.card_type || payload.role || payload.element || 'neutral');
+  const ownedStatBudgetRange = normalizeBudgetRange(payload.ownedStatBudgetRange || payload.owned_stat_budget_range, { min: staticStatBudget - growthPerLevel, max: staticStatBudget + growthPerLevel });
+  const approvedTypePool = normalizeCardTypePool(payload.approvedTypePool || payload.approved_type_pool || payload.type || payload.card_type || 'neutral', ['neutral'], { max: 3 });
+  const suggestedTypePool = normalizeCardTypePool(payload.suggestedTypePool || payload.suggested_type_pool || payload.suggestedType || payload.suggested_type || approvedTypePool, approvedTypePool, { max: 3 });
+  const cardType = normalizeCardType(payload.type || payload.card_type || approvedTypePool[0] || payload.role || payload.element || 'neutral');
   const typeSummary = getCardTypeSummary(cardType);
 
   return {
@@ -89,6 +88,9 @@ export function normalizeCardRow(row) {
     cardType,
     card_type: cardType,
     category: String(payload.category || typeSummary.label || 'Library'),
+    suggestedTypePool,
+    approvedTypePool,
+    approvedType: approvedTypePool[0] || cardType,
     typeLabel: typeSummary.label,
     typeColor: typeSummary.color,
     typeIdentity: typeSummary.coreIdentity,
@@ -133,70 +135,28 @@ export function normalizeCardRow(row) {
   };
 }
 
-function ownerWhere() {
-  return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`;
-}
+function ownerWhere() { return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`; }
+function unownedWhere() { return `(owner_user_id IS NULL OR TRIM(CAST(owner_user_id AS TEXT)) = '')`; }
 
-function unownedWhere() {
-  return `(owner_user_id IS NULL OR TRIM(CAST(owner_user_id AS TEXT)) = '')`;
-}
-
-export function summarizeByRarity(cards) {
-  return allowedRarities.reduce((summary, rarity) => {
-    summary[rarity] = cards.filter((card) => card.rarity === rarity).length;
-    return summary;
-  }, {});
-}
-
+export function summarizeByRarity(cards) { return allowedRarities.reduce((summary, rarity) => { summary[rarity] = cards.filter((card) => card.rarity === rarity).length; return summary; }, {}); }
 export function buildReadiness(cards, byRarity) {
-  if (!cards.length) {
-    return { status: 'no-pull-pool-cards', summary: 'No unowned Library cards are currently eligible for pulls.', nextStep: 'Approve at least one submission or seed unowned Library cards before pull simulation.' };
-  }
-
+  if (!cards.length) return { status: 'no-pull-pool-cards', summary: 'No unowned Library cards are currently eligible for pulls.', nextStep: 'Approve at least one submission or seed unowned Library cards before pull simulation.' };
   const missingRarities = allowedRarities.filter((rarity) => byRarity[rarity] === 0);
-  if (missingRarities.length) {
-    return { status: 'pool-ready-with-rarity-gaps', summary: 'Pull pool has cards, but one or more rarity buckets are empty.', nextStep: 'Phase 10.2 can simulate pulls with fallback behavior, or seed missing rarity buckets first.', missingRarities };
-  }
-
+  if (missingRarities.length) return { status: 'pool-ready-with-rarity-gaps', summary: 'Pull pool has cards, but one or more rarity buckets are empty.', nextStep: 'Phase 10.2 can simulate pulls with fallback behavior, or seed missing rarity buckets first.', missingRarities };
   return { status: 'ready-for-pull-simulation', summary: 'Pull pool has unowned Library cards across all configured rarity buckets.', nextStep: 'Build write-enabled pulls only after simulation verifies cleanly.' };
 }
 
 export async function readPullPool(env) {
   const [eligibleResult, totalRow, ownedRow, sampleOwnedResult] = await Promise.all([
-    env.DB.prepare(`
-      SELECT id, owner_user_id, character_id, card_json, created_at, updated_at
-      FROM cards
-      WHERE ${unownedWhere()}
-      ORDER BY created_at ASC, updated_at ASC, id ASC
-    `).all(),
+    env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${unownedWhere()} ORDER BY created_at ASC, updated_at ASC, id ASC`).all(),
     env.DB.prepare(`SELECT COUNT(*) AS count FROM cards`).first(),
     env.DB.prepare(`SELECT COUNT(*) AS count FROM cards WHERE ${ownerWhere()}`).first(),
-    env.DB.prepare(`
-      SELECT id, owner_user_id, character_id, card_json, created_at, updated_at
-      FROM cards
-      WHERE ${ownerWhere()}
-      ORDER BY updated_at DESC, created_at DESC, id ASC
-      LIMIT 10
-    `).all(),
+    env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} ORDER BY updated_at DESC, created_at DESC, id ASC LIMIT 10`).all(),
   ]);
-
   const rows = eligibleResult.results || [];
   const eligibleCards = rows.map(normalizeCardRow);
   const cards = eligibleCards.filter((card) => card.cardJsonValid);
   const byRarity = summarizeByRarity(cards);
   const sampleExcludedOwnedCards = (sampleOwnedResult.results || []).map(normalizeCardRow);
-
-  return {
-    rows,
-    allCards: eligibleCards,
-    cards,
-    byRarity,
-    totalCardsScanned: Number(totalRow?.count || rows.length),
-    eligibleCount: cards.length,
-    ownedRowsExcluded: Number(ownedRow?.count || 0),
-    invalidRowsExcluded: eligibleCards.filter((card) => !card.cardJsonValid).length,
-    approvedSubmissionCount: cards.filter((card) => card.source === 'card_submissions').length,
-    sampleExcludedOwnedCards,
-    readiness: buildReadiness(cards, byRarity),
-  };
+  return { rows, allCards: eligibleCards, cards, byRarity, totalCardsScanned: Number(totalRow?.count || rows.length), eligibleCount: cards.length, ownedRowsExcluded: Number(ownedRow?.count || 0), invalidRowsExcluded: eligibleCards.filter((card) => !card.cardJsonValid).length, approvedSubmissionCount: cards.filter((card) => card.source === 'card_submissions').length, sampleExcludedOwnedCards, readiness: buildReadiness(cards, byRarity) };
 }
