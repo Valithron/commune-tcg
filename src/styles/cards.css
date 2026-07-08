@@ -204,8 +204,19 @@
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--card-type-color, #A99A86) 86%, white 10%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--card-type-color, #A99A86) 92%, white 8%), color-mix(in srgb, var(--card-type-color, #A99A86) 72%, black 20%));
+  color: var(--card-type-text-color, #101014);
+  box-shadow: 0 0 0.55rem color-mix(in srgb, var(--card-type-color, #A99A86) 35%, transparent);
   font-family: var(--font-heading);
   letter-spacing: 0.01em;
+  text-shadow: none;
+}
+
+.card-type-chip[data-card-type='shadow'],
+.card-type-chip[data-card-type='tide'] {
+  text-shadow: 0 0.06rem 0.18rem rgba(0, 0, 0, 0.42);
 }
 
 .card-ability-chip {
@@ -258,12 +269,6 @@
 
 .card-meta-row {
   display: flex;
-  justify-content: end;
-  gap: 0.35rem;
-}
-
-.status-pill {
-  min-height: 1.45rem;
-  padding: 0.2rem 0.45rem;
-  font-size: 0.58rem;
+  justify-content: flex-end;
+  margin-bottom: 0.35rem;
 }
