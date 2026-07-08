@@ -4,7 +4,7 @@
    diagnostics and no-write simulation.
    ============================================================================ */
 
-import { normalizeBaseStats } from './card-mechanics.js';
+import { normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
 
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -38,16 +38,24 @@ function readCreatorUserId(payload) {
   return String(payload.creatorUserId || payload.creator_user_id || payload.submitterUserId || payload.submitter_user_id || payload.userId || payload.user_id || '').trim();
 }
 
+function toNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function normalizeCardRow(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const baseStats = normalizeBaseStats(payload);
+  const progressionRules = normalizeProgressionRules(payload.progressionRules || payload.progression_rules || payload);
   const imageKey = payload.image_key || payload.imageKey || payload.image_path || payload.art_key || payload.object_key || '';
   const creatorDisplayName = readCreatorDisplayName(payload);
   const creatorUserId = readCreatorUserId(payload);
   const raritySource = String(payload.raritySource || payload.rarity_source || 'legacy').trim();
   const statsSource = String(payload.statsSource || payload.stats_source || raritySource || 'legacy').trim();
   const traitSource = String(payload.traitSource || payload.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval')).trim();
+  const originRarity = normalizeRarity(payload.originRarity || payload.origin_rarity || payload.rarity || 'common');
+  const originBonusPercent = toNumber(payload.originBonusPercent ?? payload.origin_bonus_percent, 0);
 
   return {
     id: String(payload.id || row.id),
@@ -58,9 +66,19 @@ export function normalizeCardRow(row) {
     type: String(payload.type || payload.card_type || payload.role || 'Type'),
     category: String(payload.category || payload.card_type || payload.type || 'Library'),
     rarity: normalizeRarity(payload.rarity || payload.tier),
+    targetRarity: normalizeRarity(payload.targetRarity || payload.target_rarity || payload.rarity_suggestion || payload.rarity || 'common'),
     raritySource,
     statsSource,
     traitSource,
+    statBudget: toNumber(payload.statBudget ?? payload.stat_budget, baseStats.pow + baseStats.def + baseStats.spd),
+    statArchetype: String(payload.statArchetype || payload.stat_archetype || 'balanced'),
+    originRarity,
+    originBonusPercent,
+    originBonusMultiplier: 1 + originBonusPercent / 100,
+    progressionRules,
+    levelCap: progressionRules.levelCap,
+    maxLevel: progressionRules.maxLevel,
+    growthPerLevel: progressionRules.growthPerLevel,
     symbol: String(payload.symbol || payload.icon || '◆'),
     ability: String(payload.ability || payload.ability_text || payload.effect || ''),
     abilityIcon: String(payload.abilityIcon || payload.ability_icon || payload.icon || '✦'),
