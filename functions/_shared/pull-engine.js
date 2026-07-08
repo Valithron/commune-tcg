@@ -1,4 +1,4 @@
-import { buildOwnedCopyTraits, calculateEffectiveStats, normalizeBaseStats } from './card-mechanics.js';
+import { buildOwnedCopyTraits, calculateEffectiveStats, normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
 
@@ -32,6 +32,7 @@ function randomFloat() { const values = new Uint32Array(1); crypto.getRandomValu
 function buildId(prefix) { return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8); }
 function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
 function cleanText(value, maxLength = 120) { return String(value || '').trim().slice(0, maxLength); }
+function toNumber(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
 
 async function tableExists(env, tableName) {
   const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first();
@@ -147,14 +148,20 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
   const creator = creatorFields(baseCard);
   const baseStats = normalizeBaseStats(baseCard);
   const ownedTraits = buildOwnedCopyTraits();
+  const progressionRules = normalizeProgressionRules(baseCard.progressionRules || baseCard.progression_rules || baseCard);
+  const originBonusPercent = toNumber(baseCard.originBonusPercent ?? baseCard.origin_bonus_percent, 0);
+  const originBonusMultiplier = 1 + originBonusPercent / 100;
   const effectiveStats = calculateEffectiveStats({
     baseStats,
     copyTraits: ownedTraits.copyTraits,
     progression: ownedTraits.progression,
+    progressionRules,
+    originBonusPercent,
   });
   const raritySource = baseCard.raritySource || baseCard.rarity_source || 'legacy';
   const statsSource = baseCard.statsSource || baseCard.stats_source || raritySource;
   const traitSource = baseCard.traitSource || baseCard.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval');
+  const originRarity = baseCard.originRarity || baseCard.origin_rarity || baseCard.rarity;
 
   return {
     id: ownedCardId,
@@ -166,6 +173,8 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     card_type: baseCard.type,
     category: baseCard.category,
     rarity: baseCard.rarity,
+    targetRarity: baseCard.targetRarity || baseCard.target_rarity || baseCard.rarity,
+    target_rarity: baseCard.targetRarity || baseCard.target_rarity || baseCard.rarity,
     rarity_source: raritySource,
     raritySource,
     symbol: baseCard.symbol,
@@ -177,12 +186,32 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     trait_source: traitSource,
     statsSource,
     stats_source: statsSource,
+    statBudget: baseCard.statBudget || baseCard.stat_budget || baseStats.pow + baseStats.def + baseStats.spd,
+    stat_budget: baseCard.statBudget || baseCard.stat_budget || baseStats.pow + baseStats.def + baseStats.spd,
+    statArchetype: baseCard.statArchetype || baseCard.stat_archetype || 'balanced',
+    stat_archetype: baseCard.statArchetype || baseCard.stat_archetype || 'balanced',
     baseStats,
     base_stats: baseStats,
     copyTraits: ownedTraits.copyTraits,
     copy_traits: ownedTraits.copyTraits,
     progression: ownedTraits.progression,
+    progressionRules,
+    progression_rules: progressionRules,
+    levelCap: progressionRules.levelCap,
+    level_cap: progressionRules.levelCap,
+    maxLevel: progressionRules.maxLevel,
+    max_level: progressionRules.maxLevel,
+    growthPerLevel: progressionRules.growthPerLevel,
+    growth_per_level: progressionRules.growthPerLevel,
+    originRarity,
+    origin_rarity: originRarity,
+    originBonusPercent,
+    origin_bonus_percent: originBonusPercent,
+    originBonusMultiplier,
+    origin_bonus_multiplier: originBonusMultiplier,
     stats: effectiveStats,
+    effectiveStats,
+    effective_stats: effectiveStats,
     pow: effectiveStats.pow,
     def: effectiveStats.def,
     spd: effectiveStats.spd,
