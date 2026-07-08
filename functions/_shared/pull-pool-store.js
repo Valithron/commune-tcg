@@ -47,6 +47,13 @@ function toNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizeBudgetRange(value, fallback) {
+  const range = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const min = toNumber(range.min ?? range.minimum ?? range.low, fallback.min);
+  const max = toNumber(range.max ?? range.maximum ?? range.high, fallback.max);
+  return { min: Math.min(min, max), max: Math.max(min, max) };
+}
+
 export function normalizeCardRow(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
@@ -61,6 +68,13 @@ export function normalizeCardRow(row) {
   const traitSource = String(payload.traitSource || payload.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval')).trim();
   const originRarity = normalizeRarity(payload.originRarity || payload.origin_rarity || payload.rarity || 'common');
   const originBonusPercent = toNumber(payload.originBonusPercent ?? payload.origin_bonus_percent, 0);
+  const statBudget = toNumber(payload.statBudget ?? payload.stat_budget, baseStats.pow + baseStats.def + baseStats.spd);
+  const growthPerLevel = progressionRules.growthPerLevel;
+  const staticStatBudget = toNumber(payload.staticStatBudget ?? payload.static_stat_budget, statBudget);
+  const ownedStatBudgetRange = normalizeBudgetRange(
+    payload.ownedStatBudgetRange || payload.owned_stat_budget_range,
+    { min: staticStatBudget - growthPerLevel, max: staticStatBudget + growthPerLevel }
+  );
 
   return {
     id: String(payload.id || row.id),
@@ -75,7 +89,10 @@ export function normalizeCardRow(row) {
     raritySource,
     statsSource,
     traitSource,
-    statBudget: toNumber(payload.statBudget ?? payload.stat_budget, baseStats.pow + baseStats.def + baseStats.spd),
+    statBudget,
+    staticStatBudget,
+    ownedStatBudgetRange,
+    copyStatBudgetVariance: toNumber(payload.copyStatBudgetVariance ?? payload.copy_stat_budget_variance, growthPerLevel),
     statArchetype: String(payload.statArchetype || payload.stat_archetype || 'balanced'),
     originRarity,
     originBonusPercent,
@@ -83,7 +100,7 @@ export function normalizeCardRow(row) {
     progressionRules,
     levelCap: progressionRules.levelCap,
     maxLevel: progressionRules.maxLevel,
-    growthPerLevel: progressionRules.growthPerLevel,
+    growthPerLevel,
     symbol: String(payload.symbol || payload.icon || '◆'),
     ability: String(payload.ability || payload.ability_text || payload.effect || ''),
     abilityIcon: String(payload.abilityIcon || payload.ability_icon || payload.icon || '✦'),
