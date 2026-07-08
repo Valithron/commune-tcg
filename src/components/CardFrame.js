@@ -51,8 +51,44 @@ function normalizeCrop(card) {
   };
 }
 
+function isLikelyUrl(value) {
+  const text = String(value || '');
+  return /^https?:\/\//i.test(text) || text.startsWith('/');
+}
+
+function imageUrlFromValue(value) {
+  const imageValue = String(value || '').trim();
+
+  if (!imageValue) {
+    return '';
+  }
+
+  if (isLikelyUrl(imageValue)) {
+    return imageValue;
+  }
+
+  return `/api/card-image?key=${encodeURIComponent(imageValue)}`;
+}
+
+function resolveCardImageValue(card) {
+  return card.imageUrl
+    || card.image_url
+    || card.artUrl
+    || card.art_url
+    || card.imageKey
+    || card.image_key
+    || card.image_path
+    || card.image
+    || card.art_key
+    || card.object_key
+    || card.r2_key
+    || '';
+}
+
 function renderCardArt(card) {
-  if (card.imageUrl) {
+  const imageUrl = imageUrlFromValue(resolveCardImageValue(card));
+
+  if (imageUrl) {
     let crop = { x: 50, y: 50, zoom: 1 };
 
     try {
@@ -62,7 +98,7 @@ function renderCardArt(card) {
     }
 
     const cropStyle = `object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;`;
-    return `<img class="card-art-image" src="${escapeHtml(card.imageUrl)}" alt="" loading="lazy" style="${escapeHtml(cropStyle)}" />`;
+    return `<img class="card-art-image" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="${escapeHtml(cropStyle)}" />`;
   }
 
   return `<span class="card-art-symbol">${escapeHtml(card.symbol || '◆')}</span>`;
