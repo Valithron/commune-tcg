@@ -27,7 +27,7 @@ export async function loadLibraryCards({ force = false } = {}) {
     const routes = getApiRoutes();
     const payload = await fetchJson(routes.cards);
 
-    if (!payload?.ok || !Array.isArray(payload.cards) || payload.cards.length === 0) {
+    if (!payload?.ok || !Array.isArray(payload.cards)) {
       libraryCache = withMockFallback(payload?.warnings?.join(' ') || 'No backend Library cards were returned.');
       return libraryCache;
     }
@@ -37,6 +37,9 @@ export async function loadLibraryCards({ force = false } = {}) {
       source: 'backend',
       table: payload.table || null,
       warnings: payload.warnings || [],
+      currentUserId: payload.currentUserId || '',
+      ownedRowsExcluded: payload.ownedRowsExcluded || 0,
+      ownershipMappedCount: payload.ownershipMappedCount || 0,
     };
 
     return libraryCache;
@@ -47,8 +50,10 @@ export async function loadLibraryCards({ force = false } = {}) {
 }
 
 export async function findLibraryCardById(cardId) {
-  const library = await loadLibraryCards();
-  const card = library.cards.find((candidate) => String(candidate.id) === String(cardId)) || findCardById(cardId);
+  const library = await loadLibraryCards({ force: true });
+  const card = library.cards.find((candidate) => String(candidate.id) === String(cardId)
+    || String(candidate.sourceRowId || '') === String(cardId)
+    || String(candidate.templateId || '') === String(cardId)) || findCardById(cardId);
 
   return {
     ...library,
