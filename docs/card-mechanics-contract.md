@@ -33,9 +33,7 @@ Admin override skips the cascading roll and directly assigns the selected final 
 
 ## Type model
 
-Phase 4 adds type pools.
-
-Submission now lets users suggest 1 to 3 types. Admin review chooses the approved type pool, also 1 to 3 types. The Library template stores the full approved pool and uses the first approved type as its primary display/stat-preview type. Each pulled Vault copy rolls one actual type from the approved pool at pull time.
+Submission lets users suggest 1 to 3 types. Admin review chooses the approved type pool, also 1 to 3 types. The Library template stores the full approved pool and uses the first approved type as its primary display/stat-preview type. Each pulled Vault copy rolls one actual type from the approved pool at pull time.
 
 Current accepted types:
 
@@ -63,13 +61,34 @@ Current stat allocation tendencies:
 | Radiant | +5% | +5% | 0% |
 | Neutral | 0% | 0% | 0% |
 
-The accepted matchup chart is centralized in `functions/_shared/type-config.js`, but Battle does not use it yet.
+## Battle effective stats and type matchups
 
-Current matchup modifiers, for a later Battle phase:
+Phase 6 makes Battle use the mechanics model instead of stale top-level stats when mechanics metadata exists.
 
-- Advantage: +15% effectiveness.
-- Disadvantage: -5% effectiveness.
+Battle stat resolution:
+
+1. Read owned Vault card JSON.
+2. If the card has mechanics metadata, calculate effective stats from `baseStats`, `copyTraits`, `progression.level`, `progressionRules`, and `originBonusPercent`.
+3. If the card is legacy-only, fall back to legacy `stats/pow/def/spd + level` behavior.
+4. Use effective stat total as base battle power for mechanics cards.
+5. Apply type matchup modifier against the encounter enemy type.
+6. Compare matchup-adjusted squad power against enemy power.
+
+Current matchup modifiers:
+
+- Advantage: +15% battle power.
+- Disadvantage: -5% battle power.
 - Neutral: 0%.
+
+Current typed mock encounters:
+
+```text
+Training Yard Goblin: Neutral
+Calendar Hydra: Shadow
+Storm Forge Wyrm: Flame
+```
+
+Frontend preview and backend reward settlement both use the same Phase 6 idea: effective stats first, then type matchup-adjusted battle power.
 
 ## Stat budget and progression config
 
@@ -177,7 +196,7 @@ Effective stats are calculated from:
 - copyTraits.statBonus
 - originBonusPercent
 
-Current level-growth implementation distributes total growth across POW/DEF/SPD. Ability scaling, evolution formulas, equipment, buffs, debuffs, and type matchup damage modifiers are not implemented yet.
+Current level-growth implementation distributes total growth across POW/DEF/SPD. Ability scaling, evolution formulas, equipment, buffs, and debuffs are not implemented yet.
 
 ## Compatibility rule
 
@@ -200,10 +219,10 @@ CardFrame, Library, Vault, and Battle still rely on those legacy-safe fields.
 
 These are intentionally not settled in this pass:
 
-- Battle use of type matchups
 - Rarity evolution / promotion
 - Duplicate merge versus separate copy rules
 - Wild shards or duplicate substitute resources
 - Foil/holo visual display
 - Real sequential mint numbers
 - Ability strength by rarity
+- Ability effects in battle
