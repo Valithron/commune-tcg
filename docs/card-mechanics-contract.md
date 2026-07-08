@@ -8,7 +8,7 @@ Approval controls balance. Pulling controls ownership and collectible variation.
 
 Users may suggest a target rarity at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity.
 
-Pulling must not reroll base rarity or base POW/DEF/SPD unless the game is intentionally redesigned around variable copies.
+Pulling must not reroll base rarity. Pulling may roll narrow owned-copy POW/DEF/SPD budget variance inside the approved rarity's allowed range.
 
 ## Rarity assignment
 
@@ -33,23 +33,27 @@ Admin override skips the cascading roll and directly assigns the selected final 
 
 ## Stat budget and progression config
 
-Approved rarity determines the level 1 stat budget and progression metadata.
+Approved rarity determines the static template budget, pull-time owned-copy budget range, max level, growth per level, and origin bonus.
 
 ```text
-Common:    24-32 total stats,  max level 30, +2 total stats per level,  0% origin bonus
-Uncommon:  38-50 total stats,  max level 40, +3 total stats per level,  5% origin bonus
-Rare:      58-76 total stats,  max level 50, +4 total stats per level, 10% origin bonus
-Legendary: 90-115 total stats, max level 60, +5 total stats per level, 15% origin bonus
-Mythic:    130-165 total stats,max level 70, +6 total stats per level, 20% origin bonus
+Common:    static 30, owned roll 28-32, max level 30, +2 total stats per level,  0% origin bonus
+Uncommon:  static 44, owned roll 41-47, max level 40, +3 total stats per level,  3% origin bonus
+Rare:      static 63, owned roll 59-67, max level 50, +4 total stats per level,  5% origin bonus
+Legendary: static 71, owned roll 66-76, max level 60, +5 total stats per level,  7% origin bonus
+Mythic:    static 80, owned roll 74-86, max level 70, +6 total stats per level, 10% origin bonus
 ```
 
-The system distributes the stat budget into POW/DEF/SPD using a small archetype bias inferred from card type:
+Approval uses the static budget so the Library template stays stable. Pulling rolls the owned-copy budget inside the allowed range.
+
+The system currently distributes the stat budget into POW/DEF/SPD using a small legacy archetype bias inferred from card type:
 
 - battle -> aggressor
 - defense -> guardian
 - training/utility -> swift
 - support/magic/alchemy -> mystic
 - otherwise -> balanced
+
+This is temporary. The 7-type model should replace legacy archetype inference in a later phase.
 
 ## Template traits
 
@@ -65,8 +69,11 @@ Current template traits:
 - rarity
 - targetRarity
 - raritySource
-- baseStats
+- baseStats from the static rarity budget
 - statBudget
+- staticStatBudget
+- ownedStatBudgetRange
+- copyStatBudgetVariance
 - statArchetype
 - progressionRules
 - originRarity
@@ -84,13 +91,19 @@ Approved cards should include:
   "targetRarity": "mythic",
   "raritySource": "approval_cascading_roll",
   "traitSource": "approval",
-  "statsSource": "rarity_stat_budget",
-  "statBudget": 66,
+  "statsSource": "approval_static_rarity_budget",
+  "statBudget": 63,
+  "staticStatBudget": 63,
+  "ownedStatBudgetRange": {
+    "min": 59,
+    "max": 67
+  },
+  "copyStatBudgetVariance": 4,
   "statArchetype": "mystic",
   "baseStats": {
-    "pow": 24,
-    "def": 20,
-    "spd": 22
+    "pow": 23,
+    "def": 19,
+    "spd": 21
   },
   "progressionRules": {
     "levelCap": 50,
@@ -98,15 +111,15 @@ Approved cards should include:
     "growthPerLevel": 4
   },
   "originRarity": "rare",
-  "originBonusPercent": 10,
+  "originBonusPercent": 5,
   "stats": {
-    "pow": 24,
-    "def": 20,
-    "spd": 22
+    "pow": 23,
+    "def": 19,
+    "spd": 21
   },
-  "pow": 24,
-  "def": 20,
-  "spd": 22
+  "pow": 23,
+  "def": 19,
+  "spd": 21
 }
 ```
 
@@ -128,16 +141,29 @@ Current owned copy traits:
 - progression
 - copied progressionRules
 - copied origin metadata
+- templateBaseStats
+- owned-copy baseStats from pull-time budget variance
 
 Pulled cards should include:
 
 ```json
 {
   "rarity": "rare",
+  "templateBaseStats": {
+    "pow": 23,
+    "def": 19,
+    "spd": 21
+  },
+  "statBudget": 65,
+  "staticStatBudget": 63,
+  "ownedStatBudgetRange": {
+    "min": 59,
+    "max": 67
+  },
   "baseStats": {
     "pow": 24,
     "def": 20,
-    "spd": 22
+    "spd": 21
   },
   "copyTraits": {
     "foil": false,
@@ -161,11 +187,11 @@ Pulled cards should include:
     "growthPerLevel": 4
   },
   "originRarity": "rare",
-  "originBonusPercent": 10,
+  "originBonusPercent": 5,
   "stats": {
-    "pow": 26,
-    "def": 22,
-    "spd": 24
+    "pow": 25,
+    "def": 21,
+    "spd": 22
   }
 }
 ```
@@ -201,6 +227,7 @@ CardFrame, Library, Vault, and Battle still rely on those legacy-safe fields.
 
 These are intentionally not settled in this pass:
 
+- 7-type stat allocation model
 - Rarity evolution / promotion
 - Duplicate merge versus separate copy rules
 - Wild shards or duplicate substitute resources
