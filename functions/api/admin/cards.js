@@ -1,9 +1,10 @@
 import { errorResponse, jsonResponse } from '../../_shared/json.js';
+import { getCardTypeSummary, normalizeCardType } from '../../_shared/type-config.js';
 
 const allowedMimeTypes = new Map([['image/png', 'png'], ['image/jpeg', 'jpg'], ['image/webp', 'webp']]);
 const allowedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
 const allowedCharacters = new Set(['sterling', 'cydney', 'ryan', 'gabi', 'cooper', 'kenly', 'ashley']);
-const allowedTypes = new Set(['support', 'battle', 'craft', 'magic', 'alchemy', 'training', 'defense', 'utility']);
+const allowedTypes = new Set(['flame', 'tide', 'bloom', 'volt', 'shadow', 'radiant', 'neutral']);
 const knownCreators = [['sterling', 'Sterling'], ['cydney', 'Cydney'], ['ryan', 'Ryan'], ['gabi', 'Gabi'], ['cooper', 'Cooper'], ['kenly', 'Kenly'], ['ashley', 'Ashley']];
 const knownCreatorIds = new Set(knownCreators.map(([id]) => id));
 const flavorColumns = ['flavor', 'flavour', 'flavor_text', 'flavour_text', 'flavorText', 'flavourText', 'card_flavor', 'cardFlavor', 'card_flavor_text', 'cardFlavorText', 'description', 'desc', 'summary', 'lore', 'story', 'backstory', 'flavorCopy', 'flavourCopy', 'effect', 'effect_text', 'effectText', 'fx'];
@@ -12,56 +13,19 @@ const nestedTextKeys = ['text', 'value', 'content', 'copy', 'body', 'html', 'mar
 
 function cleanText(value, maxLength = 500) { return String(value || '').trim().slice(0, maxLength); }
 function normalizeChoice(value, allowed, fallback) { const cleaned = String(value || '').trim().toLowerCase(); return allowed.has(cleaned) ? cleaned : fallback; }
+function normalizeAdminCardType(value, fallback = 'neutral') { return normalizeCardType(value || fallback, fallback); }
 function creatorNameFromId(value) { return knownCreators.find(([id]) => id === String(value || '').trim().toLowerCase())?.[1] || ''; }
 function creatorIdFromName(value) { const cleaned = String(value || '').trim().toLowerCase(); return knownCreators.find(([id, name]) => id === cleaned || name.toLowerCase() === cleaned)?.[0] || ''; }
 function normalizeCreatorUserId(value, fallback = '') { const cleaned = String(value || '').trim().toLowerCase(); const fallbackCleaned = String(fallback || '').trim().toLowerCase(); if (knownCreatorIds.has(cleaned)) return cleaned; return knownCreatorIds.has(fallbackCleaned) ? fallbackCleaned : ''; }
-function resolveCreator(payload) {
-  const displayName = cleanText(payload.creatorDisplayName || payload.creator_display_name || payload.creator_name || payload.creator || payload.submitterDisplayName || payload.submitter_display_name || '', 120);
-  const rawUserId = payload.creatorUserId || payload.creator_user_id || payload.submitterUserId || payload.submitter_user_id || '';
-  const creatorUserId = normalizeCreatorUserId(rawUserId, creatorIdFromName(displayName));
-  return { creatorUserId, creatorDisplayName: creatorNameFromId(creatorUserId) || displayName || 'Unknown' };
-}
+function resolveCreator(payload) { const displayName = cleanText(payload.creatorDisplayName || payload.creator_display_name || payload.creator_name || payload.creator || payload.submitterDisplayName || payload.submitter_display_name || '', 120); const rawUserId = payload.creatorUserId || payload.creator_user_id || payload.submitterUserId || payload.submitter_user_id || ''; const creatorUserId = normalizeCreatorUserId(rawUserId, creatorIdFromName(displayName)); return { creatorUserId, creatorDisplayName: creatorNameFromId(creatorUserId) || displayName || 'Unknown' }; }
 function toStat(value, fallback = 1) { const parsed = Number(value); return Number.isFinite(parsed) ? Math.min(Math.max(Math.round(parsed), 1), 99) : fallback; }
 function toCropNumber(value, fallback, min, max) { const parsed = Number(value); return Number.isFinite(parsed) ? Math.min(Math.max(parsed, min), max) : fallback; }
 function titleCase(value) { return String(value || '').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function safeParseJson(value) { if (!value) return null; if (typeof value === 'object') return value; try { return JSON.parse(value); } catch { return null; } }
-function cleanTextValue(value, depth = 0) {
-  if (value === undefined || value === null) return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
-  if (Array.isArray(value)) return value.map((item) => cleanTextValue(item, depth + 1)).filter(Boolean).join(' ').trim();
-  if (typeof value === 'object' && depth < 4) {
-    for (const key of nestedTextKeys) {
-      const text = cleanTextValue(value[key], depth + 1);
-      if (text) return text;
-    }
-  }
-  return '';
-}
+function cleanTextValue(value, depth = 0) { if (value === undefined || value === null) return ''; if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value).trim(); if (Array.isArray(value)) return value.map((item) => cleanTextValue(item, depth + 1)).filter(Boolean).join(' ').trim(); if (typeof value === 'object' && depth < 4) { for (const key of nestedTextKeys) { const text = cleanTextValue(value[key], depth + 1); if (text) return text; } } return ''; }
 function sourceObject(value) { const parsed = safeParseJson(value); if (parsed && typeof parsed === 'object') return parsed; if (value && typeof value === 'object') return value; return null; }
-function readTextValue(row, candidates) {
-  const keys = Array.isArray(candidates) ? candidates : [candidates];
-  for (const key of keys) {
-    if (key && row[key] !== undefined && row[key] !== null && row[key] !== '') {
-      const text = cleanTextValue(row[key]);
-      if (text) return text;
-    }
-  }
-  return '';
-}
-function resolveFlavorTextFromSource(source, depth = 0) {
-  if (depth > 4) return '';
-  const object = sourceObject(source);
-  if (!object) return '';
-  const direct = readTextValue(object, flavorColumns);
-  if (direct) return direct;
-  for (const key of nestedFlavorContainers) {
-    const nested = object[key];
-    if (nested === undefined || nested === null || nested === '') continue;
-    const text = resolveFlavorTextFromSource(nested, depth + 1);
-    if (text) return text;
-  }
-  return '';
-}
+function readTextValue(row, candidates) { const keys = Array.isArray(candidates) ? candidates : [candidates]; for (const key of keys) { if (key && row[key] !== undefined && row[key] !== null && row[key] !== '') { const text = cleanTextValue(row[key]); if (text) return text; } } return ''; }
+function resolveFlavorTextFromSource(source, depth = 0) { if (depth > 4) return ''; const object = sourceObject(source); if (!object) return ''; const direct = readTextValue(object, flavorColumns); if (direct) return direct; for (const key of nestedFlavorContainers) { const nested = object[key]; if (nested === undefined || nested === null || nested === '') continue; const text = resolveFlavorTextFromSource(nested, depth + 1); if (text) return text; } return ''; }
 function resolveFlavorText(...sources) { for (const source of sources) { const text = resolveFlavorTextFromSource(source); if (text) return text; } return ''; }
 function isLikelyUrl(value) { return /^https?:\/\//i.test(String(value || '')) || String(value || '').startsWith('/'); }
 function imageUrlFromValue(value) { const imageValue = String(value || '').trim(); if (!imageValue) return ''; if (isLikelyUrl(imageValue)) return imageValue; return `/api/card-image?key=${encodeURIComponent(imageValue)}`; }
@@ -74,14 +38,21 @@ function normalizeCardRow(row) {
   const imageKey = payload.image_key || payload.imageKey || payload.image || '';
   const crop = normalizeCrop(payload.crop || payload.crop_json || payload.cropJson || payload.image_crop || payload.imageCrop || {});
   const creator = resolveCreator(payload);
+  const cardType = normalizeAdminCardType(payload.type || payload.card_type || payload.cardType || 'neutral');
+  const typeSummary = getCardTypeSummary(cardType);
   return {
     id: String(row.id || payload.id || ''),
     rowId: String(row.id || ''),
     ownerUserId: row.owner_user_id || '',
     characterId: row.character_id || payload.character_id || payload.character || '',
     name: payload.name || payload.card_name || payload.title || 'Unnamed Card',
-    type: payload.type || payload.card_type || payload.cardType || 'support',
-    category: payload.category || titleCase(payload.type || payload.card_type || 'support'),
+    type: cardType,
+    cardType,
+    typeLabel: typeSummary.label,
+    typeColor: typeSummary.color,
+    typeIdentity: typeSummary.coreIdentity,
+    typeStatBias: typeSummary.statBias,
+    category: payload.category || typeSummary.label,
     rarity: normalizeChoice(payload.rarity, allowedRarities, 'common'),
     stats: { pow: toStat(payload.pow ?? stats.pow, 1), def: toStat(payload.def ?? stats.def, 1), spd: toStat(payload.spd ?? stats.spd, 1) },
     flavor: resolveFlavorText(payload, row),
@@ -99,6 +70,7 @@ function normalizeCardRow(row) {
 }
 
 function buildCardJson(existingPayload, fields) {
+  const typeSummary = getCardTypeSummary(fields.cardType);
   return JSON.stringify({
     ...existingPayload,
     id: fields.id,
@@ -108,8 +80,21 @@ function buildCardJson(existingPayload, fields) {
     character_id: fields.characterId,
     cid: fields.characterId,
     type: fields.cardType,
+    cardType: fields.cardType,
     card_type: fields.cardType,
-    category: titleCase(fields.cardType),
+    approvedType: fields.cardType,
+    approved_type: fields.cardType,
+    category: typeSummary.label,
+    typeLabel: typeSummary.label,
+    type_label: typeSummary.label,
+    typeColor: typeSummary.color,
+    type_color: typeSummary.color,
+    typeIdentity: typeSummary.coreIdentity,
+    type_identity: typeSummary.coreIdentity,
+    typeStatBias: typeSummary.statBias,
+    type_stat_bias: typeSummary.statBias,
+    approvedTypePool: Array.isArray(existingPayload.approvedTypePool) ? existingPayload.approvedTypePool : [fields.cardType],
+    approved_type_pool: Array.isArray(existingPayload.approved_type_pool) ? existingPayload.approved_type_pool : [fields.cardType],
     rarity: fields.rarity,
     stats: fields.stats,
     pow: fields.stats.pow,
@@ -138,40 +123,17 @@ function buildCardJson(existingPayload, fields) {
 async function ensureCardsTable(env) { await env.DB.prepare('CREATE TABLE IF NOT EXISTS cards (id TEXT PRIMARY KEY, owner_user_id TEXT NOT NULL DEFAULT \'\', character_id TEXT NOT NULL DEFAULT \'\', card_json TEXT NOT NULL DEFAULT \'{}\', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)').run(); }
 async function getCardRow(env, id) { return env.DB.prepare('SELECT * FROM cards WHERE id = ? LIMIT 1').bind(String(id || '')).first(); }
 async function readPayload(request) { const contentType = request.headers.get('content-type') || ''; if (contentType.includes('application/json')) return { type: 'json', payload: await request.json(), imageFile: null }; const formData = await request.formData(); return { type: 'form', payload: Object.fromEntries(formData.entries()), imageFile: formData.get('image') }; }
-
-async function maybeStoreImage(env, cardId, imageFile) {
-  if (!imageFile || typeof imageFile.arrayBuffer !== 'function' || imageFile.size === 0) return '';
-  if (!env.CARD_IMAGES) throw new Error('R2 binding CARD_IMAGES is not available for image replacement.');
-  const extension = getImageExtension(imageFile);
-  if (!extension) throw new Error('Replacement image must be PNG, JPG, or WEBP.');
-  if (imageFile.size > 8 * 1024 * 1024) throw new Error('Replacement image must be 8 MB or smaller.');
-  const imageKey = `admin-cards/${String(cardId).replace(/[^a-zA-Z0-9_-]/g, '_')}/${Date.now()}.${extension}`;
-  await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { cardId: String(cardId), originalName: cleanText(imageFile.name, 160) } });
-  return imageKey;
-}
+async function maybeStoreImage(env, cardId, imageFile) { if (!imageFile || typeof imageFile.arrayBuffer !== 'function' || imageFile.size === 0) return ''; if (!env.CARD_IMAGES) throw new Error('R2 binding CARD_IMAGES is not available for image replacement.'); const extension = getImageExtension(imageFile); if (!extension) throw new Error('Replacement image must be PNG, JPG, or WEBP.'); if (imageFile.size > 8 * 1024 * 1024) throw new Error('Replacement image must be 8 MB or smaller.'); const imageKey = `admin-cards/${String(cardId).replace(/[^a-zA-Z0-9_-]/g, '_')}/${Date.now()}.${extension}`; await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { cardId: String(cardId), originalName: cleanText(imageFile.name, 160) } }); return imageKey; }
 
 function fieldsFromPayload(payload, existingCard, storedImageKey = '') {
   const id = cleanText(payload.id || payload.card_id || existingCard.id, 120);
   const characterId = normalizeChoice(payload.character_id || payload.characterId || existingCard.characterId, allowedCharacters, 'sterling');
-  const cardType = normalizeChoice(payload.card_type || payload.cardType || payload.type || existingCard.type, allowedTypes, 'support');
+  const cardType = normalizeAdminCardType(payload.card_type || payload.cardType || payload.type || existingCard.type, 'neutral');
   const rarity = normalizeChoice(payload.rarity || existingCard.rarity, allowedRarities, 'common');
   const creatorUserId = normalizeCreatorUserId(Object.prototype.hasOwnProperty.call(payload, 'creator_user_id') ? payload.creator_user_id : existingCard.creatorUserId, existingCard.creatorUserId);
   const creatorDisplayName = creatorNameFromId(creatorUserId) || 'Unknown';
   const imageKey = cleanText(storedImageKey || payload.image_key || payload.imageKey || existingCard.imageKey, 500);
-  return {
-    id,
-    name: cleanText(payload.name || payload.title || existingCard.name, 60) || 'Unnamed Card',
-    characterId,
-    cardType,
-    rarity,
-    creatorUserId,
-    creatorDisplayName,
-    stats: { pow: toStat(payload.pow ?? existingCard.stats.pow, 1), def: toStat(payload.def ?? existingCard.stats.def, 1), spd: toStat(payload.spd ?? existingCard.stats.spd, 1) },
-    flavorText: cleanText(resolveFlavorText(payload, existingCard), 500),
-    abilityText: cleanText(payload.ability_text || payload.ability || existingCard.ability, 500),
-    imageKey,
-    crop: { x: toCropNumber(payload.crop_x ?? payload.x ?? existingCard.crop.x, existingCard.crop.x, 0, 100), y: toCropNumber(payload.crop_y ?? payload.y ?? existingCard.crop.y, existingCard.crop.y, 0, 100), zoom: toCropNumber(payload.crop_zoom ?? payload.zoom ?? existingCard.crop.zoom, existingCard.crop.zoom, 1, 3) },
-  };
+  return { id, name: cleanText(payload.name || payload.title || existingCard.name, 60) || 'Unnamed Card', characterId, cardType, rarity, creatorUserId, creatorDisplayName, stats: { pow: toStat(payload.pow ?? existingCard.stats.pow, 1), def: toStat(payload.def ?? existingCard.stats.def, 1), spd: toStat(payload.spd ?? existingCard.stats.spd, 1) }, flavorText: cleanText(resolveFlavorText(payload, existingCard), 500), abilityText: cleanText(payload.ability_text || payload.ability || existingCard.ability, 500), imageKey, crop: { x: toCropNumber(payload.crop_x ?? payload.x ?? existingCard.crop.x, existingCard.crop.x, 0, 100), y: toCropNumber(payload.crop_y ?? payload.y ?? existingCard.crop.y, existingCard.crop.y, 0, 100), zoom: toCropNumber(payload.crop_zoom ?? payload.zoom ?? existingCard.crop.zoom, existingCard.crop.zoom, 1, 3) } };
 }
 
 export async function onRequestGet({ env, request }) {
@@ -181,7 +143,7 @@ export async function onRequestGet({ env, request }) {
   const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 500, 1), 1000);
   const result = await env.DB.prepare('SELECT * FROM cards ORDER BY updated_at DESC, created_at DESC LIMIT ?').bind(limit).all();
   const cards = (result.results || []).map(normalizeCardRow);
-  return jsonResponse({ ok: true, source: 'D1 cards', editable: true, cards, totalReturned: cards.length, warnings: ['Admin card editor can edit or delete rows in the cards table.'] });
+  return jsonResponse({ ok: true, source: 'D1 cards', editable: true, cards, totalReturned: cards.length, typeOptions: [...allowedTypes], warnings: ['Admin card editor can edit or delete rows in the cards table.', 'Legacy card types are normalized into the seven Commune types.'] });
 }
 
 export async function onRequestPost({ env, request }) {
