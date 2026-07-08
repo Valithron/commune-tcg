@@ -1,6 +1,6 @@
 import { resolveCurrentUser } from '../_shared/current-user.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
-import { normalizeCardType } from '../_shared/type-config.js';
+import { normalizeCardType, normalizeCardTypePool } from '../_shared/type-config.js';
 import { insertSubmission, listSubmissions } from '../_shared/submission-store.js';
 
 const maxImageBytes = 5 * 1024 * 1024;
@@ -32,7 +32,9 @@ function validateSubmission(fields, file) {
   if (fields.cardName.length > 25) errors.push('Card name must be 25 characters or fewer.');
   if (!fields.flavorText) errors.push('Flavor text is required.');
   if (!fields.characterId) errors.push('Character is required.');
-  if (!fields.cardType) errors.push('Card type is required.');
+  if (!fields.cardType) errors.push('At least one suggested type is required.');
+  if (!fields.typeSuggestions.length) errors.push('At least one suggested type is required.');
+  if (fields.typeSuggestions.length > 3) errors.push('Suggest up to 3 types only.');
   if (!fields.raritySuggestion || fields.raritySuggestion === 'random') errors.push('Target rarity is required.');
   const imageError = validateImage(file);
   if (imageError) errors.push(imageError);
@@ -40,10 +42,14 @@ function validateSubmission(fields, file) {
 }
 function buildSubmissionId() { return 'sub_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8); }
 function buildFields(formData) {
+  const rawTypeSuggestions = formData.getAll('type_suggestions');
+  const typeSuggestions = normalizeCardTypePool(rawTypeSuggestions.length ? rawTypeSuggestions : formData.get('card_type'), ['neutral'], { max: 3 });
   return {
     cardName: cleanText(formData.get('card_name'), 25),
     characterId: normalizeChoice(formData.get('character_id'), allowedCharacters, 'sterling'),
-    cardType: normalizeCardType(formData.get('card_type'), 'neutral'),
+    cardType: normalizeCardType(typeSuggestions[0] || formData.get('card_type'), 'neutral'),
+    typeSuggestions,
+    typeSuggestionsJson: JSON.stringify(typeSuggestions),
     raritySuggestion: normalizeChoice(formData.get('rarity_suggestion'), allowedRarities, 'rare'),
     pow: 1,
     def: 1,
@@ -80,9 +86,9 @@ export async function onRequestPost({ env, request }) {
     const extension = getImageExtension(imageFile);
     const imageKey = `submissions/${id}/original.${extension}`;
     await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { submissionId: id, originalName: cleanText(imageFile.name, 160), creatorUserId: currentUser.id } });
-    const submission = { id, submitterUserId: currentUser.id, submitterDisplayName: currentUser.displayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
+    const submission = { id, submitterUserId: currentUser.id, submitterDisplayName: currentUser.displayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, typeSuggestions: fields.typeSuggestions, typeSuggestionsJson: fields.typeSuggestionsJson, approvedTypePoolJson: '', raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
     try { await insertSubmission(env, submission); } catch (error) { await env.CARD_IMAGES.delete(imageKey).catch(() => null); throw error; }
-    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: 'card-mechanics-v2', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Target rarity is a suggestion; final rarity, type, stats, level cap, and origin metadata are controlled during admin approval.'] }, { status: 201 });
+    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: 'card-mechanics-v2', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Target rarity and suggested type pool are suggestions; final rarity, approved type pool, stats, level cap, and origin metadata are controlled during admin approval.'] }, { status: 201 });
   } catch (error) {
     return errorResponse('Failed to create submission.', 500, error.message);
   }
