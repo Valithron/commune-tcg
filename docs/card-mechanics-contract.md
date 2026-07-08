@@ -6,9 +6,9 @@ This document defines the current trait ownership model for the Gacha branch.
 
 Approval controls balance. Pulling controls ownership and collectible variation.
 
-Users may suggest a target rarity and type at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity, and admin review chooses the approved final type used for stat allocation.
+Users may suggest a target rarity and up to 3 types at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity, and admin review chooses the approved type pool used for pull-time type rolling.
 
-Pulling must not reroll base rarity. Pulling may roll narrow owned-copy POW/DEF/SPD budget variance inside the approved rarity's allowed range.
+Pulling must not reroll base rarity. Pulling may roll narrow owned-copy POW/DEF/SPD budget variance inside the approved rarity's allowed range. Pulling may also roll one owned-copy type from the approved type pool.
 
 ## Rarity assignment
 
@@ -33,9 +33,9 @@ Admin override skips the cascading roll and directly assigns the selected final 
 
 ## Type model
 
-Phase 3 exposes single-type suggestion and approval controls.
+Phase 4 adds type pools.
 
-Submission now lets users suggest one type. Admin review chooses the approved type. That approved type is stored on the Library template and copied into pulled Vault cards.
+Submission now lets users suggest 1 to 3 types. Admin review chooses the approved type pool, also 1 to 3 types. The Library template stores the full approved pool and uses the first approved type as its primary display/stat-preview type. Each pulled Vault copy rolls one actual type from the approved pool at pull time.
 
 Current accepted types:
 
@@ -85,7 +85,7 @@ Mythic:    static 80, owned roll 74-86, max level 70, +6 total stats per level, 
 
 Approval uses the static budget so the Library template stays stable. Pulling rolls the owned-copy budget inside the allowed range.
 
-The system distributes the stat budget into POW/DEF/SPD using the approved card type's stat allocation bias.
+The system distributes the stat budget into POW/DEF/SPD using the selected type's stat allocation bias. For Library templates, the selected type is the first approved type. For pulled Vault copies, the selected type is rolled from the approved type pool.
 
 Legacy inputs like `support`, `battle`, `defense`, `training`, and `utility` are normalized into the accepted 7-type model for compatibility.
 
@@ -98,9 +98,9 @@ Current template traits:
 - name
 - creator attribution
 - character
-- suggestedType
-- approvedType
-- type/category
+- suggestedTypePool
+- approvedTypePool
+- primary type/category
 - typeLabel
 - typeColor
 - typeIdentity
@@ -109,7 +109,7 @@ Current template traits:
 - rarity
 - targetRarity
 - raritySource
-- baseStats from the static rarity budget
+- baseStats from the static rarity budget and primary approved type
 - statBudget
 - staticStatBudget
 - ownedStatBudgetRange
@@ -128,8 +128,8 @@ Approved cards should include:
 ```json
 {
   "rarity": "rare",
-  "suggestedType": "neutral",
-  "approvedType": "radiant",
+  "suggestedTypePool": ["neutral", "radiant"],
+  "approvedTypePool": ["radiant", "tide"],
   "type": "radiant",
   "cardType": "radiant",
   "typeLabel": "Radiant",
@@ -190,17 +190,22 @@ Current owned copy traits:
 - progression
 - copied progressionRules
 - copied origin metadata
-- copied type metadata
+- approvedTypePool
+- selectedType
+- selectedTypeSource
 - templateBaseStats
-- owned-copy baseStats from pull-time budget variance
+- owned-copy baseStats from pull-time budget and selected type
 
 Pulled cards should include:
 
 ```json
 {
   "rarity": "rare",
-  "type": "radiant",
-  "typeLabel": "Radiant",
+  "approvedTypePool": ["radiant", "tide"],
+  "selectedType": "tide",
+  "selectedTypeSource": "pull_type_pool_roll",
+  "type": "tide",
+  "typeLabel": "Tide",
   "templateBaseStats": {
     "pow": 22,
     "def": 21,
@@ -213,9 +218,9 @@ Pulled cards should include:
     "max": 67
   },
   "baseStats": {
-    "pow": 23,
+    "pow": 21,
     "def": 22,
-    "spd": 20
+    "spd": 22
   },
   "copyTraits": {
     "foil": false,
@@ -241,9 +246,9 @@ Pulled cards should include:
   "originRarity": "rare",
   "originBonusPercent": 5,
   "stats": {
-    "pow": 24,
+    "pow": 22,
     "def": 23,
-    "spd": 21
+    "spd": 23
   }
 }
 ```
@@ -281,9 +286,6 @@ CardFrame, Library, Vault, and Battle still rely on those legacy-safe fields.
 
 These are intentionally not settled in this pass:
 
-- Multi-type suggestion pools
-- Admin-approved type pool controls
-- Pull-time type rolling from an approved pool
 - Battle use of type matchups
 - Rarity evolution / promotion
 - Duplicate merge versus separate copy rules
