@@ -1,0 +1,12 @@
+/* ============================================================================
+   Pull Sheet Overrides
+   Purpose: keep modal-only pull odds hidden until explicitly toggled open.
+   ============================================================================ */
+
+.pull-sheet-odds-panel[hidden] {
+  display: none !important;
+}
+
+.pull-sheet-odds-panel {
+  margin: 0 0 var(--space-3);
+}
