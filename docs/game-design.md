@@ -270,6 +270,37 @@ Mythic should be obtainable only through:
 
 There should be no normal Legendary-to-Mythic evolution path.
 
+## Leveling and XP Model
+
+The current accepted first-test XP curve is the hybrid linear curve:
+
+```txt
+XP to next level = 40 + currentLevel × 15
+```
+
+There is no rarity XP multiplier in the first version.
+
+Design intent:
+
+- Higher-rarity cards already take longer to max because they have higher max levels.
+- Mythics should feel like long-term projects, but not like a punishment for pulling something rare.
+- Normal XP leveling should come from playing, not from duplicate pulls.
+- Duplicate pulls should matter for evolution, limit-break style systems, shard conversion, or special upgrades later.
+- XP overflow should carry forward when a battle grants more XP than needed for the next level.
+- For the first version, every card in the battle squad should receive full battle XP.
+
+Approximate total XP from Level 1 to max:
+
+| Rarity | Max level | Total XP to max |
+| --- | ---: | ---: |
+| Common | 30 | 7,830 |
+| Uncommon | 40 | 13,130 |
+| Rare | 50 | 19,930 |
+| Legendary | 60 | 28,230 |
+| Mythic | 70 | 38,030 |
+
+Battle XP payout values are not settled yet.
+
 ## Duplicate and Shard Model
 
 Duplicates should be useful, not purely disappointing.
@@ -594,10 +625,11 @@ First version should simulate:
 - Stat budget
 - Type stat allocation bias
 - Origin bonus
+- XP to next level and total XP to max
 - Effective POW, DEF, and SPD
 - Comparison against another card
 
-First version should not include abilities, evolution costs, shards, or XP unless those systems are already mathematically settled.
+First version should not include abilities, evolution costs, or shards unless those systems are already mathematically settled.
 
 ## User-Testing Priority
 
@@ -607,6 +639,7 @@ Before adding abilities or deeper systems, the game should first test whether th
 - Type matchups
 - Rarity/stat ranges
 - Native rarity bonus
+- XP curve
 - Energy
 - Gold
 - Pull tickets
@@ -617,7 +650,7 @@ Before adding abilities or deeper systems, the game should first test whether th
 
 ## Open Questions
 
-1. What should the XP curve look like?
+1. How much XP should battles, missions, and passive systems award?
 2. How exactly should evolution costs work across duplicates, character shards, universal dust, gold, and other materials?
 3. Should evolved lower-rarity cards use the same current-rarity stat budget as natural cards, relying on origin bonus for natural-card superiority?
 4. How should seasonal bosses reward players?
@@ -635,8 +668,8 @@ Do not implement evolution yet.
 
 Next likely design priorities:
 
-1. Run a math pass on the accepted rarity, growth, origin bonus, type allocation-bias, and narrow pull-time variance model.
-2. Define the XP curve.
+1. Run a math pass on the accepted rarity, growth, origin bonus, type allocation-bias, narrow pull-time variance, and XP curve model.
+2. Define battle XP, mission XP, and passive XP payout values.
 3. Define duplicate/shard/evolution costs.
 4. Define the first testable battle model.
 5. Define the vault grouped-copy display model.
