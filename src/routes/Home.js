@@ -16,7 +16,7 @@ export function renderHome() {
       <h2 class="hero-title">Build the Vault. Pull the Commune.</h2>
       <p class="hero-copy">The player game stays focused on pulling, collecting, battling, and building the Vault. Admin and diagnostic tools are isolated elsewhere.</p>
       <div class="action-row">
-        <a class="button button-primary" href="#/pull">Start Pulling</a>
+        <a class="button button-primary" href="#/pull/confirm?count=5">Start Pulling</a>
         <a class="button button-secondary" href="#/battle">Battle</a>
         <a class="button button-secondary" href="#/submit">Submit Card</a>
       </div>
