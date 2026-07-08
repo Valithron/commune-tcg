@@ -255,6 +255,23 @@ Current principles:
 - Type should help create a card's organic battlefield role.
 - Type colors should be simple and immediately readable in the UI.
 
+### Type Matchup Modifier
+
+The current target type modifier is:
+
+- Type advantage: +15% effectiveness.
+- Type disadvantage: -5% effectiveness.
+- Total swing between advantage and disadvantage: 20 percentage points.
+- Neutral matchup: no modifier.
+
+Design intent:
+
+- Type should matter enough for strategic players to optimize squads.
+- Type should not punish casual players so heavily that favorite cards feel unusable.
+- The first user-testable version should start with this moderate modifier before increasing matchup penalties.
+
+The exact matchup chart is still under discussion.
+
 ## Battle Model
 
 Current target: light strategy.
@@ -294,6 +311,12 @@ Battle should eventually consider:
 - Enemy weakness/resistance
 - Random variance
 - Energy cost
+
+Initial type matchup balance target:
+
+- Advantage: +15% effectiveness.
+- Disadvantage: -5% effectiveness.
+- Total swing: 20 percentage points.
 
 Abilities are intentionally deferred until type matchups and stat ranges feel good.
 
@@ -459,11 +482,10 @@ Before adding abilities or deeper systems, the game should first test whether th
 5. How much should character identity influence stats?
 6. How much should type influence stats?
 7. What should the type matchup chart be?
-8. How strong should type advantage be?
-9. How should seasonal bosses reward players?
-10. What should passive farming produce beyond gold, if anything?
-11. What should character mastery/favorite-character progression look like?
-12. Should every card line have its own pool, or should there be a general pool plus limited banners?
+8. How should seasonal bosses reward players?
+9. What should passive farming produce beyond gold, if anything?
+10. What should character mastery/favorite-character progression look like?
+11. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
