@@ -89,6 +89,24 @@ The system distributes the stat budget into POW/DEF/SPD using the selected type'
 
 Legacy inputs like `support`, `battle`, `defense`, `training`, and `utility` are normalized into the accepted 7-type model for compatibility.
 
+## XP and leveling
+
+Phase 5 aligns battle XP with the accepted hybrid curve.
+
+```text
+XP to next level = 40 + currentLevel * 15
+```
+
+Rules:
+
+- No rarity XP multiplier in this version.
+- Every selected squad card receives the full encounter XP amount.
+- XP is not split between squad members.
+- XP is cumulative lifetime XP in `card_json.xp`.
+- XP overflow carries through multiple level-ups.
+- Leveling caps at the card's own `maxLevel`, `max_level`, `levelCap`, or `progressionRules.maxLevel`.
+- Battle reward writes update top-level `xp` and `level`, plus nested `progression.xp` and `progression.level` when present.
+
 ## Template traits
 
 Template traits belong to the global Library card. They are created at admin approval.
@@ -123,54 +141,7 @@ Current template traits:
 - ability/mechanic text
 - flavor text
 
-Approved cards should include:
-
-```json
-{
-  "rarity": "rare",
-  "suggestedTypePool": ["neutral", "radiant"],
-  "approvedTypePool": ["radiant", "tide"],
-  "type": "radiant",
-  "cardType": "radiant",
-  "typeLabel": "Radiant",
-  "typeStatBias": {
-    "pow": 5,
-    "def": 5,
-    "spd": 0
-  },
-  "targetRarity": "mythic",
-  "raritySource": "approval_cascading_roll",
-  "traitSource": "approval",
-  "statsSource": "approval_static_rarity_budget",
-  "statBudget": 63,
-  "staticStatBudget": 63,
-  "ownedStatBudgetRange": {
-    "min": 59,
-    "max": 67
-  },
-  "copyStatBudgetVariance": 4,
-  "baseStats": {
-    "pow": 22,
-    "def": 21,
-    "spd": 20
-  },
-  "progressionRules": {
-    "levelCap": 50,
-    "maxLevel": 50,
-    "growthPerLevel": 4
-  },
-  "originRarity": "rare",
-  "originBonusPercent": 5,
-  "stats": {
-    "pow": 22,
-    "def": 21,
-    "spd": 20
-  },
-  "pow": 22,
-  "def": 21,
-  "spd": 20
-}
-```
+Approved cards should include rarity, type metadata, baseStats, progressionRules, origin metadata, and backward-compatible `stats`, `pow`, `def`, and `spd` fields.
 
 ## Owned copy traits
 
@@ -195,63 +166,6 @@ Current owned copy traits:
 - selectedTypeSource
 - templateBaseStats
 - owned-copy baseStats from pull-time budget and selected type
-
-Pulled cards should include:
-
-```json
-{
-  "rarity": "rare",
-  "approvedTypePool": ["radiant", "tide"],
-  "selectedType": "tide",
-  "selectedTypeSource": "pull_type_pool_roll",
-  "type": "tide",
-  "typeLabel": "Tide",
-  "templateBaseStats": {
-    "pow": 22,
-    "def": 21,
-    "spd": 20
-  },
-  "statBudget": 65,
-  "staticStatBudget": 63,
-  "ownedStatBudgetRange": {
-    "min": 59,
-    "max": 67
-  },
-  "baseStats": {
-    "pow": 21,
-    "def": 22,
-    "spd": 22
-  },
-  "copyTraits": {
-    "foil": false,
-    "holo": false,
-    "variant": "standard",
-    "mintNumber": null,
-    "statBonus": {
-      "pow": 0,
-      "def": 0,
-      "spd": 0
-    }
-  },
-  "progression": {
-    "level": 1,
-    "xp": 0,
-    "copies": 1
-  },
-  "progressionRules": {
-    "levelCap": 50,
-    "maxLevel": 50,
-    "growthPerLevel": 4
-  },
-  "originRarity": "rare",
-  "originBonusPercent": 5,
-  "stats": {
-    "pow": 22,
-    "def": 23,
-    "spd": 23
-  }
-}
-```
 
 ## Effective stats
 
@@ -293,4 +207,3 @@ These are intentionally not settled in this pass:
 - Foil/holo visual display
 - Real sequential mint numbers
 - Ability strength by rarity
-- XP curve and battle reward tuning
