@@ -3,7 +3,7 @@ import { getCardTypeSummary, normalizeCardType } from '../../_shared/type-config
 
 const allowedMimeTypes = new Map([['image/png', 'png'], ['image/jpeg', 'jpg'], ['image/webp', 'webp']]);
 const allowedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
-const allowedCharacters = new Set(['sterling', 'cydney', 'Cydney'], ['ryan', 'Ryan']);
+const allowedCharacters = new Set(['sterling', 'cydney', 'ryan', 'gabi', 'cooper', 'kenly', 'ashley']);
 const allowedTypes = new Set(['flame', 'tide', 'bloom', 'volt', 'shadow', 'radiant', 'neutral']);
 const knownCreators = [['sterling', 'Sterling'], ['cydney', 'Cydney'], ['ryan', 'Ryan'], ['gabi', 'Gabi'], ['cooper', 'Cooper'], ['kenly', 'Kenly'], ['ashley', 'Ashley']];
 const knownCreatorIds = new Set(knownCreators.map(([id]) => id));
