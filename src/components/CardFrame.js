@@ -16,6 +16,16 @@ const characterMap = [
   { key: 'ashley', name: 'Ashley', abbr: 'AS', color: '#ff9ccf' },
 ];
 
+const cardTypeMap = {
+  flame: { label: 'Flame', color: '#E85D4F', textColor: '#101014' },
+  tide: { label: 'Tide', color: '#2F80ED', textColor: '#f7f9ff' },
+  bloom: { label: 'Bloom', color: '#45B36B', textColor: '#101014' },
+  volt: { label: 'Volt', color: '#F2C94C', textColor: '#101014' },
+  shadow: { label: 'Shadow', color: '#5B3A8E', textColor: '#f7f9ff' },
+  radiant: { label: 'Radiant', color: '#F6D77A', textColor: '#101014' },
+  neutral: { label: 'Neutral', color: '#A99A86', textColor: '#101014' },
+};
+
 function renderStats(stats = {}) {
   return [
     ['POW', stats.pow ?? 1],
@@ -152,9 +162,46 @@ function findCharacter(card) {
     || { key: 'unknown', name: 'Unknown', abbr: '??', color: '#9da2b7' };
 }
 
-function getCardType(card) {
-  const type = card.type || card.cardType || card.card_type || card.battleRole || card.battle_role || card.category || 'Type';
-  return titleCase(type);
+function normalizeCardType(value) {
+  const raw = String(value || '').trim().toLowerCase();
+
+  if (cardTypeMap[raw]) return raw;
+  if (['support', 'magic', 'mystic', 'holy', 'light'].includes(raw)) return 'radiant';
+  if (['battle', 'attack', 'aggressor', 'fire'].includes(raw)) return 'flame';
+  if (['water', 'aqua', 'ocean'].includes(raw)) return 'tide';
+  if (['defense', 'guardian', 'nature', 'plant'].includes(raw)) return 'bloom';
+  if (['training', 'speed', 'electric', 'lightning'].includes(raw)) return 'volt';
+  if (['dark', 'darkness'].includes(raw)) return 'shadow';
+  if (['craft', 'alchemy', 'utility', 'balanced', 'mundane', 'comedy'].includes(raw)) return 'neutral';
+  if (raw.includes('flame') || raw.includes('fire')) return 'flame';
+  if (raw.includes('tide') || raw.includes('water')) return 'tide';
+  if (raw.includes('bloom') || raw.includes('nature') || raw.includes('plant')) return 'bloom';
+  if (raw.includes('volt') || raw.includes('electric')) return 'volt';
+  if (raw.includes('shadow') || raw.includes('dark')) return 'shadow';
+  if (raw.includes('radiant') || raw.includes('holy') || raw.includes('light')) return 'radiant';
+
+  return 'neutral';
+}
+
+function getCardTypeMeta(card) {
+  const rawType = card.selectedType
+    || card.selected_type
+    || card.type
+    || card.cardType
+    || card.card_type
+    || card.battleRole
+    || card.battle_role
+    || card.category
+    || 'neutral';
+  const typeKey = normalizeCardType(rawType);
+  const meta = cardTypeMap[typeKey] || cardTypeMap.neutral;
+
+  return {
+    key: typeKey,
+    label: card.typeLabel || card.type_label || meta.label,
+    color: card.typeColor || card.type_color || meta.color,
+    textColor: meta.textColor,
+  };
 }
 
 function getAbilityIcon(card) {
@@ -163,14 +210,14 @@ function getAbilityIcon(card) {
 
 function renderIdentityLine(card, rarity) {
   const character = findCharacter(card);
-  const type = getCardType(card);
+  const type = getCardTypeMeta(card);
   const abilityIcon = getAbilityIcon(card);
 
   return `
     <div class="card-identity-line">
       <span class="card-face-pill card-face-pill--circle card-rarity-chip" title="${escapeHtml(titleCase(rarity))}">${escapeHtml(getRarityInitial(rarity))}</span>
       <span class="card-face-pill card-face-pill--circle card-character-chip" style="--character-color:${escapeHtml(character.color)}" title="${escapeHtml(character.name)}">${escapeHtml(character.abbr)}</span>
-      <span class="card-face-pill card-type-chip">${escapeHtml(type)}</span>
+      <span class="card-face-pill card-type-chip" data-card-type="${escapeHtml(type.key)}" style="--card-type-color:${escapeHtml(type.color)};--card-type-text-color:${escapeHtml(type.textColor)}" title="${escapeHtml(type.label)}">${escapeHtml(type.label)}</span>
       <span class="card-face-pill card-face-pill--circle card-ability-chip" title="Ability placeholder">${escapeHtml(abilityIcon)}</span>
     </div>
   `;
