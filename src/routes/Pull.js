@@ -68,9 +68,15 @@ function renderPullSheet({ selectedCount, resources, sheetOpen }) {
           ${renderSheetOption(pullOptions[5], selectedCount)}
         </div>
 
-        <button class="pull-sheet-odds-link" type="button" data-pull-odds>
-          View Rarity Odds <span aria-hidden="true">↗</span>
+        <button class="pull-sheet-odds-link" type="button" data-pull-odds aria-expanded="false">
+          <span data-pull-odds-label>View Rarity Odds</span> <span aria-hidden="true">↗</span>
         </button>
+
+        <div class="pull-sheet-odds-panel odds-list" data-pull-odds-panel hidden>
+          ${rarityOdds.map((entry) => `
+            <div class="detail-row"><span>${entry.rarity}</span><strong>${entry.odds}</strong></div>
+          `).join('')}
+        </div>
 
         <div class="pull-sheet-status" data-pull-status>${status}</div>
 
@@ -99,7 +105,6 @@ export async function renderPull({ query = {} } = {}) {
         <button class="button button-primary" type="button" data-pull-open="${selectedCount}">Start Pull</button>
         <a class="button button-secondary" href="#/shop">Open Ticket Shop</a>
         <a class="button button-secondary" href="#/pull/history">Pull History</a>
-        <a class="button button-secondary" href="${getApiRoutes().pullPool}" target="_blank" rel="noreferrer">Pull Pool Audit</a>
       </div>
     </section>
 
@@ -118,20 +123,6 @@ export async function renderPull({ query = {} } = {}) {
       <div class="quick-grid">
         <button class="quick-card quick-card-button" type="button" data-pull-open="1"><strong>1-Pull</strong><span>Costs 1 ticket.</span></button>
         <button class="quick-card quick-card-button" type="button" data-pull-open="5"><strong>5-Pull</strong><span>Costs 5 tickets.</span></button>
-      </div>
-    </section>
-
-    <section id="pull-odds">
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Configured Odds</span>
-          <h2 class="section-title">Rarity Preview</h2>
-        </div>
-      </div>
-      <div class="odds-list">
-        ${rarityOdds.map((entry) => `
-          <div class="detail-row"><span>${entry.rarity}</span><strong>${entry.odds}</strong></div>
-        `).join('')}
       </div>
     </section>
 
@@ -259,12 +250,18 @@ export function initPull(root) {
   });
 
   const oddsLink = overlay.querySelector('[data-pull-odds]');
-  if (oddsLink) {
+  const oddsPanel = overlay.querySelector('[data-pull-odds-panel]');
+  const oddsLabel = overlay.querySelector('[data-pull-odds-label]');
+
+  if (oddsLink && oddsPanel) {
     oddsLink.addEventListener('click', () => {
-      closeSheet(true);
-      window.setTimeout(() => {
-        root.querySelector('#pull-odds')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 280);
+      const isOpening = oddsPanel.hidden;
+      oddsPanel.hidden = !isOpening;
+      oddsLink.setAttribute('aria-expanded', isOpening ? 'true' : 'false');
+
+      if (oddsLabel) {
+        oddsLabel.textContent = isOpening ? 'Hide Rarity Odds' : 'View Rarity Odds';
+      }
     });
   }
 
