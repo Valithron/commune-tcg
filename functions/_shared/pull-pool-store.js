@@ -38,6 +38,10 @@ function readCreatorUserId(payload) {
   return String(payload.creatorUserId || payload.creator_user_id || payload.submitterUserId || payload.submitter_user_id || payload.userId || payload.user_id || '').trim();
 }
 
+function readCrop(payload) {
+  return payload.crop || payload.crop_json || payload.cropJson || payload.image_crop || payload.imageCrop || {};
+}
+
 function toNumber(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -48,9 +52,10 @@ export function normalizeCardRow(row) {
   const payload = parsed?.card || parsed?.data || parsed || {};
   const baseStats = normalizeBaseStats(payload);
   const progressionRules = normalizeProgressionRules(payload.progressionRules || payload.progression_rules || payload);
-  const imageKey = payload.image_key || payload.imageKey || payload.image_path || payload.art_key || payload.object_key || '';
+  const imageKey = payload.image_key || payload.imageKey || payload.image_path || payload.image || payload.image_url || payload.art_url || payload.art_key || payload.object_key || payload.r2_key || '';
   const creatorDisplayName = readCreatorDisplayName(payload);
   const creatorUserId = readCreatorUserId(payload);
+  const crop = readCrop(payload);
   const raritySource = String(payload.raritySource || payload.rarity_source || 'legacy').trim();
   const statsSource = String(payload.statsSource || payload.stats_source || raritySource || 'legacy').trim();
   const traitSource = String(payload.traitSource || payload.trait_source || (raritySource === 'legacy' ? 'legacy' : 'approval')).trim();
@@ -87,6 +92,9 @@ export function normalizeCardRow(row) {
     flavor: String(payload.flavor || payload.flavor_text || payload.description || 'A pull-eligible Library card.'),
     imageKey,
     imageUrl: imageUrlFromKey(imageKey),
+    crop,
+    cropJson: crop,
+    imageCrop: crop,
     creator: creatorDisplayName,
     creatorDisplayName,
     creatorUserId,
@@ -99,8 +107,12 @@ export function normalizeCardRow(row) {
   };
 }
 
-function isPullEligibleRow(row) {
-  return !String(row.owner_user_id || '').trim();
+function ownerWhere() {
+  return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`;
+}
+
+function unownedWhere() {
+  return `(owner_user_id IS NULL OR TRIM(CAST(owner_user_id AS TEXT)) = '')`;
 }
 
 export function summarizeByRarity(cards) {
@@ -124,30 +136,41 @@ export function buildReadiness(cards, byRarity) {
 }
 
 export async function readPullPool(env) {
-  const result = await env.DB.prepare(`
-    SELECT id, owner_user_id, character_id, card_json, created_at, updated_at
-    FROM cards
-    LIMIT 500
-  `).all();
+  const [eligibleResult, totalRow, ownedRow, sampleOwnedResult] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, owner_user_id, character_id, card_json, created_at, updated_at
+      FROM cards
+      WHERE ${unownedWhere()}
+      ORDER BY created_at ASC, updated_at ASC, id ASC
+    `).all(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM cards`).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM cards WHERE ${ownerWhere()}`).first(),
+    env.DB.prepare(`
+      SELECT id, owner_user_id, character_id, card_json, created_at, updated_at
+      FROM cards
+      WHERE ${ownerWhere()}
+      ORDER BY updated_at DESC, created_at DESC, id ASC
+      LIMIT 10
+    `).all(),
+  ]);
 
-  const rows = result.results || [];
-  const allCards = rows.map(normalizeCardRow);
-  const unownedRows = rows.filter(isPullEligibleRow);
-  const unownedCards = unownedRows.map(normalizeCardRow);
-  const cards = unownedCards.filter((card) => card.cardJsonValid);
+  const rows = eligibleResult.results || [];
+  const eligibleCards = rows.map(normalizeCardRow);
+  const cards = eligibleCards.filter((card) => card.cardJsonValid);
   const byRarity = summarizeByRarity(cards);
+  const sampleExcludedOwnedCards = (sampleOwnedResult.results || []).map(normalizeCardRow);
 
   return {
     rows,
-    allCards,
+    allCards: eligibleCards,
     cards,
     byRarity,
-    totalCardsScanned: rows.length,
+    totalCardsScanned: Number(totalRow?.count || rows.length),
     eligibleCount: cards.length,
-    ownedRowsExcluded: rows.length - unownedRows.length,
-    invalidRowsExcluded: unownedCards.filter((card) => !card.cardJsonValid).length,
+    ownedRowsExcluded: Number(ownedRow?.count || 0),
+    invalidRowsExcluded: eligibleCards.filter((card) => !card.cardJsonValid).length,
     approvedSubmissionCount: cards.filter((card) => card.source === 'card_submissions').length,
-    sampleExcludedOwnedCards: allCards.filter((card) => card.ownerUserId).slice(0, 10),
+    sampleExcludedOwnedCards,
     readiness: buildReadiness(cards, byRarity),
   };
 }
