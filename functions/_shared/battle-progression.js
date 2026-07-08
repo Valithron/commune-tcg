@@ -5,7 +5,7 @@
    Vault grants, or auth changes.
    ============================================================================ */
 
-import { calculateBattleRewardPreview, previewLevelFromXp } from './battle-reward-contract.js';
+import { calculateBattleRewardPreview, normalizeBattleMaxLevel, previewLevelFromXp } from './battle-reward-contract.js';
 import { ensureBattleHistorySchema } from './battle-engine.js';
 
 const userResourcesSql = `
@@ -23,15 +23,21 @@ function buildId(prefix) {
 }
 
 function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
+  if (!value || typeof value !== 'string') return null;
+  try { return JSON.parse(value); } catch { return null; }
+}
 
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
+function toNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readCardMaxLevel(payload) {
+  const progressionRules = payload?.progressionRules || payload?.progression_rules || {};
+  return normalizeBattleMaxLevel(
+    payload?.maxLevel ?? payload?.max_level ?? payload?.levelCap ?? payload?.level_cap ?? progressionRules.maxLevel ?? progressionRules.max_level ?? progressionRules.levelCap ?? progressionRules.level_cap,
+    30
+  );
 }
 
 async function columnExists(env, tableName, columnName) {
@@ -90,21 +96,30 @@ async function readOwnedCardRows(env, ownerUserId, sourceRowIds) {
       LIMIT 1
     `).bind(sourceRowId, ownerUserId).first();
 
-    if (row) {
-      rows.set(String(sourceRowId), row);
-    }
+    if (row) rows.set(String(sourceRowId), row);
   }
 
   return rows;
 }
 
 function updatePayloadProgression(payload, application, battleId, now) {
+  const previousProgression = payload.progression && typeof payload.progression === 'object' && !Array.isArray(payload.progression)
+    ? payload.progression
+    : {};
+
   return {
     ...payload,
     xp: application.nextXp,
     experience: application.nextXp,
     level: application.nextLevel,
     card_level: application.nextLevel,
+    maxLevel: application.maxLevel,
+    max_level: application.maxLevel,
+    progression: {
+      ...previousProgression,
+      xp: application.nextXp,
+      level: application.nextLevel,
+    },
     battle_xp_updated_at: now,
     last_battle_id: battleId,
     last_battle_at: now,
@@ -119,27 +134,15 @@ function buildUpdatedCardJson(cardJson, application, battleId, now) {
   }
 
   if (parsed.card && typeof parsed.card === 'object') {
-    return JSON.stringify({
-      ...parsed,
-      card: updatePayloadProgression(parsed.card, application, battleId, now),
-    });
+    return JSON.stringify({ ...parsed, card: updatePayloadProgression(parsed.card, application, battleId, now) });
   }
 
   if (parsed.data?.card && typeof parsed.data.card === 'object') {
-    return JSON.stringify({
-      ...parsed,
-      data: {
-        ...parsed.data,
-        card: updatePayloadProgression(parsed.data.card, application, battleId, now),
-      },
-    });
+    return JSON.stringify({ ...parsed, data: { ...parsed.data, card: updatePayloadProgression(parsed.data.card, application, battleId, now) } });
   }
 
   if (parsed.data && typeof parsed.data === 'object') {
-    return JSON.stringify({
-      ...parsed,
-      data: updatePayloadProgression(parsed.data, application, battleId, now),
-    });
+    return JSON.stringify({ ...parsed, data: updatePayloadProgression(parsed.data, application, battleId, now) });
   }
 
   return JSON.stringify(updatePayloadProgression(parsed, application, battleId, now));
@@ -152,12 +155,14 @@ function buildRewardPlan(simulation) {
     squadSize: simulation.squad.length,
   });
 
-  const xpApplications = simulation.squad.map((card, index) => {
-    const gainedXp = reward.baseXpPerCard + (index < reward.remainderXp ? 1 : 0);
+  const xpApplications = simulation.squad.map((card) => {
+    const gainedXp = reward.xpPerCard ?? reward.baseXpPerCard ?? reward.totalXp ?? 0;
+    const maxLevel = normalizeBattleMaxLevel(card.maxLevel ?? card.max_level ?? card.levelCap ?? card.level_cap, 30);
     const levelPreview = previewLevelFromXp({
       currentLevel: card.level,
       currentXp: card.xp,
       gainedXp,
+      maxLevel,
     });
 
     return {
@@ -165,6 +170,7 @@ function buildRewardPlan(simulation) {
       sourceRowId: card.sourceRowId,
       cardTitle: card.name,
       rarity: card.rarity,
+      maxLevel,
       previousLevel: card.level,
       previousXp: card.xp,
       gainedXp,
@@ -174,14 +180,14 @@ function buildRewardPlan(simulation) {
       xpToNextLevel: levelPreview.xpToNextLevelPreview,
       levelsGained: levelPreview.levelsGained,
       maxLevelReached: levelPreview.maxLevelReached,
-      writes: ['cards.card_json.xp', 'cards.card_json.level', 'cards.updated_at'],
+      writes: ['cards.card_json.xp', 'cards.card_json.level', 'cards.card_json.progression', 'cards.updated_at'],
     };
   });
 
   return {
     reward,
     xpApplications,
-    writes: ['battle_history', 'user_resources.gold', 'cards.card_json.xp_level'],
+    writes: ['battle_history', 'user_resources.gold', 'cards.card_json.xp_level_progression'],
     deferredWrites: ['pull tickets', 'drops', 'stamina', 'energy', 'Vault changes', 'auth changes'],
   };
 }
@@ -190,7 +196,7 @@ function buildResultJson({ battleId, attemptId, simulation, rewardPlan, resource
   return JSON.stringify({
     battleId,
     attemptId,
-    phase: 'battle-8',
+    phase: 'card-mechanics-phase-5',
     ownerUserId: simulation.ownerUserId,
     ownerDisplayName: simulation.ownerDisplayName,
     encounterId: simulation.encounter.id,
@@ -205,12 +211,15 @@ function buildResultJson({ battleId, attemptId, simulation, rewardPlan, resource
       cardTitle: card.name,
       rarity: card.rarity,
       level: card.level,
+      maxLevel: card.maxLevel,
       battlePower: card.battlePower,
       stats: card.stats,
     })),
     rewardPreview: rewardPlan.reward,
     rewardApplied: {
       goldGained: rewardPlan.reward.gold,
+      xpPerCard: rewardPlan.reward.xpPerCard,
+      totalSquadXp: rewardPlan.reward.totalSquadXp,
       totalXp: rewardPlan.reward.totalXp,
       pullTickets: 0,
       drops: [],
@@ -221,7 +230,7 @@ function buildResultJson({ battleId, attemptId, simulation, rewardPlan, resource
     xpApplied: rewardPlan.xpApplications,
     combatLog: [
       ...simulation.combatLog,
-      `Battle Phase 8 applied ${rewardPlan.reward.gold} gold and ${rewardPlan.reward.totalXp} total XP once for attempt ${attemptId}.`,
+      `Battle Phase 5 applied ${rewardPlan.reward.gold} gold and ${rewardPlan.reward.xpPerCard} XP to each selected squad card for attempt ${attemptId}.`,
     ],
     resultRule: simulation.resultRule,
     rewardRule: rewardPlan.reward.xpAllocationRule,
@@ -236,10 +245,7 @@ function buildResultJson({ battleId, attemptId, simulation, rewardPlan, resource
 }
 
 export async function readBattleAttempt(env, { ownerUserId, attemptId } = {}) {
-  if (!ownerUserId || !attemptId) {
-    return null;
-  }
-
+  if (!ownerUserId || !attemptId) return null;
   await ensureBattleHistorySchema(env);
   await ensureBattleAttemptSchema(env);
   return readExistingAttempt(env, ownerUserId, attemptId);
@@ -285,10 +291,17 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
 
   const cardUpdates = rewardPlan.xpApplications.map((application) => {
     const row = cardRows.get(String(application.sourceRowId));
+    const parsed = safeParseJson(row.card_json);
+    const payload = parsed?.card || parsed?.data?.card || parsed?.data || parsed || {};
+    const rowMaxLevel = readCardMaxLevel(payload);
+    const finalApplication = {
+      ...application,
+      maxLevel: rowMaxLevel || application.maxLevel,
+    };
 
     return {
-      application,
-      updatedCardJson: buildUpdatedCardJson(row.card_json, application, battleId, now),
+      application: finalApplication,
+      updatedCardJson: buildUpdatedCardJson(row.card_json, finalApplication, battleId, now),
     };
   });
 
@@ -310,17 +323,7 @@ export async function writeBattleProgression(env, simulationResult, { now = new 
     env.DB.prepare(`
       INSERT INTO battle_history (id, attempt_id, user_id, encounter_id, victory, squad_power, enemy_power, result_json, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      battleId,
-      safeAttemptId,
-      ownerUserId,
-      simulation.encounter.id,
-      simulation.victory ? 1 : 0,
-      simulation.squadPower,
-      simulation.enemyPower,
-      resultJson,
-      now
-    ),
+    `).bind(battleId, safeAttemptId, ownerUserId, simulation.encounter.id, simulation.victory ? 1 : 0, simulation.squadPower, simulation.enemyPower, resultJson, now),
     env.DB.prepare(`
       UPDATE user_resources
       SET gold = gold + ?, updated_at = ?
