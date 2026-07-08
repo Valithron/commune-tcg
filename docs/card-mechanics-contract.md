@@ -6,7 +6,7 @@ This document defines the current trait ownership model for the Gacha branch.
 
 Approval controls balance. Pulling controls ownership and collectible variation.
 
-Users may suggest a target rarity at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity.
+Users may suggest a target rarity and type at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity, and admin review chooses the approved final type used for stat allocation.
 
 Pulling must not reroll base rarity. Pulling may roll narrow owned-copy POW/DEF/SPD budget variance inside the approved rarity's allowed range.
 
@@ -33,7 +33,9 @@ Admin override skips the cascading roll and directly assigns the selected final 
 
 ## Type model
 
-Phase 2 adds the accepted 7-type foundation.
+Phase 3 exposes single-type suggestion and approval controls.
+
+Submission now lets users suggest one type. Admin review chooses the approved type. That approved type is stored on the Library template and copied into pulled Vault cards.
 
 Current accepted types:
 
@@ -96,6 +98,8 @@ Current template traits:
 - name
 - creator attribution
 - character
+- suggestedType
+- approvedType
 - type/category
 - typeLabel
 - typeColor
@@ -124,6 +128,8 @@ Approved cards should include:
 ```json
 {
   "rarity": "rare",
+  "suggestedType": "neutral",
+  "approvedType": "radiant",
   "type": "radiant",
   "cardType": "radiant",
   "typeLabel": "Radiant",
@@ -275,8 +281,9 @@ CardFrame, Library, Vault, and Battle still rely on those legacy-safe fields.
 
 These are intentionally not settled in this pass:
 
-- Submitter-facing type suggestion pool
+- Multi-type suggestion pools
 - Admin-approved type pool controls
+- Pull-time type rolling from an approved pool
 - Battle use of type matchups
 - Rarity evolution / promotion
 - Duplicate merge versus separate copy rules
