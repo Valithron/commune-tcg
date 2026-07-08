@@ -1,12 +1,12 @@
 import { resolveCurrentUser } from '../_shared/current-user.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
+import { normalizeCardType } from '../_shared/type-config.js';
 import { insertSubmission, listSubmissions } from '../_shared/submission-store.js';
 
 const maxImageBytes = 5 * 1024 * 1024;
 const allowedMimeTypes = new Map([['image/png', 'png'], ['image/jpeg', 'jpg'], ['image/webp', 'webp']]);
 const allowedRarities = new Set(['random', 'common', 'uncommon', 'rare', 'legendary', 'mythic']);
 const allowedCharacters = new Set(['sterling', 'cydney', 'ryan', 'gabi', 'cooper', 'kenly', 'ashley']);
-const allowedTypes = new Set(['support', 'battle', 'craft', 'magic', 'alchemy', 'training', 'defense', 'utility']);
 
 function cleanText(value, maxLength) { return String(value || '').trim().slice(0, maxLength); }
 function normalizeChoice(value, allowed, fallback) { const cleaned = String(value || '').trim().toLowerCase(); return allowed.has(cleaned) ? cleaned : fallback; }
@@ -43,7 +43,7 @@ function buildFields(formData) {
   return {
     cardName: cleanText(formData.get('card_name'), 25),
     characterId: normalizeChoice(formData.get('character_id'), allowedCharacters, 'sterling'),
-    cardType: normalizeChoice(formData.get('card_type'), allowedTypes, 'support'),
+    cardType: normalizeCardType(formData.get('card_type'), 'neutral'),
     raritySuggestion: normalizeChoice(formData.get('rarity_suggestion'), allowedRarities, 'rare'),
     pow: 1,
     def: 1,
@@ -82,7 +82,7 @@ export async function onRequestPost({ env, request }) {
     await env.CARD_IMAGES.put(imageKey, await imageFile.arrayBuffer(), { httpMetadata: { contentType: imageFile.type || `image/${extension}` }, customMetadata: { submissionId: id, originalName: cleanText(imageFile.name, 160), creatorUserId: currentUser.id } });
     const submission = { id, submitterUserId: currentUser.id, submitterDisplayName: currentUser.displayName, cardName: fields.cardName, characterId: fields.characterId, cardType: fields.cardType, raritySuggestion: fields.raritySuggestion, pow: fields.pow, def: fields.def, spd: fields.spd, flavorText: fields.flavorText, abilityText: fields.abilityText, imageKey, imageOriginalName: cleanText(imageFile.name, 160), imageMimeType: imageFile.type || `image/${extension}`, imageSizeBytes: imageFile.size, cropJson: fields.cropJson, moderationStatus: 'pending_review', reviewNotes: '', approvedCardId: '', createdAt: now, updatedAt: now, reviewedAt: '', reviewedBy: '' };
     try { await insertSubmission(env, submission); } catch (error) { await env.CARD_IMAGES.delete(imageKey).catch(() => null); throw error; }
-    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: 'card-mechanics-v2', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Target rarity is a suggestion; final rarity, stats, level cap, and origin metadata are controlled during admin approval.'] }, { status: 201 });
+    return jsonResponse({ ok: true, source: 'D1 card_submissions + R2 CARD_IMAGES', phase: 'card-mechanics-v2', creator: currentUser, submission: { ...submission, imageUrl: `/api/card-image?key=${encodeURIComponent(imageKey)}` }, warnings: ['Submission is pending_review and does not enter Library or pulls until approved.', 'Target rarity is a suggestion; final rarity, type, stats, level cap, and origin metadata are controlled during admin approval.'] }, { status: 201 });
   } catch (error) {
     return errorResponse('Failed to create submission.', 500, error.message);
   }
