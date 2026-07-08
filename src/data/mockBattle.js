@@ -1,10 +1,11 @@
 /* ============================================================================
    Mock Battle Data
-   Phase 3 responsibility: deterministic encounter, squad, and result data.
-   Real battle math, persistence, rewards, and cooldowns belong to backend phases.
+   Phase 6 responsibility: deterministic typed encounters for frontend battle
+   previews. Backend settlement remains authoritative.
    ============================================================================ */
 
 import { mockCards } from './mockCards.js';
+import { applyTypeMatchups } from '../services/typeMatchups.js';
 
 export const mockEncounters = [
   {
@@ -12,6 +13,7 @@ export const mockEncounters = [
     name: 'Training Yard Goblin',
     difficulty: 'Easy',
     element: 'Starter',
+    enemyType: 'neutral',
     enemyPower: 86,
     staminaCost: 4,
     rewardGold: 120,
@@ -23,6 +25,7 @@ export const mockEncounters = [
     name: 'Calendar Hydra',
     difficulty: 'Medium',
     element: 'Pressure',
+    enemyType: 'shadow',
     enemyPower: 132,
     staminaCost: 7,
     rewardGold: 260,
@@ -34,6 +37,7 @@ export const mockEncounters = [
     name: 'Storm Forge Wyrm',
     difficulty: 'Hard',
     element: 'Boss',
+    enemyType: 'flame',
     enemyPower: 205,
     staminaCost: 10,
     rewardGold: 520,
@@ -42,30 +46,24 @@ export const mockEncounters = [
   },
 ];
 
-const defaultSquadIds = [
-  'forgefather-sterling',
-  'cydney-hearthwarden',
-  'ashley-dragon-trainer',
-];
+const defaultSquadIds = ['forgefather-sterling', 'cydney-hearthwarden', 'ashley-dragon-trainer'];
 
 export function getEncounterById(encounterId) {
   return mockEncounters.find((encounter) => encounter.id === encounterId) || mockEncounters[0];
 }
 
 export function getDefaultSquad() {
-  return defaultSquadIds
-    .map((cardId) => mockCards.find((card) => card.id === cardId))
-    .filter(Boolean);
+  return defaultSquadIds.map((cardId) => mockCards.find((card) => card.id === cardId)).filter(Boolean);
 }
 
-export function getSquadPower(cards) {
-  return cards.reduce((total, card) => total + card.stats.pow + card.stats.def + card.stats.spd + card.level, 0);
+export function getSquadPower(cards, encounter = {}) {
+  return applyTypeMatchups(cards, encounter).reduce((total, card) => total + Number(card.battlePower || 0), 0);
 }
 
 export function getBattleOutcome(encounterId) {
   const encounter = getEncounterById(encounterId);
-  const squad = getDefaultSquad();
-  const squadPower = getSquadPower(squad);
+  const squad = applyTypeMatchups(getDefaultSquad(), encounter);
+  const squadPower = getSquadPower(squad, encounter);
   const victory = squadPower >= encounter.enemyPower;
 
   return {
@@ -79,7 +77,7 @@ export function getBattleOutcome(encounterId) {
     },
     log: [
       'Squad enters formation.',
-      `${encounter.name} opens with ${encounter.element} pressure.`,
+      `${encounter.name} opens with ${encounter.enemyType} pressure.`,
       victory ? 'The squad controls the tempo and wins decisively.' : 'The squad survives but fails to secure victory.',
     ],
   };
