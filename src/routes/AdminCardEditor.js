@@ -70,10 +70,19 @@ function cardStat(card, key) {
   return Number(card?.stats?.[key] ?? 0) || 0;
 }
 
+function knownUserName(userId) {
+  return knownUsers.find(([id]) => id === String(userId || '').toLowerCase())?.[1] || '';
+}
+
+function creatorName(card) {
+  return card.creatorDisplayName || knownUserName(card.creatorUserId) || 'Unknown';
+}
+
 function sortValue(card, key) {
   if (key === 'pow') return cardStat(card, 'pow');
   if (key === 'def') return cardStat(card, 'def');
   if (key === 'spd') return cardStat(card, 'spd');
+  if (key === 'creatorDisplayName') return creatorName(card).toLowerCase();
   if (key === 'createdAt' || key === 'updatedAt') return new Date(card?.[key] || 0).getTime() || 0;
   return String(card?.[key] ?? '').toLowerCase();
 }
@@ -116,14 +125,6 @@ function shortText(value, fallback = '—') {
   return text || fallback;
 }
 
-function knownUserName(userId) {
-  return knownUsers.find(([id]) => id === String(userId || '').toLowerCase())?.[1] || '';
-}
-
-function creatorName(card) {
-  return card.creatorDisplayName || knownUserName(card.creatorUserId) || 'Unknown';
-}
-
 function renderTableRow(card) {
   return `
     <tr data-admin-card-row data-card-id="${escapeHtml(card.id)}" tabindex="0">
@@ -138,7 +139,7 @@ function renderTableRow(card) {
       <td class="admin-number-cell">${escapeHtml(cardStat(card, 'pow'))}</td>
       <td class="admin-number-cell">${escapeHtml(cardStat(card, 'def'))}</td>
       <td class="admin-number-cell">${escapeHtml(cardStat(card, 'spd'))}</td>
-      <td class="admin-card-image-key">${escapeHtml(shortText(card.imageKey))}</td>
+      <td class="admin-card-creator-cell">${escapeHtml(creatorName(card))}</td>
       <td>${escapeHtml(formatDate(card.updatedAt))}</td>
       <td class="admin-card-actions-cell">
         <button class="button button-secondary" type="button" data-admin-edit-card>Edit</button>
@@ -150,6 +151,24 @@ function renderTableRow(card) {
 
 function renderTableRows() {
   return sortedCards().map(renderTableRow).join('');
+}
+
+function renderTableHeader() {
+  return `
+    <tr>
+      <th>Art</th>
+      <th>${renderSortButton('Name', 'name')}</th>
+      <th>${renderSortButton('Character', 'characterId')}</th>
+      <th>${renderSortButton('Type', 'type')}</th>
+      <th>${renderSortButton('Rarity', 'rarity')}</th>
+      <th>${renderSortButton('POW', 'pow')}</th>
+      <th>${renderSortButton('DEF', 'def')}</th>
+      <th>${renderSortButton('SPD', 'spd')}</th>
+      <th>${renderSortButton('Creator', 'creatorDisplayName')}</th>
+      <th>${renderSortButton('Updated', 'updatedAt')}</th>
+      <th>Actions</th>
+    </tr>
+  `;
 }
 
 function renderTable() {
@@ -164,21 +183,7 @@ function renderTable() {
       </div>
       <div class="admin-card-table-scroll">
         <table class="admin-card-table" data-admin-card-table>
-          <thead>
-            <tr>
-              <th>Art</th>
-              <th>${renderSortButton('Name', 'name')}</th>
-              <th>${renderSortButton('Character', 'characterId')}</th>
-              <th>${renderSortButton('Type', 'type')}</th>
-              <th>${renderSortButton('Rarity', 'rarity')}</th>
-              <th>${renderSortButton('POW', 'pow')}</th>
-              <th>${renderSortButton('DEF', 'def')}</th>
-              <th>${renderSortButton('SPD', 'spd')}</th>
-              <th>${renderSortButton('Image Key', 'imageKey')}</th>
-              <th>${renderSortButton('Updated', 'updatedAt')}</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <thead>${renderTableHeader()}</thead>
           <tbody data-admin-card-table-body>
             ${renderTableRows() || '<tr><td colspan="11" class="empty-note">No cards were found in the cards table.</td></tr>'}
           </tbody>
@@ -410,21 +415,7 @@ function renderRowsInto(root) {
   }
 
   if (tableHead) {
-    tableHead.innerHTML = `
-      <tr>
-        <th>Art</th>
-        <th>${renderSortButton('Name', 'name')}</th>
-        <th>${renderSortButton('Character', 'characterId')}</th>
-        <th>${renderSortButton('Type', 'type')}</th>
-        <th>${renderSortButton('Rarity', 'rarity')}</th>
-        <th>${renderSortButton('POW', 'pow')}</th>
-        <th>${renderSortButton('DEF', 'def')}</th>
-        <th>${renderSortButton('SPD', 'spd')}</th>
-        <th>${renderSortButton('Image Key', 'imageKey')}</th>
-        <th>${renderSortButton('Updated', 'updatedAt')}</th>
-        <th>Actions</th>
-      </tr>
-    `;
+    tableHead.innerHTML = renderTableHeader();
   }
 }
 
