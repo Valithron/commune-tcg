@@ -304,6 +304,33 @@ Reasoning summary:
 - **Radiant** loses to **Tide** because water flow/refraction erodes rigid protection, and loses to **Volt** because overload disrupts radiant shielding.
 - **Neutral** has no strengths and no weaknesses. It is deliberately stable and easy to understand.
 
+### Current Accepted Type Stat Tendencies
+
+Types should influence stat identity modestly, while rarity, level, and native rarity still do most of the power work.
+
+Current accepted rule of thumb:
+
+- Primary stat boost: about +10%.
+- Secondary stat boost: about +5%.
+- Tradeoff penalty: about -5% when needed.
+- Neutral: no bonus and no penalty.
+
+| Type | POW | DEF | SPD | Notes |
+| --- | ---: | ---: | ---: | --- |
+| Flame | +10% | -5% | 0% | Harder-hitting, slightly more fragile |
+| Tide | 0% | +5% | +5% | Flexible, evasive, control/support flavor |
+| Bloom | 0% | +10% | -5% | Durable, slower, sustain flavor |
+| Volt | +5% | -5% | +10% | Fast, tempo-oriented, more fragile |
+| Shadow | 0% | +10% | -5% | Defensive, corruptive, sturdy dark-type feel |
+| Radiant | +5% | +5% | 0% | Balanced, heroic, support-capable |
+| Neutral | 0% | 0% | 0% | Stable, flexible, no special stat bend |
+
+Design intent:
+
+- Type should shape how a card feels without overpowering rarity, level, or matchup advantage.
+- Type identity should be noticeable but not so large that it overwhelms the rest of the card model.
+- Shadow is currently using the more conservative version with no POW bonus and a DEF-focused identity.
+
 ## Battle Model
 
 Current target: light strategy.
@@ -512,11 +539,10 @@ Before adding abilities or deeper systems, the game should first test whether th
 3. How exactly should stat ranges be derived from rarity, type, character, and template?
 4. Should submitters suggest stat personality, or only type/rarity/flavor?
 5. How much should character identity influence stats?
-6. How much should type influence stats?
-7. How should seasonal bosses reward players?
-8. What should passive farming produce beyond gold, if anything?
-9. What should character mastery/favorite-character progression look like?
-10. Should every card line have its own pool, or should there be a general pool plus limited banners?
+6. How should seasonal bosses reward players?
+7. What should passive farming produce beyond gold, if anything?
+8. What should character mastery/favorite-character progression look like?
+9. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
@@ -527,9 +553,8 @@ Do not add trading yet.
 
 Next likely design priorities:
 
-1. Define how strongly type affects stat tendencies.
-2. Define rarity/stat ranges.
-3. Define native rarity bonuses.
-4. Define duplicate/shard/evolution rules.
-5. Define the first testable battle model.
-6. Define the vault display/filter model.
+1. Define rarity/stat ranges.
+2. Define native rarity bonuses.
+3. Define duplicate/shard/evolution rules.
+4. Define the first testable battle model.
+5. Define the vault display/filter model.
