@@ -4,44 +4,16 @@
    Reward, XP, currency, stamina, Vault, card progression, and auth writes are deferred.
    ============================================================================ */
 
+import { calculateBattleRewardPreview, normalizeBattleMaxLevel, previewLevelFromXp } from './battle-reward-contract.js';
+
 export const temporaryBattleUserId = 'sterling';
 export const temporaryBattleUserDisplayName = 'Sterling';
 export const maxBattleSquadSize = 3;
 
 export const mockBattleEncounters = [
-  {
-    id: 'training-yard-goblin',
-    name: 'Training Yard Goblin',
-    difficulty: 'Easy',
-    element: 'Starter',
-    enemyPower: 86,
-    staminaCost: 4,
-    rewardGold: 120,
-    rewardXp: 35,
-    description: 'A safe first fight tuned for a full starter squad under the current stat budget system.',
-  },
-  {
-    id: 'calendar-hydra',
-    name: 'Calendar Hydra',
-    difficulty: 'Medium',
-    element: 'Pressure',
-    enemyPower: 132,
-    staminaCost: 7,
-    rewardGold: 260,
-    rewardXp: 80,
-    description: 'A mid-tier pressure fight tuned for upgraded commons, uncommons, or mixed-rarity squads.',
-  },
-  {
-    id: 'storm-forge-wyrm',
-    name: 'Storm Forge Wyrm',
-    difficulty: 'Hard',
-    element: 'Boss',
-    enemyPower: 205,
-    staminaCost: 10,
-    rewardGold: 520,
-    rewardXp: 150,
-    description: 'A boss-style prototype tuned for rare-heavy squads under the current stat budget system.',
-  },
+  { id: 'training-yard-goblin', name: 'Training Yard Goblin', difficulty: 'Easy', element: 'Starter', enemyPower: 86, staminaCost: 4, rewardGold: 120, rewardXp: 35, description: 'A safe first fight tuned for a full starter squad under the current stat budget system.' },
+  { id: 'calendar-hydra', name: 'Calendar Hydra', difficulty: 'Medium', element: 'Pressure', enemyPower: 132, staminaCost: 7, rewardGold: 260, rewardXp: 80, description: 'A mid-tier pressure fight tuned for upgraded commons, uncommons, or mixed-rarity squads.' },
+  { id: 'storm-forge-wyrm', name: 'Storm Forge Wyrm', difficulty: 'Hard', element: 'Boss', enemyPower: 205, staminaCost: 10, rewardGold: 520, rewardXp: 150, description: 'A boss-style prototype tuned for rare-heavy squads under the current stat budget system.' },
 ];
 
 const battleHistorySql = `
@@ -58,15 +30,8 @@ const battleHistorySql = `
 `;
 
 function safeParseJson(value) {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
+  if (!value || typeof value !== 'string') return null;
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 function toNumber(value, fallback) {
@@ -76,23 +41,27 @@ function toNumber(value, fallback) {
 
 function normalizeRarity(value) {
   const rarity = String(value || 'common').trim().toLowerCase();
-
-  if (['common', 'uncommon', 'rare', 'legendary', 'mythic'].includes(rarity)) {
-    return rarity;
-  }
-
+  if (['common', 'uncommon', 'rare', 'legendary', 'mythic'].includes(rarity)) return rarity;
   if (rarity.includes('myth')) return 'mythic';
   if (rarity.includes('legend')) return 'legendary';
   if (rarity.includes('uncommon')) return 'uncommon';
   if (rarity.includes('rare')) return 'rare';
-
   return 'common';
+}
+
+function readMaxLevel(payload) {
+  const progressionRules = payload?.progressionRules || payload?.progression_rules || {};
+  return normalizeBattleMaxLevel(
+    payload?.maxLevel ?? payload?.max_level ?? payload?.levelCap ?? payload?.level_cap ?? progressionRules.maxLevel ?? progressionRules.max_level ?? progressionRules.levelCap ?? progressionRules.level_cap,
+    30
+  );
 }
 
 function flattenCardPayload(row) {
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const stats = payload.stats || payload.statBlock || {};
+  const maxLevel = readMaxLevel(payload);
 
   return {
     parsed,
@@ -109,6 +78,9 @@ function flattenCardPayload(row) {
       type: String(payload.type || payload.card_type || payload.role || 'Type'),
       level: toNumber(payload.level ?? payload.card_level ?? payload.cardLevel, 1),
       xp: toNumber(payload.xp ?? payload.experience ?? payload.experience_points ?? payload.experiencePoints, 0),
+      maxLevel,
+      max_level: maxLevel,
+      levelCap: maxLevel,
       copies: toNumber(payload.copies ?? payload.copy_count ?? payload.copyCount ?? payload.quantity, 1),
       stats: {
         pow: toNumber(payload.pow ?? stats.pow ?? stats.power ?? stats.attack ?? stats.atk ?? stats.strength, 1),
@@ -122,51 +94,18 @@ function flattenCardPayload(row) {
 }
 
 function hasExplicitStat(payload, stats) {
-  return [
-    payload.pow,
-    payload.power,
-    payload.attack,
-    payload.atk,
-    payload.strength,
-    payload.def,
-    payload.defense,
-    payload.health,
-    payload.hp,
-    payload.spd,
-    payload.speed,
-    payload.agility,
-    stats.pow,
-    stats.power,
-    stats.attack,
-    stats.atk,
-    stats.strength,
-    stats.def,
-    stats.defense,
-    stats.health,
-    stats.hp,
-    stats.spd,
-    stats.speed,
-    stats.agility,
-  ].some((value) => value !== undefined && value !== null && value !== '');
+  return [payload.pow, payload.power, payload.attack, payload.atk, payload.strength, payload.def, payload.defense, payload.health, payload.hp, payload.spd, payload.speed, payload.agility, stats.pow, stats.power, stats.attack, stats.atk, stats.strength, stats.def, stats.defense, stats.health, stats.hp, stats.spd, stats.speed, stats.agility]
+    .some((value) => value !== undefined && value !== null && value !== '');
 }
 
 export function normalizeOwnedBattleCard(row) {
   const { parsed, payload, stats, normalized } = flattenCardPayload(row);
   const reasons = [];
-
-  if (!parsed) {
-    reasons.push('invalid-card-json');
-  }
-
+  if (!parsed) reasons.push('invalid-card-json');
   const disabled = payload.canBattle === false || payload.battleEligible === false || payload.disabled === true;
-  if (disabled) {
-    reasons.push('explicitly-disabled');
-  }
-
+  if (disabled) reasons.push('explicitly-disabled');
   const statValues = Object.values(normalized.stats);
-  if (!statValues.every(Number.isFinite)) {
-    reasons.push('invalid-normalized-stats');
-  }
+  if (!statValues.every(Number.isFinite)) reasons.push('invalid-normalized-stats');
 
   return {
     ...normalized,
@@ -177,9 +116,7 @@ export function normalizeOwnedBattleCard(row) {
   };
 }
 
-function ownerWhere() {
-  return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`;
-}
+function ownerWhere() { return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`; }
 
 export async function readOwnedBattleRows(env, ownerUserId) {
   const result = await env.DB.prepare(`
@@ -189,7 +126,6 @@ export async function readOwnedBattleRows(env, ownerUserId) {
     ORDER BY updated_at DESC, created_at DESC
     LIMIT 500
   `).bind(ownerUserId).all();
-
   return result.results || [];
 }
 
@@ -198,14 +134,8 @@ export function getBattleEncounterById(encounterId) {
 }
 
 export function parseSquadCardIds(value) {
-  if (Array.isArray(value)) {
-    return value.map((id) => String(id).trim()).filter(Boolean);
-  }
-
-  return String(value || '')
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean);
+  if (Array.isArray(value)) return value.map((id) => String(id).trim()).filter(Boolean);
+  return String(value || '').split(',').map((id) => id.trim()).filter(Boolean);
 }
 
 function buildCardLookup(cards) {
@@ -217,18 +147,12 @@ function buildCardLookup(cards) {
 }
 
 function selectDefaultSquad(cards) {
-  return [...cards]
-    .filter((card) => card.eligible)
-    .sort((a, b) => b.battlePower - a.battlePower)
-    .slice(0, maxBattleSquadSize);
+  return [...cards].filter((card) => card.eligible).sort((a, b) => b.battlePower - a.battlePower).slice(0, maxBattleSquadSize);
 }
 
 function selectRequestedSquad(cards, requestedIds) {
   const lookup = buildCardLookup(cards);
-  return requestedIds.map((cardId) => ({
-    requestedId: cardId,
-    card: lookup.get(cardId) || null,
-  }));
+  return requestedIds.map((cardId) => ({ requestedId: cardId, card: lookup.get(cardId) || null }));
 }
 
 function buildValidation({ encounter, requestedIds, selectedEntries, squad }) {
@@ -236,57 +160,21 @@ function buildValidation({ encounter, requestedIds, selectedEntries, squad }) {
   const warnings = [];
   const duplicateIds = requestedIds.filter((id, index) => requestedIds.indexOf(id) !== index);
   const missingIds = selectedEntries.filter((entry) => !entry.card).map((entry) => entry.requestedId);
-  const ineligibleCards = selectedEntries.filter((entry) => entry.card && !entry.card.eligible).map((entry) => ({
-    requestedId: entry.requestedId,
-    cardId: entry.card.id,
-    reasons: entry.card.reasons,
-  }));
+  const ineligibleCards = selectedEntries.filter((entry) => entry.card && !entry.card.eligible).map((entry) => ({ requestedId: entry.requestedId, cardId: entry.card.id, reasons: entry.card.reasons }));
 
-  if (!encounter) {
-    errors.push('encounter-not-found');
-  }
+  if (!encounter) errors.push('encounter-not-found');
+  if (requestedIds.length > maxBattleSquadSize) errors.push('squad-too-large');
+  if (duplicateIds.length) errors.push('duplicate-card-ids');
+  if (missingIds.length) errors.push('squad-card-not-owned-by-owner');
+  if (ineligibleCards.length) errors.push('squad-card-ineligible');
+  if (!squad.length) errors.push('empty-squad');
+  if (squad.length < maxBattleSquadSize) warnings.push('squad-has-open-slots');
 
-  if (requestedIds.length > maxBattleSquadSize) {
-    errors.push('squad-too-large');
-  }
-
-  if (duplicateIds.length) {
-    errors.push('duplicate-card-ids');
-  }
-
-  if (missingIds.length) {
-    errors.push('squad-card-not-owned-by-owner');
-  }
-
-  if (ineligibleCards.length) {
-    errors.push('squad-card-ineligible');
-  }
-
-  if (!squad.length) {
-    errors.push('empty-squad');
-  }
-
-  if (squad.length < maxBattleSquadSize) {
-    warnings.push('squad-has-open-slots');
-  }
-
-  return {
-    ok: errors.length === 0,
-    errors,
-    warnings,
-    duplicateIds,
-    missingIds,
-    ineligibleCards,
-    expectedSquadSize: maxBattleSquadSize,
-    selectedSquadSize: squad.length,
-  };
+  return { ok: errors.length === 0, errors, warnings, duplicateIds, missingIds, ineligibleCards, expectedSquadSize: maxBattleSquadSize, selectedSquadSize: squad.length };
 }
 
 function sanitizeForId(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'unknown';
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown';
 }
 
 function buildSimulationId(ownerUserId, encounterId, squad) {
@@ -299,47 +187,42 @@ function buildId(prefix) {
 }
 
 function buildRewardPreview(encounter, victory, squad) {
-  const gold = victory ? encounter.rewardGold : Math.floor(encounter.rewardGold * 0.25);
-  const totalXp = victory ? encounter.rewardXp : Math.floor(encounter.rewardXp * 0.35);
-  const xpPerCard = squad.length ? Math.floor(totalXp / squad.length) : 0;
-
-  return {
-    gold,
-    totalXp,
-    xpPerCard,
-    pullTickets: 0,
-    drops: [],
-    rewardRule: victory ? 'full mock encounter reward preview' : 'partial mock encounter consolation preview',
-    writes: [],
-  };
+  return calculateBattleRewardPreview({ encounter, victory, squadSize: squad.length });
 }
 
 function buildXpPreview(squad, xpPerCard) {
-  return squad.map((card) => ({
-    cardId: card.id,
-    sourceRowId: card.sourceRowId,
-    cardTitle: card.name,
-    previousLevel: card.level,
-    previousXp: card.xp,
-    gainedXp: xpPerCard,
-    nextXpPreview: card.xp + xpPerCard,
-    nextLevelPreview: card.level,
-    levelPreviewStatus: 'deferred-until-reward-xp-contract',
-    writes: [],
-  }));
+  return squad.map((card) => {
+    const maxLevel = normalizeBattleMaxLevel(card.maxLevel ?? card.max_level ?? card.levelCap, 30);
+    const preview = previewLevelFromXp({ currentLevel: card.level, currentXp: card.xp, gainedXp: xpPerCard, maxLevel });
+
+    return {
+      cardId: card.id,
+      sourceRowId: card.sourceRowId,
+      cardTitle: card.name,
+      previousLevel: card.level,
+      previousXp: card.xp,
+      maxLevel,
+      gainedXp: xpPerCard,
+      nextXpPreview: preview.nextXpPreview,
+      nextLevelPreview: preview.nextLevelPreview,
+      xpIntoCurrentLevelPreview: preview.xpIntoCurrentLevelPreview,
+      xpToNextLevelPreview: preview.xpToNextLevelPreview,
+      levelsGained: preview.levelsGained,
+      maxLevelReached: preview.maxLevelReached,
+      levelPreviewStatus: 'phase-5-xp-curve-preview',
+      writes: [],
+    };
+  });
 }
 
 function buildCombatLog({ encounter, squad, squadPower, enemyPower, victory, margin }) {
   const leader = squad[0]?.name || 'Selected squad';
-
   return [
     `${leader} leads ${squad.length} card(s) into ${encounter.name}.`,
     `Squad power resolves to ${squadPower}.`,
     `${encounter.name} answers with ${encounter.element} pressure at enemy power ${enemyPower}.`,
-    victory
-      ? `The squad wins the battle contract by ${margin} power.`
-      : `The squad falls short in the battle contract by ${Math.abs(margin)} power.`,
-    'Battle history may be written only by POST /api/battles. Rewards, XP, currency, stamina, and Vault data are not written.',
+    victory ? `The squad wins the battle contract by ${margin} power.` : `The squad falls short in the battle contract by ${Math.abs(margin)} power.`,
+    'Battle history may be written only by POST /api/battles. Phase 5 rewards give full encounter XP to each selected squad card.',
   ];
 }
 
@@ -361,7 +244,7 @@ function buildSimulation({ ownerUserId, encounter, squad, createdAt }) {
     margin,
     victory,
     rewardPreview,
-    xpPreview: buildXpPreview(squad, rewardPreview.xpPerCard),
+    xpPreview: buildXpPreview(squad, rewardPreview.xpPerCard ?? rewardPreview.totalXp),
     combatLog: buildCombatLog({ encounter, squad, squadPower, enemyPower, victory, margin }),
     resultRule: 'deterministic comparison of normalized squad battlePower against mock encounter enemyPower',
     createdAt,
@@ -369,21 +252,14 @@ function buildSimulation({ ownerUserId, encounter, squad, createdAt }) {
   };
 }
 
-export async function resolveBattleSimulation(env, {
-  ownerUserId = temporaryBattleUserId,
-  encounterId = mockBattleEncounters[0].id,
-  squadCardIds = [],
-  createdAt = new Date().toISOString(),
-} = {}) {
+export async function resolveBattleSimulation(env, { ownerUserId = temporaryBattleUserId, encounterId = mockBattleEncounters[0].id, squadCardIds = [], createdAt = new Date().toISOString() } = {}) {
   const requestedIds = parseSquadCardIds(squadCardIds);
   const rows = await readOwnedBattleRows(env, ownerUserId);
   const ownedCards = rows.map(normalizeOwnedBattleCard);
   const eligibleCards = ownedCards.filter((card) => card.eligible);
   const encounter = getBattleEncounterById(encounterId);
   const selectedEntries = requestedIds.length ? selectRequestedSquad(ownedCards, requestedIds) : [];
-  const squad = requestedIds.length
-    ? selectedEntries.map((entry) => entry.card).filter((card) => card?.eligible)
-    : selectDefaultSquad(eligibleCards);
+  const squad = requestedIds.length ? selectedEntries.map((entry) => entry.card).filter((card) => card?.eligible) : selectDefaultSquad(eligibleCards);
   const validation = buildValidation({ encounter, requestedIds, selectedEntries, squad });
 
   if (!validation.ok) {
@@ -400,10 +276,7 @@ export async function resolveBattleSimulation(env, {
       battleEligibleCount: eligibleCards.length,
       validation,
       writes: [],
-      notes: [
-        'This endpoint performs no writes even when validation fails.',
-        'Use /api/battle-inventory to inspect eligible card ids before supplying squadCardIds.',
-      ],
+      notes: ['This endpoint performs no writes even when validation fails.', 'Use /api/battle-inventory to inspect eligible card ids before supplying squadCardIds.'],
     };
   }
 
@@ -413,42 +286,20 @@ export async function resolveBattleSimulation(env, {
     phase: 'battle-2',
     readOnly: true,
     source: 'D1 owned Vault cards plus frontend mock encounter contract',
-    requested: {
-      ownerUserId,
-      encounterId,
-      squadCardIds: requestedIds,
-    },
+    requested: { ownerUserId, encounterId, squadCardIds: requestedIds },
     ownedCardsScanned: ownedCards.length,
     battleEligibleCount: eligibleCards.length,
     defaultSquadUsed: requestedIds.length === 0,
     validation,
     simulation: buildSimulation({ ownerUserId, encounter, squad, createdAt }),
-    availableEncounters: mockBattleEncounters.map((mockEncounter) => ({
-      id: mockEncounter.id,
-      name: mockEncounter.name,
-      enemyPower: mockEncounter.enemyPower,
-      difficulty: mockEncounter.difficulty,
-    })),
-    guardrails: [
-      'No battle_history write in simulation mode.',
-      'No reward write.',
-      'No XP or level write.',
-      'No currency write.',
-      'No stamina or energy write.',
-      'No Vault write.',
-      'No auth change.',
-    ],
+    availableEncounters: mockBattleEncounters.map((mockEncounter) => ({ id: mockEncounter.id, name: mockEncounter.name, enemyPower: mockEncounter.enemyPower, difficulty: mockEncounter.difficulty })),
+    guardrails: ['No battle_history write in simulation mode.', 'No reward write.', 'No XP or level write.', 'No currency write.', 'No stamina or energy write.', 'No Vault write.', 'No auth change.'],
     nextStep: 'POST /api/battles may write battle_history only after simulation validation passes.',
   };
 }
 
 async function tableExists(env, tableName) {
-  const row = await env.DB.prepare(`
-    SELECT name FROM sqlite_master
-    WHERE type = 'table' AND name = ?
-    LIMIT 1
-  `).bind(tableName).first();
-
+  const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first();
   return Boolean(row);
 }
 
@@ -460,12 +311,7 @@ export async function ensureBattleHistorySchema(env) {
 
 export async function writeBattleHistory(env, simulationResult, { now = new Date().toISOString() } = {}) {
   const battleId = buildId('battle');
-  const simulation = {
-    ...simulationResult.simulation,
-    battleId,
-    createdAt: now,
-    writes: ['battle_history'],
-  };
+  const simulation = { ...simulationResult.simulation, battleId, createdAt: now, writes: ['battle_history'] };
   const resultJson = JSON.stringify({
     battleId,
     phase: 'battle-3',
@@ -477,15 +323,7 @@ export async function writeBattleHistory(env, simulationResult, { now = new Date
     squadPower: simulation.squadPower,
     enemyPower: simulation.enemyPower,
     margin: simulation.margin,
-    squad: simulation.squad.map((card) => ({
-      cardId: card.id,
-      sourceRowId: card.sourceRowId,
-      cardTitle: card.name,
-      rarity: card.rarity,
-      level: card.level,
-      battlePower: card.battlePower,
-      stats: card.stats,
-    })),
+    squad: simulation.squad.map((card) => ({ cardId: card.id, sourceRowId: card.sourceRowId, cardTitle: card.name, rarity: card.rarity, level: card.level, maxLevel: card.maxLevel, battlePower: card.battlePower, stats: card.stats })),
     rewardPreview: simulation.rewardPreview,
     xpPreview: simulation.xpPreview,
     combatLog: simulation.combatLog,
@@ -499,28 +337,11 @@ export async function writeBattleHistory(env, simulationResult, { now = new Date
   await env.DB.prepare(`
     INSERT INTO battle_history (id, user_id, encounter_id, victory, squad_power, enemy_power, result_json, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    battleId,
-    simulation.ownerUserId,
-    simulation.encounter.id,
-    simulation.victory ? 1 : 0,
-    simulation.squadPower,
-    simulation.enemyPower,
-    resultJson,
-    now
-  ).run();
+  `).bind(battleId, simulation.ownerUserId, simulation.encounter.id, simulation.victory ? 1 : 0, simulation.squadPower, simulation.enemyPower, resultJson, now).run();
 
   return {
     battleId,
-    historyRow: {
-      id: battleId,
-      userId: simulation.ownerUserId,
-      encounterId: simulation.encounter.id,
-      victory: simulation.victory,
-      squadPower: simulation.squadPower,
-      enemyPower: simulation.enemyPower,
-      createdAt: now,
-    },
+    historyRow: { id: battleId, userId: simulation.ownerUserId, encounterId: simulation.encounter.id, victory: simulation.victory, squadPower: simulation.squadPower, enemyPower: simulation.enemyPower, createdAt: now },
     resultJson,
     simulation,
   };
@@ -528,14 +349,7 @@ export async function writeBattleHistory(env, simulationResult, { now = new Date
 
 export async function readBattleHistory(env, { ownerUserId = temporaryBattleUserId, limit = 20 } = {}) {
   const exists = await tableExists(env, 'battle_history');
-
-  if (!exists) {
-    return {
-      tableExists: false,
-      totalReturned: 0,
-      battles: [],
-    };
-  }
+  if (!exists) return { tableExists: false, totalReturned: 0, battles: [] };
 
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const result = await env.DB.prepare(`
@@ -548,13 +362,7 @@ export async function readBattleHistory(env, { ownerUserId = temporaryBattleUser
 
   const battles = (result.results || []).map((row) => {
     let parsedResult = null;
-
-    try {
-      parsedResult = JSON.parse(row.resultJson || 'null');
-    } catch {
-      parsedResult = null;
-    }
-
+    try { parsedResult = JSON.parse(row.resultJson || 'null'); } catch { parsedResult = null; }
     return {
       id: row.id,
       userId: row.userId,
@@ -577,9 +385,5 @@ export async function readBattleHistory(env, { ownerUserId = temporaryBattleUser
     };
   });
 
-  return {
-    tableExists: true,
-    totalReturned: battles.length,
-    battles,
-  };
+  return { tableExists: true, totalReturned: battles.length, battles };
 }
