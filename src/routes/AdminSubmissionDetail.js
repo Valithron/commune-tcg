@@ -8,6 +8,8 @@ import { renderCardFrame } from '../components/CardFrame.js';
 import { escapeHtml, titleCase } from '../components/format.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 
+const rarityOptions = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
+
 function formatStatus(value) {
   return titleCase(String(value || 'pending_review').replaceAll('_', ' '));
 }
@@ -18,6 +20,11 @@ function formatBytes(value) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function normalizeRarity(value, fallback = 'rare') {
+  const rarity = String(value || fallback).trim().toLowerCase();
+  return rarityOptions.includes(rarity) ? rarity : fallback;
 }
 
 function formatRarityReview(value) {
@@ -53,7 +60,7 @@ function submissionToPreviewCard(submission) {
     characterId: submission.characterId,
     type: submission.cardType,
     category: submission.cardType,
-    rarity: submission.raritySuggestion === 'random' ? 'common' : submission.raritySuggestion,
+    rarity: submission.raritySuggestion === 'random' ? 'rare' : submission.raritySuggestion,
     symbol: '◆',
     ability: submission.abilityText || '',
     abilityIcon: '✦',
@@ -72,6 +79,11 @@ function renderDetailRow(label, value) {
   return `<div class="detail-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || 'Not set')}</strong></div>`;
 }
 
+function renderRarityOptions(selected, includeRoll = false) {
+  const options = includeRoll ? ['roll', ...rarityOptions] : rarityOptions;
+  return options.map((rarity) => `<option value="${escapeHtml(rarity)}"${rarity === selected ? ' selected' : ''}>${escapeHtml(rarity === 'roll' ? 'Roll from target' : titleCase(rarity))}</option>`).join('');
+}
+
 function renderReviewControls(submission) {
   if (!isReviewable(submission)) {
     return `
@@ -84,15 +96,24 @@ function renderReviewControls(submission) {
   }
 
   const creatorDisplayName = getCreatorDisplayName(submission);
+  const suggestedTarget = normalizeRarity(submission.raritySuggestion, 'rare');
 
   return `
     <section class="glass-panel admin-panel admin-card-editor-form" data-submission-review-panel data-submission-id="${escapeHtml(submission.id)}">
       <span class="section-kicker">Review Actions</span>
       <h2 class="section-title">Server-owned review</h2>
-      <p class="hero-copy">Approve creates an unowned Library card row. Rarity and POW/DEF/SPD are rolled by the server during approval.</p>
+      <p class="hero-copy">Approve creates an unowned Library card row. The target rarity controls the cascading roll table; the final override skips the roll and uses the selected rarity.</p>
       <label class="review-notes-label">
         <span>Creator</span>
         <input data-review-creator maxlength="120" value="${escapeHtml(creatorDisplayName)}" placeholder="Visible creator name" />
+      </label>
+      <label class="review-notes-label">
+        <span>Approval Roll Target</span>
+        <select data-review-target-rarity>${renderRarityOptions(suggestedTarget)}</select>
+      </label>
+      <label class="review-notes-label">
+        <span>Final Rarity Override</span>
+        <select data-review-final-rarity>${renderRarityOptions('roll', true)}</select>
       </label>
       <label class="review-notes-label">
         <span>Review Notes</span>
@@ -103,7 +124,7 @@ function renderReviewControls(submission) {
         <button class="button button-secondary" type="button" data-review-action="needs_changes">Needs Changes</button>
         <button class="button button-secondary" type="button" data-review-action="reject">Reject</button>
       </div>
-      <div class="empty-note" data-review-status>Ready for review action. Creator override will be saved with the action.</div>
+      <div class="empty-note" data-review-status>Ready for review action. Creator, target rarity, and optional final override will be saved with the action.</div>
     </section>
   `;
 }
@@ -127,7 +148,7 @@ export async function renderAdminSubmissionDetail({ params }) {
       <section class="hero-panel">
         <span class="section-kicker">Admin Review</span>
         <h2 class="hero-title">Submission Detail</h2>
-        <p class="hero-copy">Approved submissions become Library cards. Rarity and battle stats are assigned only when you approve.</p>
+        <p class="hero-copy">Approved submissions become Library cards. Target rarity is a submitter suggestion; final rarity, battle stats, level cap, and origin metadata are assigned only when you approve.</p>
         <div class="action-row">
           <a class="button button-secondary" href="#/admin">Back to Admin</a>
           <a class="button button-secondary" href="${escapeHtml(submission.imageUrl)}" target="_blank" rel="noreferrer">Open Image</a>
@@ -149,8 +170,8 @@ export async function renderAdminSubmissionDetail({ params }) {
             ${renderDetailRow('Creator', creatorDisplayName)}
             ${renderDetailRow('Character', titleCase(submission.characterId))}
             ${renderDetailRow('Type', titleCase(submission.cardType))}
-            ${renderDetailRow('Approval Rarity', formatRarityReview(submission.raritySuggestion))}
-            ${renderDetailRow('Approval Stats', 'Generated from approved rarity')}
+            ${renderDetailRow('Target Rarity', formatRarityReview(submission.raritySuggestion))}
+            ${renderDetailRow('Approval Stats', 'Generated from approved rarity stat budget')}
             ${renderDetailRow('Flavor', submission.flavorText)}
             ${renderDetailRow('Ability', submission.abilityText || 'None')}
             ${renderDetailRow('Review Notes', submission.reviewNotes || 'None')}
@@ -185,12 +206,14 @@ export function initAdminSubmissionDetail(root) {
   const status = panel.querySelector('[data-review-status]');
   const notes = panel.querySelector('[data-review-notes]');
   const creator = panel.querySelector('[data-review-creator]');
+  const targetRarity = panel.querySelector('[data-review-target-rarity]');
+  const finalRarity = panel.querySelector('[data-review-final-rarity]');
 
   panel.querySelectorAll('[data-review-action]').forEach((button) => {
     button.addEventListener('click', async () => {
       const action = button.getAttribute('data-review-action');
       const creatorDisplayName = creator?.value?.trim() || '';
-      status.textContent = 'Applying review action and saving creator...';
+      status.textContent = 'Applying review action and saving mechanics...';
 
       try {
         const routes = getApiRoutes();
@@ -202,6 +225,8 @@ export function initAdminSubmissionDetail(root) {
             action,
             reviewNotes: notes.value,
             creatorDisplayName,
+            targetRarity: targetRarity?.value || '',
+            finalRarityOverride: finalRarity?.value === 'roll' ? '' : finalRarity?.value || '',
           }),
         });
         const payload = await response.json().catch(() => null);
@@ -210,7 +235,7 @@ export function initAdminSubmissionDetail(root) {
         const roll = payload.approvalProfile;
         const creatorMessage = payload.creatorDisplayName ? ` Creator saved as ${payload.creatorDisplayName}.` : ' Creator saved.';
         status.textContent = roll
-          ? `Approved: ${titleCase(roll.rarity)} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd}.${creatorMessage}`
+          ? `Approved: ${titleCase(roll.rarity)} from ${titleCase(roll.targetRarity)} target · budget ${roll.statBudget} · POW ${roll.stats.pow} / DEF ${roll.stats.def} / SPD ${roll.stats.spd} · max Lv ${roll.maxLevel} · origin +${roll.originBonusPercent}%.${creatorMessage}`
           : 'Review action applied: ' + action.replaceAll('_', ' ') + '.' + creatorMessage;
         window.setTimeout(() => window.location.reload(), 900);
       } catch (error) {
