@@ -1,6 +1,7 @@
 import { rollApprovalProfile } from './approval-rolls.js';
 import { buildApprovedTemplateTraits } from './card-mechanics.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
+import { getCardTypeSummary, normalizeCardType } from './type-config.js';
 
 const temporaryReviewerId = 'temporary-admin-sterling';
 const allowedActions = new Set(['approve', 'needs_changes', 'reject']);
@@ -51,6 +52,8 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
   const creatorDisplayNameOverride = cleanText(submission.creatorDisplayNameOverride || '', 120);
   const submitterDisplayName = cleanText(submission.submitterDisplayName || creatorDisplayName, 120);
+  const suggestedType = normalizeCardType(submission.originalSuggestedCardType || submission.suggestedCardType || submission.cardType || 'neutral');
+  const suggestedTypeSummary = getCardTypeSummary(suggestedType);
 
   return JSON.stringify({
     id: buildApprovedCardId(submission),
@@ -59,8 +62,15 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     character_id: submission.characterId,
     cid: submission.characterId,
     type: templateTraits.type,
+    cardType: templateTraits.cardType,
     card_type: templateTraits.cardType,
     category: titleCase(templateTraits.typeLabel || templateTraits.type),
+    suggestedType,
+    suggested_type: suggestedType,
+    suggestedTypeLabel: suggestedTypeSummary.label,
+    suggested_type_label: suggestedTypeSummary.label,
+    approvedType: templateTraits.type,
+    approved_type: templateTraits.type,
     typeLabel: templateTraits.typeLabel,
     type_label: templateTraits.typeLabel,
     typeColor: templateTraits.typeColor,
@@ -205,7 +215,7 @@ async function updateSubmissionReview(env, submission, action, reviewNotes, appr
   ).run();
 }
 
-export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '' }) {
+export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '', approvedCardType = '' }) {
   await ensureSubmissionSchema(env);
 
   const normalizedAction = String(action || '').trim().toLowerCase();
@@ -232,8 +242,12 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
   const now = new Date().toISOString();
   const cleanedNotes = cleanText(reviewNotes);
   const creatorOverride = cleanText(creatorDisplayName, 120) || cleanText(submission.creatorDisplayNameOverride || '', 120);
+  const normalizedApprovedType = normalizeCardType(approvedCardType || submission.cardType || 'neutral');
   const submissionForReview = {
     ...submission,
+    originalSuggestedCardType: submission.cardType,
+    suggestedCardType: submission.cardType,
+    cardType: normalizedApprovedType,
     creatorDisplayNameOverride: creatorOverride,
     creatorDisplayName: creatorOverride || submission.creatorDisplayName,
   };
@@ -260,6 +274,7 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
     action: normalizedAction,
     approvedCardId,
     approvalProfile,
+    approvedCardType: normalizedApprovedType,
     submission: updatedSubmission,
     reviewerId: temporaryReviewerId,
     creatorDisplayName: updatedSubmission?.creatorDisplayName || '',
