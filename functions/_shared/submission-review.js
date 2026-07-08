@@ -1,48 +1,18 @@
 import { rollApprovalProfile } from './approval-rolls.js';
 import { buildApprovedTemplateTraits } from './card-mechanics.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
-import { getCardTypeSummary, normalizeCardType } from './type-config.js';
+import { getCardTypeSummary, normalizeCardType, normalizeCardTypePool } from './type-config.js';
 
 const temporaryReviewerId = 'temporary-admin-sterling';
 const allowedActions = new Set(['approve', 'needs_changes', 'reject']);
 const allowedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
 
-function cleanText(value, maxLength = 500) {
-  return String(value || '').trim().slice(0, maxLength);
-}
-
-function normalizeRarityChoice(value, fallback = '') {
-  const cleaned = cleanText(value, 40).toLowerCase();
-  if (!cleaned || cleaned === 'random' || cleaned === 'roll' || cleaned === 'none') return fallback;
-  return allowedRarities.has(cleaned) ? cleaned : fallback;
-}
-
-function titleCase(value) {
-  return String(value || '')
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function statusFromAction(action) {
-  if (action === 'approve') return 'approved';
-  if (action === 'reject') return 'rejected';
-  return action;
-}
-
-function buildApprovedCardId(submission) {
-  return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-}
-
-function resolveCreatorDisplayName(submission) {
-  return cleanText(
-    submission.creatorDisplayNameOverride
-      || submission.creatorDisplayName
-      || submission.submitterDisplayName
-      || submission.submitterUserId
-      || 'Unknown',
-    120
-  );
-}
+function cleanText(value, maxLength = 500) { return String(value || '').trim().slice(0, maxLength); }
+function normalizeRarityChoice(value, fallback = '') { const cleaned = cleanText(value, 40).toLowerCase(); if (!cleaned || cleaned === 'random' || cleaned === 'roll' || cleaned === 'none') return fallback; return allowedRarities.has(cleaned) ? cleaned : fallback; }
+function titleCase(value) { return String(value || '').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function statusFromAction(action) { if (action === 'approve') return 'approved'; if (action === 'reject') return 'rejected'; return action; }
+function buildApprovedCardId(submission) { return 'approved_' + String(submission.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+function resolveCreatorDisplayName(submission) { return cleanText(submission.creatorDisplayNameOverride || submission.creatorDisplayName || submission.submitterDisplayName || submission.submitterUserId || 'Unknown', 120); }
 
 function buildApprovedCardJson(submission, now, approvalProfile) {
   const cropJson = cleanText(submission.cropJson || '{"x":50,"y":50,"zoom":1}', 2000);
@@ -52,7 +22,9 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
   const creatorDisplayNameOverride = cleanText(submission.creatorDisplayNameOverride || '', 120);
   const submitterDisplayName = cleanText(submission.submitterDisplayName || creatorDisplayName, 120);
-  const suggestedType = normalizeCardType(submission.originalSuggestedCardType || submission.suggestedCardType || submission.cardType || 'neutral');
+  const suggestedTypePool = normalizeCardTypePool(submission.typeSuggestions || submission.typeSuggestionsJson || submission.originalSuggestedCardType || submission.suggestedCardType || submission.cardType || 'neutral', ['neutral'], { max: 3 });
+  const approvedTypePool = normalizeCardTypePool(submission.approvedTypePool || submission.approvedTypePoolJson || submission.cardType || 'neutral', [templateTraits.type || 'neutral'], { max: 3 });
+  const suggestedType = suggestedTypePool[0] || 'neutral';
   const suggestedTypeSummary = getCardTypeSummary(suggestedType);
 
   return JSON.stringify({
@@ -69,8 +41,12 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
     suggested_type: suggestedType,
     suggestedTypeLabel: suggestedTypeSummary.label,
     suggested_type_label: suggestedTypeSummary.label,
+    suggestedTypePool,
+    suggested_type_pool: suggestedTypePool,
     approvedType: templateTraits.type,
     approved_type: templateTraits.type,
+    approvedTypePool,
+    approved_type_pool: approvedTypePool,
     typeLabel: templateTraits.typeLabel,
     type_label: templateTraits.typeLabel,
     typeColor: templateTraits.typeColor,
@@ -161,92 +137,47 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
 async function upsertApprovedLibraryCard(env, submission, now, approvalProfile) {
   const approvedCardId = buildApprovedCardId(submission);
   const cardJson = buildApprovedCardJson(submission, now, approvalProfile);
-
-  await env.DB.prepare(`
-    INSERT OR IGNORE INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(
-    approvedCardId,
-    '',
-    submission.characterId,
-    cardJson,
-    now,
-    now
-  ).run();
-
-  await env.DB.prepare(`
-    UPDATE cards
-    SET owner_user_id = ?,
-        character_id = ?,
-        card_json = ?,
-        updated_at = ?
-    WHERE id = ?
-  `).bind(
-    '',
-    submission.characterId,
-    cardJson,
-    now,
-    approvedCardId
-  ).run();
-
+  await env.DB.prepare(`INSERT OR IGNORE INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(approvedCardId, '', submission.characterId, cardJson, now, now).run();
+  await env.DB.prepare(`UPDATE cards SET owner_user_id = ?, character_id = ?, card_json = ?, updated_at = ? WHERE id = ?`).bind('', submission.characterId, cardJson, now, approvedCardId).run();
   return approvedCardId;
 }
 
-async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, creatorDisplayNameOverride, now) {
+async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, creatorDisplayNameOverride, approvedTypePoolJson, now) {
   await env.DB.prepare(`
     UPDATE card_submissions
     SET moderation_status = ?,
         review_notes = ?,
         creator_display_name_override = ?,
+        approved_type_pool_json = ?,
         approved_card_id = ?,
         reviewed_at = ?,
         reviewed_by = ?,
         updated_at = ?
     WHERE id = ?
-  `).bind(
-    statusFromAction(action),
-    reviewNotes,
-    creatorDisplayNameOverride,
-    approvedCardId || submission.approvedCardId || '',
-    now,
-    temporaryReviewerId,
-    now,
-    submission.id
-  ).run();
+  `).bind(statusFromAction(action), reviewNotes, creatorDisplayNameOverride, approvedTypePoolJson || submission.approvedTypePoolJson || '', approvedCardId || submission.approvedCardId || '', now, temporaryReviewerId, now, submission.id).run();
 }
 
-export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '', approvedCardType = '' }) {
+export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '', approvedCardType = '', approvedCardTypes = [] }) {
   await ensureSubmissionSchema(env);
-
   const normalizedAction = String(action || '').trim().toLowerCase();
-
-  if (!allowedActions.has(normalizedAction)) {
-    return { ok: false, status: 400, error: 'Unsupported review action.' };
-  }
+  if (!allowedActions.has(normalizedAction)) return { ok: false, status: 400, error: 'Unsupported review action.' };
 
   const submission = await getSubmissionById(env, id);
-
-  if (!submission) {
-    return { ok: false, status: 404, error: 'Submission was not found.' };
-  }
-
-  if (!['pending_review', 'needs_changes'].includes(submission.moderationStatus)) {
-    return {
-      ok: false,
-      status: 409,
-      error: 'Submission is not reviewable in its current status.',
-      submission,
-    };
-  }
+  if (!submission) return { ok: false, status: 404, error: 'Submission was not found.' };
+  if (!['pending_review', 'needs_changes'].includes(submission.moderationStatus)) return { ok: false, status: 409, error: 'Submission is not reviewable in its current status.', submission };
 
   const now = new Date().toISOString();
   const cleanedNotes = cleanText(reviewNotes);
   const creatorOverride = cleanText(creatorDisplayName, 120) || cleanText(submission.creatorDisplayNameOverride || '', 120);
-  const normalizedApprovedType = normalizeCardType(approvedCardType || submission.cardType || 'neutral');
+  const approvedTypePool = normalizeCardTypePool(approvedCardTypes?.length ? approvedCardTypes : approvedCardType || submission.typeSuggestions || submission.cardType || 'neutral', ['neutral'], { max: 3 });
+  const approvedTypePoolJson = JSON.stringify(approvedTypePool);
+  const normalizedApprovedType = normalizeCardType(approvedTypePool[0] || approvedCardType || submission.cardType || 'neutral');
   const submissionForReview = {
     ...submission,
     originalSuggestedCardType: submission.cardType,
     suggestedCardType: submission.cardType,
+    approvedTypePool,
+    approvedTypePoolJson,
     cardType: normalizedApprovedType,
     creatorDisplayNameOverride: creatorOverride,
     creatorDisplayName: creatorOverride || submission.creatorDisplayName,
@@ -257,26 +188,11 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
   if (normalizedAction === 'approve') {
     const approvedTarget = normalizeRarityChoice(targetRarity, normalizeRarityChoice(submission.raritySuggestion, 'rare')) || 'rare';
     const approvedOverride = normalizeRarityChoice(finalRarityOverride, '');
-    approvalProfile = rollApprovalProfile({
-      targetRarity: approvedTarget,
-      finalRarityOverride: approvedOverride,
-      source: submissionForReview,
-    });
+    approvalProfile = rollApprovalProfile({ targetRarity: approvedTarget, finalRarityOverride: approvedOverride, source: submissionForReview });
     approvedCardId = await upsertApprovedLibraryCard(env, submissionForReview, now, approvalProfile);
   }
 
-  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, creatorOverride, now);
+  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, creatorOverride, normalizedAction === 'approve' ? approvedTypePoolJson : '', now);
   const updatedSubmission = await getSubmissionById(env, id);
-
-  return {
-    ok: true,
-    status: 200,
-    action: normalizedAction,
-    approvedCardId,
-    approvalProfile,
-    approvedCardType: normalizedApprovedType,
-    submission: updatedSubmission,
-    reviewerId: temporaryReviewerId,
-    creatorDisplayName: updatedSubmission?.creatorDisplayName || '',
-  };
+  return { ok: true, status: 200, action: normalizedAction, approvedCardId, approvalProfile, approvedCardType: normalizedApprovedType, approvedTypePool, submission: updatedSubmission, reviewerId: temporaryReviewerId, creatorDisplayName: updatedSubmission?.creatorDisplayName || '' };
 }
