@@ -316,6 +316,11 @@ export function initPull(root) {
   updateSelection(selectedCount);
 
   if (overlay.classList.contains('is-open')) {
-    window.requestAnimationFrame(() => overlay.focus({ preventScroll: true }));
+    overlay.classList.remove('is-open');
+    overlay.hidden = false;
+    window.requestAnimationFrame(() => {
+      overlay.classList.add('is-open');
+      overlay.focus({ preventScroll: true });
+    });
   }
 }
