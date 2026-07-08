@@ -10,3 +10,32 @@
 .pull-sheet-odds-panel {
   margin: 0 0 var(--space-3);
 }
+
+.pull-orb-image-button {
+  display: grid;
+  place-items: center;
+  width: min(82vw, 18rem);
+  min-height: min(82vw, 18rem);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 0 2.2rem rgba(212, 175, 55, 0.28));
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.pull-orb-image-button:active {
+  transform: scale(0.97);
+}
+
+.pull-orb-image-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 0.35rem;
+}
+
+.pull-orb-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
