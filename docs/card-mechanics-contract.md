@@ -90,6 +90,24 @@ Storm Forge Wyrm: Flame
 
 Frontend preview and backend reward settlement both use the same Phase 6 idea: effective stats first, then type matchup-adjusted battle power.
 
+## Phase 7 admin simulator
+
+The Admin Mechanics page now includes a no-write simulator for:
+
+- rarity static budget
+- type stat allocation bias
+- custom stat budget
+- level and max level
+- growth per level
+- origin bonus
+- effective POW/DEF/SPD
+- enemy type matchup
+- adjusted battle power
+
+The simulator is for math preview only. It does not mutate card rows, grant XP, change pulls, or implement evolution. It exists so evolution and ability scaling can be tuned before new write paths are added.
+
+The Admin Cards editor now uses only the seven accepted card types. Legacy `support`, `battle`, `craft`, `magic`, `alchemy`, `training`, `defense`, and `utility` values are normalized into the accepted model when cards are read or saved through the admin editor.
+
 ## Stat budget and progression config
 
 Approved rarity determines the static template budget, pull-time owned-copy budget range, max level, growth per level, and origin bonus.
