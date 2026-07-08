@@ -29,6 +29,23 @@ function unownedWhere() {
   return `(owner_user_id IS NULL OR TRIM(CAST(owner_user_id AS TEXT)) = '')`;
 }
 
+function jsonPullSourceWhere() {
+  return `(json_valid(card_json) AND COALESCE(json_extract(card_json, '$.source'), '') = 'pull')`;
+}
+
+function jsonOwnedSourceLinkWhere() {
+  return `(json_valid(card_json) AND (
+    COALESCE(json_extract(card_json, '$.source_pool_card_id'), '') != ''
+    OR COALESCE(json_extract(card_json, '$.sourcePoolCardId'), '') != ''
+    OR COALESCE(json_extract(card_json, '$.source_card_id'), '') != ''
+    OR COALESCE(json_extract(card_json, '$.sourceCardId'), '') != ''
+  ))`;
+}
+
+function ownedCopyWhere() {
+  return `(id LIKE 'owned_%' OR ${jsonPullSourceWhere()} OR (${ownerWhere()} AND ${jsonOwnedSourceLinkWhere()}))`;
+}
+
 async function ensureCardsTable(env) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS cards (
@@ -127,7 +144,7 @@ async function readTemplateRows(env) {
 }
 
 async function readOwnedCopyCount(env) {
-  const row = await env.DB.prepare(`SELECT COUNT(*) AS count FROM cards WHERE ${ownerWhere()} OR id LIKE 'owned_%' OR COALESCE(json_extract(card_json, '$.source'), '') = 'pull'`).first();
+  const row = await env.DB.prepare(`SELECT COUNT(*) AS count FROM cards WHERE ${ownedCopyWhere()}`).first();
   return Number(row?.count || 0);
 }
 
@@ -146,12 +163,13 @@ function buildRepairSource(payload, row) {
 function buildRepairedPayload(payload, row) {
   const now = new Date().toISOString();
   const rarity = readRarity(payload);
+  const repairSource = buildRepairSource(payload, row);
   const approvalProfile = rollApprovalProfile({
     targetRarity: rarity,
     finalRarityOverride: rarity,
-    source: buildRepairSource(payload, row),
+    source: repairSource,
   });
-  const templateTraits = buildApprovedTemplateTraits({ approvalProfile, source: buildRepairSource(payload, row) });
+  const templateTraits = buildApprovedTemplateTraits({ approvalProfile, source: repairSource });
   const stats = templateTraits.stats;
   const characterId = readCharacter(payload, row);
   const cardType = readType(payload);
@@ -287,12 +305,7 @@ async function repairTemplates(env, { mode }) {
 async function clearOwnedCopies(env) {
   await ensureCardsTable(env);
   const before = await readOwnedCopyCount(env);
-  await env.DB.prepare(`
-    DELETE FROM cards
-    WHERE id LIKE 'owned_%'
-       OR COALESCE(json_extract(card_json, '$.source'), '') = 'pull'
-       OR ${ownerWhere()}
-  `).run();
+  await env.DB.prepare(`DELETE FROM cards WHERE ${ownedCopyWhere()}`).run();
   const after = await readOwnedCopyCount(env);
 
   return {
