@@ -109,7 +109,9 @@ export async function renderPull({ query = {} } = {}) {
     </section>
 
     <section class="pull-device" aria-label="Prototype pull device">
-      <div class="pull-orb">Commune<br />Pull</div>
+      <button class="pull-orb-image-button" type="button" data-pull-open="${selectedCount}" aria-label="Open pull confirmation">
+        <img class="pull-orb-image" src="/assets/commune-pull-orb.svg" alt="Commune Pull" />
+      </button>
     </section>
 
     <section>
