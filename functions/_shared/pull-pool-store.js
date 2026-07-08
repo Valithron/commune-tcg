@@ -5,6 +5,7 @@
    ============================================================================ */
 
 import { normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
+import { getCardTypeSummary, normalizeCardType } from './type-config.js';
 
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -75,6 +76,8 @@ export function normalizeCardRow(row) {
     payload.ownedStatBudgetRange || payload.owned_stat_budget_range,
     { min: staticStatBudget - growthPerLevel, max: staticStatBudget + growthPerLevel }
   );
+  const cardType = normalizeCardType(payload.type || payload.card_type || payload.role || payload.element || 'neutral');
+  const typeSummary = getCardTypeSummary(cardType);
 
   return {
     id: String(payload.id || row.id),
@@ -82,8 +85,14 @@ export function normalizeCardRow(row) {
     name: String(payload.name || payload.card_name || payload.title || 'Unnamed Card'),
     character: String(payload.character || payload.character_id || row.character_id || ''),
     characterId: String(payload.character_id || payload.characterId || payload.character || row.character_id || ''),
-    type: String(payload.type || payload.card_type || payload.role || 'Type'),
-    category: String(payload.category || payload.card_type || payload.type || 'Library'),
+    type: cardType,
+    cardType,
+    card_type: cardType,
+    category: String(payload.category || typeSummary.label || 'Library'),
+    typeLabel: typeSummary.label,
+    typeColor: typeSummary.color,
+    typeIdentity: typeSummary.coreIdentity,
+    typeStatBias: typeSummary.statBias,
     rarity: normalizeRarity(payload.rarity || payload.tier),
     targetRarity: normalizeRarity(payload.targetRarity || payload.target_rarity || payload.rarity_suggestion || payload.rarity || 'common'),
     raritySource,
@@ -93,7 +102,7 @@ export function normalizeCardRow(row) {
     staticStatBudget,
     ownedStatBudgetRange,
     copyStatBudgetVariance: toNumber(payload.copyStatBudgetVariance ?? payload.copy_stat_budget_variance, growthPerLevel),
-    statArchetype: String(payload.statArchetype || payload.stat_archetype || 'balanced'),
+    statArchetype: normalizeCardType(payload.statArchetype || payload.stat_archetype || cardType),
     originRarity,
     originBonusPercent,
     originBonusMultiplier: 1 + originBonusPercent / 100,
