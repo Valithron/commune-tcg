@@ -13,6 +13,8 @@ const createTableSql = `
     card_name TEXT NOT NULL,
     character_id TEXT NOT NULL,
     card_type TEXT NOT NULL,
+    type_suggestions_json TEXT,
+    approved_type_pool_json TEXT,
     rarity_suggestion TEXT NOT NULL,
     pow INTEGER NOT NULL,
     def INTEGER NOT NULL,
@@ -36,6 +38,8 @@ const createTableSql = `
 
 const additiveColumns = [
   ['creator_display_name_override', 'TEXT'],
+  ['type_suggestions_json', 'TEXT'],
+  ['approved_type_pool_json', 'TEXT'],
 ];
 
 async function addColumnIfMissing(env, columnName, definition) {
@@ -50,6 +54,16 @@ async function addColumnIfMissing(env, columnName, definition) {
 
 function cleanText(value, maxLength = 500) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+function safeParseJson(value, fallback = []) {
+  if (!value || typeof value !== 'string') return fallback;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function ensureSubmissionSchema(env) {
@@ -82,6 +96,8 @@ function resolveCreatorDisplayName(row) {
 export function normalizeSubmissionRow(row) {
   const creatorDisplayNameOverride = cleanText(row.creator_display_name_override || '', 120);
   const creatorDisplayName = resolveCreatorDisplayName(row);
+  const typeSuggestions = safeParseJson(row.type_suggestions_json, row.card_type ? [row.card_type] : []);
+  const approvedTypePool = safeParseJson(row.approved_type_pool_json, []);
 
   return {
     id: row.id,
@@ -92,6 +108,10 @@ export function normalizeSubmissionRow(row) {
     cardName: row.card_name,
     characterId: row.character_id,
     cardType: row.card_type,
+    typeSuggestions,
+    typeSuggestionsJson: row.type_suggestions_json || JSON.stringify(typeSuggestions),
+    approvedTypePool,
+    approvedTypePoolJson: row.approved_type_pool_json || JSON.stringify(approvedTypePool),
     raritySuggestion: row.rarity_suggestion,
     stats: {
       pow: Number(row.pow),
@@ -128,6 +148,8 @@ export async function insertSubmission(env, submission) {
       card_name,
       character_id,
       card_type,
+      type_suggestions_json,
+      approved_type_pool_json,
       rarity_suggestion,
       pow,
       def,
@@ -146,7 +168,7 @@ export async function insertSubmission(env, submission) {
       updated_at,
       reviewed_at,
       reviewed_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     submission.id,
     submission.submitterUserId,
@@ -155,6 +177,8 @@ export async function insertSubmission(env, submission) {
     submission.cardName,
     submission.characterId,
     submission.cardType,
+    submission.typeSuggestionsJson || JSON.stringify(submission.typeSuggestions || [submission.cardType]),
+    submission.approvedTypePoolJson || '',
     submission.raritySuggestion,
     submission.pow,
     submission.def,
@@ -173,6 +197,20 @@ export async function insertSubmission(env, submission) {
     submission.updatedAt,
     submission.reviewedAt,
     submission.reviewedBy
+  ).run();
+}
+
+export async function updateSubmissionApprovedTypePool(env, submissionId, approvedTypePoolJson) {
+  await ensureSubmissionSchema(env);
+  await env.DB.prepare(`
+    UPDATE card_submissions
+    SET approved_type_pool_json = ?,
+        updated_at = ?
+    WHERE id = ?
+  `).bind(
+    approvedTypePoolJson || '',
+    new Date().toISOString(),
+    submissionId
   ).run();
 }
 
