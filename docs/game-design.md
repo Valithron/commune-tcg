@@ -270,7 +270,39 @@ Design intent:
 - Type should not punish casual players so heavily that favorite cards feel unusable.
 - The first user-testable version should start with this moderate modifier before increasing matchup penalties.
 
-The exact matchup chart is still under discussion.
+### Current Accepted Type Matchup Chart
+
+| Attacker ↓ / Defender → | Flame | Tide | Bloom | Volt | Shadow | Radiant | Neutral |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Flame** | = | - | + | = | + | - | = |
+| **Tide** | + | = | - | - | = | + | = |
+| **Bloom** | - | + | = | + | - | = | = |
+| **Volt** | = | + | - | = | - | + | = |
+| **Shadow** | - | = | + | + | = | - | = |
+| **Radiant** | + | - | = | - | + | = | = |
+| **Neutral** | = | = | = | = | = | = | = |
+
+Legend:
+
+- `+` means the attacker has advantage.
+- `-` means the attacker has disadvantage.
+- `=` means the matchup is neutral.
+
+Reasoning summary:
+
+- **Flame** beats **Bloom** because fire burns growth, and beats **Shadow** because flame reveals and drives back darkness.
+- **Flame** loses to **Tide** because water douses fire, and loses to **Radiant** because radiant order/discipline contains raw flame.
+- **Tide** beats **Flame** because water extinguishes fire, and beats **Radiant** because water refracts and erodes rigid light/protection.
+- **Tide** loses to **Bloom** because growth thrives on water, and loses to **Volt** because electricity punishes conductive water.
+- **Bloom** beats **Tide** because plant life drinks water, and beats **Volt** because roots/earth ground unstable electricity.
+- **Bloom** loses to **Flame** because fire burns nature, and loses to **Shadow** because blight/corruption weakens living growth.
+- **Volt** beats **Tide** because electricity conducts through water, and beats **Radiant** because fast unstable energy overloads radiant shields/order.
+- **Volt** loses to **Bloom** because growth and rooted earth ground it, and loses to **Shadow** because shadow disrupts and smothers unstable energy.
+- **Shadow** beats **Bloom** because blight corrupts life, and beats **Volt** because concealment/drain disrupts unstable energy.
+- **Shadow** loses to **Flame** because fire exposes it, and loses to **Radiant** because radiance purges darkness.
+- **Radiant** beats **Shadow** because light purifies darkness, and beats **Flame** because divine/ordered power contains reckless fire.
+- **Radiant** loses to **Tide** because water flow/refraction erodes rigid protection, and loses to **Volt** because overload disrupts radiant shielding.
+- **Neutral** has no strengths and no weaknesses. It is deliberately stable and easy to understand.
 
 ## Battle Model
 
@@ -481,11 +513,10 @@ Before adding abilities or deeper systems, the game should first test whether th
 4. Should submitters suggest stat personality, or only type/rarity/flavor?
 5. How much should character identity influence stats?
 6. How much should type influence stats?
-7. What should the type matchup chart be?
-8. How should seasonal bosses reward players?
-9. What should passive farming produce beyond gold, if anything?
-10. What should character mastery/favorite-character progression look like?
-11. Should every card line have its own pool, or should there be a general pool plus limited banners?
+7. How should seasonal bosses reward players?
+8. What should passive farming produce beyond gold, if anything?
+9. What should character mastery/favorite-character progression look like?
+10. Should every card line have its own pool, or should there be a general pool plus limited banners?
 
 ## Current Near-Term Direction
 
@@ -496,10 +527,9 @@ Do not add trading yet.
 
 Next likely design priorities:
 
-1. Define the type matchup chart.
-2. Define how strongly type affects stat tendencies.
-3. Define rarity/stat ranges.
-4. Define native rarity bonuses.
-5. Define duplicate/shard/evolution rules.
-6. Define the first testable battle model.
-7. Define the vault display/filter model.
+1. Define how strongly type affects stat tendencies.
+2. Define rarity/stat ranges.
+3. Define native rarity bonuses.
+4. Define duplicate/shard/evolution rules.
+5. Define the first testable battle model.
+6. Define the vault display/filter model.
