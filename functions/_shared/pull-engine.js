@@ -40,39 +40,54 @@ function readImageKey(card) { return card.imageKey || card.image_key || card.ima
 function readImageUrl(card, imageKey = readImageKey(card)) { return card.imageUrl || card.image_url || card.artUrl || card.art_url || imageUrlFromKey(imageKey); }
 function readCrop(card) { return card.crop || card.crop_json || card.cropJson || card.image_crop || card.imageCrop || {}; }
 function chooseRandomType(pool) { const normalized = normalizeCardTypePool(pool, ['neutral'], { max: 3 }); return normalized[Math.floor(randomFloat() * normalized.length)] || normalized[0] || 'neutral'; }
+function resolvePullUser(user = null) { return { id: String(user?.id || user?.slotId || temporaryPullUserId), displayName: String(user?.displayName || user?.username || temporaryPullUserDisplayName) }; }
 
 async function tableExists(env, tableName) { const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first(); return Boolean(row); }
-async function ensurePullSchema(env, now) {
+async function ensurePullSchema(env, now, user = null) {
+  const activeUser = resolvePullUser(user);
   await env.DB.prepare(userResourcesSql).run();
   await env.DB.prepare(pullHistorySql).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pull_history_user_created ON pull_history (user_id, created_at)').run();
-  await env.DB.prepare(`INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`).bind(temporaryPullUserId, temporaryStartingTickets, 0, now, now).run();
+  await env.DB.prepare(`INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`).bind(activeUser.id, temporaryStartingTickets, 0, now, now).run();
 }
-async function readUserResources(env) { return env.DB.prepare(`SELECT user_id AS userId, pull_tickets AS pullTickets, gold, created_at AS createdAt, updated_at AS updatedAt FROM user_resources WHERE user_id = ? LIMIT 1`).bind(temporaryPullUserId).first(); }
-export async function readPullResources(env) { const exists = await tableExists(env, 'user_resources'); if (!exists) return { userId: temporaryPullUserId, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: false, note: 'Live pull resources have not been created yet.' }; const resources = await readUserResources(env); if (!resources) return { userId: temporaryPullUserId, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: true, note: 'Sterling resources row has not been created yet.' }; return { userId: resources.userId, pullTickets: Number(resources.pullTickets), gold: Number(resources.gold || 0), createdAt: resources.createdAt, updatedAt: resources.updatedAt, bootstrapped: true, tableExists: true, note: '' }; }
-async function readOwnedCardSummary(env, ownedCardId) {
+async function readUserResources(env, user = null) {
+  const activeUser = resolvePullUser(user);
+  return env.DB.prepare(`SELECT user_id AS userId, pull_tickets AS pullTickets, gold, created_at AS createdAt, updated_at AS updatedAt FROM user_resources WHERE user_id = ? LIMIT 1`).bind(activeUser.id).first();
+}
+export async function readPullResources(env, { user = null } = {}) {
+  const activeUser = resolvePullUser(user);
+  const exists = await tableExists(env, 'user_resources');
+  if (!exists) return { userId: activeUser.id, ownerDisplayName: activeUser.displayName, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: false, note: 'Live pull resources have not been created yet.' };
+  const resources = await readUserResources(env, activeUser);
+  if (!resources) return { userId: activeUser.id, ownerDisplayName: activeUser.displayName, pullTickets: temporaryStartingTickets, gold: 0, bootstrapped: false, tableExists: true, note: `${activeUser.displayName} resources row has not been created yet.` };
+  return { userId: resources.userId, ownerDisplayName: activeUser.displayName, pullTickets: Number(resources.pullTickets), gold: Number(resources.gold || 0), createdAt: resources.createdAt, updatedAt: resources.updatedAt, bootstrapped: true, tableExists: true, note: '' };
+}
+async function readOwnedCardSummary(env, ownedCardId, owner = null) {
+  const activeUser = resolvePullUser(owner);
   if (!ownedCardId) return null;
   const row = await env.DB.prepare(`SELECT id, owner_user_id, card_json FROM cards WHERE id = ? LIMIT 1`).bind(ownedCardId).first();
   if (!row) return null;
   const parsed = safeParseJson(row.card_json);
   const payload = parsed?.card || parsed?.data || parsed || {};
   const imageKey = readImageKey(payload);
-  return { ownedCardId: row.id, ownerUserId: row.owner_user_id || '', ownerDisplayName: row.owner_user_id === temporaryPullUserId ? temporaryPullUserDisplayName : row.owner_user_id || 'Unknown owner', cardTitle: payload.name || payload.card_name || payload.title || 'Unknown card', actualRarity: payload.rarity || 'common', characterId: payload.character_id || payload.characterId || payload.character || '', creatorDisplayName: payload.creatorDisplayName || payload.creator_display_name || payload.creator || '', creatorUserId: payload.creatorUserId || payload.creator_user_id || '', imageKey, imageUrl: readImageUrl(payload, imageKey) };
+  return { ownedCardId: row.id, ownerUserId: row.owner_user_id || '', ownerDisplayName: row.owner_user_id === activeUser.id ? activeUser.displayName : row.owner_user_id || 'Unknown owner', cardTitle: payload.name || payload.card_name || payload.title || 'Unknown card', actualRarity: payload.rarity || 'common', characterId: payload.character_id || payload.characterId || payload.character || '', creatorDisplayName: payload.creatorDisplayName || payload.creator_display_name || payload.creator || '', creatorUserId: payload.creatorUserId || payload.creator_user_id || '', imageKey, imageUrl: readImageUrl(payload, imageKey) };
 }
-async function hydrateHistoryResult(env, result, userId) {
-  const ownerUserId = result.ownerUserId || userId || temporaryPullUserId;
+async function hydrateHistoryResult(env, result, userId, owner = null) {
+  const activeUser = resolvePullUser(owner);
+  const ownerUserId = result.ownerUserId || userId || activeUser.id;
   const alreadySemantic = result.cardTitle && result.ownerDisplayName;
   if (alreadySemantic) return { ...result, ownerUserId, ownerDisplayName: result.ownerDisplayName };
-  const ownedSummary = await readOwnedCardSummary(env, result.ownedCardId);
-  return { ...result, ownerUserId: result.ownerUserId || ownedSummary?.ownerUserId || ownerUserId, ownerDisplayName: result.ownerDisplayName || ownedSummary?.ownerDisplayName || temporaryPullUserDisplayName, cardTitle: result.cardTitle || ownedSummary?.cardTitle || result.sourceCardTitle || 'Unknown card', actualRarity: result.actualRarity || ownedSummary?.actualRarity || result.selectedRarity || 'common', characterId: result.characterId || ownedSummary?.characterId || '', creatorDisplayName: result.creatorDisplayName || ownedSummary?.creatorDisplayName || '', creatorUserId: result.creatorUserId || ownedSummary?.creatorUserId || '', imageKey: result.imageKey || ownedSummary?.imageKey || '', imageUrl: result.imageUrl || ownedSummary?.imageUrl || '', historyHydrated: Boolean(ownedSummary) };
+  const ownedSummary = await readOwnedCardSummary(env, result.ownedCardId, activeUser);
+  return { ...result, ownerUserId: result.ownerUserId || ownedSummary?.ownerUserId || ownerUserId, ownerDisplayName: result.ownerDisplayName || ownedSummary?.ownerDisplayName || activeUser.displayName, cardTitle: result.cardTitle || ownedSummary?.cardTitle || result.sourceCardTitle || 'Unknown card', actualRarity: result.actualRarity || ownedSummary?.actualRarity || result.selectedRarity || 'common', characterId: result.characterId || ownedSummary?.characterId || '', creatorDisplayName: result.creatorDisplayName || ownedSummary?.creatorDisplayName || '', creatorUserId: result.creatorUserId || ownedSummary?.creatorUserId || '', imageKey: result.imageKey || ownedSummary?.imageKey || '', imageUrl: result.imageUrl || ownedSummary?.imageUrl || '', historyHydrated: Boolean(ownedSummary) };
 }
-export async function readPullHistory(env, { limit = 20 } = {}) {
+export async function readPullHistory(env, { limit = 20, user = null } = {}) {
+  const activeUser = resolvePullUser(user);
   const exists = await tableExists(env, 'pull_history');
   if (!exists) return { tableExists: false, totalReturned: 0, pulls: [] };
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-  const result = await env.DB.prepare(`SELECT id, user_id AS userId, pull_count AS pullCount, ticket_cost AS ticketCost, result_json AS resultJson, created_at AS createdAt FROM pull_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(temporaryPullUserId, safeLimit).all();
+  const result = await env.DB.prepare(`SELECT id, user_id AS userId, pull_count AS pullCount, ticket_cost AS ticketCost, result_json AS resultJson, created_at AS createdAt FROM pull_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(activeUser.id, safeLimit).all();
   const pulls = [];
-  for (const row of result.results || []) { let rawResults = []; try { rawResults = JSON.parse(row.resultJson || '[]'); } catch { rawResults = []; } const results = []; for (const rawResult of rawResults) results.push(await hydrateHistoryResult(env, rawResult, row.userId)); pulls.push({ id: row.id, userId: row.userId, ownerUserId: row.userId, ownerDisplayName: row.userId === temporaryPullUserId ? temporaryPullUserDisplayName : row.userId, pullCount: Number(row.pullCount), ticketCost: Number(row.ticketCost), results, createdAt: row.createdAt }); }
+  for (const row of result.results || []) { let rawResults = []; try { rawResults = JSON.parse(row.resultJson || '[]'); } catch { rawResults = []; } const results = []; for (const rawResult of rawResults) results.push(await hydrateHistoryResult(env, rawResult, row.userId, activeUser)); pulls.push({ id: row.id, userId: row.userId, ownerUserId: row.userId, ownerDisplayName: row.userId === activeUser.id ? activeUser.displayName : row.userId, pullCount: Number(row.pullCount), ticketCost: Number(row.ticketCost), results, createdAt: row.createdAt }); }
   return { tableExists: true, totalReturned: pulls.length, pulls };
 }
 function chooseWeightedRarity(rarityOdds) { const totalWeight = rarityOdds.reduce((total, entry) => total + entry.weight, 0); let roll = randomFloat() * totalWeight; for (const entry of rarityOdds) { roll -= entry.weight; if (roll <= 0) return entry.rarity; } return rarityOdds[0]?.rarity || 'common'; }
@@ -80,7 +95,8 @@ function chooseRandomCard(cards) { return cards.length ? cards[Math.floor(random
 function chooseCardForRarity(cards, rarity) { const fromRarity = chooseRandomCard(cards.filter((card) => card.rarity === rarity)); return fromRarity ? { card: fromRarity, fallbackUsed: false } : { card: chooseRandomCard(cards), fallbackUsed: true }; }
 function creatorFields(baseCard) { const creatorDisplayName = cleanText(baseCard.creatorDisplayName || baseCard.creator || ''); const creatorUserId = cleanText(baseCard.creatorUserId || ''); return { creatorDisplayName, creatorUserId }; }
 
-function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
+function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now, owner = null }) {
+  const activeUser = resolvePullUser(owner);
   const creator = creatorFields(baseCard);
   const approvedTypePool = normalizeCardTypePool(baseCard.approvedTypePool || baseCard.approved_type_pool || baseCard.type || baseCard.cardType || 'neutral', ['neutral'], { max: 3 });
   const selectedType = chooseRandomType(approvedTypePool);
@@ -196,8 +212,8 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
     creator_user_id: creator.creatorUserId,
     creatorUserId: creator.creatorUserId,
     owned: true,
-    owner_user_id: temporaryPullUserId,
-    ownerDisplayName: temporaryPullUserDisplayName,
+    owner_user_id: activeUser.id,
+    ownerDisplayName: activeUser.displayName,
     level: ownedTraits.progression.level,
     xp: ownedTraits.progression.xp,
     copies: ownedTraits.progression.copies,
@@ -211,26 +227,26 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now }) {
 }
 
 function simulateSelections(cards, count, rarityOdds) { const results = []; for (let index = 0; index < count; index += 1) { const selectedRarity = chooseWeightedRarity(rarityOdds); const selection = chooseCardForRarity(cards, selectedRarity); if (selection.card) results.push({ index: index + 1, selectedRarity, actualRarity: selection.card.rarity, fallbackUsed: selection.fallbackUsed, baseCard: selection.card }); } return results; }
-function buildHistoryResult(result) { const creator = creatorFields(result.baseCard); const imageKey = readImageKey(result.baseCard); return { index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, imageKey, imageUrl: readImageUrl(result.baseCard, imageKey), sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId };
-}
+function buildHistoryResult(result, owner = null) { const activeUser = resolvePullUser(owner); const creator = creatorFields(result.baseCard); const imageKey = readImageKey(result.baseCard); return { index: result.index, ownerUserId: activeUser.id, ownerDisplayName: activeUser.displayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, imageKey, imageUrl: readImageUrl(result.baseCard, imageKey), sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId }; }
 
-export async function resolvePull(env, { count }) {
+export async function resolvePull(env, { count, user = null }) {
+  const activeUser = resolvePullUser(user);
   const now = new Date().toISOString();
   const pullCount = clampPullCount(count);
   const option = pullOptions[pullCount] || pullOptions[1];
   const ticketCost = option.ticketCost;
   const rarityOdds = getRarityOddsPercentages();
-  await ensurePullSchema(env, now);
-  const resources = await readUserResources(env);
+  await ensurePullSchema(env, now, activeUser);
+  const resources = await readUserResources(env, activeUser);
   if (!resources || Number(resources.pullTickets) < ticketCost) return { ok: false, status: 409, error: 'Not enough pull tickets.', resources, ticketCost };
   const pool = await readPullPool(env);
   if (!pool.cards.length) return { ok: false, status: 409, error: 'No pull-eligible cards are available.', poolReadiness: pool.readiness };
   const pullId = buildId('pull');
   const selections = simulateSelections(pool.cards, pullCount, rarityOdds);
-  const grantedResults = selections.map((selection) => { const ownedCardId = buildId('owned'); const ownedCard = buildOwnedCardPayload({ baseCard: selection.baseCard, ownedCardId, pullId, now }); return { ...selection, ownedCardId, ownedCard }; });
-  const historyResults = grantedResults.map(buildHistoryResult);
-  const statements = [env.DB.prepare(`UPDATE user_resources SET pull_tickets = pull_tickets - ?, updated_at = ? WHERE user_id = ? AND pull_tickets >= ?`).bind(ticketCost, now, temporaryPullUserId, ticketCost), ...grantedResults.map((result) => env.DB.prepare(`INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(result.ownedCardId, temporaryPullUserId, result.baseCard.characterId, JSON.stringify(result.ownedCard), now, now)), env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(pullId, temporaryPullUserId, pullCount, ticketCost, JSON.stringify(historyResults), now)];
+  const grantedResults = selections.map((selection) => { const ownedCardId = buildId('owned'); const ownedCard = buildOwnedCardPayload({ baseCard: selection.baseCard, ownedCardId, pullId, now, owner: activeUser }); return { ...selection, ownedCardId, ownedCard }; });
+  const historyResults = grantedResults.map((result) => buildHistoryResult(result, activeUser));
+  const statements = [env.DB.prepare(`UPDATE user_resources SET pull_tickets = pull_tickets - ?, updated_at = ? WHERE user_id = ? AND pull_tickets >= ?`).bind(ticketCost, now, activeUser.id, ticketCost), ...grantedResults.map((result) => env.DB.prepare(`INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(result.ownedCardId, activeUser.id, result.baseCard.characterId, JSON.stringify(result.ownedCard), now, now)), env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(pullId, activeUser.id, pullCount, ticketCost, JSON.stringify(historyResults), now)];
   await env.DB.batch(statements);
-  const updatedResources = await readUserResources(env);
-  return { ok: true, status: 200, pullId, userId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, count: pullCount, ticketCost, ticketsBefore: Number(resources.pullTickets), ticketsAfter: Number(updatedResources.pullTickets), results: grantedResults.map((result) => ({ index: result.index, ownerUserId: temporaryPullUserId, ownerDisplayName: temporaryPullUserDisplayName, cardTitle: result.baseCard.name, selectedRarity: result.selectedRarity, actualRarity: result.actualRarity, fallbackUsed: result.fallbackUsed, sourceCard: result.baseCard, ownedCard: result.ownedCard, ownedCardId: result.ownedCardId })), poolSummary: { eligibleCount: pool.eligibleCount, approvedSubmissionCount: pool.approvedSubmissionCount, byRarity: pool.byRarity, readiness: pool.readiness } };
+  const updatedResources = await readUserResources(env, activeUser);
+  return { ok: true, status: 200, pullId, userId: activeUser.id, ownerDisplayName: activeUser.displayName, count: pullCount, ticketCost, ticketsBefore: Number(resources.pullTickets), ticketsAfter: Number(updatedResources.pullTickets), results: grantedResults.map((result) => ({ index: result.index, ownerUserId: activeUser.id, ownerDisplayName: activeUser.displayName, cardTitle: result.baseCard.name, selectedRarity: result.selectedRarity, actualRarity: result.actualRarity, fallbackUsed: result.fallbackUsed, sourceCard: result.baseCard, ownedCard: result.ownedCard, ownedCardId: result.ownedCardId })), poolSummary: { eligibleCount: pool.eligibleCount, approvedSubmissionCount: pool.approvedSubmissionCount, byRarity: pool.byRarity, readiness: pool.readiness } };
 }
