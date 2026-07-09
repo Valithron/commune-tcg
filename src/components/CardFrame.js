@@ -6,6 +6,11 @@
 
 import { escapeHtml, titleCase } from './format.js';
 
+const rarityFrameAssets = import.meta.glob('../assets/card-frames/*.{png,webp,avif}', {
+  eager: true,
+  import: 'default',
+});
+
 const characterMap = [
   { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#789461' },
   { key: 'sterling', name: 'Sterling', abbr: 'ST', color: '#c4c5db' },
@@ -46,7 +51,7 @@ function toCropNumber(value, fallback, min, max) {
     return fallback;
   }
 
-  return Math.min(Math.max(parsed, min), max);
+  return Math.min(Math.max(parsed, min, max === undefined ? parsed : max), max);
 }
 
 function normalizeCrop(card) {
@@ -208,6 +213,34 @@ function getAbilityIcon(card) {
   return card.abilityIcon || card.ability_icon || card.icon || '✦';
 }
 
+function getRarityFrameUrl(rarity) {
+  const normalizedRarity = normalizeRarity(rarity);
+  const rarityPattern = new RegExp(`(^|[-_/])${normalizedRarity}([-_.]|$)`, 'i');
+  const matches = Object.entries(rarityFrameAssets)
+    .filter(([path]) => rarityPattern.test(path))
+    .sort(([left], [right]) => {
+      const leftFinal = new RegExp(`card-frame-${normalizedRarity}\\.(png|webp|avif)$`, 'i').test(left) ? 0 : 1;
+      const rightFinal = new RegExp(`card-frame-${normalizedRarity}\\.(png|webp|avif)$`, 'i').test(right) ? 0 : 1;
+      return leftFinal - rightFinal || left.localeCompare(right, undefined, { numeric: true });
+    });
+
+  return matches[0]?.[1] || '';
+}
+
+function renderRarityFrameOverlay(rarity, showRarityFrame) {
+  if (!showRarityFrame) {
+    return '';
+  }
+
+  const frameUrl = getRarityFrameUrl(rarity);
+
+  if (!frameUrl) {
+    return '';
+  }
+
+  return `<img class="card-rarity-frame-overlay" src="${escapeHtml(frameUrl)}" alt="" aria-hidden="true" loading="lazy" />`;
+}
+
 function renderIdentityLine(card, rarity) {
   const character = findCharacter(card);
   const type = getCardTypeMeta(card);
@@ -236,6 +269,7 @@ export function renderCardFrame(card, options = {}) {
     href = '',
     showOwnership = true,
     showStats = true,
+    showRarityFrame = false,
     density = 'standard',
     context = 'default',
   } = options;
@@ -247,7 +281,8 @@ export function renderCardFrame(card, options = {}) {
     'tcg-card',
     `tcg-card--${escapeHtml(density)}`,
     `tcg-card--context-${escapeHtml(context)}`,
-  ].join(' ');
+    showRarityFrame ? 'tcg-card--rarity-frame' : '',
+  ].filter(Boolean).join(' ');
 
   return `
     <${tagName} class="${className}" data-rarity="${escapeHtml(rarity)}"${hrefAttribute} aria-label="${escapeHtml(card.name)} card">
@@ -255,6 +290,7 @@ export function renderCardFrame(card, options = {}) {
       <div class="card-art" aria-hidden="true">
         ${renderCardArt(card)}
       </div>
+      ${renderRarityFrameOverlay(rarity, showRarityFrame)}
       <div class="card-nameplate">
         <h3 class="card-title">${escapeHtml(card.name)}</h3>
       </div>
