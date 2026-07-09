@@ -232,7 +232,7 @@ export function initPullReveal(root) {
     }, 560);
   }
 
-  function revealCard(revealCard) {
+  function revealOne(revealCard) {
     if (!revealCard || revealCard.classList.contains('is-revealed')) {
       return;
     }
@@ -258,19 +258,19 @@ export function initPullReveal(root) {
         return;
       }
 
-      window.setTimeout(() => revealCard(revealCard), index * 90);
+      window.setTimeout(() => revealOne(revealCard), index * 90);
     });
   }
 
   revealCards.forEach((revealCard) => {
-    revealCard.addEventListener('click', () => revealCard(revealCard));
+    revealCard.addEventListener('click', () => revealOne(revealCard));
     revealCard.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') {
         return;
       }
 
       event.preventDefault();
-      revealCard(revealCard);
+      revealOne(revealCard);
     });
   });
 
