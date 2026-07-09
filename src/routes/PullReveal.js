@@ -1,4 +1,5 @@
 import { renderCardFrame } from '../components/CardFrame.js';
+import { fitCardTitles } from '../components/cardTitleFit.js';
 import { escapeHtml, titleCase } from '../components/format.js';
 import { clearPullRevealPayload, readPullRevealPayload } from '../services/pullRevealStore.js';
 
@@ -56,6 +57,28 @@ function renderRevealCard(card, index, { mini = false } = {}) {
         </div>
         <div class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
           ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: mini ? 'thumbnail' : 'standard' })}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPreviewModal(cards) {
+  return `
+    <div class="pull-reveal-preview" data-pull-reveal-preview hidden aria-hidden="true" tabindex="-1">
+      <div class="pull-reveal-preview-panel" data-pull-reveal-preview-panel role="dialog" aria-modal="true" aria-labelledby="pull-reveal-preview-title">
+        <button class="pull-reveal-preview-handle" type="button" data-pull-preview-close aria-label="Swipe down or tap to close card preview"></button>
+        <div class="pull-reveal-preview-copy">
+          <span class="section-kicker">Card Preview</span>
+          <h2 id="pull-reveal-preview-title">Expanded View</h2>
+        </div>
+        <button class="pull-reveal-preview-close" type="button" data-pull-preview-close aria-label="Close card preview">×</button>
+        <div class="pull-reveal-preview-cards">
+          ${cards.map((card, index) => `
+            <article class="pull-reveal-preview-card" data-pull-preview-card data-preview-index="${index}" hidden>
+              ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: 'standard' })}
+            </article>
+          `).join('')}
         </div>
       </div>
     </div>
@@ -153,6 +176,8 @@ function renderFiveReveal(cards) {
           <a class="button button-secondary" href="#/pull/confirm?count=5" data-pull-reveal-clear>Pull Again</a>
         </div>
       </div>
+
+      ${renderPreviewModal(cards)}
     </section>
   `;
 }
@@ -183,7 +208,12 @@ export function initPullReveal(root) {
   const copy = revealRoot.querySelector('[data-pull-reveal-copy]');
   const burst = revealRoot.querySelector('[data-pull-reveal-burst]');
   const revealAllButton = revealRoot.querySelector('[data-pull-reveal-all]');
+  const preview = revealRoot.querySelector('[data-pull-reveal-preview]');
+  const previewPanel = revealRoot.querySelector('[data-pull-reveal-preview-panel]');
+  const previewCards = Array.from(revealRoot.querySelectorAll('[data-pull-preview-card]'));
   const isMulti = revealRoot.dataset.revealMode === 'multi';
+  let previewCloseTimer = null;
+  let previewDragState = null;
 
   function updatePrompt(text) {
     if (!prompt) {
@@ -201,6 +231,46 @@ export function initPullReveal(root) {
     return revealCards.length > 0 && revealCards.every((card) => card.classList.contains('is-revealed'));
   }
 
+  function openPreview(index) {
+    if (!isMulti || !preview || !previewPanel || !areAllCardsRevealed()) {
+      return;
+    }
+
+    window.clearTimeout(previewCloseTimer);
+    previewCards.forEach((card) => {
+      card.hidden = card.dataset.previewIndex !== String(index);
+    });
+    preview.hidden = false;
+    preview.setAttribute('aria-hidden', 'false');
+    preview.classList.remove('is-closing');
+    previewPanel.style.transform = '';
+
+    window.requestAnimationFrame(() => {
+      preview.classList.add('is-open');
+      preview.focus({ preventScroll: true });
+      fitCardTitles(preview);
+    });
+  }
+
+  function closePreview() {
+    if (!preview || !preview.classList.contains('is-open')) {
+      return;
+    }
+
+    preview.classList.remove('is-open');
+    preview.classList.add('is-closing');
+    preview.setAttribute('aria-hidden', 'true');
+    if (previewPanel) {
+      previewPanel.style.transform = '';
+    }
+
+    window.clearTimeout(previewCloseTimer);
+    previewCloseTimer = window.setTimeout(() => {
+      preview.classList.remove('is-closing');
+      preview.hidden = true;
+    }, 240);
+  }
+
   function completeRevealIfReady() {
     if (!areAllCardsRevealed()) {
       return;
@@ -216,7 +286,7 @@ export function initPullReveal(root) {
       burst.classList.add('is-active');
     }
 
-    updatePrompt(isMulti ? 'All Revealed' : 'Revealed');
+    updatePrompt(isMulti ? 'Tap a Card to Inspect' : 'Revealed');
 
     if (revealAllButton) {
       revealAllButton.hidden = true;
@@ -263,18 +333,95 @@ export function initPullReveal(root) {
   }
 
   revealCards.forEach((revealCard) => {
-    revealCard.addEventListener('click', () => revealOne(revealCard));
+    revealCard.addEventListener('click', () => {
+      if (isMulti && revealCard.classList.contains('is-revealed') && areAllCardsRevealed()) {
+        openPreview(revealCard.dataset.revealIndex || '0');
+        return;
+      }
+
+      revealOne(revealCard);
+    });
     revealCard.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') {
         return;
       }
 
       event.preventDefault();
+      if (isMulti && revealCard.classList.contains('is-revealed') && areAllCardsRevealed()) {
+        openPreview(revealCard.dataset.revealIndex || '0');
+        return;
+      }
+
       revealOne(revealCard);
     });
   });
 
   revealAllButton?.addEventListener('click', revealAll);
+
+  preview?.addEventListener('click', (event) => {
+    if (event.target === preview) {
+      closePreview();
+    }
+  });
+
+  preview?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closePreview();
+    }
+  });
+
+  revealRoot.querySelectorAll('[data-pull-preview-close]').forEach((button) => {
+    button.addEventListener('click', closePreview);
+  });
+
+  previewPanel?.addEventListener('pointerdown', (event) => {
+    const target = event.target;
+    const isHandle = target.closest?.('[data-pull-preview-close]') || target.closest?.('.pull-reveal-preview-copy');
+    if (!isHandle) {
+      return;
+    }
+
+    previewDragState = {
+      startY: event.clientY,
+      distance: 0,
+    };
+    previewPanel.classList.add('is-dragging');
+    previewPanel.setPointerCapture?.(event.pointerId);
+  });
+
+  previewPanel?.addEventListener('pointermove', (event) => {
+    if (!previewDragState || !previewPanel) {
+      return;
+    }
+
+    const distance = Math.max(0, event.clientY - previewDragState.startY);
+    previewDragState.distance = distance;
+    previewPanel.style.transform = `translateY(${distance}px)`;
+    if (preview) {
+      preview.style.opacity = String(Math.max(0.35, 1 - distance / 360));
+    }
+  });
+
+  function endPreviewDrag() {
+    if (!previewDragState || !previewPanel) {
+      return;
+    }
+
+    const shouldClose = previewDragState.distance > 80;
+    previewDragState = null;
+    previewPanel.classList.remove('is-dragging');
+    previewPanel.style.transform = '';
+    if (preview) {
+      preview.style.opacity = '';
+    }
+
+    if (shouldClose) {
+      closePreview();
+    }
+  }
+
+  previewPanel?.addEventListener('pointerup', endPreviewDrag);
+  previewPanel?.addEventListener('pointercancel', endPreviewDrag);
 
   revealRoot.querySelectorAll('[data-pull-reveal-clear]').forEach((link) => {
     link.addEventListener('click', () => clearPullRevealPayload());
