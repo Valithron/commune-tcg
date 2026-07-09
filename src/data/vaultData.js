@@ -21,10 +21,113 @@ function currentOwner() {
   };
 }
 
+function slugify(value) {
+  return String(value || 'card')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'card';
+}
+
+function normalizeBool(value) {
+  if (typeof value === 'boolean') return value;
+  const text = String(value ?? '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'y', 'on'].includes(text);
+}
+
+function readCardImageIdentity(card) {
+  return card?.imageKey
+    || card?.image_key
+    || card?.imageUrl
+    || card?.image_url
+    || card?.image_path
+    || card?.image
+    || card?.art_key
+    || card?.object_key
+    || card?.r2_key
+    || '';
+}
+
+function resolveDuplicateGroupKey(card) {
+  return card?.duplicateGroupKey
+    || card?.duplicate_group_key
+    || (card?.templateId ? `template:${slugify(card.templateId)}` : '')
+    || (card?.template_id ? `template:${slugify(card.template_id)}` : '')
+    || (card?.sourceCardId ? `source-card:${slugify(card.sourceCardId)}` : '')
+    || (card?.source_card_id ? `source-card:${slugify(card.source_card_id)}` : '')
+    || (card?.sourcePoolCardId ? `source-pool:${slugify(card.sourcePoolCardId)}` : '')
+    || (card?.source_pool_card_id ? `source-pool:${slugify(card.source_pool_card_id)}` : '')
+    || (card?.sourceSubmissionId ? `submission:${slugify(card.sourceSubmissionId)}` : '')
+    || (card?.source_submission_id ? `submission:${slugify(card.source_submission_id)}` : '')
+    || `fingerprint:${slugify(card?.character || card?.characterId || card?.character_id)}:${slugify(card?.name || card?.title)}:${slugify(card?.rarity)}:${slugify(readCardImageIdentity(card))}`;
+}
+
+function isSpecialDuplicateCopy(card) {
+  const copyTraits = card?.copyTraits || card?.copy_traits || {};
+  const progression = card?.progression || {};
+  const specialValues = [
+    card?.locked,
+    card?.isLocked,
+    card?.is_locked,
+    card?.favorite,
+    card?.favorited,
+    card?.isFavorite,
+    card?.is_favorite,
+    card?.foil,
+    card?.holo,
+    card?.holographic,
+    card?.mint,
+    card?.specialTreatment,
+    card?.special_treatment,
+    copyTraits?.locked,
+    copyTraits?.favorite,
+    copyTraits?.favorited,
+    copyTraits?.foil,
+    copyTraits?.holo,
+    copyTraits?.holographic,
+    copyTraits?.mint,
+    progression?.locked,
+    progression?.favorite,
+    progression?.favorited,
+  ];
+
+  return Number(card?.level || 1) > 1 || Number(card?.xp || 0) > 0 || specialValues.some(normalizeBool);
+}
+
+function groupVaultDuplicateCopies(cards = []) {
+  const groups = new Map();
+
+  cards.forEach((card, index) => {
+    const ownerId = card?.ownerUserId || card?.owner_user_id || currentOwner().id || 'unknown';
+    const duplicateGroupKey = resolveDuplicateGroupKey(card);
+    const groupKey = `${ownerId}::${duplicateGroupKey}`;
+
+    if (!groups.has(groupKey)) groups.set(groupKey, { firstIndex: index, cards: [] });
+    groups.get(groupKey).cards.push({ ...card, duplicateGroupKey, duplicateSpecial: card?.duplicateSpecial ?? isSpecialDuplicateCopy(card), __vaultOriginalIndex: index });
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => a.firstIndex - b.firstIndex)
+    .flatMap((group) => group.cards
+      .sort((a, b) => {
+        const specialDelta = Number(a.duplicateSpecial) - Number(b.duplicateSpecial);
+        if (specialDelta) return specialDelta;
+        return a.__vaultOriginalIndex - b.__vaultOriginalIndex;
+      })
+      .map((card, index) => {
+        const { __vaultOriginalIndex, ...cleanCard } = card;
+        return {
+          ...cleanCard,
+          duplicateGroupCount: group.cards.length,
+          duplicateGroupIndex: index + 1,
+        };
+      }));
+}
+
 function mockVault(errorMessage = '') {
   const owner = currentOwner();
   return {
-    cards: ownedCards,
+    cards: groupVaultDuplicateCopies(ownedCards),
     source: 'mock',
     selectedOwnerUserId: owner.id,
     ownerDisplayName: owner.displayName,
@@ -68,11 +171,13 @@ export async function loadVaultCards({ force = false } = {}) {
     }
 
     vaultCache = {
-      cards: payload.cards,
+      cards: groupVaultDuplicateCopies(payload.cards),
       source: 'backend',
       selectedOwnerUserId: payload.selectedOwnerUserId || owner.id,
       ownerDisplayName: payload.ownerDisplayName || owner.displayName,
       ownerUserIds: payload.ownerUserIds || [],
+      duplicateGrouping: payload.duplicateGrouping || { enabled: true },
+      duplicateGroups: payload.duplicateGroups || [],
       warnings: payload.warnings || [],
     };
     vaultCacheOwner = owner.id;
