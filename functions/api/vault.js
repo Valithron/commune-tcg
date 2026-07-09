@@ -1,3 +1,4 @@
+import { getSessionUser } from '../_shared/auth.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 
 const nameColumns = ['name', 'card_name', 'title'];
@@ -120,11 +121,7 @@ function normalizeOwnedRow(row) {
 function ownerWhere() { return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`; }
 async function readOwnerCounts(env) { const result = await env.DB.prepare(`SELECT owner_user_id AS ownerUserId, COUNT(*) AS cardCount FROM cards WHERE ${ownerWhere()} GROUP BY owner_user_id ORDER BY cardCount DESC LIMIT 50`).all(); return result.results || []; }
 async function readOwnedRows(env, ownerUserId) {
-  if (ownerUserId) {
-    const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} AND CAST(owner_user_id AS TEXT) = ? ORDER BY updated_at DESC, created_at DESC LIMIT 500`).bind(String(ownerUserId)).all();
-    return result.results || [];
-  }
-  const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} ORDER BY owner_user_id ASC, updated_at DESC, created_at DESC LIMIT 500`).all();
+  const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} AND CAST(owner_user_id AS TEXT) = ? ORDER BY updated_at DESC, created_at DESC LIMIT 500`).bind(String(ownerUserId)).all();
   return result.results || [];
 }
 function groupCardsByOwner(cards) { return cards.reduce((groups, card) => { const owner = card.ownerUserId || 'unknown'; if (!groups[owner]) groups[owner] = []; groups[owner].push(card); return groups; }, {}); }
@@ -132,7 +129,9 @@ function groupCardsByOwner(cards) { return cards.reduce((groups, card) => { cons
 export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
   const url = new URL(request.url);
-  const ownerUserId = url.searchParams.get('ownerUserId') || '';
+  const user = await getSessionUser(request, env);
+  if (!user) return errorResponse('Sign in to read your Vault.', 401);
+  const ownerUserId = url.searchParams.get('ownerUserId') || user.id;
   try {
     const ownerCounts = await readOwnerCounts(env);
     const rows = await readOwnedRows(env, ownerUserId);
@@ -142,22 +141,22 @@ export async function onRequestGet({ env, request }) {
     return jsonResponse({
       ok: true,
       source: 'D1',
-      phase: '10F.5',
+      phase: 'auth-current-user',
       readOnly: true,
       table: 'cards',
-      selectedOwnerUserId: ownerUserId || null,
+      selectedOwnerUserId: ownerUserId,
+      ownerDisplayName: ownerUserId === user.id ? user.displayName : ownerUserId,
       ownerUserIds,
       ownerCounts,
       totalReturned: cards.length,
       cards,
-      cardsByOwner: ownerUserId ? null : groupCardsByOwner(cards),
+      cardsByOwner: groupCardsByOwner(cards),
       warnings: [
-        'No authentication is applied yet; this endpoint is a read-only mapping endpoint, not a current-user Vault contract.',
-        ...(ownerUserId ? [] : ['No ownerUserId filter was supplied, so up to 500 owned cards across owners were returned.']),
+        ownerUserId === user.id ? 'Vault is scoped to the signed-in player.' : 'Vault ownerUserId override was supplied for diagnostics.',
         ...(invalidCardJsonCount > 0 ? [`${invalidCardJsonCount} returned row(s) had invalid card_json.`] : []),
         ...(cards.some((card) => !card.progressionMapped) ? ['Some rows do not contain level/xp/copy fields; safe placeholders were applied.'] : []),
       ],
-      nextStep: 'Wire the Vault route to a real current-user contract when authentication lands.',
+      nextStep: 'Continue replacing remaining diagnostics with signed-in user contracts.',
     });
   } catch (error) {
     return errorResponse('Failed to read Vault cards.', 500, error.message);
