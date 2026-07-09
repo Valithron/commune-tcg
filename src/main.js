@@ -10,6 +10,7 @@ import './styles/components.css';
 import './styles/account.css';
 import './styles/type-pool.css';
 import './styles/pull-sheet.css';
+import './styles/pull-reveal.css';
 import './styles/library.css';
 import './styles/admin.css';
 import './styles/auth.css';
@@ -36,6 +37,7 @@ import { initSignIn, renderSignIn } from './routes/SignIn.js';
 import { renderHome } from './routes/Home.js';
 import { initPull, renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
+import { initPullReveal, renderPullReveal } from './routes/PullReveal.js';
 import { renderPullResults } from './routes/PullResults.js';
 import { renderPullHistory } from './routes/PullHistory.js';
 import { renderVault } from './routes/Vault.js';
@@ -67,6 +69,7 @@ const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
   { pattern: '/pull', navRoute: '/pull', shell: 'player', render: renderPull },
   { pattern: '/pull/confirm', navRoute: '/pull', shell: 'player', render: renderPullConfirm },
+  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'player', render: renderPullReveal },
   { pattern: '/pull/results', navRoute: '/pull', shell: 'player', render: renderPullResults },
   { pattern: '/pull/history', navRoute: '/pull', shell: 'player', render: renderPullHistory },
   { pattern: '/vault', navRoute: '/vault', shell: 'player', render: renderVault },
@@ -247,6 +250,11 @@ async function render() {
 
     if (matchedRoute.pattern === '/pull' || matchedRoute.pattern === '/pull/confirm') {
       initPull(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/pull/reveal') {
+      initPullReveal(appRoot);
+      fitCardTitles(appRoot);
     }
 
     if (matchedRoute.pattern === '/library') {
