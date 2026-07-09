@@ -11,6 +11,7 @@ import './styles/type-pool.css';
 import './styles/pull-sheet.css';
 import './styles/library.css';
 import './styles/admin.css';
+import './styles/auth.css';
 
 // Card system styles: foundation, density overrides, detail layout, then dev tools.
 import './styles/cards.css';
@@ -29,6 +30,8 @@ import './styles/phase4.css';
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
+import { loadAuthUser } from './services/authClient.js';
+import { initSignIn, renderSignIn } from './routes/SignIn.js';
 import { renderHome } from './routes/Home.js';
 import { initPull, renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
@@ -57,6 +60,7 @@ import { initCardFrameTuner } from './routes/cardFrameTuner.js';
 
 const appRoot = document.querySelector('#app');
 let renderToken = 0;
+let authRenderState = {};
 
 const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
@@ -201,6 +205,13 @@ function renderShell(route, content) {
   });
 }
 
+async function renderAuthGate(nextState = {}) {
+  authRenderState = { ...authRenderState, ...nextState };
+  appRoot.innerHTML = await renderSignIn(authRenderState);
+  initSignIn(appRoot, renderAuthGate);
+  scrollRouteToTop();
+}
+
 async function render() {
   const currentToken = ++renderToken;
   const { path, query } = parseHashRoute();
@@ -213,6 +224,15 @@ async function render() {
   }
 
   try {
+    if (matchedRoute.shell === 'player') {
+      const user = await loadAuthUser({ force: true });
+      if (!user || !user.usernameSet) {
+        await renderAuthGate();
+        return;
+      }
+      authRenderState = {};
+    }
+
     const content = await matchedRoute.render({ params: matchedRoute.params, query });
 
     if (currentToken !== renderToken) {
