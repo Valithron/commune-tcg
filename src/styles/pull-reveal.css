@@ -1,0 +1,234 @@
+/* ============================================================================
+   Pull Reveal Modal
+   Purpose: one-pull anticipation and card flip reveal flow.
+   ============================================================================ */
+
+.pull-reveal-screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - var(--bottom-nav-height) - 7rem);
+  overflow: hidden;
+  padding: var(--space-5) var(--space-3) calc(var(--space-6) + env(safe-area-inset-bottom));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 50% 43%, rgba(212, 175, 55, 0.34), transparent 24rem),
+    radial-gradient(circle at 45% 20%, rgba(181, 108, 255, 0.18), transparent 18rem),
+    linear-gradient(180deg, rgba(26, 28, 44, 0.92), rgba(10, 12, 22, 0.98));
+  box-shadow: var(--shadow-soft);
+}
+
+.pull-reveal-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pull-reveal-atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(10, 12, 22, 0.76) 82%);
+}
+
+.pull-reveal-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 24rem);
+}
+
+.pull-reveal-glow {
+  position: absolute;
+  top: 3rem;
+  width: 20rem;
+  height: 24rem;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.22);
+  filter: blur(4rem);
+  animation: pull-reveal-glow-pulse 3s ease-in-out infinite;
+}
+
+.pull-reveal-card {
+  position: relative;
+  width: min(76vw, 16.5rem);
+  aspect-ratio: 2.5 / 3.5;
+  cursor: pointer;
+  outline: none;
+  perspective: 1200px;
+  animation: pull-reveal-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 2rem rgba(212, 175, 55, 0.38));
+}
+
+.pull-reveal-card:focus-visible {
+  border-radius: 1rem;
+  box-shadow: 0 0 0 2px var(--color-primary), 0 0 2rem rgba(212, 175, 55, 0.45);
+}
+
+.pull-reveal-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 760ms cubic-bezier(0.2, 0.82, 0.2, 1);
+}
+
+.pull-reveal-card.is-revealed .pull-reveal-card-inner {
+  transform: rotateY(180deg);
+}
+
+.pull-reveal-card-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.pull-reveal-card-back {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(7, 10, 24, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.26);
+}
+
+.pull-reveal-card-back img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pull-reveal-card-front {
+  transform: rotateY(180deg);
+}
+
+.pull-reveal-card-front .tcg-card {
+  width: 100%;
+  height: 100%;
+}
+
+.pull-reveal-prompt {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  color: var(--color-text-muted);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.pull-reveal-prompt.is-revealed {
+  opacity: 0.72;
+  transform: translateY(-0.25rem);
+}
+
+.pull-reveal-prompt p {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.pull-reveal-loader {
+  position: relative;
+  display: block;
+  width: 8rem;
+  height: 0.18rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.pull-reveal-loader span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 45%;
+  background: var(--color-primary);
+  animation: pull-reveal-loader 1.8s ease-in-out infinite;
+}
+
+.pull-reveal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.pull-reveal-actions[hidden] {
+  display: none !important;
+}
+
+.pull-reveal-particle {
+  position: absolute;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0.8rem var(--color-primary);
+  opacity: 0;
+  animation: pull-reveal-particle-drift 4s linear infinite;
+}
+
+.pull-reveal-particle--one {
+  left: 16%;
+  top: 42%;
+  animation-delay: 0s;
+}
+
+.pull-reveal-particle--two {
+  left: 74%;
+  top: 34%;
+  animation-delay: 0.9s;
+}
+
+.pull-reveal-particle--three {
+  left: 22%;
+  top: 72%;
+  animation-delay: 1.8s;
+}
+
+.pull-reveal-particle--four {
+  left: 82%;
+  top: 66%;
+  animation-delay: 2.7s;
+}
+
+@keyframes pull-reveal-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1rem) rotate(1deg); }
+}
+
+@keyframes pull-reveal-glow-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes pull-reveal-loader {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(260%); }
+}
+
+@keyframes pull-reveal-particle-drift {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.7); }
+  35% { opacity: 0.82; }
+  100% { opacity: 0; transform: translate3d(1.5rem, -5rem, 0) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pull-reveal-card,
+  .pull-reveal-glow,
+  .pull-reveal-loader span,
+  .pull-reveal-particle {
+    animation: none;
+  }
+
+  .pull-reveal-card-inner {
+    transition: none;
+  }
+}
