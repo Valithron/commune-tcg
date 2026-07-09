@@ -125,6 +125,10 @@
   width: 6rem;
 }
 
+.pull-reveal-screen.is-revealed .pull-reveal-loader {
+  display: none;
+}
+
 .pull-reveal-prompt--multi p {
   font-size: 0.62rem;
   letter-spacing: 0.24em;
