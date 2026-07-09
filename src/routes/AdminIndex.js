@@ -21,6 +21,11 @@ const adminSections = [
     copy: 'Audit placeholder 1/1/1 stats, reroll template mechanics, and clear pulled test copies.',
   },
   {
+    href: '#/admin/submit-crop-lab',
+    title: 'Submit Crop Lab',
+    copy: 'Compare the two proposed Submit Card preview/crop approaches before changing the live form.',
+  },
+  {
     href: '#/admin/submissions',
     title: 'Submissions Review',
     copy: 'Review submitted cards and approve them into the Library pipeline.',
