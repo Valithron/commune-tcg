@@ -1,14 +1,13 @@
 /* ============================================================================
    Vault Route
-   Phase 8.4 responsibility: render the temporary active user's Vault using the
-   shared Vault data source, with mock fallback owned by src/data/vaultData.js.
+   Phase auth-current-user responsibility: render the signed-in player's Vault.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
-import { loadVaultCards, temporaryVaultOwner } from '../data/vaultData.js';
+import { loadVaultCards } from '../data/vaultData.js';
 
-function formatVaultOwnerName(ownerUserId) {
-  return String(ownerUserId || temporaryVaultOwner || 'User')
+function formatVaultOwnerName(vault) {
+  return String(vault.ownerDisplayName || vault.selectedOwnerUserId || 'User')
     .split(/[-_\s]+/)
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -16,14 +15,14 @@ function formatVaultOwnerName(ownerUserId) {
 }
 
 export async function renderVault() {
-  const vault = await loadVaultCards();
-  const ownerName = formatVaultOwnerName(vault.selectedOwnerUserId);
+  const vault = await loadVaultCards({ force: true });
+  const ownerName = formatVaultOwnerName(vault);
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
       <h2 class="hero-title">${ownerName}'s Vault</h2>
-      <p class="hero-copy">The Vault is currently mapped to ${temporaryVaultOwner} as the temporary active owner until real authentication exists.</p>
+      <p class="hero-copy">This Vault is scoped to the currently signed-in player. Pulled cards and rewards should attach to this account.</p>
     </section>
 
     <section>
