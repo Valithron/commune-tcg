@@ -2,8 +2,16 @@ import { renderCardFrame } from '../components/CardFrame.js';
 import { escapeHtml, titleCase } from '../components/format.js';
 import { clearPullRevealPayload, readPullRevealPayload } from '../services/pullRevealStore.js';
 
-function getRevealCard(payload) {
-  return payload?.cards?.[0] || null;
+const rarityRank = {
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  legendary: 4,
+  mythic: 5,
+};
+
+function getRevealCards(payload) {
+  return Array.isArray(payload?.cards) ? payload.cards.filter(Boolean) : [];
 }
 
 function getVaultCardHref(card) {
@@ -15,10 +23,43 @@ function getRarity(card) {
   return String(card?.rarity || 'common').toLowerCase();
 }
 
+function getDominantRarity(cards) {
+  return cards.reduce((best, card) => {
+    const rarity = getRarity(card);
+    return (rarityRank[rarity] || 1) > (rarityRank[best] || 1) ? rarity : best;
+  }, 'common');
+}
+
 function renderParticles() {
   return Array.from({ length: 10 }, (_, index) => `
     <span class="pull-reveal-particle pull-reveal-particle--${index + 1}"></span>
   `).join('');
+}
+
+function renderRevealCard(card, index, { mini = false } = {}) {
+  const rarity = getRarity(card);
+  const name = card.name || 'Pulled card';
+
+  return `
+    <div
+      class="pull-reveal-card${mini ? ' pull-reveal-card--mini' : ''}"
+      role="button"
+      tabindex="0"
+      data-pull-reveal-card
+      data-reveal-index="${index}"
+      data-rarity="${escapeHtml(rarity)}"
+      aria-label="Tap to reveal ${escapeHtml(name)}"
+    >
+      <div class="pull-reveal-card-inner">
+        <div class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
+          <img src="/assets/commune-card-back.png" alt="Commune card back" />
+        </div>
+        <div class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
+          ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: mini ? 'thumbnail' : 'standard' })}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderMissingReveal() {
@@ -26,28 +67,20 @@ function renderMissingReveal() {
     <section class="hero-panel">
       <span class="section-kicker">Reveal Expired</span>
       <h2 class="hero-title">No card is waiting.</h2>
-      <p class="hero-copy">Start a fresh one-pull to open the reveal animation. This keeps refreshes from spending tickets again.</p>
+      <p class="hero-copy">Start a fresh pull to open the reveal animation. This keeps refreshes from spending tickets again.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull/confirm?count=1">Start 1 Pull</a>
-        <a class="button button-secondary" href="#/pull">Back to Pull</a>
       </div>
     </section>
   `;
 }
 
-export async function renderPullReveal() {
-  const payload = readPullRevealPayload();
-  const card = getRevealCard(payload);
-
-  if (!card) {
-    return renderMissingReveal();
-  }
-
+function renderSingleReveal(card) {
   const rarity = getRarity(card);
   const cardName = card.name || 'Revealed Card';
 
   return `
-    <section class="pull-reveal-screen" data-pull-reveal data-rarity="${escapeHtml(rarity)}">
+    <section class="pull-reveal-screen" data-pull-reveal data-reveal-mode="single" data-rarity="${escapeHtml(rarity)}">
       <div class="pull-reveal-atmosphere" aria-hidden="true">
         ${renderParticles()}
       </div>
@@ -62,16 +95,7 @@ export async function renderPullReveal() {
         <div class="pull-reveal-glow" aria-hidden="true"></div>
         <div class="pull-reveal-burst" data-pull-reveal-burst aria-hidden="true"></div>
 
-        <div class="pull-reveal-card" role="button" tabindex="0" data-pull-reveal-card aria-label="Tap to reveal pulled card">
-          <div class="pull-reveal-card-inner">
-            <div class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
-              <img src="/assets/commune-card-back.png" alt="Commune card back" />
-            </div>
-            <div class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
-              ${renderCardFrame(card, { context: 'pull', showOwnership: true })}
-            </div>
-          </div>
-        </div>
+        ${renderRevealCard(card, 0)}
 
         <div class="pull-reveal-prompt" data-pull-reveal-prompt>
           <span class="pull-reveal-loader" aria-hidden="true"><span></span></span>
@@ -86,11 +110,64 @@ export async function renderPullReveal() {
         <div class="pull-reveal-actions" data-pull-reveal-actions hidden>
           <a class="button button-primary" href="${getVaultCardHref(card)}" data-pull-reveal-clear>View in Vault</a>
           <a class="button button-secondary" href="#/pull/confirm?count=1" data-pull-reveal-clear>Pull Again</a>
-          <a class="button button-secondary" href="#/pull" data-pull-reveal-clear>Back to Pull</a>
         </div>
       </div>
     </section>
   `;
+}
+
+function renderFiveReveal(cards) {
+  const rarity = getDominantRarity(cards);
+
+  return `
+    <section class="pull-reveal-screen pull-reveal-screen--multi" data-pull-reveal data-reveal-mode="multi" data-rarity="${escapeHtml(rarity)}">
+      <div class="pull-reveal-atmosphere" aria-hidden="true">
+        ${renderParticles()}
+      </div>
+
+      <div class="pull-reveal-stage pull-reveal-stage--multi">
+        <div class="pull-reveal-copy" data-pull-reveal-copy>
+          <span class="section-kicker">Five Pull</span>
+          <h2>Five Seals Ready</h2>
+          <p>Reveal the cards in any order, or reveal the rest all at once.</p>
+        </div>
+
+        <div class="pull-reveal-glow" aria-hidden="true"></div>
+        <div class="pull-reveal-burst" data-pull-reveal-burst aria-hidden="true"></div>
+
+        <div class="pull-reveal-five-layout" aria-label="Five pulled cards">
+          ${cards.map((card, index) => renderRevealCard(card, index, { mini: true })).join('')}
+        </div>
+
+        <div class="pull-reveal-prompt pull-reveal-prompt--multi" data-pull-reveal-prompt>
+          <span class="pull-reveal-loader" aria-hidden="true"><span></span></span>
+          <p>Choose a Card</p>
+        </div>
+
+        <button class="button button-primary pull-reveal-all" type="button" data-pull-reveal-all>
+          Reveal All
+        </button>
+
+        <div class="pull-reveal-actions" data-pull-reveal-actions hidden>
+          <a class="button button-primary" href="#/vault" data-pull-reveal-clear>View in Vault</a>
+          <a class="button button-secondary" href="#/pull/confirm?count=5" data-pull-reveal-clear>Pull Again</a>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+export async function renderPullReveal() {
+  const payload = readPullRevealPayload();
+  const cards = getRevealCards(payload);
+
+  if (!cards.length) {
+    return renderMissingReveal();
+  }
+
+  return cards.length >= 5 || Number(payload?.count) === 5
+    ? renderFiveReveal(cards.slice(0, 5))
+    : renderSingleReveal(cards[0]);
 }
 
 export function initPullReveal(root) {
@@ -99,25 +176,37 @@ export function initPullReveal(root) {
     return;
   }
 
-  const revealCard = revealRoot.querySelector('[data-pull-reveal-card]');
+  const revealCards = Array.from(revealRoot.querySelectorAll('[data-pull-reveal-card]'));
   const prompt = revealRoot.querySelector('[data-pull-reveal-prompt]');
   const actions = revealRoot.querySelector('[data-pull-reveal-actions]');
   const revealedCopy = revealRoot.querySelector('[data-pull-reveal-revealed-copy]');
   const copy = revealRoot.querySelector('[data-pull-reveal-copy]');
   const burst = revealRoot.querySelector('[data-pull-reveal-burst]');
-  const back = revealRoot.querySelector('[data-pull-reveal-back]');
-  const front = revealRoot.querySelector('[data-pull-reveal-front]');
+  const revealAllButton = revealRoot.querySelector('[data-pull-reveal-all]');
+  const isMulti = revealRoot.dataset.revealMode === 'multi';
 
-  function reveal() {
-    if (!revealCard || revealCard.classList.contains('is-revealed')) {
+  function updatePrompt(text) {
+    if (!prompt) {
+      return;
+    }
+
+    prompt.classList.add('is-revealed');
+    const promptCopy = prompt.querySelector('p');
+    if (promptCopy) {
+      promptCopy.textContent = text;
+    }
+  }
+
+  function areAllCardsRevealed() {
+    return revealCards.length > 0 && revealCards.every((card) => card.classList.contains('is-revealed'));
+  }
+
+  function completeRevealIfReady() {
+    if (!areAllCardsRevealed()) {
       return;
     }
 
     revealRoot.classList.add('is-revealed');
-    revealCard.classList.add('is-revealed');
-    revealCard.setAttribute('aria-label', 'Pulled card revealed');
-    back?.setAttribute('aria-hidden', 'true');
-    front?.setAttribute('aria-hidden', 'false');
 
     if (copy) {
       copy.classList.add('is-revealed');
@@ -127,12 +216,10 @@ export function initPullReveal(root) {
       burst.classList.add('is-active');
     }
 
-    if (prompt) {
-      prompt.classList.add('is-revealed');
-      const promptCopy = prompt.querySelector('p');
-      if (promptCopy) {
-        promptCopy.textContent = 'Revealed';
-      }
+    updatePrompt(isMulti ? 'All Revealed' : 'Revealed');
+
+    if (revealAllButton) {
+      revealAllButton.hidden = true;
     }
 
     window.setTimeout(() => {
@@ -145,15 +232,49 @@ export function initPullReveal(root) {
     }, 560);
   }
 
-  revealCard?.addEventListener('click', reveal);
-  revealCard?.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') {
+  function revealCard(revealCard) {
+    if (!revealCard || revealCard.classList.contains('is-revealed')) {
       return;
     }
 
-    event.preventDefault();
-    reveal();
+    revealCard.classList.add('is-revealed');
+    revealCard.setAttribute('aria-label', 'Pulled card revealed');
+    revealCard.querySelector('[data-pull-reveal-back]')?.setAttribute('aria-hidden', 'true');
+    revealCard.querySelector('[data-pull-reveal-front]')?.setAttribute('aria-hidden', 'false');
+
+    if (!isMulti) {
+      completeRevealIfReady();
+      return;
+    }
+
+    const revealedCount = revealCards.filter((card) => card.classList.contains('is-revealed')).length;
+    updatePrompt(`${revealedCount} of ${revealCards.length} Revealed`);
+    completeRevealIfReady();
+  }
+
+  function revealAll() {
+    revealCards.forEach((revealCard, index) => {
+      if (revealCard.classList.contains('is-revealed')) {
+        return;
+      }
+
+      window.setTimeout(() => revealCard(revealCard), index * 90);
+    });
+  }
+
+  revealCards.forEach((revealCard) => {
+    revealCard.addEventListener('click', () => revealCard(revealCard));
+    revealCard.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+
+      event.preventDefault();
+      revealCard(revealCard);
+    });
   });
+
+  revealAllButton?.addEventListener('click', revealAll);
 
   revealRoot.querySelectorAll('[data-pull-reveal-clear]').forEach((link) => {
     link.addEventListener('click', () => clearPullRevealPayload());
