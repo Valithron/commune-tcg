@@ -8,6 +8,7 @@ const allowedActions = new Set([
   'reroll_all_template_stats',
   'clear_owned_copies',
   'apply_founder_pool_rarities',
+  'randomize_founder_pool_rarities',
 ]);
 const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 const allowedRarities = new Set(rarityOrder);
@@ -28,6 +29,16 @@ function titleCase(value) {
   return String(value || '')
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function randomFloat() {
+  try {
+    const values = new Uint32Array(1);
+    crypto.getRandomValues(values);
+    return values[0] / 4294967296;
+  } catch {
+    return Math.random();
+  }
 }
 
 function ownerWhere() {
@@ -187,6 +198,32 @@ function buildFounderTargetDistribution(total) {
   return rarityOrder.reduce((summary, rarity) => ({ ...summary, [rarity]: counts[rarity] || 0 }), {});
 }
 
+function shuffleRows(rows) {
+  const shuffled = [...rows];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(randomFloat() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function buildRandomFounderAssignments(rows) {
+  const targetDistribution = buildFounderTargetDistribution(rows.length);
+  const shuffledRows = shuffleRows(rows);
+  const assignments = [];
+  let rowIndex = 0;
+
+  for (const rarity of rarityOrder) {
+    const count = targetDistribution[rarity] || 0;
+    for (let index = 0; index < count && rowIndex < shuffledRows.length; index += 1) {
+      assignments.push({ id: String(shuffledRows[rowIndex].id), rarity });
+      rowIndex += 1;
+    }
+  }
+
+  return { assignments, targetDistribution };
+}
+
 function buildRepairSource(payload, row, rarityOverride = '') {
   const rarity = normalizeRarity(rarityOverride || readRarity(payload));
 
@@ -321,7 +358,7 @@ async function auditMechanics(env) {
     warnings: [
       'Template rows are unowned cards only. Owned Vault copies are not repaired by this tool.',
       'Repair actions reroll template mechanics while preserving art, text, creator, character, and type.',
-      'Founder Pool re-rarity is a manual admin curation action. It does not randomly assign rarity tiers.',
+      'Founder Pool re-rarity can be applied manually or randomized to the target distribution.',
     ],
   };
 }
@@ -398,7 +435,13 @@ function normalizeAssignments(assignments) {
   })).filter((entry) => entry.id && allowedRarities.has(entry.rarity));
 }
 
-async function applyFounderPoolRarities(env, { assignments = [], resetOwnedCopies = false } = {}) {
+async function applyFounderPoolRarities(env, {
+  assignments = [],
+  resetOwnedCopies = false,
+  actionName = 'apply_founder_pool_rarities',
+  sourceLabel = 'founder_pool_re_rarity',
+  assignmentMode = 'manual',
+} = {}) {
   await ensureCardsTable(env);
   const rows = await readTemplateRows(env);
   const byId = new Map(rows.map((row) => [String(row.id), row]));
@@ -429,7 +472,7 @@ async function applyFounderPoolRarities(env, { assignments = [], resetOwnedCopie
   for (const row of rows) {
     const payload = readPayload(row);
     const rarity = assignmentById.get(String(row.id));
-    const repairedPayload = buildRepairedPayload(payload, row, { rarityOverride: rarity, sourceLabel: 'founder_pool_re_rarity' });
+    const repairedPayload = buildRepairedPayload(payload, row, { rarityOverride: rarity, sourceLabel });
 
     await env.DB.prepare(`
       UPDATE cards
@@ -463,13 +506,33 @@ async function applyFounderPoolRarities(env, { assignments = [], resetOwnedCopie
 
   return {
     ok: true,
-    action: 'apply_founder_pool_rarities',
+    action: actionName,
+    assignmentMode,
     updatedCount: updated.length,
     byRarity,
     targetDistribution: buildFounderTargetDistribution(updated.length),
     resetOwnedCopies: Boolean(resetOwnedCopies),
     deletedOwnedCopies: resetResult?.deletedCount || 0,
     updated,
+  };
+}
+
+async function randomizeFounderPoolRarities(env, { resetOwnedCopies = false } = {}) {
+  await ensureCardsTable(env);
+  const rows = await readTemplateRows(env);
+  const { assignments, targetDistribution } = buildRandomFounderAssignments(rows);
+  const result = await applyFounderPoolRarities(env, {
+    assignments,
+    resetOwnedCopies,
+    actionName: 'randomize_founder_pool_rarities',
+    sourceLabel: 'founder_pool_random_rarity',
+    assignmentMode: 'random_target_distribution',
+  });
+
+  return {
+    ...result,
+    generatedAssignments: assignments,
+    targetDistribution,
   };
 }
 
@@ -504,6 +567,13 @@ export async function onRequestPost({ env, request }) {
         resetOwnedCopies: payload.resetOwnedCopies === true,
       });
       if (!result.ok) return errorResponse(result.error || 'Failed to apply Founder Pool rarity assignments.', result.status || 400, result);
+      return jsonResponse(result);
+    }
+    if (action === 'randomize_founder_pool_rarities') {
+      const result = await randomizeFounderPoolRarities(env, {
+        resetOwnedCopies: payload.resetOwnedCopies === true,
+      });
+      if (!result.ok) return errorResponse(result.error || 'Failed to randomize Founder Pool rarity assignments.', result.status || 400, result);
       return jsonResponse(result);
     }
 
