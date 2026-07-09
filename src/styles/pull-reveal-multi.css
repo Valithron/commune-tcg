@@ -106,6 +106,10 @@
   height: 100%;
 }
 
+.pull-reveal-screen--multi.is-revealed .pull-reveal-card--mini.is-revealed {
+  cursor: zoom-in;
+}
+
 .pull-reveal-prompt--multi {
   margin-top: var(--space-4);
 }
@@ -123,6 +127,124 @@
 
 .pull-reveal-screen--multi .pull-reveal-actions {
   margin-top: var(--space-4);
+}
+
+.pull-reveal-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: end center;
+  padding: var(--space-3) var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: rgba(4, 6, 14, 0.78);
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.pull-reveal-preview[hidden] {
+  display: none !important;
+}
+
+.pull-reveal-preview.is-open {
+  opacity: 1;
+}
+
+.pull-reveal-preview.is-closing {
+  opacity: 0;
+}
+
+.pull-reveal-preview-panel {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 25rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-lg) var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--pull-reveal-rarity-color, var(--color-primary)) 20%, transparent), transparent 16rem),
+    rgba(12, 14, 25, 0.98);
+  box-shadow: 0 -1rem 4rem rgba(0, 0, 0, 0.48);
+  transform: translateY(1rem);
+  transition: transform 240ms cubic-bezier(0.2, 0.82, 0.2, 1);
+}
+
+.pull-reveal-preview.is-open .pull-reveal-preview-panel {
+  transform: translateY(0);
+}
+
+.pull-reveal-preview-panel.is-dragging {
+  transition: none;
+}
+
+.pull-reveal-preview-handle {
+  position: absolute;
+  top: 0.7rem;
+  left: 50%;
+  width: 4.2rem;
+  height: 0.32rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateX(-50%);
+  cursor: grab;
+}
+
+.pull-reveal-preview-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  margin-bottom: var(--space-3);
+  text-align: center;
+  touch-action: none;
+}
+
+.pull-reveal-preview-copy h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.pull-reveal-preview-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.85rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.pull-reveal-preview-cards {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.pull-reveal-preview-card {
+  width: min(72vw, 19rem);
+  animation: pull-reveal-actions-in 260ms ease-out both;
+}
+
+.pull-reveal-preview-card[hidden] {
+  display: none !important;
+}
+
+.pull-reveal-preview-card .tcg-card {
+  width: 100%;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pull-reveal-rarity-color, var(--color-primary)) 42%, transparent), 0 1.25rem 4rem rgba(0, 0, 0, 0.56);
 }
 
 @keyframes pull-reveal-mini-float {
@@ -163,10 +285,20 @@
   .pull-reveal-stage--multi .pull-reveal-copy p {
     font-size: 0.78rem;
   }
+
+  .pull-reveal-preview-card {
+    width: min(78vw, 17rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pull-reveal-five-layout .pull-reveal-card {
+  .pull-reveal-five-layout .pull-reveal-card,
+  .pull-reveal-preview-card {
     animation: none;
+  }
+
+  .pull-reveal-preview,
+  .pull-reveal-preview-panel {
+    transition: none;
   }
 }
