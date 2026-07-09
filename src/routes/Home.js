@@ -1,24 +1,92 @@
 /* ============================================================================
    Home Route
-   Phase auth-current-user responsibility: mark the signed-in player clearly and
-   keep the player dashboard focused on game routes.
+   Phase auth-current-user responsibility: mark the signed-in player clearly,
+   keep the player dashboard focused on game routes, and feature the strongest
+   card from the signed-in player's Vault.
    ============================================================================ */
 
 import { mockUser } from '../data/mockUser.js';
-import { featuredCards } from '../data/mockCards.js';
 import { getCachedAuthUser } from '../services/authClient.js';
+import { loadVaultCards } from '../data/vaultData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
 
-export function renderHome() {
-  const featuredCard = featuredCards[0];
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getAggregateStats(card) {
+  const stats = card?.stats || {};
+  return Number(stats.pow || 0) + Number(stats.def || 0) + Number(stats.spd || 0);
+}
+
+function getStrongestVaultCard(cards = []) {
+  return [...cards]
+    .sort((a, b) => {
+      const aggregateDifference = getAggregateStats(b) - getAggregateStats(a);
+      if (aggregateDifference !== 0) return aggregateDifference;
+
+      const levelDifference = Number(b?.level || 0) - Number(a?.level || 0);
+      if (levelDifference !== 0) return levelDifference;
+
+      return String(a?.name || '').localeCompare(String(b?.name || ''));
+    })[0] || null;
+}
+
+function renderVaultHighlight(strongestCard, displayName) {
+  if (!strongestCard) {
+    return `
+      <div class="quick-grid">
+        <div class="quick-card">
+          <strong>No Vault cards yet</strong>
+          <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
+        </div>
+        <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
+        <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
+        <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
+      </div>
+    `;
+  }
+
+  const totalStats = getAggregateStats(strongestCard);
+  const pow = Number(strongestCard.stats?.pow || 0);
+  const def = Number(strongestCard.stats?.def || 0);
+  const spd = Number(strongestCard.stats?.spd || 0);
+
+  return `
+    ${renderCardFrame(strongestCard, {
+      href: `#/vault/card/${strongestCard.id}`,
+      context: 'vault',
+    })}
+    <div class="quick-grid">
+      <a class="quick-card" href="#/vault/card/${strongestCard.id}">
+        <strong>${escapeHtml(strongestCard.name || 'Strongest Card')}</strong>
+        <span>Strongest owned card by total stats: ${totalStats} · POW ${pow} / DEF ${def} / SPD ${spd}</span>
+      </a>
+      <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
+      <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
+      <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
+      <a class="quick-card" href="#/vault"><strong>Vault</strong><span>Review ${escapeHtml(displayName)}'s owned cards.</span></a>
+    </div>
+  `;
+}
+
+export async function renderHome() {
   const user = getCachedAuthUser();
   const displayName = user?.displayName || user?.username || 'Player';
+  const vault = await loadVaultCards({ force: true });
+  const strongestCard = getStrongestVaultCard(vault?.cards || []);
+  const strongestTotal = strongestCard ? getAggregateStats(strongestCard) : 0;
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Gacha Prototype</span>
       <h2 class="hero-title">Build the Vault. Pull the Commune.</h2>
-      <p class="hero-copy">Signed in as ${displayName}. Pulls, resources, submissions, and Vault reads now use the active player session where wired.</p>
+      <p class="hero-copy">Signed in as ${escapeHtml(displayName)}. Pulls, resources, submissions, and Vault reads now use the active player session where wired.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull/confirm?count=5">Start Pulling</a>
         <a class="button button-secondary" href="#/battle">Battle</a>
@@ -32,13 +100,13 @@ export function renderHome() {
           <span class="section-kicker">Account</span>
           <h2 class="section-title">Signed-in Player</h2>
         </div>
-        <span class="status-pill">${displayName}</span>
+        <span class="status-pill">${escapeHtml(displayName)}</span>
       </div>
       <div class="home-account-card">
-        <strong>${displayName}'s active session</strong>
-        <span>Player slot: ${user?.id || 'unknown'}. This marker appears from the auth session, not a temporary Sterling fallback.</span>
+        <strong>${escapeHtml(displayName)}'s active session</strong>
+        <span>Player slot: ${escapeHtml(user?.id || 'unknown')}. This marker appears from the auth session, not a temporary Sterling fallback.</span>
         <div class="action-row">
-          <a class="button button-secondary" href="#/vault">Open ${displayName}'s Vault</a>
+          <a class="button button-secondary" href="#/vault">Open ${escapeHtml(displayName)}'s Vault</a>
           <a class="button button-secondary" href="/api/auth/logout">Log out</a>
         </div>
       </div>
@@ -53,7 +121,7 @@ export function renderHome() {
         <span class="status-pill">Lv ${mockUser.level}</span>
       </div>
       <div class="stat-grid">
-        <div class="stat-panel"><span class="stat-label">Vault</span><span class="stat-value">${mockUser.vaultCount}</span></div>
+        <div class="stat-panel"><span class="stat-label">Vault</span><span class="stat-value">${vault?.cards?.length || 0}</span></div>
         <div class="stat-panel"><span class="stat-label">Library</span><span class="stat-value">${mockUser.librarySeen}</span></div>
         <div class="stat-panel"><span class="stat-label">Streak</span><span class="stat-value">${mockUser.streakDays}</span></div>
       </div>
@@ -62,18 +130,13 @@ export function renderHome() {
     <section>
       <div class="section-heading">
         <div>
-          <span class="section-kicker">Featured</span>
-          <h2 class="section-title">Archive Highlight</h2>
+          <span class="section-kicker">Vault Highlight</span>
+          <h2 class="section-title">Strongest Owned Card</h2>
         </div>
+        <span class="status-pill">${strongestTotal} Total</span>
       </div>
       <div class="card-grid">
-        ${renderCardFrame(featuredCard)}
-        <div class="quick-grid">
-          <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
-          <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
-          <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
-          <a class="quick-card" href="#/vault"><strong>Vault</strong><span>Review cards owned by ${displayName}.</span></a>
-        </div>
+        ${renderVaultHighlight(strongestCard, displayName)}
       </div>
     </section>
   `;
