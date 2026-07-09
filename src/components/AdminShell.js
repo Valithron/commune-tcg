@@ -8,6 +8,7 @@ const adminNavItems = [
   { href: '#/admin/battle-check', route: '/admin/battle-check', label: 'Battle Check' },
   { href: '#/admin/cards', route: '/admin/cards', label: 'Cards' },
   { href: '#/admin/card-mechanics', route: '/admin/card-mechanics', label: 'Mechanics' },
+  { href: '#/admin/submit-crop-lab', route: '/admin/submit-crop-lab', label: 'Crop Lab' },
   { href: '#/admin/submissions', route: '/admin/submissions', label: 'Submissions' },
   { href: '#/admin/backend', route: '/admin/backend', label: 'Backend' },
   { href: '#/admin/inventory', route: '/admin/inventory', label: 'Inventory' },
