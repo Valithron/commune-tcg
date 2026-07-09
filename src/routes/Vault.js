@@ -4,6 +4,7 @@
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
+import { escapeHtml } from '../components/format.js';
 import { loadVaultCards } from '../data/vaultData.js';
 
 function formatVaultOwnerName(vault) {
@@ -14,6 +15,21 @@ function formatVaultOwnerName(vault) {
     .join(' ') || 'User';
 }
 
+function renderVaultCard(card) {
+  const duplicateCount = Number(card.duplicateGroupCount || 1);
+  const duplicateIndex = Number(card.duplicateGroupIndex || 1);
+  const duplicateBadge = duplicateCount > 1
+    ? `<span class="status-pill vault-copy-pill" aria-label="Duplicate copy ${duplicateIndex} of ${duplicateCount}">Copy ${duplicateIndex}/${duplicateCount}</span>`
+    : '';
+
+  return `
+    <div class="vault-card-slot" data-duplicate-group="${escapeHtml(card.duplicateGroupKey || card.id || '')}">
+      ${duplicateBadge}
+      ${renderCardFrame(card, { href: `#/vault/card/${card.id}`, context: 'vault' })}
+    </div>
+  `;
+}
+
 export async function renderVault() {
   const vault = await loadVaultCards({ force: true });
   const ownerName = formatVaultOwnerName(vault);
@@ -22,7 +38,7 @@ export async function renderVault() {
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
       <h2 class="hero-title">${ownerName}'s Vault</h2>
-      <p class="hero-copy">This Vault is scoped to the currently signed-in player. Pulled cards and rewards should attach to this account.</p>
+      <p class="hero-copy">This Vault is scoped to the currently signed-in player. Duplicate copies are grouped together by card template while preserving each owned copy.</p>
     </section>
 
     <section>
@@ -33,8 +49,8 @@ export async function renderVault() {
         </div>
         <span class="status-pill">${vault.cards.length} owned</span>
       </div>
-      <div class="card-grid">
-        ${vault.cards.map((card) => renderCardFrame(card, { href: `#/vault/card/${card.id}`, context: 'vault' })).join('')}
+      <div class="card-grid vault-card-grid">
+        ${vault.cards.map((card) => renderVaultCard(card)).join('')}
       </div>
     </section>
   `;
