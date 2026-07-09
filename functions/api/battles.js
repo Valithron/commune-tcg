@@ -22,6 +22,7 @@ export async function onRequestPost({ env, request }) {
     const payload = await readPayload(request);
     const now = new Date().toISOString();
     const ownerUserId = payload.ownerUserId || user.id;
+    const ownerDisplayName = ownerUserId === user.id ? user.displayName : ownerUserId;
     const encounterId = payload.encounterId || mockBattleEncounters[0].id;
     const squadCardIds = payload.squadCardIds || [];
     const attemptId = normalizeAttemptId(payload.attemptId);
@@ -29,7 +30,7 @@ export async function onRequestPost({ env, request }) {
 
     if (attemptError) return jsonResponse({ ok: false, phase: 'auth-current-user-battle', readOnly: false, writesPerformed: false, writes: [], error: 'Battle attempt validation failed.', code: attemptError, guardrails: ['A valid attemptId is required before any reward write.', 'No battle_history, gold, XP, levels, stamina, energy, Vault, or card ownership writes occurred.'] }, { status: 400 });
 
-    const simulationResult = await resolveBattleSimulation(env, { ownerUserId, encounterId, squadCardIds, createdAt: now });
+    const simulationResult = await resolveBattleSimulation(env, { ownerUserId, ownerDisplayName, encounterId, squadCardIds, createdAt: now });
     if (!simulationResult.ok) return jsonResponse({ ...simulationResult, phase: 'auth-current-user-battle', readOnly: false, writesPerformed: false, writes: [], error: simulationResult.error || 'Battle validation failed.', notes: ['Validation failed before any reward or history write was attempted.', 'No battle_history, gold, XP, levels, stamina, energy, Vault, or card ownership writes occurred.'] }, { status: simulationResult.status || 400 });
 
     const written = await writeBattleProgression(env, simulationResult, { now, attemptId });
@@ -40,7 +41,7 @@ export async function onRequestPost({ env, request }) {
       source: 'D1 owned Vault cards + effective stats + type matchups + user_resources + battle_history',
       readOnly: false,
       writesPerformed: true,
-      ownerDisplayName: ownerUserId === user.id ? user.displayName : ownerUserId,
+      ownerDisplayName,
       writes: written.writes,
       deferredWrites: written.deferredWrites,
       battleId: written.battleId,
