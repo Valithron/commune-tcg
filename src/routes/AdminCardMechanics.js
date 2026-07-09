@@ -23,6 +23,8 @@ const typeConfig = {
   neutral: { label: 'Neutral', weights: { pow: 1.00, def: 1.00, spd: 1.00 } },
 };
 
+const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
+
 const matchupChart = {
   flame: { flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral' },
   tide: { flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral' },
@@ -43,8 +45,9 @@ function statLine(stats = {}) { return `POW ${escapeHtml(stats.pow ?? 1)} / DEF 
 function optionList(options, selectedValue) { return options.map(([value, label]) => `<option value="${escapeHtml(value)}"${String(value) === String(selectedValue) ? ' selected' : ''}>${escapeHtml(label)}</option>`).join(''); }
 function typeOptions(selectedValue = 'neutral') { return optionList(Object.entries(typeConfig).map(([value, config]) => [value, config.label]), selectedValue); }
 function rarityOptions(selectedValue = 'rare') { return optionList(Object.entries(rarityConfig).map(([value, config]) => [value, config.label]), selectedValue); }
-
+function formatRaritySpread(spread = {}) { return rarityOrder.map((rarity) => `${rarityConfig[rarity].label} ${Number(spread[rarity] || 0)}`).join(' / '); }
 function renderMetric(label, value, tone = '') { return `<div class="quick-card${tone ? ` ${tone}` : ''}"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`; }
+function renderMetrics(payload = {}) { return [renderMetric('Template cards', payload.templateCount ?? 0), renderMetric('Current spread', formatRaritySpread(payload.byRarity)), renderMetric('Founder target', formatRaritySpread(payload.founderPoolTarget)), renderMetric('Owned copies', payload.ownedCopyCount ?? 0)].join(''); }
 
 function allocateStats(totalBudget, type) {
   const budget = Math.max(3, Math.round(Number(totalBudget) || 3));
@@ -127,9 +130,62 @@ function readSimulatorValues(root) {
   };
 }
 
-function renderTemplateRow(card) { return `<tr><td><strong>${escapeHtml(card.name || 'Unnamed Card')}</strong><span>${escapeHtml(card.id || '')}</span></td><td><span class="status-pill admin-rarity-pill">${escapeHtml(card.rarity || 'common')}</span></td><td>${escapeHtml(card.type || card.statArchetype || 'neutral')}</td><td class="admin-number-cell">${escapeHtml(card.statBudget ?? 0)}</td><td>${escapeHtml(statLine(card.stats))}</td><td>${card.placeholder ? '<span class="status-pill">Needs repair</span>' : '<span class="empty-note">Healthy</span>'}</td></tr>`; }
-function renderTemplateTable(payload) { const rows = payload.placeholderTemplates?.length ? payload.placeholderTemplates : payload.templates || []; return `<div class="glass-panel admin-card-table-panel"><div class="admin-card-table-toolbar"><div><span class="section-kicker">Template Audit</span><h2 class="section-title">${escapeHtml(rows.length)} shown</h2></div><span class="empty-note">Showing placeholder rows first. If none need repair, all template rows are shown.</span></div><div class="admin-card-table-scroll"><table class="admin-card-table"><thead><tr><th>Card</th><th>Rarity</th><th>Type</th><th>Budget</th><th>Stats</th><th>Status</th></tr></thead><tbody data-card-mechanics-table-body>${rows.length ? rows.map(renderTemplateRow).join('') : '<tr><td colspan="6" class="empty-note">No template cards were found.</td></tr>'}</tbody></table></div></div>`; }
-function renderResultPanel(payload = null) { if (!payload) return '<div class="empty-note" data-card-mechanics-result>Ready.</div>'; if (payload.action === 'clear_owned_copies') return `<div class="empty-note" data-card-mechanics-result>Cleared ${escapeHtml(payload.deletedCount || 0)} owned pull copies.</div>`; if (payload.repairedCount !== undefined) return `<div class="empty-note" data-card-mechanics-result>Repaired ${escapeHtml(payload.repairedCount)} template card${payload.repairedCount === 1 ? '' : 's'}.</div>`; return '<div class="empty-note" data-card-mechanics-result>Action finished.</div>'; }
+function renderTemplateRow(card) {
+  return `
+    <tr data-founder-rarity-row data-card-id="${escapeHtml(card.id || '')}">
+      <td><strong>${escapeHtml(card.name || 'Unnamed Card')}</strong><span>${escapeHtml(card.id || '')}</span></td>
+      <td><select name="founder_rarity" data-founder-rarity-select>${rarityOptions(card.rarity || 'common')}</select></td>
+      <td>${escapeHtml(card.type || card.statArchetype || 'neutral')}</td>
+      <td>${escapeHtml(card.creatorDisplayName || 'Unknown')}</td>
+      <td class="admin-number-cell">${escapeHtml(card.statBudget ?? 0)}</td>
+      <td>${escapeHtml(statLine(card.stats))}</td>
+      <td>${card.placeholder ? '<span class="status-pill">Needs repair</span>' : '<span class="empty-note">Healthy</span>'}</td>
+    </tr>
+  `;
+}
+
+function renderTemplateTable(payload) {
+  const rows = payload.templates || [];
+  return `
+    <div class="glass-panel admin-card-table-panel">
+      <div class="admin-card-table-toolbar">
+        <div><span class="section-kicker">Founder Pool Curation</span><h2 class="section-title">${escapeHtml(rows.length)} template cards</h2></div>
+        <span class="empty-note">Select final rarity per template, then apply once. This touches unowned Library templates only.</span>
+      </div>
+      <div class="admin-card-table-scroll">
+        <table class="admin-card-table">
+          <thead><tr><th>Card</th><th>Founder Rarity</th><th>Type</th><th>Creator</th><th>Budget</th><th>Stats</th><th>Status</th></tr></thead>
+          <tbody data-card-mechanics-table-body>${rows.length ? rows.map(renderTemplateRow).join('') : '<tr><td colspan="7" class="empty-note">No template cards were found.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderResultPanel(payload = null) {
+  if (!payload) return '<div class="empty-note" data-card-mechanics-result>Ready.</div>';
+  if (payload.action === 'clear_owned_copies') return `<div class="empty-note" data-card-mechanics-result>Cleared ${escapeHtml(payload.deletedCount || 0)} owned pull copies.</div>`;
+  if (payload.action === 'apply_founder_pool_rarities') return `<div class="empty-note" data-card-mechanics-result>Applied Founder Pool rarities to ${escapeHtml(payload.updatedCount || 0)} templates. Spread: ${escapeHtml(formatRaritySpread(payload.byRarity))}.${payload.resetOwnedCopies ? ` Cleared ${escapeHtml(payload.deletedOwnedCopies || 0)} owned test copies.` : ''}</div>`;
+  if (payload.repairedCount !== undefined) return `<div class="empty-note" data-card-mechanics-result>Repaired ${escapeHtml(payload.repairedCount)} template card${payload.repairedCount === 1 ? '' : 's'}.</div>`;
+  return '<div class="empty-note" data-card-mechanics-result>Action finished.</div>';
+}
+
+function renderFounderRarityTool(payload) {
+  return `
+    <section class="glass-panel admin-panel" data-founder-rarity-tool>
+      <span class="section-kicker">One-time Founder Pool cleanup</span>
+      <h2 class="section-title">Manual rarity assignment</h2>
+      <div class="admin-checklist">
+        <div>Target spread for this pool: <strong>${escapeHtml(formatRaritySpread(payload.founderPoolTarget))}</strong>.</div>
+        <div>Current selected spread: <strong data-founder-selected-spread>${escapeHtml(formatRaritySpread(payload.byRarity))}</strong>.</div>
+        <div>Applying recomputes template rarity, static budget, pull-time budget range, level cap, growth, origin bonus, base stats, and legacy pow/def/spd fields.</div>
+      </div>
+      <label class="admin-inline-check"><input type="checkbox" data-founder-reset-owned /> Clear owned test copies after applying</label>
+      <div class="action-row"><button class="button button-primary" type="button" data-founder-rarity-apply>Apply Selected Founder Rarities</button></div>
+    </section>
+  `;
+}
+
 async function loadMechanicsAudit() { const routes = getApiRoutes(); return fetchJson(routes.adminCardMechanics); }
 
 function renderSimulator() {
@@ -159,9 +215,10 @@ export async function renderAdminCardMechanics() {
   let payload;
   try { payload = await loadMechanicsAudit(); } catch (error) { return `<section class="hero-panel"><span class="section-kicker">Card Mechanics</span><h2 class="hero-title">Repair tool unavailable.</h2><p class="hero-copy">${escapeHtml(error.message)}</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a></div></section>`; }
   return `
-    <section class="hero-panel"><span class="section-kicker">Admin Mechanics</span><h2 class="hero-title">Simulate and repair card mechanics.</h2><p class="hero-copy">Preview rarity, type, level, origin bonus, and battle matchup math before we implement evolution. Repair tools remain scoped to unowned Library templates.</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a><a class="button button-secondary" href="#/admin/cards">Card Editor</a></div></section>
+    <section class="hero-panel"><span class="section-kicker">Admin Mechanics</span><h2 class="hero-title">Simulate, repair, and seed card mechanics.</h2><p class="hero-copy">Use this during pre-launch inventory to curate Founder Pool rarity, repair stale template stats, and clear distorted test pulls.</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a><a class="button button-secondary" href="#/admin/cards">Card Editor</a></div></section>
     <section class="admin-card-mechanics" data-card-mechanics-tool>
-      <div class="quick-grid admin-hub-grid" data-card-mechanics-metrics>${renderMetric('Template cards', payload.templateCount ?? 0)}${renderMetric('Placeholder stat rows', payload.placeholderCount ?? 0)}${renderMetric('Healthy stat rows', payload.healthyCount ?? 0)}${renderMetric('Owned copies', payload.ownedCopyCount ?? 0)}</div>
+      <div class="quick-grid admin-hub-grid" data-card-mechanics-metrics>${renderMetrics(payload)}</div>
+      ${renderFounderRarityTool(payload)}
       ${renderSimulator()}
       <section class="glass-panel admin-panel"><span class="section-kicker">Actions</span><h2 class="section-title">Controlled repair</h2><div class="admin-checklist"><div>Repair placeholder stats: rerolls only missing or 1/1/1 template cards while preserving rarity.</div><div>Reroll all template stats: rerolls every unowned Library template while preserving rarity.</div><div>Clear owned copies: deletes current pulled Vault copies so fresh pulls inherit repaired template stats.</div></div><div class="action-row"><button class="button button-primary" type="button" data-card-mechanics-action="repair_placeholder_stats">Repair Placeholder Stats</button><button class="button button-secondary" type="button" data-card-mechanics-action="reroll_all_template_stats">Reroll All Template Stats</button><button class="button button-secondary admin-danger-button" type="button" data-card-mechanics-action="clear_owned_copies">Clear Owned Copies</button><button class="button button-secondary" type="button" data-card-mechanics-action="audit">Refresh Audit</button></div>${renderResultPanel()}</section>
       <div data-card-mechanics-table>${renderTemplateTable(payload)}</div>
@@ -173,8 +230,10 @@ function renderAuditInto(root, payload, resultPayload = null) {
   const metrics = root.querySelector('[data-card-mechanics-metrics]');
   const table = root.querySelector('[data-card-mechanics-table]');
   const result = root.querySelector('[data-card-mechanics-result]');
-  if (metrics) metrics.innerHTML = [renderMetric('Template cards', payload.templateCount ?? 0), renderMetric('Placeholder stat rows', payload.placeholderCount ?? 0), renderMetric('Healthy stat rows', payload.healthyCount ?? 0), renderMetric('Owned copies', payload.ownedCopyCount ?? 0)].join('');
+  const spread = root.querySelector('[data-founder-selected-spread]');
+  if (metrics) metrics.innerHTML = renderMetrics(payload);
   if (table) table.innerHTML = renderTemplateTable(payload);
+  if (spread) spread.textContent = formatRaritySpread(payload.byRarity);
   if (result) { const wrapper = document.createElement('div'); wrapper.innerHTML = renderResultPanel(resultPayload || payload); result.replaceWith(wrapper.firstElementChild); }
 }
 
@@ -192,6 +251,44 @@ function applyRarityDefaults(root) {
   updateSimulator(root);
 }
 
+function readFounderAssignments(root) {
+  return Array.from(root.querySelectorAll('[data-founder-rarity-row]')).map((row) => ({
+    id: row.dataset.cardId || '',
+    rarity: row.querySelector('[data-founder-rarity-select]')?.value || 'common',
+  })).filter((entry) => entry.id);
+}
+
+function selectedFounderSpread(root) {
+  return readFounderAssignments(root).reduce((spread, entry) => {
+    spread[entry.rarity] = (spread[entry.rarity] || 0) + 1;
+    return spread;
+  }, {});
+}
+
+function updateFounderSpread(root) {
+  const target = root.querySelector('[data-founder-selected-spread]');
+  if (target) target.textContent = formatRaritySpread(selectedFounderSpread(root));
+}
+
+async function runFounderApply(root) {
+  const assignments = readFounderAssignments(root);
+  const resetOwnedCopies = root.querySelector('[data-founder-reset-owned]')?.checked === true;
+  if (!assignments.length) return;
+  const confirmation = `Apply selected Founder Pool rarities to ${assignments.length} templates?${resetOwnedCopies ? ' This will also clear owned test copies.' : ''}`;
+  if (!window.confirm(confirmation)) return;
+  const routes = getApiRoutes();
+  const result = root.querySelector('[data-card-mechanics-result]');
+  if (result) result.textContent = 'Applying Founder Pool rarities...';
+  try {
+    const actionPayload = await fetchJson(routes.adminCardMechanics, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'apply_founder_pool_rarities', assignments, resetOwnedCopies }) });
+    const auditPayload = await fetchJson(routes.adminCardMechanics);
+    renderAuditInto(root, auditPayload, actionPayload);
+  } catch (error) {
+    const current = root.querySelector('[data-card-mechanics-result]');
+    if (current) current.textContent = error.message;
+  }
+}
+
 async function runMechanicsAction(root, action) {
   const routes = getApiRoutes();
   const destructive = action === 'clear_owned_copies' || action === 'reroll_all_template_stats';
@@ -205,7 +302,8 @@ export function initAdminCardMechanics(root) {
   const tool = root.querySelector('[data-card-mechanics-tool]');
   if (!tool) return;
   updateSimulator(root);
-  tool.addEventListener('click', (event) => { const resetButton = event.target.closest('[data-sim-apply-rarity]'); if (resetButton) { applyRarityDefaults(root); return; } const button = event.target.closest('[data-card-mechanics-action]'); if (!button) return; runMechanicsAction(root, button.dataset.cardMechanicsAction || 'audit'); });
-  tool.addEventListener('input', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); });
-  tool.addEventListener('change', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); });
+  updateFounderSpread(root);
+  tool.addEventListener('click', (event) => { const resetButton = event.target.closest('[data-sim-apply-rarity]'); if (resetButton) { applyRarityDefaults(root); return; } const founderButton = event.target.closest('[data-founder-rarity-apply]'); if (founderButton) { runFounderApply(root); return; } const button = event.target.closest('[data-card-mechanics-action]'); if (!button) return; runMechanicsAction(root, button.dataset.cardMechanicsAction || 'audit'); });
+  tool.addEventListener('input', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); if (event.target.closest('[data-founder-rarity-select]')) updateFounderSpread(root); });
+  tool.addEventListener('change', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); if (event.target.closest('[data-founder-rarity-select]')) updateFounderSpread(root); });
 }
