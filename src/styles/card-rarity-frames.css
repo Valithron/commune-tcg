@@ -1,0 +1,38 @@
+/* ============================================================================
+   Rarity Frame Overlays
+   Purpose: transparent PNG frame overlays for Card Lab testing. Frames are
+   authored at the large showcase ratio and scale down with the card face.
+   ============================================================================ */
+
+.tcg-card--rarity-frame .card-art {
+  z-index: 1;
+}
+
+.tcg-card--rarity-frame::before {
+  z-index: 2;
+}
+
+.card-rarity-frame-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  border-radius: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+
+.tcg-card--rarity-frame .card-nameplate,
+.tcg-card--rarity-frame .card-identity-line,
+.tcg-card--rarity-frame .card-stat-row,
+.tcg-card--rarity-frame .card-meta-row {
+  z-index: 4;
+}
+
+.tcg-card--rarity-frame .card-nameplate,
+.tcg-card--rarity-frame .card-identity-line {
+  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.32);
+}
