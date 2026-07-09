@@ -109,39 +109,19 @@ function parseHashRoute() {
   const rawHash = window.location.hash.replace('#', '') || '/home';
   const [path, queryString = ''] = rawHash.split('?');
   const query = Object.fromEntries(new URLSearchParams(queryString));
-
-  return {
-    path: path || '/home',
-    query,
-  };
+  return { path: path || '/home', query };
 }
 
-function setHashRoute(path) {
-  window.history.replaceState(null, '', '#' + path);
-}
+function setHashRoute(path) { window.history.replaceState(null, '', '#' + path); }
 
 function matchPattern(path, pattern) {
   const pathParts = path.split('/').filter(Boolean);
   const patternParts = pattern.split('/').filter(Boolean);
-
-  if (pathParts.length !== patternParts.length) {
-    return null;
-  }
-
+  if (pathParts.length !== patternParts.length) return null;
   return patternParts.reduce((params, patternPart, index) => {
-    if (params === null) {
-      return null;
-    }
-
+    if (params === null) return null;
     const pathPart = pathParts[index];
-
-    if (patternPart.startsWith(':')) {
-      return {
-        ...params,
-        [patternPart.slice(1)]: decodeURIComponent(pathPart),
-      };
-    }
-
+    if (patternPart.startsWith(':')) return { ...params, [patternPart.slice(1)]: decodeURIComponent(pathPart) };
     return patternPart === pathPart ? params : null;
   }, {});
 }
@@ -149,70 +129,35 @@ function matchPattern(path, pattern) {
 function resolveRoute(path) {
   for (const route of routeDefinitions) {
     const params = matchPattern(path, route.pattern);
-
-    if (params) {
-      return {
-        ...route,
-        params,
-      };
-    }
+    if (params) return { ...route, params };
   }
-
   return null;
 }
 
-function getFallbackPath(path) {
-  return path.startsWith('/admin') ? '/admin' : '/home';
-}
+function getFallbackPath(path) { return path.startsWith('/admin') ? '/admin' : '/home'; }
 
 function scrollRouteToTop() {
   const mainContent = document.querySelector('#main-content');
   const scrollingElement = document.scrollingElement || document.documentElement;
-
-  if (scrollingElement) {
-    scrollingElement.scrollTop = 0;
-  }
-
+  if (scrollingElement) scrollingElement.scrollTop = 0;
   document.body.scrollTop = 0;
   appRoot.scrollTop = 0;
-
-  if (mainContent) {
-    mainContent.scrollTop = 0;
-  }
-
+  if (mainContent) mainContent.scrollTop = 0;
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-
-  window.requestAnimationFrame(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  });
+  window.requestAnimationFrame(() => { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); });
 }
 
 function renderError(error, shell) {
   const fallbackHref = shell === 'admin' ? '#/admin' : '#/home';
   const fallbackLabel = shell === 'admin' ? 'Back to Admin' : 'Back Home';
-
-  return `
-    <section class="hero-panel">
-      <span class="section-kicker">Route Error</span>
-      <h2 class="hero-title">Something failed.</h2>
-      <p class="hero-copy">${error.message}</p>
-      <div class="action-row"><a class="button button-secondary" href="${fallbackHref}">${fallbackLabel}</a></div>
-    </section>
-  `;
+  return `<section class="hero-panel"><span class="section-kicker">Route Error</span><h2 class="hero-title">Something failed.</h2><p class="hero-copy">${error.message}</p><div class="action-row"><a class="button button-secondary" href="${fallbackHref}">${fallbackLabel}</a></div></section>`;
 }
 
-function renderShell(route, content) {
+async function renderShell(route, content) {
   if (route.shell === 'admin') {
-    return renderAdminShell({
-      activeRoute: route.navRoute,
-      content,
-    });
+    return renderAdminShell({ activeRoute: route.navRoute, content });
   }
-
-  return renderAppShell({
-    activeRoute: route.navRoute,
-    content,
-  });
+  return renderAppShell({ activeRoute: route.navRoute, content });
 }
 
 async function renderAuthGate(nextState = {}) {
@@ -225,7 +170,6 @@ async function renderRoute() {
   const currentToken = ++renderToken;
   const { path, query } = parseHashRoute();
   const route = resolveRoute(path);
-
   if (!route) {
     const fallbackPath = legacyAdminRedirects[path] || getFallbackPath(path);
     setHashRoute(fallbackPath);
@@ -234,53 +178,31 @@ async function renderRoute() {
 
   try {
     const authUser = await loadAuthUser();
-
-    if (!authUser) {
-      return renderAuthGate({ redirectTo: path });
-    }
-
-    if (currentToken !== renderToken) {
-      return;
-    }
+    if (!authUser) return renderAuthGate({ redirectTo: path });
+    if (currentToken !== renderToken) return;
 
     const content = await route.render({ params: route.params || {}, query });
+    if (currentToken !== renderToken) return;
 
-    if (currentToken !== renderToken) {
-      return;
-    }
-
-    appRoot.innerHTML = renderShell(route, content);
+    appRoot.innerHTML = await renderShell(route, content);
     fitCardTitles(appRoot);
 
-    if (route.render === renderPull) {
-      initPull(appRoot);
-    } else if (route.render === renderPullReveal) {
-      initPullReveal(appRoot);
-    } else if (route.render === renderLibrary) {
-      initLibraryControls(appRoot);
-    } else if (route.render === renderSubmitCard) {
-      initSubmitCardForm(appRoot);
-    } else if (route.render === renderAdminBattleTest) {
-      initAdminBattleTest(appRoot);
-    } else if (route.render === renderAdminCardEditor) {
-      initAdminCardEditor(appRoot);
-    } else if (route.render === renderAdminCardMechanics) {
-      initAdminCardMechanics(appRoot);
-    } else if (route.render === renderAdminSubmitCropLab) {
-      initAdminSubmitCropLab(appRoot);
-    } else if (route.render === renderAdminSubmissionDetail) {
-      initAdminSubmissionDetail(appRoot);
-    } else if (route.render === renderSquadBuilder) {
-      initSquadBuilder(appRoot);
-    } else if (route.render === renderBattleResults) {
-      initBattleResults(appRoot);
-    } else if (route.render === renderCardLab) {
-      initCardFrameTuner(appRoot);
-    }
+    if (route.render === renderPull) initPull(appRoot);
+    else if (route.render === renderPullReveal) initPullReveal(appRoot);
+    else if (route.render === renderLibrary) initLibraryControls(appRoot);
+    else if (route.render === renderSubmitCard) initSubmitCardForm(appRoot);
+    else if (route.render === renderAdminBattleTest) initAdminBattleTest(appRoot);
+    else if (route.render === renderAdminCardEditor) initAdminCardEditor(appRoot);
+    else if (route.render === renderAdminCardMechanics) initAdminCardMechanics(appRoot);
+    else if (route.render === renderAdminSubmitCropLab) initAdminSubmitCropLab(appRoot);
+    else if (route.render === renderAdminSubmissionDetail) initAdminSubmissionDetail(appRoot);
+    else if (route.render === renderSquadBuilder) initSquadBuilder(appRoot);
+    else if (route.render === renderBattleResults) initBattleResults(appRoot);
+    else if (route.render === renderCardLab) initCardFrameTuner(appRoot);
 
     scrollRouteToTop();
   } catch (error) {
-    appRoot.innerHTML = renderShell(route, renderError(error, route.shell));
+    appRoot.innerHTML = await renderShell(route, renderError(error, route.shell));
   }
 }
 
