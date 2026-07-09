@@ -51,7 +51,7 @@ function toCropNumber(value, fallback, min, max) {
     return fallback;
   }
 
-  return Math.min(Math.max(parsed, min, max === undefined ? parsed : max), max);
+  return Math.min(Math.max(parsed, min), max);
 }
 
 function normalizeCrop(card) {
