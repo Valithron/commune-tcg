@@ -150,9 +150,7 @@ function renderFiveReveal(cards) {
 
       <div class="pull-reveal-stage pull-reveal-stage--multi">
         <div class="pull-reveal-copy" data-pull-reveal-copy>
-          <span class="section-kicker">Five Pull</span>
           <h2>Five Seals Ready</h2>
-          <p>Reveal the cards in any order, or reveal the rest all at once.</p>
         </div>
 
         <div class="pull-reveal-glow" aria-hidden="true"></div>
