@@ -6,7 +6,7 @@
 const defaultCrop = { x: 50, y: 50, zoom: 1 };
 const maxImageBytes = 5 * 1024 * 1024;
 
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const clamp = (value, min, max) => Math.min(Math.max(value), max);
 const point = (event) => ({ x: event.clientX, y: event.clientY });
 const touchPoint = (touch) => ({ x: touch.clientX, y: touch.clientY });
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -30,13 +30,15 @@ function validateFile(file) {
 export function initSubmitImageCropper(form, status) {
   const box = form.querySelector('[data-submit-cropper]');
   const input = form.querySelector('[data-submit-image-input]');
-  const preview = form.querySelector('[data-submit-preview]');
   const cropInput = form.querySelector('[name="crop_json"]');
   const cropHelp = form.querySelector('[data-submit-crop-help]');
   const changeButton = form.querySelector('[data-submit-change-art]');
+  const uploadLabelText = form.querySelector('[data-submit-upload-label-text]');
 
-  if (!box || !input || !preview || !cropInput) return;
+  if (!box || !input || !cropInput) return;
 
+  const art = box.querySelector('.card-art');
+  const defaultArtHtml = art?.innerHTML || '<span class="card-art-symbol">◆</span>';
   const pointers = new Map();
   let crop = { ...defaultCrop };
   let start = null;
@@ -46,7 +48,9 @@ export function initSubmitImageCropper(form, status) {
   let lastTap = 0;
   let nativeTouchMode = false;
 
-  const hasImage = () => box.classList.contains('has-image');
+  const getArt = () => box.querySelector('.card-art');
+  const getPreview = () => getArt()?.querySelector('[data-submit-preview]') || null;
+  const hasImage = () => box.classList.contains('has-image') && Boolean(getPreview());
 
   function showStatus(message) {
     status.hidden = false;
@@ -55,10 +59,14 @@ export function initSubmitImageCropper(form, status) {
 
   function writeCrop() {
     const next = rounded(crop);
+    const preview = getPreview();
     cropInput.value = JSON.stringify(next);
-    preview.style.objectPosition = `${next.x}% ${next.y}%`;
-    preview.style.transform = `scale(${next.zoom})`;
-    preview.style.transformOrigin = `${next.x}% ${next.y}%`;
+
+    if (preview) {
+      preview.style.objectPosition = `${next.x}% ${next.y}%`;
+      preview.style.transform = `scale(${next.zoom})`;
+      preview.style.transformOrigin = `${next.x}% ${next.y}%`;
+    }
   }
 
   function setCrop(next) {
@@ -97,8 +105,8 @@ export function initSubmitImageCropper(form, status) {
     if (!start || !hasImage()) return;
 
     const active = [...pointers.values()];
-    const rect = box.getBoundingClientRect();
-    if (!active.length || !rect.width || !rect.height) return;
+    const rect = getArt()?.getBoundingClientRect();
+    if (!active.length || !rect?.width || !rect?.height) return;
 
     if (active.length > 1 && start.points.length > 1) {
       const currentMidpoint = midpoint(active[0], active[1]);
@@ -137,8 +145,8 @@ export function initSubmitImageCropper(form, status) {
     if (!touchStart || !hasImage()) return;
 
     const active = Array.from(touches).map(touchPoint);
-    const rect = box.getBoundingClientRect();
-    if (!active.length || !rect.width || !rect.height) return;
+    const rect = getArt()?.getBoundingClientRect();
+    if (!active.length || !rect?.width || !rect?.height) return;
 
     if (active.length > 1 && touchStart.points.length > 1) {
       const currentMidpoint = midpoint(active[0], active[1]);
@@ -161,12 +169,12 @@ export function initSubmitImageCropper(form, status) {
   function clearPreview() {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = '';
-    preview.src = '';
-    preview.hidden = true;
-    preview.removeAttribute('style');
+    const nextArt = getArt();
+    if (nextArt) nextArt.innerHTML = defaultArtHtml;
     box.classList.remove('has-image');
     if (cropHelp) cropHelp.hidden = true;
     if (changeButton) changeButton.hidden = true;
+    if (uploadLabelText) uploadLabelText.textContent = 'Upload Art';
     crop = { ...defaultCrop };
     cropInput.value = JSON.stringify(defaultCrop);
     pointers.clear();
@@ -175,7 +183,20 @@ export function initSubmitImageCropper(form, status) {
     gestureStartCrop = null;
   }
 
-  box.addEventListener('click', () => {
+  function installPreviewImage(url) {
+    const nextArt = getArt();
+    if (!nextArt) return;
+    nextArt.innerHTML = '';
+    const preview = document.createElement('img');
+    preview.className = 'card-art-image';
+    preview.setAttribute('data-submit-preview', '');
+    preview.alt = '';
+    preview.src = url;
+    nextArt.appendChild(preview);
+  }
+
+  box.addEventListener('click', (event) => {
+    if (event.target.closest('input, textarea, select, button, label, a')) return;
     if (!hasImage()) openPicker();
   });
 
@@ -200,12 +221,12 @@ export function initSubmitImageCropper(form, status) {
 
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(file);
-    preview.src = objectUrl;
-    preview.hidden = false;
+    installPreviewImage(objectUrl);
     box.classList.add('has-image');
     if (cropHelp) cropHelp.hidden = false;
     if (changeButton) changeButton.hidden = false;
-    showStatus('Art loaded. Set the crop, then submit.');
+    if (uploadLabelText) uploadLabelText.textContent = 'Art Selected';
+    showStatus('Art loaded. Drag on the card to crop, then submit.');
     resetCrop();
   });
 
