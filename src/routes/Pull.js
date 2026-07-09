@@ -2,6 +2,7 @@ import { mockUser } from '../data/mockUser.js';
 import { pullOptions, rarityOdds } from '../data/mockPull.js';
 import { clampPullCount } from '../components/format.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
+import { savePullRevealPayload } from '../services/pullRevealStore.js';
 
 async function loadResources() {
   try {
@@ -143,6 +144,7 @@ export function initPull(root) {
   const handle = overlay.querySelector('[data-pull-drag-handle]');
   const status = overlay.querySelector('[data-pull-status]');
   const confirmButton = overlay.querySelector('[data-pull-confirm]');
+  const confirmLabel = overlay.querySelector('[data-pull-confirm-label]');
   const balance = Number(overlay.dataset.ticketBalance || 0);
   let selectedCount = clampPullCount(overlay.dataset.selectedCount || 5);
   let closeTimer = null;
@@ -268,12 +270,66 @@ export function initPull(root) {
   }
 
   if (confirmButton) {
-    confirmButton.addEventListener('click', () => {
+    confirmButton.addEventListener('click', async () => {
       const option = getSelectedOption();
       if (balance < option.ticketCost) {
         return;
       }
-      window.location.hash = `/pull/results?count=${selectedCount}&real=1`;
+
+      if (selectedCount !== 1) {
+        window.location.hash = `/pull/results?count=${selectedCount}&real=1`;
+        return;
+      }
+
+      confirmButton.disabled = true;
+      confirmButton.classList.add('button-working');
+      if (confirmLabel) {
+        confirmLabel.textContent = 'Opening...';
+      }
+      if (status) {
+        status.textContent = 'Preparing reveal...';
+      }
+
+      try {
+        const routes = getApiRoutes();
+        const response = await fetch(routes.pulls, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ count: 1 }),
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok || !payload?.ok) {
+          throw new Error(payload?.error || `Pull failed with ${response.status}`);
+        }
+
+        const card = payload.results?.[0]?.ownedCard;
+        if (!card) {
+          throw new Error('The pull resolved, but no card was returned for reveal.');
+        }
+
+        savePullRevealPayload({
+          mode: 'single',
+          source: 'real',
+          count: 1,
+          cards: [card],
+          ticketsBefore: payload.ticketsBefore,
+          ticketsAfter: payload.ticketsAfter,
+          poolSummary: payload.poolSummary,
+          fallbackUsed: Boolean(payload.results?.[0]?.fallbackUsed),
+        });
+
+        window.location.hash = '/pull/reveal?count=1';
+      } catch (error) {
+        if (status) {
+          status.textContent = error.message;
+        }
+        if (confirmLabel) {
+          confirmLabel.textContent = 'Confirm Pull';
+        }
+        confirmButton.disabled = false;
+        confirmButton.classList.remove('button-working');
+      }
     });
   }
 
