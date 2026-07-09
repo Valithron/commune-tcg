@@ -29,6 +29,7 @@ import './styles/battle.css';
 import './styles/battle-encounter-compact.css';
 import './styles/battle-squad-thumbnails.css';
 import './styles/phase4.css';
+import './styles/submit-crop-lab.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
@@ -55,6 +56,7 @@ import { renderAdminIndex } from './routes/AdminIndex.js';
 import { initAdminBattleTest, renderAdminBattleTest } from './routes/AdminBattleTest.js';
 import { initAdminCardEditor, renderAdminCardEditor } from './routes/AdminCardEditor.js';
 import { initAdminCardMechanics, renderAdminCardMechanics } from './routes/AdminCardMechanics.js';
+import { initAdminSubmitCropLab, renderAdminSubmitCropLab } from './routes/AdminSubmitCropLab.js';
 import { renderAdminDashboard } from './routes/AdminDashboard.js';
 import { initAdminSubmissionDetail, renderAdminSubmissionDetail } from './routes/AdminSubmissionDetail.js';
 import { renderBackendStatus } from './routes/BackendStatus.js';
@@ -87,6 +89,7 @@ const routeDefinitions = [
   { pattern: '/admin/battle-check', navRoute: '/admin/battle-check', shell: 'admin', render: renderAdminBattleTest },
   { pattern: '/admin/cards', navRoute: '/admin/cards', shell: 'admin', render: renderAdminCardEditor },
   { pattern: '/admin/card-mechanics', navRoute: '/admin/card-mechanics', shell: 'admin', render: renderAdminCardMechanics },
+  { pattern: '/admin/submit-crop-lab', navRoute: '/admin/submit-crop-lab', shell: 'admin', render: renderAdminSubmitCropLab },
   { pattern: '/admin/submissions', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminDashboard },
   { pattern: '/admin/submission/:submissionId', navRoute: '/admin/submissions', shell: 'admin', render: renderAdminSubmissionDetail },
   { pattern: '/admin/backend', navRoute: '/admin/backend', shell: 'admin', render: renderBackendStatus },
@@ -276,6 +279,10 @@ async function render() {
 
     if (matchedRoute.pattern === '/admin/card-mechanics') {
       initAdminCardMechanics(appRoot);
+    }
+
+    if (matchedRoute.pattern === '/admin/submit-crop-lab') {
+      initAdminSubmitCropLab(appRoot);
     }
 
     if (matchedRoute.pattern === '/battle/squad') {
