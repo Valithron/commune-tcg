@@ -1,0 +1,109 @@
+/* ============================================================================
+   Submit Card Preview Styles
+   Purpose: live CardFrame preview and direct crop interaction on Submit page.
+   ============================================================================ */
+
+.submit-card-builder {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.submit-preview-panel,
+.submit-fields-panel {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.submit-preview-heading {
+  align-items: start;
+  margin-bottom: 0;
+}
+
+.submit-card-preview-stage {
+  display: grid;
+  place-items: center;
+  min-height: 30rem;
+  padding: var(--space-3);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(246, 215, 122, 0.08), transparent 36%),
+    rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  user-select: none;
+}
+
+.submit-card-preview-stage .tcg-card {
+  width: min(100%, 20rem);
+  max-width: 20rem;
+}
+
+.submit-card-preview-stage .card-art {
+  cursor: pointer;
+  touch-action: none;
+}
+
+.submit-card-preview-stage.has-image .card-art {
+  cursor: grab;
+}
+
+.submit-card-preview-stage.has-image:active .card-art {
+  cursor: grabbing;
+}
+
+.submit-art-compact-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.submit-art-upload-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.submit-art-upload-button input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.submit-review-note {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 62rem) {
+  .submit-card-builder {
+    grid-template-columns: 1fr;
+  }
+
+  .submit-card-preview-stage {
+    min-height: 27rem;
+  }
+
+  .submit-card-preview-stage .tcg-card {
+    width: min(100%, 18.5rem);
+    max-width: 18.5rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .submit-card-preview-stage {
+    min-height: 24rem;
+    padding: var(--space-2);
+  }
+
+  .submit-card-preview-stage .tcg-card {
+    width: min(100%, 17rem);
+    max-width: 17rem;
+  }
+}
