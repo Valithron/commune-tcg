@@ -1,55 +1,71 @@
 /* ============================================================================
    Vault Data Source
-   Phase 8.4 responsibility: centralize read-only Vault loading for list and
-   detail routes. Keeps the temporary owner strategy in one place.
+   Phase auth-current-user responsibility: centralize signed-in Vault loading for
+   list and detail routes, with mock fallback only when backend read fails.
    ============================================================================ */
 
 import { ownedCards, findCardById } from './mockCards.js';
+import { getCachedAuthUser } from '../services/authClient.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 
 export const temporaryVaultOwner = 'sterling';
 
 let vaultCache = null;
+let vaultCacheOwner = '';
+
+function currentOwner() {
+  const user = getCachedAuthUser();
+  return {
+    id: user?.id || temporaryVaultOwner,
+    displayName: user?.displayName || user?.username || 'User',
+  };
+}
 
 function mockVault(errorMessage = '') {
+  const owner = currentOwner();
   return {
     cards: ownedCards,
     source: 'mock',
-    selectedOwnerUserId: temporaryVaultOwner,
+    selectedOwnerUserId: owner.id,
+    ownerDisplayName: owner.displayName,
     warnings: errorMessage ? [errorMessage] : ['Using local mock owned cards.'],
   };
 }
 
 export function getVaultSourceLabel(vault) {
-  return vault.source === 'backend' ? 'Live Vault · ' + temporaryVaultOwner : 'Mock Vault fallback';
+  return vault.source === 'backend' ? 'Live Vault · ' + (vault.ownerDisplayName || vault.selectedOwnerUserId || 'User') : 'Mock Vault fallback';
 }
 
 export async function loadVaultCards({ force = false } = {}) {
-  if (vaultCache && !force) {
+  const owner = currentOwner();
+  if (vaultCache && !force && vaultCacheOwner === owner.id) {
     return vaultCache;
   }
 
   try {
     const routes = getApiRoutes();
-    const path = routes.vault + '?' + 'ownerUserId=' + encodeURIComponent(temporaryVaultOwner);
-    const payload = await fetchJson(path);
+    const payload = await fetchJson(routes.vault, { cache: 'no-store' });
 
     if (!payload?.ok || !Array.isArray(payload.cards)) {
       vaultCache = mockVault(payload?.warnings?.join(' ') || 'No backend Vault cards were returned.');
+      vaultCacheOwner = owner.id;
       return vaultCache;
     }
 
     vaultCache = {
       cards: payload.cards,
       source: 'backend',
-      selectedOwnerUserId: payload.selectedOwnerUserId || temporaryVaultOwner,
+      selectedOwnerUserId: payload.selectedOwnerUserId || owner.id,
+      ownerDisplayName: payload.ownerDisplayName || owner.displayName,
       ownerUserIds: payload.ownerUserIds || [],
       warnings: payload.warnings || [],
     };
+    vaultCacheOwner = owner.id;
 
     return vaultCache;
   } catch (error) {
     vaultCache = mockVault(error.message);
+    vaultCacheOwner = owner.id;
     return vaultCache;
   }
 }
