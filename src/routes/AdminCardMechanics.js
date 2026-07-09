@@ -150,7 +150,7 @@ function renderTemplateTable(payload) {
     <div class="glass-panel admin-card-table-panel">
       <div class="admin-card-table-toolbar">
         <div><span class="section-kicker">Founder Pool Curation</span><h2 class="section-title">${escapeHtml(rows.length)} template cards</h2></div>
-        <span class="empty-note">Select final rarity per template, then apply once. This touches unowned Library templates only.</span>
+        <span class="empty-note">Use the randomizer for speed, or adjust individual dropdowns first and apply manually.</span>
       </div>
       <div class="admin-card-table-scroll">
         <table class="admin-card-table">
@@ -165,7 +165,10 @@ function renderTemplateTable(payload) {
 function renderResultPanel(payload = null) {
   if (!payload) return '<div class="empty-note" data-card-mechanics-result>Ready.</div>';
   if (payload.action === 'clear_owned_copies') return `<div class="empty-note" data-card-mechanics-result>Cleared ${escapeHtml(payload.deletedCount || 0)} owned pull copies.</div>`;
-  if (payload.action === 'apply_founder_pool_rarities') return `<div class="empty-note" data-card-mechanics-result>Applied Founder Pool rarities to ${escapeHtml(payload.updatedCount || 0)} templates. Spread: ${escapeHtml(formatRaritySpread(payload.byRarity))}.${payload.resetOwnedCopies ? ` Cleared ${escapeHtml(payload.deletedOwnedCopies || 0)} owned test copies.` : ''}</div>`;
+  if (payload.action === 'apply_founder_pool_rarities' || payload.action === 'randomize_founder_pool_rarities') {
+    const verb = payload.action === 'randomize_founder_pool_rarities' ? 'Randomized' : 'Applied';
+    return `<div class="empty-note" data-card-mechanics-result>${verb} Founder Pool rarities for ${escapeHtml(payload.updatedCount || 0)} templates. Spread: ${escapeHtml(formatRaritySpread(payload.byRarity))}.${payload.resetOwnedCopies ? ` Cleared ${escapeHtml(payload.deletedOwnedCopies || 0)} owned test copies.` : ''}</div>`;
+  }
   if (payload.repairedCount !== undefined) return `<div class="empty-note" data-card-mechanics-result>Repaired ${escapeHtml(payload.repairedCount)} template card${payload.repairedCount === 1 ? '' : 's'}.</div>`;
   return '<div class="empty-note" data-card-mechanics-result>Action finished.</div>';
 }
@@ -174,14 +177,14 @@ function renderFounderRarityTool(payload) {
   return `
     <section class="glass-panel admin-panel" data-founder-rarity-tool>
       <span class="section-kicker">One-time Founder Pool cleanup</span>
-      <h2 class="section-title">Manual rarity assignment</h2>
+      <h2 class="section-title">Automatic rarity seeding</h2>
       <div class="admin-checklist">
         <div>Target spread for this pool: <strong>${escapeHtml(formatRaritySpread(payload.founderPoolTarget))}</strong>.</div>
         <div>Current selected spread: <strong data-founder-selected-spread>${escapeHtml(formatRaritySpread(payload.byRarity))}</strong>.</div>
-        <div>Applying recomputes template rarity, static budget, pull-time budget range, level cap, growth, origin bonus, base stats, and legacy pow/def/spd fields.</div>
+        <div>Randomize and apply will pick cards randomly, assign exact target counts, then recompute rarity budgets, pull ranges, level caps, growth, origin bonus, and legacy pow/def/spd fields.</div>
       </div>
       <label class="admin-inline-check"><input type="checkbox" data-founder-reset-owned /> Clear owned test copies after applying</label>
-      <div class="action-row"><button class="button button-primary" type="button" data-founder-rarity-apply>Apply Selected Founder Rarities</button></div>
+      <div class="action-row"><button class="button button-primary" type="button" data-founder-rarity-randomize>Randomize and Apply Target Spread</button><button class="button button-secondary" type="button" data-founder-rarity-apply>Apply Selected Dropdowns</button></div>
     </section>
   `;
 }
@@ -215,7 +218,7 @@ export async function renderAdminCardMechanics() {
   let payload;
   try { payload = await loadMechanicsAudit(); } catch (error) { return `<section class="hero-panel"><span class="section-kicker">Card Mechanics</span><h2 class="hero-title">Repair tool unavailable.</h2><p class="hero-copy">${escapeHtml(error.message)}</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a></div></section>`; }
   return `
-    <section class="hero-panel"><span class="section-kicker">Admin Mechanics</span><h2 class="hero-title">Simulate, repair, and seed card mechanics.</h2><p class="hero-copy">Use this during pre-launch inventory to curate Founder Pool rarity, repair stale template stats, and clear distorted test pulls.</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a><a class="button button-secondary" href="#/admin/cards">Card Editor</a></div></section>
+    <section class="hero-panel"><span class="section-kicker">Admin Mechanics</span><h2 class="hero-title">Simulate, repair, and seed card mechanics.</h2><p class="hero-copy">Use this during pre-launch inventory to randomize Founder Pool rarity, repair stale template stats, and clear distorted test pulls.</p><div class="action-row"><a class="button button-secondary" href="#/admin">Admin Home</a><a class="button button-secondary" href="#/admin/cards">Card Editor</a></div></section>
     <section class="admin-card-mechanics" data-card-mechanics-tool>
       <div class="quick-grid admin-hub-grid" data-card-mechanics-metrics>${renderMetrics(payload)}</div>
       ${renderFounderRarityTool(payload)}
@@ -289,6 +292,23 @@ async function runFounderApply(root) {
   }
 }
 
+async function runFounderRandomize(root) {
+  const resetOwnedCopies = root.querySelector('[data-founder-reset-owned]')?.checked === true;
+  const confirmation = `Randomize all Founder Pool template rarities to the target spread?${resetOwnedCopies ? ' This will also clear owned test copies.' : ''}`;
+  if (!window.confirm(confirmation)) return;
+  const routes = getApiRoutes();
+  const result = root.querySelector('[data-card-mechanics-result]');
+  if (result) result.textContent = 'Randomizing Founder Pool rarities...';
+  try {
+    const actionPayload = await fetchJson(routes.adminCardMechanics, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'randomize_founder_pool_rarities', resetOwnedCopies }) });
+    const auditPayload = await fetchJson(routes.adminCardMechanics);
+    renderAuditInto(root, auditPayload, actionPayload);
+  } catch (error) {
+    const current = root.querySelector('[data-card-mechanics-result]');
+    if (current) current.textContent = error.message;
+  }
+}
+
 async function runMechanicsAction(root, action) {
   const routes = getApiRoutes();
   const destructive = action === 'clear_owned_copies' || action === 'reroll_all_template_stats';
@@ -303,7 +323,17 @@ export function initAdminCardMechanics(root) {
   if (!tool) return;
   updateSimulator(root);
   updateFounderSpread(root);
-  tool.addEventListener('click', (event) => { const resetButton = event.target.closest('[data-sim-apply-rarity]'); if (resetButton) { applyRarityDefaults(root); return; } const founderButton = event.target.closest('[data-founder-rarity-apply]'); if (founderButton) { runFounderApply(root); return; } const button = event.target.closest('[data-card-mechanics-action]'); if (!button) return; runMechanicsAction(root, button.dataset.cardMechanicsAction || 'audit'); });
+  tool.addEventListener('click', (event) => {
+    const resetButton = event.target.closest('[data-sim-apply-rarity]');
+    if (resetButton) { applyRarityDefaults(root); return; }
+    const randomizeButton = event.target.closest('[data-founder-rarity-randomize]');
+    if (randomizeButton) { runFounderRandomize(root); return; }
+    const founderButton = event.target.closest('[data-founder-rarity-apply]');
+    if (founderButton) { runFounderApply(root); return; }
+    const button = event.target.closest('[data-card-mechanics-action]');
+    if (!button) return;
+    runMechanicsAction(root, button.dataset.cardMechanicsAction || 'audit');
+  });
   tool.addEventListener('input', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); if (event.target.closest('[data-founder-rarity-select]')) updateFounderSpread(root); });
   tool.addEventListener('change', (event) => { if (event.target.closest('[data-mechanics-simulator]')) updateSimulator(root); if (event.target.closest('[data-founder-rarity-select]')) updateFounderSpread(root); });
 }
