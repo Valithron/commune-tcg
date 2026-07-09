@@ -2,7 +2,16 @@ import { errorResponse, jsonResponse } from '../../_shared/json.js';
 import { rollApprovalProfile } from '../../_shared/approval-rolls.js';
 import { buildApprovedTemplateTraits, normalizeBaseStats, normalizeRarity } from '../../_shared/card-mechanics.js';
 
-const allowedActions = new Set(['audit', 'repair_placeholder_stats', 'reroll_all_template_stats', 'clear_owned_copies']);
+const allowedActions = new Set([
+  'audit',
+  'repair_placeholder_stats',
+  'reroll_all_template_stats',
+  'clear_owned_copies',
+  'apply_founder_pool_rarities',
+]);
+const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
+const allowedRarities = new Set(rarityOrder);
+const founderRarityRatios = Object.freeze({ common: 0.50, uncommon: 0.27, rare: 0.13, legendary: 0.07, mythic: 0.03 });
 
 function safeParseJson(value) {
   if (!value) return null;
@@ -73,7 +82,7 @@ function readCharacter(payload, row) {
 }
 
 function readType(payload) {
-  return cleanText(payload.type || payload.card_type || payload.cardType || payload.role || payload.battle_role || payload.battleRole || 'support', 80).toLowerCase();
+  return cleanText(payload.type || payload.card_type || payload.cardType || payload.approvedType || payload.approved_type || payload.role || payload.battle_role || payload.battleRole || 'neutral', 80).toLowerCase();
 }
 
 function readCreator(payload) {
@@ -85,7 +94,7 @@ function readRarity(payload) {
 }
 
 function readStatArchetype(payload) {
-  return cleanText(payload.statArchetype || payload.stat_archetype || payload.card_type || payload.cardType || payload.type || 'balanced', 80).toLowerCase();
+  return cleanText(payload.statArchetype || payload.stat_archetype || payload.card_type || payload.cardType || payload.type || 'neutral', 80).toLowerCase();
 }
 
 function readStatBudget(payload, stats) {
@@ -118,6 +127,8 @@ function summarizeRow(row) {
     characterId: readCharacter(payload, row),
     type: readType(payload),
     rarity,
+    targetRarity: normalizeRarity(payload.targetRarity || payload.target_rarity || rarity),
+    raritySource: payload.raritySource || payload.rarity_source || '',
     statArchetype: readStatArchetype(payload),
     statBudget: readStatBudget(payload, stats),
     stats,
@@ -148,22 +159,52 @@ async function readOwnedCopyCount(env) {
   return Number(row?.count || 0);
 }
 
-function buildRepairSource(payload, row) {
+function buildRaritySummary(cards) {
+  return rarityOrder.reduce((summary, rarity) => {
+    summary[rarity] = cards.filter((card) => card.rarity === rarity).length;
+    return summary;
+  }, {});
+}
+
+function buildFounderTargetDistribution(total) {
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  if (!safeTotal) return rarityOrder.reduce((summary, rarity) => ({ ...summary, [rarity]: 0 }), {});
+
+  const raw = rarityOrder.map((rarity) => {
+    const value = safeTotal * founderRarityRatios[rarity];
+    return { rarity, floor: Math.floor(value), remainder: value - Math.floor(value) };
+  });
+  let remaining = safeTotal - raw.reduce((totalCount, entry) => totalCount + entry.floor, 0);
+  const counts = Object.fromEntries(raw.map((entry) => [entry.rarity, entry.floor]));
+
+  raw.sort((a, b) => b.remainder - a.remainder || rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity));
+  for (const entry of raw) {
+    if (remaining <= 0) break;
+    counts[entry.rarity] += 1;
+    remaining -= 1;
+  }
+
+  return rarityOrder.reduce((summary, rarity) => ({ ...summary, [rarity]: counts[rarity] || 0 }), {});
+}
+
+function buildRepairSource(payload, row, rarityOverride = '') {
+  const rarity = normalizeRarity(rarityOverride || readRarity(payload));
+
   return {
     ...payload,
     id: payload.id || row.id,
     cardName: readName(payload, row),
     characterId: readCharacter(payload, row),
     cardType: readType(payload),
-    raritySuggestion: readRarity(payload),
+    raritySuggestion: rarity,
     statArchetype: readStatArchetype(payload),
   };
 }
 
-function buildRepairedPayload(payload, row) {
+function buildRepairedPayload(payload, row, { rarityOverride = '', sourceLabel = 'admin_mechanics_repair' } = {}) {
   const now = new Date().toISOString();
-  const rarity = readRarity(payload);
-  const repairSource = buildRepairSource(payload, row);
+  const rarity = normalizeRarity(rarityOverride || readRarity(payload));
+  const repairSource = buildRepairSource(payload, row, rarity);
   const approvalProfile = rollApprovalProfile({
     targetRarity: rarity,
     finalRarityOverride: rarity,
@@ -172,7 +213,7 @@ function buildRepairedPayload(payload, row) {
   const templateTraits = buildApprovedTemplateTraits({ approvalProfile, source: repairSource });
   const stats = templateTraits.stats;
   const characterId = readCharacter(payload, row);
-  const cardType = readType(payload);
+  const cardType = templateTraits.type;
   const creator = readCreator(payload);
 
   return {
@@ -184,26 +225,45 @@ function buildRepairedPayload(payload, row) {
     character_id: characterId,
     cid: characterId,
     type: cardType,
+    cardType,
     card_type: cardType,
-    category: payload.category || titleCase(cardType),
+    approvedType: payload.approvedType || payload.approved_type || cardType,
+    approved_type: payload.approved_type || payload.approvedType || cardType,
+    category: titleCase(templateTraits.typeLabel || cardType),
     creator,
     creator_name: creator,
     creatorDisplayName: payload.creatorDisplayName || payload.creator_display_name || creator,
     creator_display_name: payload.creator_display_name || payload.creatorDisplayName || creator,
     mechanicsVersion: templateTraits.mechanicsVersion,
     rarity: templateTraits.rarity,
-    rarity_source: 'admin_mechanics_repair',
-    raritySource: 'admin_mechanics_repair',
+    rarity_source: sourceLabel,
+    raritySource: sourceLabel,
     targetRarity: templateTraits.targetRarity,
     target_rarity: templateTraits.targetRarity,
-    statsSource: 'admin_mechanics_repair',
-    stats_source: 'admin_mechanics_repair',
-    traitSource: 'admin_repair',
-    trait_source: 'admin_repair',
+    finalRarityOverride: templateTraits.rarity,
+    final_rarity_override: templateTraits.rarity,
+    statsSource: sourceLabel,
+    stats_source: sourceLabel,
+    traitSource: sourceLabel,
+    trait_source: sourceLabel,
+    staticStatBudget: templateTraits.staticStatBudget,
+    static_stat_budget: templateTraits.staticStatBudget,
+    ownedStatBudgetRange: templateTraits.ownedStatBudgetRange,
+    owned_stat_budget_range: templateTraits.ownedStatBudgetRange,
+    copyStatBudgetVariance: templateTraits.copyStatBudgetVariance,
+    copy_stat_budget_variance: templateTraits.copyStatBudgetVariance,
     statBudget: templateTraits.statBudget,
     stat_budget: templateTraits.statBudget,
     statArchetype: templateTraits.statArchetype,
     stat_archetype: templateTraits.statArchetype,
+    typeLabel: templateTraits.typeLabel,
+    type_label: templateTraits.typeLabel,
+    typeColor: templateTraits.typeColor,
+    type_color: templateTraits.typeColor,
+    typeIdentity: templateTraits.typeIdentity,
+    type_identity: templateTraits.typeIdentity,
+    typeStatBias: templateTraits.typeStatBias,
+    type_stat_bias: templateTraits.typeStatBias,
     baseStats: templateTraits.baseStats,
     base_stats: templateTraits.baseStats,
     progressionRules: templateTraits.progressionRules,
@@ -226,9 +286,12 @@ function buildRepairedPayload(payload, row) {
     spd: stats.spd,
     adminMechanicsRepair: {
       repairedAt: now,
+      previousRarity: readRarity(payload),
+      newRarity: templateTraits.rarity,
       previousStats: normalizeBaseStats(payload),
       previousStatBudget: readStatBudget(payload, normalizeBaseStats(payload)),
       approvalProfile,
+      source: sourceLabel,
     },
     updatedAt: now,
     updated_at: now,
@@ -240,6 +303,7 @@ async function auditMechanics(env) {
   const [rows, ownedCopyCount] = await Promise.all([readTemplateRows(env), readOwnedCopyCount(env)]);
   const templates = rows.map(summarizeRow);
   const placeholderTemplates = templates.filter((card) => card.placeholder);
+  const byRarity = buildRaritySummary(templates);
 
   return {
     ok: true,
@@ -250,13 +314,14 @@ async function auditMechanics(env) {
     ownedCopyCount,
     templates,
     placeholderTemplates,
-    byRarity: templates.reduce((summary, card) => {
-      summary[card.rarity] = (summary[card.rarity] || 0) + 1;
-      return summary;
-    }, {}),
+    byRarity,
+    founderPoolTarget: buildFounderTargetDistribution(templates.length),
+    founderPoolRatios: founderRarityRatios,
+    rarityGaps: rarityOrder.filter((rarity) => byRarity[rarity] === 0),
     warnings: [
       'Template rows are unowned cards only. Owned Vault copies are not repaired by this tool.',
       'Repair actions reroll template mechanics while preserving art, text, creator, character, and type.',
+      'Founder Pool re-rarity is a manual admin curation action. It does not randomly assign rarity tiers.',
     ],
   };
 }
@@ -317,6 +382,97 @@ async function clearOwnedCopies(env) {
   };
 }
 
+function normalizeAssignmentRarity(value) {
+  const raw = cleanText(value, 40).toLowerCase();
+  if (!raw) return '';
+  if (allowedRarities.has(raw)) return raw;
+  if (raw.includes('myth') || raw.includes('legend') || raw.includes('uncommon') || raw.includes('rare') || raw.includes('common')) return normalizeRarity(raw);
+  return '';
+}
+
+function normalizeAssignments(assignments) {
+  const normalized = Array.isArray(assignments) ? assignments : [];
+  return normalized.map((entry) => ({
+    id: cleanText(entry?.id, 180),
+    rarity: normalizeAssignmentRarity(entry?.rarity || ''),
+  })).filter((entry) => entry.id && allowedRarities.has(entry.rarity));
+}
+
+async function applyFounderPoolRarities(env, { assignments = [], resetOwnedCopies = false } = {}) {
+  await ensureCardsTable(env);
+  const rows = await readTemplateRows(env);
+  const byId = new Map(rows.map((row) => [String(row.id), row]));
+  const normalizedAssignments = normalizeAssignments(assignments);
+  const assignmentById = new Map(normalizedAssignments.map((entry) => [entry.id, entry.rarity]));
+  const missingAssignments = rows.filter((row) => !assignmentById.has(String(row.id))).map((row) => row.id);
+  const unknownAssignments = normalizedAssignments.filter((entry) => !byId.has(entry.id)).map((entry) => entry.id);
+
+  if (!rows.length) {
+    return { ok: false, status: 409, error: 'No unowned Library templates were found for Founder Pool re-rarity.' };
+  }
+
+  if (missingAssignments.length || unknownAssignments.length) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Founder Pool assignments must cover every current unowned Library template exactly once.',
+      templateCount: rows.length,
+      assignmentCount: normalizedAssignments.length,
+      missingAssignments,
+      unknownAssignments,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const updated = [];
+
+  for (const row of rows) {
+    const payload = readPayload(row);
+    const rarity = assignmentById.get(String(row.id));
+    const repairedPayload = buildRepairedPayload(payload, row, { rarityOverride: rarity, sourceLabel: 'founder_pool_re_rarity' });
+
+    await env.DB.prepare(`
+      UPDATE cards
+      SET card_json = ?,
+          character_id = ?,
+          updated_at = ?
+      WHERE id = ?
+        AND ${unownedWhere()}
+    `).bind(
+      JSON.stringify(repairedPayload),
+      readCharacter(repairedPayload, row),
+      now,
+      row.id
+    ).run();
+
+    updated.push({
+      id: row.id,
+      name: readName(repairedPayload, row),
+      previousRarity: readRarity(payload),
+      rarity: readRarity(repairedPayload),
+      statBudget: readStatBudget(repairedPayload, normalizeBaseStats(repairedPayload)),
+      stats: normalizeBaseStats(repairedPayload),
+    });
+  }
+
+  const resetResult = resetOwnedCopies ? await clearOwnedCopies(env) : null;
+  const byRarity = rarityOrder.reduce((summary, rarity) => {
+    summary[rarity] = updated.filter((card) => card.rarity === rarity).length;
+    return summary;
+  }, {});
+
+  return {
+    ok: true,
+    action: 'apply_founder_pool_rarities',
+    updatedCount: updated.length,
+    byRarity,
+    targetDistribution: buildFounderTargetDistribution(updated.length),
+    resetOwnedCopies: Boolean(resetOwnedCopies),
+    deletedOwnedCopies: resetResult?.deletedCount || 0,
+    updated,
+  };
+}
+
 export async function onRequestGet({ env }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
 
@@ -342,6 +498,14 @@ export async function onRequestPost({ env, request }) {
     if (action === 'repair_placeholder_stats') return jsonResponse(await repairTemplates(env, { mode: 'placeholder' }));
     if (action === 'reroll_all_template_stats') return jsonResponse(await repairTemplates(env, { mode: 'all' }));
     if (action === 'clear_owned_copies') return jsonResponse(await clearOwnedCopies(env));
+    if (action === 'apply_founder_pool_rarities') {
+      const result = await applyFounderPoolRarities(env, {
+        assignments: payload.assignments || [],
+        resetOwnedCopies: payload.resetOwnedCopies === true,
+      });
+      if (!result.ok) return errorResponse(result.error || 'Failed to apply Founder Pool rarity assignments.', result.status || 400, result);
+      return jsonResponse(result);
+    }
 
     return errorResponse('Unsupported card mechanics action.', 400);
   } catch (error) {
