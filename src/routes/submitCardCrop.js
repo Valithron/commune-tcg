@@ -45,7 +45,7 @@ export function initSubmitImageCropper(form, status) {
   let touchStart = null;
   let gestureStartCrop = null;
   let objectUrl = '';
-  let lastTap = 0;
+  let lastDesktopTap = 0;
   let nativeTouchMode = false;
 
   const getArt = () => box.querySelector('.card-art');
@@ -181,6 +181,7 @@ export function initSubmitImageCropper(form, status) {
     start = null;
     touchStart = null;
     gestureStartCrop = null;
+    lastDesktopTap = 0;
   }
 
   function installPreviewImage(url) {
@@ -233,14 +234,16 @@ export function initSubmitImageCropper(form, status) {
   box.addEventListener('pointerdown', (event) => {
     if (!hasImage() || (nativeTouchMode && event.pointerType === 'touch')) return;
 
-    const now = Date.now();
-    if (now - lastTap < 300) {
-      resetCrop();
-      lastTap = 0;
-      event.preventDefault();
-      return;
+    if (event.pointerType !== 'touch') {
+      const now = Date.now();
+      if (now - lastDesktopTap < 300) {
+        resetCrop();
+        lastDesktopTap = 0;
+        event.preventDefault();
+        return;
+      }
+      lastDesktopTap = now;
     }
-    lastTap = now;
 
     box.setPointerCapture?.(event.pointerId);
     pointers.set(event.pointerId, point(event));
@@ -267,37 +270,19 @@ export function initSubmitImageCropper(form, status) {
     if (!hasImage()) return;
     nativeTouchMode = true;
     pointers.clear();
-
-    if (event.touches.length > 1) {
-      lastTap = 0;
-      beginTouchGesture(event.touches);
-      event.preventDefault();
-      return;
-    }
-
-    const now = Date.now();
-    if (event.touches.length === 1 && now - lastTap < 300) {
-      resetCrop();
-      lastTap = 0;
-      event.preventDefault();
-      return;
-    }
-    lastTap = now;
-
+    lastDesktopTap = 0;
     beginTouchGesture(event.touches);
     event.preventDefault();
   }, { passive: false });
 
   box.addEventListener('touchmove', (event) => {
     if (!hasImage()) return;
-    if (event.touches.length > 1) lastTap = 0;
     updateTouchGesture(event.touches);
     event.preventDefault();
   }, { passive: false });
 
   box.addEventListener('touchend', (event) => {
     if (!hasImage()) return;
-    if (event.touches.length) lastTap = 0;
     beginTouchGesture(event.touches);
     if (!event.touches.length) nativeTouchMode = false;
   }, { passive: false });
@@ -305,26 +290,25 @@ export function initSubmitImageCropper(form, status) {
   box.addEventListener('touchcancel', () => {
     nativeTouchMode = false;
     touchStart = null;
-    lastTap = 0;
+    lastDesktopTap = 0;
   }, { passive: false });
 
   box.addEventListener('gesturestart', (event) => {
     if (!hasImage()) return;
-    lastTap = 0;
+    lastDesktopTap = 0;
     gestureStartCrop = { ...crop };
     event.preventDefault();
   }, { passive: false });
 
   box.addEventListener('gesturechange', (event) => {
     if (!hasImage() || !gestureStartCrop) return;
-    lastTap = 0;
     setCrop({ ...gestureStartCrop, zoom: gestureStartCrop.zoom * Number(event.scale || 1) });
     event.preventDefault();
   }, { passive: false });
 
   box.addEventListener('gestureend', (event) => {
     gestureStartCrop = null;
-    lastTap = 0;
+    lastDesktopTap = 0;
     event.preventDefault();
   }, { passive: false });
 
