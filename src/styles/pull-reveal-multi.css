@@ -1,0 +1,157 @@
+/* ============================================================================
+   Five Pull Reveal Overrides
+   Purpose: Phase 3A staged five-card reveal layout and controls.
+   ============================================================================ */
+
+.pull-reveal-screen--multi {
+  min-height: calc(100dvh - var(--bottom-nav-height) - 5.5rem);
+  padding-top: var(--space-4);
+}
+
+.pull-reveal-stage--multi {
+  width: min(100%, 28rem);
+}
+
+.pull-reveal-stage--multi .pull-reveal-copy {
+  margin-bottom: var(--space-3);
+}
+
+.pull-reveal-stage--multi .pull-reveal-copy p {
+  max-width: 20rem;
+}
+
+.pull-reveal-stage--multi .pull-reveal-glow {
+  top: 7rem;
+  width: 24rem;
+  height: 27rem;
+}
+
+.pull-reveal-stage--multi .pull-reveal-burst {
+  top: 12rem;
+}
+
+.pull-reveal-five-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, auto);
+  column-gap: clamp(0.35rem, 2.5vw, 0.85rem);
+  row-gap: clamp(0.55rem, 2.7vw, 0.95rem);
+  width: min(100%, 23rem);
+  margin-top: var(--space-2);
+}
+
+.pull-reveal-five-layout .pull-reveal-card {
+  width: 100%;
+  max-width: 7.15rem;
+  justify-self: center;
+  animation: pull-reveal-mini-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 1.35rem color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--pull-reveal-rarity-color, var(--color-primary))) 42%, transparent));
+}
+
+.pull-reveal-five-layout .pull-reveal-card:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+  animation-delay: 0s;
+}
+
+.pull-reveal-five-layout .pull-reveal-card:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+  animation-delay: 0.18s;
+}
+
+.pull-reveal-five-layout .pull-reveal-card:nth-child(3) {
+  grid-column: 1;
+  grid-row: 2;
+  animation-delay: 0.36s;
+}
+
+.pull-reveal-five-layout .pull-reveal-card:nth-child(4) {
+  grid-column: 3;
+  grid-row: 2;
+  animation-delay: 0.54s;
+}
+
+.pull-reveal-five-layout .pull-reveal-card:nth-child(5) {
+  grid-column: 2;
+  grid-row: 3;
+  animation-delay: 0.72s;
+}
+
+.pull-reveal-card[data-rarity='common'] { --pull-reveal-card-rarity-color: var(--rarity-common); }
+.pull-reveal-card[data-rarity='uncommon'] { --pull-reveal-card-rarity-color: var(--rarity-uncommon); }
+.pull-reveal-card[data-rarity='rare'] { --pull-reveal-card-rarity-color: var(--rarity-rare); }
+.pull-reveal-card[data-rarity='legendary'] { --pull-reveal-card-rarity-color: var(--rarity-legendary); }
+.pull-reveal-card[data-rarity='mythic'] { --pull-reveal-card-rarity-color: var(--rarity-mythic); }
+
+.pull-reveal-card--mini:hover {
+  filter: drop-shadow(0 0 1.85rem color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--color-primary)) 62%, transparent));
+}
+
+.pull-reveal-card--mini .pull-reveal-card-back {
+  border-color: color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--color-primary)) 48%, transparent);
+  border-radius: 0.72rem;
+}
+
+.pull-reveal-card--mini .pull-reveal-card-front .tcg-card {
+  border-radius: 0.72rem;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--color-primary)) 46%, transparent),
+    0 0.7rem 1.7rem rgba(0, 0, 0, 0.42);
+}
+
+.pull-reveal-card--mini .tcg-card--thumbnail {
+  height: 100%;
+}
+
+.pull-reveal-prompt--multi {
+  margin-top: var(--space-4);
+}
+
+.pull-reveal-all {
+  margin-top: var(--space-4);
+  min-width: 11rem;
+  border-color: color-mix(in srgb, var(--color-primary) 80%, white 8%);
+  box-shadow: 0 0 1.4rem rgba(212, 175, 55, 0.24);
+}
+
+.pull-reveal-all[hidden] {
+  display: none !important;
+}
+
+.pull-reveal-screen--multi .pull-reveal-actions {
+  margin-top: var(--space-4);
+}
+
+@keyframes pull-reveal-mini-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.45rem) rotate(0.75deg); }
+}
+
+@media (max-width: 380px) {
+  .pull-reveal-five-layout {
+    width: min(100%, 20rem);
+    column-gap: 0.35rem;
+    row-gap: 0.55rem;
+  }
+
+  .pull-reveal-five-layout .pull-reveal-card {
+    max-width: 6.15rem;
+  }
+
+  .pull-reveal-stage--multi .pull-reveal-copy h2 {
+    font-size: 1.45rem;
+  }
+
+  .pull-reveal-stage--multi .pull-reveal-copy p {
+    font-size: 0.78rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pull-reveal-five-layout .pull-reveal-card {
+    animation: none;
+  }
+}
