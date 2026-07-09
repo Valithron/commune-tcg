@@ -1,5 +1,6 @@
 import { mockUser } from '../data/mockUser.js';
 import { pullOptions, rarityOdds } from '../data/mockPull.js';
+import { clearVaultCache } from '../data/vaultData.js';
 import { clampPullCount } from '../components/format.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { savePullRevealPayload } from '../services/pullRevealStore.js';
@@ -308,6 +309,7 @@ export function initPull(root) {
           throw new Error('The pull resolved, but no card was returned for reveal.');
         }
 
+        clearVaultCache();
         savePullRevealPayload({
           mode: 'single',
           source: 'real',
