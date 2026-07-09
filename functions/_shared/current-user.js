@@ -1,7 +1,9 @@
 /* ============================================================================
    Current User Helper
-   Purpose: centralize the temporary active-user contract until real auth lands.
+   Purpose: centralize the active player contract for APIs that create or own data.
    ============================================================================ */
+
+import { getSessionUser } from './auth.js';
 
 export const temporaryCurrentUser = {
   id: 'sterling',
@@ -28,7 +30,19 @@ function displayNameFromEmail(email) {
     .join(' ') || temporaryCurrentUser.displayName;
 }
 
-export function resolveCurrentUser(request) {
+export async function resolveCurrentUser(request, env = null) {
+  if (env?.DB) {
+    const sessionUser = await getSessionUser(request, env).catch(() => null);
+    if (sessionUser?.id) {
+      return {
+        id: sessionUser.id,
+        displayName: sessionUser.displayName || sessionUser.username || sessionUser.id,
+        username: sessionUser.username || '',
+        source: 'player-auth-session',
+      };
+    }
+  }
+
   const headers = request?.headers;
   const accessEmail = headers?.get('cf-access-authenticated-user-email') || '';
 
