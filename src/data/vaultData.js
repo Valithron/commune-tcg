@@ -4,7 +4,7 @@
    list and detail routes, with mock fallback only when backend read fails.
    ============================================================================ */
 
-import { ownedCards, findCardById } from './mockCards.js';
+import { ownedCards } from './mockCards.js';
 import { getCachedAuthUser } from '../services/authClient.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 
@@ -30,6 +30,21 @@ function mockVault(errorMessage = '') {
     ownerDisplayName: owner.displayName,
     warnings: errorMessage ? [errorMessage] : ['Using local mock owned cards.'],
   };
+}
+
+function getCardLookupKeys(card) {
+  return [
+    card?.id,
+    card?.ownedCardId,
+    card?.owned_card_id,
+    card?.sourceRowId,
+    card?.source_row_id,
+  ].filter((value) => value !== undefined && value !== null && value !== '').map(String);
+}
+
+export function clearVaultCache() {
+  vaultCache = null;
+  vaultCacheOwner = '';
 }
 
 export function getVaultSourceLabel(vault) {
@@ -70,9 +85,10 @@ export async function loadVaultCards({ force = false } = {}) {
   }
 }
 
-export async function findVaultCardById(cardId) {
-  const vault = await loadVaultCards();
-  const card = vault.cards.find((candidate) => String(candidate.id) === String(cardId)) || findCardById(cardId);
+export async function findVaultCardById(cardId, { force = true } = {}) {
+  const vault = await loadVaultCards({ force });
+  const lookupId = String(cardId || '');
+  const card = vault.cards.find((candidate) => getCardLookupKeys(candidate).includes(lookupId)) || null;
 
   return {
     ...vault,
