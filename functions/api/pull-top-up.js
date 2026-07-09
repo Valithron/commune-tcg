@@ -1,5 +1,6 @@
+import { getSessionUser } from '../_shared/auth.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
-import { temporaryPullUserId, temporaryStartingTickets } from '../_shared/pull-engine.js';
+import { temporaryStartingTickets } from '../_shared/pull-engine.js';
 
 const allowedAmounts = new Set([1, 5, 12]);
 
@@ -8,7 +9,7 @@ function cleanAmount(value) {
   return allowedAmounts.has(amount) ? amount : 1;
 }
 
-async function ensureResources(env, now) {
+async function ensureResources(env, now, user) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS user_resources (
       user_id TEXT PRIMARY KEY,
@@ -22,16 +23,16 @@ async function ensureResources(env, now) {
   await env.DB.prepare(`
     INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?)
-  `).bind(temporaryPullUserId, temporaryStartingTickets, 0, now, now).run();
+  `).bind(user.id, temporaryStartingTickets, 0, now, now).run();
 }
 
-async function readResources(env) {
+async function readResources(env, user) {
   return env.DB.prepare(`
     SELECT user_id AS userId, pull_tickets AS pullTickets, gold, created_at AS createdAt, updated_at AS updatedAt
     FROM user_resources
     WHERE user_id = ?
     LIMIT 1
-  `).bind(temporaryPullUserId).first();
+  `).bind(user.id).first();
 }
 
 async function readPayload(request) {
@@ -54,35 +55,35 @@ export async function onRequestPost({ env, request }) {
   }
 
   try {
+    const user = await getSessionUser(request, env);
+    if (!user) return errorResponse('Sign in before topping up tickets.', 401);
     const now = new Date().toISOString();
     const payload = await readPayload(request);
     const amount = cleanAmount(payload.amount);
 
-    await ensureResources(env, now);
+    await ensureResources(env, now, user);
 
-    const before = await readResources(env);
+    const before = await readResources(env, user);
 
     await env.DB.prepare(`
       UPDATE user_resources
       SET pull_tickets = pull_tickets + ?, updated_at = ?
       WHERE user_id = ?
-    `).bind(amount, now, temporaryPullUserId).run();
+    `).bind(amount, now, user.id).run();
 
-    const after = await readResources(env);
+    const after = await readResources(env, user);
 
     return jsonResponse({
       ok: true,
       source: 'D1 user_resources',
-      phase: '10.5',
-      userId: temporaryPullUserId,
+      phase: 'auth-current-user',
+      userId: user.id,
+      ownerDisplayName: user.displayName,
       amount,
       ticketsBefore: Number(before?.pullTickets || 0),
       ticketsAfter: Number(after?.pullTickets || 0),
       resources: after,
-      warnings: [
-        'Temporary Sterling testing top-up only.',
-        'No payment, purchase, or real economy validation is implemented yet.',
-      ],
+      warnings: ['Testing top-up only. No payment, purchase, or real economy validation is implemented yet.'],
     });
   } catch (error) {
     return errorResponse('Failed to top up pull tickets.', 500, error.message);
