@@ -277,11 +277,6 @@ export function initPull(root) {
         return;
       }
 
-      if (selectedCount !== 1) {
-        window.location.hash = `/pull/results?count=${selectedCount}&real=1`;
-        return;
-      }
-
       confirmButton.disabled = true;
       confirmButton.classList.add('button-working');
       if (confirmLabel) {
@@ -296,7 +291,7 @@ export function initPull(root) {
         const response = await fetch(routes.pulls, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ count: 1 }),
+          body: JSON.stringify({ count: selectedCount }),
         });
         const payload = await response.json().catch(() => null);
 
@@ -304,24 +299,24 @@ export function initPull(root) {
           throw new Error(payload?.error || `Pull failed with ${response.status}`);
         }
 
-        const card = payload.results?.[0]?.ownedCard;
-        if (!card) {
-          throw new Error('The pull resolved, but no card was returned for reveal.');
+        const cards = (payload.results || []).map((result) => result.ownedCard).filter(Boolean);
+        if (cards.length !== selectedCount) {
+          throw new Error('The pull resolved, but not all cards were returned for reveal.');
         }
 
         clearVaultCache();
         savePullRevealPayload({
-          mode: 'single',
+          mode: selectedCount === 5 ? 'multi' : 'single',
           source: 'real',
-          count: 1,
-          cards: [card],
+          count: selectedCount,
+          cards,
           ticketsBefore: payload.ticketsBefore,
           ticketsAfter: payload.ticketsAfter,
           poolSummary: payload.poolSummary,
-          fallbackUsed: Boolean(payload.results?.[0]?.fallbackUsed),
+          fallbackCount: (payload.results || []).filter((result) => result.fallbackUsed).length,
         });
 
-        window.location.hash = '/pull/reveal?count=1';
+        window.location.hash = `/pull/reveal?count=${selectedCount}`;
       } catch (error) {
         if (status) {
           status.textContent = error.message;
