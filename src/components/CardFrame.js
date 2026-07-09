@@ -11,14 +11,6 @@ const rarityFrameAssets = import.meta.glob('../assets/card-frames/*.{png,PNG,web
   import: 'default',
 });
 
-const rarityFrameFallbacks = {
-  common: '/src/assets/card-frames/card-frame-common.png',
-  uncommon: '/src/assets/card-frames/card-frame-uncommon.png',
-  rare: '/src/assets/card-frames/card-frame-rare.png',
-  legendary: '/src/assets/card-frames/card-frame-legendary.png',
-  mythic: '/src/assets/card-frames/card-frame-mythic.png',
-};
-
 const characterMap = [
   { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#789461' },
   { key: 'sterling', name: 'Sterling', abbr: 'ST', color: '#c4c5db' },
@@ -252,7 +244,7 @@ function getRarityFrameUrl(rarity) {
       return leftPreferred - rightPreferred || leftFallback - rightFallback || left.key.localeCompare(right.key, undefined, { numeric: true });
     });
 
-  return matches[0]?.url || rarityFrameFallbacks[normalizedRarity] || '';
+  return matches[0]?.url || '';
 }
 
 export function getRarityFrameDebugInfo() {
