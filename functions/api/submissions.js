@@ -75,7 +75,8 @@ export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
   if (!env.CARD_IMAGES) return errorResponse('R2 binding CARD_IMAGES is not available.', 503);
   try {
-    const currentUser = resolveCurrentUser(request);
+    const currentUser = await resolveCurrentUser(request, env);
+    if (!currentUser?.id || currentUser.source === 'temporary-active-user') return errorResponse('Sign in before submitting a card.', 401);
     const formData = await request.formData();
     const fields = buildFields(formData);
     const imageFile = formData.get('image');
