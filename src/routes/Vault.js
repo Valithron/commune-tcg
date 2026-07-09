@@ -19,11 +19,11 @@ function renderVaultCard(card) {
   const duplicateCount = Number(card.duplicateGroupCount || 1);
   const duplicateIndex = Number(card.duplicateGroupIndex || 1);
   const duplicateBadge = duplicateCount > 1
-    ? `<span class="status-pill vault-copy-pill" aria-label="Duplicate copy ${duplicateIndex} of ${duplicateCount}">Copy ${duplicateIndex}/${duplicateCount}</span>`
+    ? `<span class="status-pill vault-copy-pill" style="position:absolute;right:0.45rem;top:0.45rem;z-index:4;min-height:1.45rem;padding:0.2rem 0.5rem;background:rgba(8,10,20,0.82);box-shadow:0 0.35rem 1rem rgba(0,0,0,0.25);" aria-label="Duplicate copy ${duplicateIndex} of ${duplicateCount}">Copy ${duplicateIndex}/${duplicateCount}</span>`
     : '';
 
   return `
-    <div class="vault-card-slot" data-duplicate-group="${escapeHtml(card.duplicateGroupKey || card.id || '')}">
+    <div class="vault-card-slot" style="position:relative;min-width:0;" data-duplicate-group="${escapeHtml(card.duplicateGroupKey || card.id || '')}">
       ${duplicateBadge}
       ${renderCardFrame(card, { href: `#/vault/card/${card.id}`, context: 'vault' })}
     </div>
