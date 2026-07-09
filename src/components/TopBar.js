@@ -1,4 +1,5 @@
 import { mockUser } from '../data/mockUser.js';
+import { getCachedAuthUser } from '../services/authClient.js';
 import { getApiRoutes } from '../services/apiClient.js';
 import { formatNumber } from './format.js';
 
@@ -46,6 +47,19 @@ function renderResourcePills(resources) {
   `;
 }
 
+function renderUserPill() {
+  const user = getCachedAuthUser();
+  if (!user) return '';
+
+  return `
+    <div class="signed-user-pill" title="Signed-in player">
+      <span>Signed in</span>
+      <strong>${user.displayName || user.username || user.id}</strong>
+      <a href="/api/auth/logout">Log out</a>
+    </div>
+  `;
+}
+
 export async function refreshTopBarResources(root = document, overrides = {}) {
   const target = root.querySelector('[data-topbar-resources]');
 
@@ -54,7 +68,7 @@ export async function refreshTopBarResources(root = document, overrides = {}) {
   }
 
   const resources = await loadTopBarResources(overrides);
-  const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
+  const resourceTitle = resources.live ? 'Live signed-in player resources' : 'Fallback player resources';
 
   target.setAttribute('title', resourceTitle);
   target.innerHTML = renderResourcePills(resources);
@@ -64,7 +78,7 @@ export async function refreshTopBarResources(root = document, overrides = {}) {
 
 export async function renderTopBar() {
   const resources = await loadTopBarResources();
-  const resourceTitle = resources.live ? 'Live player resources' : 'Fallback player resources';
+  const resourceTitle = resources.live ? 'Live signed-in player resources' : 'Fallback player resources';
 
   return `
     <header class="app-topbar">
@@ -72,8 +86,11 @@ export async function renderTopBar() {
         <span class="brand-kicker">Commune TCG</span>
         <h1 class="brand-title">Gacha</h1>
       </a>
-      <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources>
-        ${renderResourcePills(resources)}
+      <div class="topbar-right">
+        ${renderUserPill()}
+        <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources>
+          ${renderResourcePills(resources)}
+        </div>
       </div>
     </header>
   `;
