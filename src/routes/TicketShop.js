@@ -8,11 +8,13 @@ async function loadResources() {
     return {
       tickets: Number(payload.resources?.pullTickets || 0),
       source: payload.resources?.bootstrapped ? 'Live' : 'Starter',
+      ownerDisplayName: payload.ownerDisplayName || payload.resources?.ownerDisplayName || 'Player',
     };
   } catch {
     return {
       tickets: 0,
       source: 'Unavailable',
+      ownerDisplayName: 'Player',
     };
   }
 }
@@ -24,7 +26,7 @@ export async function renderTicketShop() {
     <section class="hero-panel">
       <span class="section-kicker">Ticket Shop</span>
       <h2 class="hero-title">Fuel the next pull.</h2>
-      <p class="hero-copy">Phase 10.5 uses temporary Sterling ticket top-ups for testing. This is not a real purchase flow.</p>
+      <p class="hero-copy">Testing top-ups are scoped to ${resources.ownerDisplayName}'s signed-in account. This is not a real purchase flow.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/pull">Back to Pull</a>
         <a class="button button-secondary" href="#/pull/history">Pull History</a>
@@ -34,6 +36,7 @@ export async function renderTicketShop() {
     <section class="glass-panel confirm-panel" data-ticket-shop-panel>
       <div class="detail-list">
         <div class="detail-row"><span>${resources.source} Tickets</span><strong>🎟 ${resources.tickets}</strong></div>
+        <div class="detail-row"><span>Account</span><strong>${resources.ownerDisplayName}</strong></div>
         <div class="detail-row"><span>Status</span><strong data-shop-status>Ready</strong></div>
       </div>
     </section>
