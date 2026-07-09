@@ -6,7 +6,7 @@
 const defaultCrop = { x: 50, y: 50, zoom: 1 };
 const maxImageBytes = 5 * 1024 * 1024;
 
-const clamp = (value, min, max) => Math.min(Math.max(value), max);
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const point = (event) => ({ x: event.clientX, y: event.clientY });
 const touchPoint = (touch) => ({ x: touch.clientX, y: touch.clientY });
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
