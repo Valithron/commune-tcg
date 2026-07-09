@@ -117,7 +117,7 @@ export function initSignIn(root, rerender) {
     try {
       await signIn({ slotId, username, pin, confirm, setup });
       window.location.hash = '#/home';
-      rerender();
+      window.dispatchEvent(new Event('hashchange'));
     } catch (err) {
       rerender({ selectedSlotId: slotId, error: err.message || 'Sign-in failed.' });
     }
