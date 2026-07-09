@@ -5,6 +5,11 @@ function getRevealCard(payload) {
   return payload?.cards?.[0] || null;
 }
 
+function getVaultCardHref(card) {
+  const cardId = card?.id || card?.ownedCardId || card?.owned_card_id || '';
+  return cardId ? `#/vault/card/${encodeURIComponent(cardId)}` : '#/vault';
+}
+
 function renderMissingReveal() {
   return `
     <section class="hero-panel">
@@ -55,7 +60,7 @@ export async function renderPullReveal() {
         </div>
 
         <div class="pull-reveal-actions" data-pull-reveal-actions hidden>
-          <a class="button button-primary" href="#/vault/card/${encodeURIComponent(card.id)}" data-pull-reveal-clear>View in Vault</a>
+          <a class="button button-primary" href="${getVaultCardHref(card)}" data-pull-reveal-clear>View in Vault</a>
           <a class="button button-secondary" href="#/pull/confirm?count=1" data-pull-reveal-clear>Pull Again</a>
           <a class="button button-secondary" href="#/pull" data-pull-reveal-clear>Back to Pull</a>
         </div>
@@ -84,7 +89,10 @@ export function initPullReveal(root) {
 
     if (prompt) {
       prompt.classList.add('is-revealed');
-      prompt.querySelector('p').textContent = 'Revealed';
+      const promptCopy = prompt.querySelector('p');
+      if (promptCopy) {
+        promptCopy.textContent = 'Revealed';
+      }
     }
 
     if (actions) {
