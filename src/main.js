@@ -22,6 +22,7 @@ import './styles/card-showcase.css';
 import './styles/card-standard.css';
 import './styles/card-thumbnail.css';
 import './styles/card-detail.css';
+import './styles/card-rarity-frames.css';
 import './styles/card-lab.css';
 import './styles/card-standard-tuner.css';
 
@@ -218,98 +219,70 @@ async function renderAuthGate(nextState = {}) {
   authRenderState = { ...authRenderState, ...nextState };
   appRoot.innerHTML = await renderSignIn(authRenderState);
   initSignIn(appRoot, renderAuthGate);
-  scrollRouteToTop();
 }
 
-async function render() {
+async function renderRoute() {
   const currentToken = ++renderToken;
   const { path, query } = parseHashRoute();
-  const redirectedPath = legacyAdminRedirects[path] || path;
-  const fallbackPath = getFallbackPath(redirectedPath);
-  const matchedRoute = resolveRoute(redirectedPath) || resolveRoute(fallbackPath);
+  const route = resolveRoute(path);
 
-  if (redirectedPath !== path || !resolveRoute(redirectedPath)) {
-    setHashRoute(resolveRoute(redirectedPath) ? redirectedPath : fallbackPath);
+  if (!route) {
+    const fallbackPath = legacyAdminRedirects[path] || getFallbackPath(path);
+    setHashRoute(fallbackPath);
+    return renderRoute();
   }
 
   try {
-    if (matchedRoute.shell === 'player') {
-      const user = await loadAuthUser({ force: true });
-      if (!user || !user.usernameSet) {
-        await renderAuthGate();
-        return;
-      }
-      authRenderState = {};
-    }
+    const authUser = await loadAuthUser();
 
-    const content = await matchedRoute.render({ params: matchedRoute.params, query });
+    if (!authUser) {
+      return renderAuthGate({ redirectTo: path });
+    }
 
     if (currentToken !== renderToken) {
       return;
     }
 
-    appRoot.innerHTML = await renderShell(matchedRoute, content);
-    scrollRouteToTop();
+    const content = await route.render({ params: route.params || {}, query });
 
+    if (currentToken !== renderToken) {
+      return;
+    }
+
+    appRoot.innerHTML = renderShell(route, content);
     fitCardTitles(appRoot);
 
-    if (matchedRoute.pattern === '/pull' || matchedRoute.pattern === '/pull/confirm') {
+    if (route.render === renderPull) {
       initPull(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/pull/reveal') {
+    } else if (route.render === renderPullReveal) {
       initPullReveal(appRoot);
-      fitCardTitles(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/library') {
+    } else if (route.render === renderLibrary) {
       initLibraryControls(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/admin/card-lab') {
+    } else if (route.render === renderSubmitCard) {
+      initSubmitCardForm(appRoot);
+    } else if (route.render === renderAdminBattleTest) {
+      initAdminBattleTest(appRoot);
+    } else if (route.render === renderAdminCardEditor) {
+      initAdminCardEditor(appRoot);
+    } else if (route.render === renderAdminCardMechanics) {
+      initAdminCardMechanics(appRoot);
+    } else if (route.render === renderAdminSubmitCropLab) {
+      initAdminSubmitCropLab(appRoot);
+    } else if (route.render === renderAdminSubmissionDetail) {
+      initAdminSubmissionDetail(appRoot);
+    } else if (route.render === renderSquadBuilder) {
+      initSquadBuilder(appRoot);
+    } else if (route.render === renderBattleResults) {
+      initBattleResults(appRoot);
+    } else if (route.render === renderCardLab) {
       initCardFrameTuner(appRoot);
     }
 
-    if (matchedRoute.pattern === '/admin/battle-check') {
-      initAdminBattleTest(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/admin/cards') {
-      initAdminCardEditor(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/admin/card-mechanics') {
-      initAdminCardMechanics(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/admin/submit-crop-lab') {
-      initAdminSubmitCropLab(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/battle/squad') {
-      initSquadBuilder(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/battle/results') {
-      initBattleResults(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/submit') {
-      initSubmitCardForm(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/shop') {
-      initTicketShop(appRoot);
-    }
-
-    if (matchedRoute.pattern === '/admin/submission/:submissionId') {
-      initAdminSubmissionDetail(appRoot);
-    }
-  } catch (error) {
-    appRoot.innerHTML = await renderShell(matchedRoute, renderError(error, matchedRoute.shell));
     scrollRouteToTop();
+  } catch (error) {
+    appRoot.innerHTML = renderShell(route, renderError(error, route.shell));
   }
 }
 
-window.addEventListener('hashchange', render);
-window.addEventListener('DOMContentLoaded', render);
+window.addEventListener('hashchange', renderRoute);
+renderRoute();
