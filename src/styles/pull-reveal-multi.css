@@ -33,50 +33,50 @@
 .pull-reveal-five-layout {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(3, auto);
-  column-gap: clamp(0.35rem, 2.5vw, 0.85rem);
-  row-gap: clamp(0.55rem, 2.7vw, 0.95rem);
   width: min(100%, 23rem);
+  height: clamp(23rem, 72vw, 25.5rem);
   margin-top: var(--space-2);
 }
 
 .pull-reveal-five-layout .pull-reveal-card {
-  width: 100%;
-  max-width: 7.15rem;
-  justify-self: center;
+  position: absolute;
+  width: clamp(6.25rem, 28vw, 7.15rem);
   animation: pull-reveal-mini-float 4s ease-in-out infinite;
   filter: drop-shadow(0 0 1.35rem color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--pull-reveal-rarity-color, var(--color-primary))) 42%, transparent));
 }
 
 .pull-reveal-five-layout .pull-reveal-card:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
+  left: 34%;
+  top: 0;
+  transform: translateX(-50%);
   animation-delay: 0s;
 }
 
 .pull-reveal-five-layout .pull-reveal-card:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
+  left: 66%;
+  top: 0;
+  transform: translateX(-50%);
   animation-delay: 0.18s;
 }
 
 .pull-reveal-five-layout .pull-reveal-card:nth-child(3) {
-  grid-column: 1;
-  grid-row: 2;
+  left: 15%;
+  top: 34%;
+  transform: translateX(-50%);
   animation-delay: 0.36s;
 }
 
 .pull-reveal-five-layout .pull-reveal-card:nth-child(4) {
-  grid-column: 3;
-  grid-row: 2;
+  left: 85%;
+  top: 34%;
+  transform: translateX(-50%);
   animation-delay: 0.54s;
 }
 
 .pull-reveal-five-layout .pull-reveal-card:nth-child(5) {
-  grid-column: 2;
-  grid-row: 3;
+  left: 50%;
+  top: 66%;
+  transform: translateX(-50%);
   animation-delay: 0.72s;
 }
 
@@ -126,19 +126,34 @@
 }
 
 @keyframes pull-reveal-mini-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-0.45rem) rotate(0.75deg); }
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 0 -0.45rem; rotate: 0.75deg; }
 }
 
 @media (max-width: 380px) {
   .pull-reveal-five-layout {
     width: min(100%, 20rem);
-    column-gap: 0.35rem;
-    row-gap: 0.55rem;
+    height: 22.4rem;
   }
 
   .pull-reveal-five-layout .pull-reveal-card {
-    max-width: 6.15rem;
+    width: 6.15rem;
+  }
+
+  .pull-reveal-five-layout .pull-reveal-card:nth-child(1) {
+    left: 35%;
+  }
+
+  .pull-reveal-five-layout .pull-reveal-card:nth-child(2) {
+    left: 65%;
+  }
+
+  .pull-reveal-five-layout .pull-reveal-card:nth-child(3) {
+    left: 17%;
+  }
+
+  .pull-reveal-five-layout .pull-reveal-card:nth-child(4) {
+    left: 83%;
   }
 
   .pull-reveal-stage--multi .pull-reveal-copy h2 {
