@@ -6,10 +6,18 @@
 
 import { escapeHtml, titleCase } from './format.js';
 
-const rarityFrameAssets = import.meta.glob('../assets/card-frames/*.{png,webp,avif}', {
+const rarityFrameAssets = import.meta.glob('../assets/card-frames/*.{png,PNG,webp,WEBP,avif,AVIF}', {
   eager: true,
   import: 'default',
 });
+
+const rarityFrameFallbacks = {
+  common: '/src/assets/card-frames/card-frame-common.png',
+  uncommon: '/src/assets/card-frames/card-frame-uncommon.png',
+  rare: '/src/assets/card-frames/card-frame-rare.png',
+  legendary: '/src/assets/card-frames/card-frame-legendary.png',
+  mythic: '/src/assets/card-frames/card-frame-mythic.png',
+};
 
 const characterMap = [
   { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#789461' },
@@ -213,18 +221,52 @@ function getAbilityIcon(card) {
   return card.abilityIcon || card.ability_icon || card.icon || '✦';
 }
 
+function normalizeAssetPath(path) {
+  return String(path || '')
+    .split('/')
+    .pop()
+    .replace(/\.[^.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function getFrameAssetEntries() {
+  return Object.entries(rarityFrameAssets).map(([path, url]) => ({
+    path,
+    url,
+    key: normalizeAssetPath(path),
+  }));
+}
+
 function getRarityFrameUrl(rarity) {
   const normalizedRarity = normalizeRarity(rarity);
-  const rarityPattern = new RegExp(`(^|[-_/])${normalizedRarity}([-_.]|$)`, 'i');
-  const matches = Object.entries(rarityFrameAssets)
-    .filter(([path]) => rarityPattern.test(path))
-    .sort(([left], [right]) => {
-      const leftFinal = new RegExp(`card-frame-${normalizedRarity}\\.(png|webp|avif)$`, 'i').test(left) ? 0 : 1;
-      const rightFinal = new RegExp(`card-frame-${normalizedRarity}\\.(png|webp|avif)$`, 'i').test(right) ? 0 : 1;
-      return leftFinal - rightFinal || left.localeCompare(right, undefined, { numeric: true });
+  const preferredKey = `cardframe${normalizedRarity}`;
+  const fallbackCandidates = [`frame${normalizedRarity}`, normalizedRarity];
+  const matches = getFrameAssetEntries()
+    .filter((asset) => asset.key.includes(normalizedRarity))
+    .sort((left, right) => {
+      const leftPreferred = left.key === preferredKey ? 0 : 1;
+      const rightPreferred = right.key === preferredKey ? 0 : 1;
+      const leftFallback = fallbackCandidates.includes(left.key) ? 0 : 1;
+      const rightFallback = fallbackCandidates.includes(right.key) ? 0 : 1;
+      return leftPreferred - rightPreferred || leftFallback - rightFallback || left.key.localeCompare(right.key, undefined, { numeric: true });
     });
 
-  return matches[0]?.[1] || '';
+  return matches[0]?.url || rarityFrameFallbacks[normalizedRarity] || '';
+}
+
+export function getRarityFrameDebugInfo() {
+  const entries = getFrameAssetEntries();
+
+  return {
+    total: entries.length,
+    assets: entries.map((asset) => asset.path.split('/').pop()),
+    resolved: ['common', 'uncommon', 'rare', 'legendary', 'mythic'].map((rarity) => ({
+      rarity,
+      url: getRarityFrameUrl(rarity),
+      bundled: entries.some((asset) => asset.url === getRarityFrameUrl(rarity)),
+    })),
+  };
 }
 
 function renderRarityFrameOverlay(rarity, showRarityFrame) {
