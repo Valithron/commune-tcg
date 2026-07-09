@@ -35,7 +35,7 @@ export async function onRequestGet({ env, request }) {
   try {
     const savedSquad = await readSavedSquadRow(env, ownerUserId);
     if (!savedSquad) return jsonResponse(buildSavedSquadResponse({ ownerUserId, ownerDisplayName, savedSquad: null, validationResult: null }));
-    const validationResult = await resolveBattleSimulation(env, { ownerUserId, encounterId: mockBattleEncounters[0].id, squadCardIds: savedSquad.squadCardIds, createdAt: new Date().toISOString() });
+    const validationResult = await resolveBattleSimulation(env, { ownerUserId, ownerDisplayName, encounterId: mockBattleEncounters[0].id, squadCardIds: savedSquad.squadCardIds, createdAt: new Date().toISOString() });
     return jsonResponse(buildSavedSquadResponse({ ownerUserId, ownerDisplayName, savedSquad, validationResult }));
   } catch (error) {
     return errorResponse('Failed to read saved battle squad.', 500, error.message);
@@ -57,7 +57,7 @@ export async function onRequestPost({ env, request }) {
     if (!requestedIds.length) return jsonResponse({ ok: false, phase: 'auth-current-user-battle-squad', readOnly: false, writesPerformed: false, error: 'At least one battle-eligible card ID is required to save a squad.', code: 'saved-squad-empty', writes: [] }, { status: 400 });
     if (requestedIds.length > maxBattleSquadSize) return jsonResponse({ ok: false, phase: 'auth-current-user-battle-squad', readOnly: false, writesPerformed: false, error: `Saved squads can contain at most ${maxBattleSquadSize} cards.`, code: 'saved-squad-too-large', writes: [] }, { status: 400 });
 
-    const validationResult = await resolveBattleSimulation(env, { ownerUserId, encounterId: mockBattleEncounters[0].id, squadCardIds: requestedIds, createdAt: now });
+    const validationResult = await resolveBattleSimulation(env, { ownerUserId, ownerDisplayName, encounterId: mockBattleEncounters[0].id, squadCardIds: requestedIds, createdAt: now });
     if (!validationResult.ok) return jsonResponse({ ...validationResult, phase: 'auth-current-user-battle-squad', readOnly: false, writesPerformed: false, error: 'Saved squad validation failed.', writes: [], notes: ['Validation failed before the saved squad row was written.', 'No battle, reward, XP, level, resource, Vault, or card ownership writes occurred.'] }, { status: validationResult.status || 400 });
 
     const normalizedIds = validationResult.simulation.squad.map((card) => card.sourceRowId || card.id).filter(Boolean);
