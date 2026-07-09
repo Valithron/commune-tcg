@@ -11,6 +11,7 @@ import './styles/account.css';
 import './styles/type-pool.css';
 import './styles/pull-sheet.css';
 import './styles/pull-reveal.css';
+import './styles/pull-reveal-multi.css';
 import './styles/library.css';
 import './styles/admin.css';
 import './styles/auth.css';
