@@ -25,17 +25,17 @@ const densityRows = [
   {
     density: 'showcase',
     title: 'Showcase Size',
-    note: 'Large desktop inspection size for shape, crop, title, rarity, and footer checks.',
+    note: 'Large desktop inspection size for shape, crop, title, rarity, and footer checks. Rarity PNG frames are authored for this size first.',
   },
   {
     density: 'standard',
     title: 'Standard Mobile Size',
-    note: 'Normal collection and mobile card sizing target.',
+    note: 'Normal collection and mobile card sizing target. The showcase frame overlay scales down into this size.',
   },
   {
     density: 'thumbnail',
     title: 'Thumbnail Size',
-    note: 'Small collection, result, and compressed-list stress test.',
+    note: 'Small collection, result, and compressed-list stress test. The same frame overlay scales down here for readability checks.',
   },
 ];
 
@@ -324,6 +324,7 @@ function renderDetailPreview(card, library) {
             context: 'library',
             showOwnership: false,
             showStats: true,
+            showRarityFrame: true,
           })}
         </div>
         <div class="card-lab-detail-sheet" data-card-frame-tuner-panel-target="showcase">
@@ -365,6 +366,7 @@ function renderStandardTunerPreview(card) {
             context: 'library',
             showOwnership: false,
             showStats: true,
+            showRarityFrame: true,
           })}
         </div>
         <div class="card-lab-standard-tuner-sheet" data-card-frame-tuner-panel-target="standard">
@@ -406,6 +408,7 @@ function renderCardCell(sample, density) {
           context: 'library',
           showOwnership: false,
           showStats: true,
+          showRarityFrame: true,
         })}
       </div>
       <div class="card-lab-title-readout">${escapeHtml(sample.card.name)}</div>
@@ -452,7 +455,7 @@ function renderDensitySection(row, titleSamples, raritySamples) {
         density: row.density,
         rowLabel: 'Rarity spread',
         rowTitle: `${row.title} Rarity Samples`,
-        rowNote: 'Common, Uncommon, Rare, Legendary, and Mythic frames. Missing rarities are rendered as lab-only overrides.',
+        rowNote: 'Common, Uncommon, Rare, Legendary, and Mythic frame overlays. Missing rarities are rendered as lab-only overrides.',
         samples: raritySamples,
       })}
     </section>
@@ -472,7 +475,7 @@ export async function renderCardLab() {
     <section class="hero-panel card-lab-hero">
       <span class="section-kicker">Admin Card Lab</span>
       <h2 class="hero-title">Stress the frame.</h2>
-      <p class="hero-copy">Live detail, title-length, and rarity samples from the Library render inside the isolated admin area before we lock the production overlay shape.</p>
+      <p class="hero-copy">Live detail, title-length, and rarity samples from the Library render inside the isolated admin area before we lock the production overlay shape. Rarity PNG frames are enabled here for showcase, standard, and thumbnail checks.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-secondary" href="#/admin/inventory">Inventory</a>
@@ -484,6 +487,7 @@ export async function renderCardLab() {
         <div class="detail-row"><span>Source</span><strong>${escapeHtml(sourceLabel)}</strong></div>
         <div class="detail-row"><span>Total Cards</span><strong>${escapeHtml(String(library.cards.length))}</strong></div>
         <div class="detail-row"><span>Title Limit Target</span><strong>${titleLimit} characters</strong></div>
+        <div class="detail-row"><span>Frame Overlay</span><strong>Enabled in Card Lab</strong></div>
         <div class="detail-row"><span>Title Rule</span><strong>One line, no ellipsis</strong></div>
       </div>
     </section>
