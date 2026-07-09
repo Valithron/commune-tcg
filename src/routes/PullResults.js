@@ -1,7 +1,12 @@
 import { getMockPullResults } from '../data/mockPull.js';
+import { clearVaultCache } from '../data/vaultData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
 import { clampPullCount } from '../components/format.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
+
+function getOwnedCardId(card) {
+  return card?.ownedCardId || card?.owned_card_id || card?.id || '';
+}
 
 async function loadSimulatedPull(count) {
   const routes = getApiRoutes();
@@ -33,6 +38,8 @@ async function loadRealPull(count) {
   if (!response.ok || !payload?.ok) {
     throw new Error(payload?.error || `Pull failed with ${response.status}`);
   }
+
+  clearVaultCache();
 
   return {
     source: 'real',
@@ -110,7 +117,7 @@ export async function renderPullResults({ query }) {
         <span class="status-pill">${count}-Pull</span>
       </div>
       <div class="card-grid result-grid">
-        ${results.length ? results.map((card) => renderCardFrame(card, { href: `${cardHrefBase}${card.id}` })).join('') : '<div class="empty-note">No cards were granted.</div>'}
+        ${results.length ? results.map((card) => renderCardFrame(card, { href: `${cardHrefBase}${pull.source === 'real' ? getOwnedCardId(card) : card.id}` })).join('') : '<div class="empty-note">No cards were granted.</div>'}
       </div>
     </section>
   `;
