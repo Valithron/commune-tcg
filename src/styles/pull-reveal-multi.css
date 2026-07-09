@@ -43,6 +43,7 @@
 
 .pull-reveal-five-layout .pull-reveal-card {
   position: absolute;
+  z-index: 1;
   width: clamp(5.35rem, 23vw, 6.2rem);
   animation: pull-reveal-mini-float 4s ease-in-out infinite;
   filter: drop-shadow(0 0 1.35rem color-mix(in srgb, var(--pull-reveal-card-rarity-color, var(--pull-reveal-rarity-color, var(--color-primary))) 42%, transparent));
@@ -114,6 +115,8 @@
 }
 
 .pull-reveal-prompt--multi {
+  position: relative;
+  z-index: 4;
   gap: 0.45rem;
   margin-top: 0.35rem;
 }
@@ -128,6 +131,8 @@
 }
 
 .pull-reveal-all {
+  position: relative;
+  z-index: 5;
   min-height: 2.25rem;
   min-width: 9.5rem;
   margin-top: 0.5rem;
@@ -140,6 +145,8 @@
 }
 
 .pull-reveal-screen--multi .pull-reveal-actions {
+  position: relative;
+  z-index: 5;
   gap: var(--space-2);
   margin-top: 0.55rem;
 }
