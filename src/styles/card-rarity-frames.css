@@ -5,21 +5,27 @@
    ============================================================================ */
 
 .tcg-card--rarity-frame {
-  border-color: color-mix(in srgb, var(--rarity-color) 34%, transparent);
-  box-shadow: 0 0 0.72rem rgba(0, 0, 0, 0.34);
+  border-color: color-mix(in srgb, var(--rarity-color) 58%, white 6%);
+  box-shadow:
+    0 0 0 0.12rem color-mix(in srgb, var(--rarity-color) 34%, transparent),
+    0 0 0.92rem color-mix(in srgb, var(--rarity-color) 22%, transparent),
+    0 0 0.72rem rgba(0, 0, 0, 0.34);
 }
 
 .tcg-card--rarity-frame[data-rarity='uncommon'],
 .tcg-card--rarity-frame[data-rarity='rare'],
 .tcg-card--rarity-frame[data-rarity='legendary'],
 .tcg-card--rarity-frame[data-rarity='mythic'] {
-  box-shadow: 0 0 0.82rem color-mix(in srgb, var(--rarity-color) 18%, transparent), 0 0.85rem 1.55rem rgba(0, 0, 0, 0.22);
+  box-shadow:
+    0 0 0 0.14rem color-mix(in srgb, var(--rarity-color) 42%, transparent),
+    0 0 1.12rem color-mix(in srgb, var(--rarity-color) 30%, transparent),
+    0 0.85rem 1.55rem rgba(0, 0, 0, 0.22);
 }
 
 .tcg-card--rarity-frame::before {
   z-index: 2;
-  opacity: 0.36;
-  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rarity-color) 18%, transparent), transparent 54%);
+  opacity: 0.44;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rarity-color) 24%, transparent), transparent 54%);
 }
 
 .tcg-card--rarity-frame .card-art {
