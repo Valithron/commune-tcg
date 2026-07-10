@@ -206,7 +206,7 @@ function renderOwnershipBadge(card, context, showOwnership) {
 }
 
 export function renderCardFrame(card, options = {}) {
-  const { href = '', showOwnership = true, showStats = true, showRarityFrame = false, density = 'standard', context = 'default' } = options;
+  const { href = '', showOwnership = true, showStats = true, showRarityFrame = true, density = 'standard', context = 'default' } = options;
   const tagName = href ? 'a' : 'article';
   const hrefAttribute = href ? ` href="${escapeHtml(href)}"` : '';
   const rarity = normalizeRarity(card.rarity || 'common');
