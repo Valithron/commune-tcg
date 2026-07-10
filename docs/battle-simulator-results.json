@@ -1,0 +1,1216 @@
+{
+  "generatedBy": "scripts/battle-simulate.js",
+  "iterationsPerRun": 1000,
+  "encounter": {
+    "id": "crossroads-patrol",
+    "version": "crossroads-patrol-1.0.0"
+  },
+  "crossLane": {
+    "1": {
+      "balanced": {
+        "battles": 1000,
+        "winRate": 0.697,
+        "laneWinRates": {
+          "left": 0.823,
+          "center": 0.762,
+          "right": 0.871
+        },
+        "firstLaneBroken": {
+          "left": 0.323,
+          "center": 0.677,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 5.63,
+        "averageRounds": 7.253,
+        "averageRemainingHp": {
+          "player": 47.849,
+          "enemy": 12.896
+        },
+        "averageReinforcementAttacks": 1.877,
+        "averageReinforcementDamage": 47.987,
+        "outcomesReversedByReinforcement": 332,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Balanced B": 355,
+          "Balanced A": 128,
+          "Balanced C": 214
+        },
+        "averagePlaybackSeconds": 34.56735999999994
+      },
+      "aceSupports": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 1,
+          "center": 0,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 2.998,
+        "averageRounds": 6.021,
+        "averageRemainingHp": {
+          "player": 253.686,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 4.31,
+        "averageReinforcementDamage": 232.182,
+        "outcomesReversedByReinforcement": 998,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Ace": 1000
+        },
+        "averagePlaybackSeconds": 28.031300000000122
+      },
+      "threeMedium": {
+        "battles": 1000,
+        "winRate": 0.892,
+        "laneWinRates": {
+          "left": 0.931,
+          "center": 0.892,
+          "right": 0.999
+        },
+        "firstLaneBroken": {
+          "left": 0.646,
+          "center": 0.341,
+          "right": 0.013
+        },
+        "averageFirstKnockoutRound": 5.132,
+        "averageRounds": 7.049,
+        "averageRemainingHp": {
+          "player": 76.514,
+          "enemy": 6.485
+        },
+        "averageReinforcementAttacks": 3.035,
+        "averageReinforcementDamage": 93.991,
+        "outcomesReversedByReinforcement": 151,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Medium A": 467,
+          "Medium C": 423,
+          "Medium B": 2
+        },
+        "averagePlaybackSeconds": 33.507500000000064
+      },
+      "atkHeavy": {
+        "battles": 1000,
+        "winRate": 0.995,
+        "laneWinRates": {
+          "left": 0.995,
+          "center": 0.996,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.334,
+          "center": 0.633,
+          "right": 0.033
+        },
+        "averageFirstKnockoutRound": 3.972,
+        "averageRounds": 4.863,
+        "averageRemainingHp": {
+          "player": 153.141,
+          "enemy": 0.214
+        },
+        "averageReinforcementAttacks": 0.741,
+        "averageReinforcementDamage": 14.367,
+        "outcomesReversedByReinforcement": 6,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "ATK A": 326,
+          "ATK B": 655,
+          "ATK C": 14
+        },
+        "averagePlaybackSeconds": 26.305039999999945
+      },
+      "defHeavy": {
+        "battles": 1000,
+        "winRate": 0.003,
+        "laneWinRates": {
+          "left": 0.019,
+          "center": 0.004,
+          "right": 0.014
+        },
+        "firstLaneBroken": {
+          "left": 0.265,
+          "center": 0.735,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 6.693,
+        "averageRounds": 7.887,
+        "averageRemainingHp": {
+          "player": 0.122,
+          "enemy": 109.153
+        },
+        "averageReinforcementAttacks": 1.664,
+        "averageReinforcementDamage": 41.027,
+        "outcomesReversedByReinforcement": 6,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "DEF B": 2,
+          "DEF A": 1
+        },
+        "averagePlaybackSeconds": 38.56185999999996
+      },
+      "spdSpecialists": {
+        "battles": 1000,
+        "winRate": 0.002,
+        "laneWinRates": {
+          "left": 0.003,
+          "center": 0.36,
+          "right": 0.031
+        },
+        "firstLaneBroken": {
+          "left": 0.774,
+          "center": 0.226,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 4.976,
+        "averageRounds": 6.228,
+        "averageRemainingHp": {
+          "player": 0.119,
+          "enemy": 106.974
+        },
+        "averageReinforcementAttacks": 1.269,
+        "averageReinforcementDamage": 30.921,
+        "outcomesReversedByReinforcement": 29,
+        "averageDoubleStrikes": 4.641,
+        "mvpFrequency": {
+          "SPD B": 2
+        },
+        "averagePlaybackSeconds": 39.0494299999999
+      },
+      "mixedLevelRarity": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.008,
+          "center": 0.992,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 3.983,
+        "averageRounds": 4.913,
+        "averageRemainingHp": {
+          "player": 439.113,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 0.937,
+        "averageReinforcementDamage": 24.346,
+        "outcomesReversedByReinforcement": 0,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "New Legendary": 992,
+          "Veteran Common": 8
+        },
+        "averagePlaybackSeconds": 23.91596000000032
+      },
+      "equalSpeed": {
+        "battles": 1000,
+        "winRate": 0.879,
+        "laneWinRates": {
+          "left": 0.906,
+          "center": 0.899,
+          "right": 0.957
+        },
+        "firstLaneBroken": {
+          "left": 0.637,
+          "center": 0.323,
+          "right": 0.04
+        },
+        "averageFirstKnockoutRound": 5.482,
+        "averageRounds": 6.787,
+        "averageRemainingHp": {
+          "player": 82.821,
+          "enemy": 4.307
+        },
+        "averageReinforcementAttacks": 1.459,
+        "averageReinforcementDamage": 34.466,
+        "outcomesReversedByReinforcement": 173,
+        "averageDoubleStrikes": 1.673,
+        "mvpFrequency": {
+          "Tie A": 580,
+          "Tie B": 122,
+          "Tie C": 177
+        },
+        "averagePlaybackSeconds": 35.597489999999866
+      }
+    },
+    "0.85": {
+      "balanced": {
+        "battles": 1000,
+        "winRate": 0.595,
+        "laneWinRates": {
+          "left": 0.815,
+          "center": 0.655,
+          "right": 0.858
+        },
+        "firstLaneBroken": {
+          "left": 0.331,
+          "center": 0.669,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 5.622,
+        "averageRounds": 7.406,
+        "averageRemainingHp": {
+          "player": 43.112,
+          "enemy": 13.38
+        },
+        "averageReinforcementAttacks": 2.119,
+        "averageReinforcementDamage": 49.485,
+        "outcomesReversedByReinforcement": 422,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Balanced B": 332,
+          "Balanced A": 117,
+          "Balanced C": 146
+        },
+        "averagePlaybackSeconds": 34.850479999999884
+      },
+      "aceSupports": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 1,
+          "center": 0,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 2.996,
+        "averageRounds": 7.102,
+        "averageRemainingHp": {
+          "player": 191.098,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 4.446,
+        "averageReinforcementDamage": 207.613,
+        "outcomesReversedByReinforcement": 1000,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Ace": 1000
+        },
+        "averagePlaybackSeconds": 30.699360000000265
+      },
+      "threeMedium": {
+        "battles": 1000,
+        "winRate": 0.901,
+        "laneWinRates": {
+          "left": 0.913,
+          "center": 0.91,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.658,
+          "center": 0.335,
+          "right": 0.007
+        },
+        "averageFirstKnockoutRound": 5.145,
+        "averageRounds": 7.081,
+        "averageRemainingHp": {
+          "player": 79.331,
+          "enemy": 4.284
+        },
+        "averageReinforcementAttacks": 3.204,
+        "averageReinforcementDamage": 91.271,
+        "outcomesReversedByReinforcement": 135,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Medium A": 389,
+          "Medium C": 510,
+          "Medium B": 2
+        },
+        "averagePlaybackSeconds": 33.6911400000001
+      },
+      "atkHeavy": {
+        "battles": 1000,
+        "winRate": 0.999,
+        "laneWinRates": {
+          "left": 0.999,
+          "center": 0.999,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.354,
+          "center": 0.619,
+          "right": 0.027
+        },
+        "averageFirstKnockoutRound": 3.979,
+        "averageRounds": 4.853,
+        "averageRemainingHp": {
+          "player": 151.126,
+          "enemy": 0.042
+        },
+        "averageReinforcementAttacks": 0.711,
+        "averageReinforcementDamage": 13.335,
+        "outcomesReversedByReinforcement": 1,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "ATK B": 644,
+          "ATK A": 344,
+          "ATK C": 11
+        },
+        "averagePlaybackSeconds": 26.357079999999936
+      },
+      "defHeavy": {
+        "battles": 1000,
+        "winRate": 0.001,
+        "laneWinRates": {
+          "left": 0.017,
+          "center": 0.003,
+          "right": 0.015
+        },
+        "firstLaneBroken": {
+          "left": 0.291,
+          "center": 0.709,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 6.671,
+        "averageRounds": 7.92,
+        "averageRemainingHp": {
+          "player": 0.025,
+          "enemy": 109
+        },
+        "averageReinforcementAttacks": 1.745,
+        "averageReinforcementDamage": 40.67,
+        "outcomesReversedByReinforcement": 6,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "DEF A": 1
+        },
+        "averagePlaybackSeconds": 38.64245999999992
+      },
+      "spdSpecialists": {
+        "battles": 1000,
+        "winRate": 0.002,
+        "laneWinRates": {
+          "left": 0.002,
+          "center": 0.359,
+          "right": 0.036
+        },
+        "firstLaneBroken": {
+          "left": 0.782,
+          "center": 0.218,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 4.975,
+        "averageRounds": 6.25,
+        "averageRemainingHp": {
+          "player": 0.046,
+          "enemy": 106.819
+        },
+        "averageReinforcementAttacks": 1.419,
+        "averageReinforcementDamage": 30.435,
+        "outcomesReversedByReinforcement": 33,
+        "averageDoubleStrikes": 4.646,
+        "mvpFrequency": {
+          "SPD B": 2
+        },
+        "averagePlaybackSeconds": 39.34114000000006
+      },
+      "mixedLevelRarity": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.007,
+          "center": 0.993,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 3.988,
+        "averageRounds": 4.908,
+        "averageRemainingHp": {
+          "player": 439.43,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 0.924,
+        "averageReinforcementDamage": 23.53,
+        "outcomesReversedByReinforcement": 0,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "New Legendary": 993,
+          "Veteran Common": 7
+        },
+        "averagePlaybackSeconds": 23.91420000000032
+      },
+      "equalSpeed": {
+        "battles": 1000,
+        "winRate": 0.854,
+        "laneWinRates": {
+          "left": 0.912,
+          "center": 0.879,
+          "right": 0.964
+        },
+        "firstLaneBroken": {
+          "left": 0.633,
+          "center": 0.333,
+          "right": 0.034
+        },
+        "averageFirstKnockoutRound": 5.494,
+        "averageRounds": 6.911,
+        "averageRemainingHp": {
+          "player": 80.027,
+          "enemy": 3.792
+        },
+        "averageReinforcementAttacks": 1.709,
+        "averageReinforcementDamage": 34.184,
+        "outcomesReversedByReinforcement": 174,
+        "averageDoubleStrikes": 1.735,
+        "mvpFrequency": {
+          "Tie A": 506,
+          "Tie C": 214,
+          "Tie B": 134
+        },
+        "averagePlaybackSeconds": 35.96982999999992
+      }
+    },
+    "0.7": {
+      "balanced": {
+        "battles": 1000,
+        "winRate": 0.584,
+        "laneWinRates": {
+          "left": 0.852,
+          "center": 0.618,
+          "right": 0.884
+        },
+        "firstLaneBroken": {
+          "left": 0.328,
+          "center": 0.672,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 5.622,
+        "averageRounds": 7.563,
+        "averageRemainingHp": {
+          "player": 43.019,
+          "enemy": 11.998
+        },
+        "averageReinforcementAttacks": 2.41,
+        "averageReinforcementDamage": 48.686,
+        "outcomesReversedByReinforcement": 424,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Balanced B": 350,
+          "Balanced A": 141,
+          "Balanced C": 93
+        },
+        "averagePlaybackSeconds": 35.15333999999996
+      },
+      "aceSupports": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 1,
+          "center": 0,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 2.994,
+        "averageRounds": 7.429,
+        "averageRemainingHp": {
+          "player": 176.532,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 4.607,
+        "averageReinforcementDamage": 198.168,
+        "outcomesReversedByReinforcement": 1000,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Ace": 1000
+        },
+        "averagePlaybackSeconds": 31.474680000000244
+      },
+      "threeMedium": {
+        "battles": 1000,
+        "winRate": 0.916,
+        "laneWinRates": {
+          "left": 0.925,
+          "center": 0.917,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.642,
+          "center": 0.345,
+          "right": 0.013
+        },
+        "averageFirstKnockoutRound": 5.126,
+        "averageRounds": 7.305,
+        "averageRemainingHp": {
+          "player": 79.135,
+          "enemy": 3.611
+        },
+        "averageReinforcementAttacks": 3.811,
+        "averageReinforcementDamage": 96.026,
+        "outcomesReversedByReinforcement": 121,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "Medium C": 542,
+          "Medium A": 374
+        },
+        "averagePlaybackSeconds": 34.0618
+      },
+      "atkHeavy": {
+        "battles": 1000,
+        "winRate": 0.999,
+        "laneWinRates": {
+          "left": 0.999,
+          "center": 0.999,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.379,
+          "center": 0.585,
+          "right": 0.036
+        },
+        "averageFirstKnockoutRound": 3.984,
+        "averageRounds": 4.881,
+        "averageRemainingHp": {
+          "player": 147.843,
+          "enemy": 0.05
+        },
+        "averageReinforcementAttacks": 0.718,
+        "averageReinforcementDamage": 13.014,
+        "outcomesReversedByReinforcement": 1,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "ATK A": 384,
+          "ATK B": 609,
+          "ATK C": 6
+        },
+        "averagePlaybackSeconds": 26.482599999999923
+      },
+      "defHeavy": {
+        "battles": 1000,
+        "winRate": 0.002,
+        "laneWinRates": {
+          "left": 0.027,
+          "center": 0.003,
+          "right": 0.019
+        },
+        "firstLaneBroken": {
+          "left": 0.304,
+          "center": 0.696,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 6.662,
+        "averageRounds": 7.96,
+        "averageRemainingHp": {
+          "player": 0.071,
+          "enemy": 107.914
+        },
+        "averageReinforcementAttacks": 1.916,
+        "averageReinforcementDamage": 39.547,
+        "outcomesReversedByReinforcement": 10,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "DEF A": 1,
+          "DEF B": 1
+        },
+        "averagePlaybackSeconds": 38.81811999999986
+      },
+      "spdSpecialists": {
+        "battles": 1000,
+        "winRate": 0.001,
+        "laneWinRates": {
+          "left": 0.001,
+          "center": 0.33,
+          "right": 0.033
+        },
+        "firstLaneBroken": {
+          "left": 0.779,
+          "center": 0.221,
+          "right": 0
+        },
+        "averageFirstKnockoutRound": 4.979,
+        "averageRounds": 6.24,
+        "averageRemainingHp": {
+          "player": 0.009,
+          "enemy": 107.743
+        },
+        "averageReinforcementAttacks": 1.441,
+        "averageReinforcementDamage": 29.009,
+        "outcomesReversedByReinforcement": 37,
+        "averageDoubleStrikes": 4.651,
+        "mvpFrequency": {
+          "SPD C": 1
+        },
+        "averagePlaybackSeconds": 39.452150000000096
+      },
+      "mixedLevelRarity": {
+        "battles": 1000,
+        "winRate": 1,
+        "laneWinRates": {
+          "left": 1,
+          "center": 1,
+          "right": 1
+        },
+        "firstLaneBroken": {
+          "left": 0.01,
+          "center": 0.989,
+          "right": 0.001
+        },
+        "averageFirstKnockoutRound": 3.985,
+        "averageRounds": 4.914,
+        "averageRemainingHp": {
+          "player": 439.74,
+          "enemy": 0
+        },
+        "averageReinforcementAttacks": 0.932,
+        "averageReinforcementDamage": 23.889,
+        "outcomesReversedByReinforcement": 0,
+        "averageDoubleStrikes": 0,
+        "mvpFrequency": {
+          "New Legendary": 989,
+          "Veteran Common": 10,
+          "Growing Rare": 1
+        },
+        "averagePlaybackSeconds": 23.92354000000033
+      },
+      "equalSpeed": {
+        "battles": 1000,
+        "winRate": 0.882,
+        "laneWinRates": {
+          "left": 0.928,
+          "center": 0.887,
+          "right": 0.971
+        },
+        "firstLaneBroken": {
+          "left": 0.666,
+          "center": 0.298,
+          "right": 0.036
+        },
+        "averageFirstKnockoutRound": 5.452,
+        "averageRounds": 6.977,
+        "averageRemainingHp": {
+          "player": 81.813,
+          "enemy": 3.11
+        },
+        "averageReinforcementAttacks": 1.983,
+        "averageReinforcementDamage": 34.92,
+        "outcomesReversedByReinforcement": 162,
+        "averageDoubleStrikes": 1.771,
+        "mvpFrequency": {
+          "Tie B": 138,
+          "Tie A": 515,
+          "Tie C": 229
+        },
+        "averagePlaybackSeconds": 36.14470999999993
+      }
+    }
+  },
+  "formations": {
+    "balanced": [
+      {
+        "order": [
+          "Balanced A",
+          "Balanced B",
+          "Balanced C"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.7,
+          "laneWinRates": {
+            "left": 0.844,
+            "center": 0.75,
+            "right": 0.883
+          },
+          "firstLaneBroken": {
+            "left": 0.285,
+            "center": 0.715,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 5.668,
+          "averageRounds": 7.324,
+          "averageRemainingHp": {
+            "player": 44.939,
+            "enemy": 12.309
+          },
+          "averageReinforcementAttacks": 1.935,
+          "averageReinforcementDamage": 48.741,
+          "outcomesReversedByReinforcement": 343,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced C": 235,
+            "Balanced B": 350,
+            "Balanced A": 115
+          },
+          "averagePlaybackSeconds": 34.70475999999983
+        }
+      },
+      {
+        "order": [
+          "Balanced A",
+          "Balanced C",
+          "Balanced B"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.712,
+          "laneWinRates": {
+            "left": 0.769,
+            "center": 0.717,
+            "right": 0.999
+          },
+          "firstLaneBroken": {
+            "left": 0.275,
+            "center": 0.448,
+            "right": 0.277
+          },
+          "averageFirstKnockoutRound": 5.531,
+          "averageRounds": 7.637,
+          "averageRemainingHp": {
+            "player": 48.239,
+            "enemy": 20.085
+          },
+          "averageReinforcementAttacks": 3.483,
+          "averageReinforcementDamage": 109.324,
+          "outcomesReversedByReinforcement": 374,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced B": 670,
+            "Balanced A": 42
+          },
+          "averagePlaybackSeconds": 34.90899999999998
+        }
+      },
+      {
+        "order": [
+          "Balanced B",
+          "Balanced A",
+          "Balanced C"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.837,
+          "laneWinRates": {
+            "left": 0.994,
+            "center": 0.837,
+            "right": 0.987
+          },
+          "firstLaneBroken": {
+            "left": 0.862,
+            "center": 0.138,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 5.012,
+          "averageRounds": 7.298,
+          "averageRemainingHp": {
+            "player": 66.955,
+            "enemy": 6.721
+          },
+          "averageReinforcementAttacks": 3.15,
+          "averageReinforcementDamage": 106.906,
+          "outcomesReversedByReinforcement": 165,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced B": 781,
+            "Balanced C": 56
+          },
+          "averagePlaybackSeconds": 34.7164800000002
+        }
+      },
+      {
+        "order": [
+          "Balanced B",
+          "Balanced C",
+          "Balanced A"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.757,
+          "laneWinRates": {
+            "left": 0.987,
+            "center": 0.766,
+            "right": 0.928
+          },
+          "firstLaneBroken": {
+            "left": 0.882,
+            "center": 0.118,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 5.007,
+          "averageRounds": 7.271,
+          "averageRemainingHp": {
+            "player": 54.263,
+            "enemy": 12.694
+          },
+          "averageReinforcementAttacks": 2.904,
+          "averageReinforcementDamage": 102.632,
+          "outcomesReversedByReinforcement": 281,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced B": 752,
+            "Balanced A": 5
+          },
+          "averagePlaybackSeconds": 34.736680000000156
+        }
+      },
+      {
+        "order": [
+          "Balanced C",
+          "Balanced A",
+          "Balanced B"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.35,
+          "laneWinRates": {
+            "left": 0.401,
+            "center": 0.394,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 0.194,
+            "center": 0.489,
+            "right": 0.317
+          },
+          "averageFirstKnockoutRound": 5.566,
+          "averageRounds": 7.436,
+          "averageRemainingHp": {
+            "player": 21.383,
+            "enemy": 45.647
+          },
+          "averageReinforcementAttacks": 3.405,
+          "averageReinforcementDamage": 115.402,
+          "outcomesReversedByReinforcement": 480,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced B": 349,
+            "Balanced C": 1
+          },
+          "averagePlaybackSeconds": 34.783540000000016
+        }
+      },
+      {
+        "order": [
+          "Balanced C",
+          "Balanced B",
+          "Balanced A"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.405,
+          "laneWinRates": {
+            "left": 0.6,
+            "center": 0.52,
+            "right": 0.665
+          },
+          "firstLaneBroken": {
+            "left": 0.22,
+            "center": 0.78,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 5.736,
+          "averageRounds": 7.064,
+          "averageRemainingHp": {
+            "player": 27.226,
+            "enemy": 38.006
+          },
+          "averageReinforcementAttacks": 1.372,
+          "averageReinforcementDamage": 38.563,
+          "outcomesReversedByReinforcement": 541,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Balanced B": 387,
+            "Balanced C": 12,
+            "Balanced A": 6
+          },
+          "averagePlaybackSeconds": 34.442220000000006
+        }
+      }
+    ],
+    "aceSupports": [
+      {
+        "order": [
+          "Ace",
+          "Support A",
+          "Support B"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 1,
+          "laneWinRates": {
+            "left": 1,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 1,
+            "center": 0,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 2.997,
+          "averageRounds": 6.035,
+          "averageRemainingHp": {
+            "player": 252.877,
+            "enemy": 0
+          },
+          "averageReinforcementAttacks": 4.338,
+          "averageReinforcementDamage": 232.574,
+          "outcomesReversedByReinforcement": 999,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 1000
+          },
+          "averagePlaybackSeconds": 28.056900000000134
+        }
+      },
+      {
+        "order": [
+          "Ace",
+          "Support B",
+          "Support A"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 1,
+          "laneWinRates": {
+            "left": 1,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 1,
+            "center": 0,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 2.996,
+          "averageRounds": 6.021,
+          "averageRemainingHp": {
+            "player": 231.112,
+            "enemy": 0
+          },
+          "averageReinforcementAttacks": 4.529,
+          "averageReinforcementDamage": 243.56,
+          "outcomesReversedByReinforcement": 1000,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 1000
+          },
+          "averagePlaybackSeconds": 28.346920000000193
+        }
+      },
+      {
+        "order": [
+          "Support A",
+          "Ace",
+          "Support B"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 1,
+          "laneWinRates": {
+            "left": 1,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 0,
+            "center": 1,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 3.846,
+          "averageRounds": 7.008,
+          "averageRemainingHp": {
+            "player": 153.352,
+            "enemy": 0
+          },
+          "averageReinforcementAttacks": 3.528,
+          "averageReinforcementDamage": 206.666,
+          "outcomesReversedByReinforcement": 999,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 1000
+          },
+          "averagePlaybackSeconds": 30.841280000000207
+        }
+      },
+      {
+        "order": [
+          "Support A",
+          "Support B",
+          "Ace"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.989,
+          "laneWinRates": {
+            "left": 0.989,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 0,
+            "center": 0,
+            "right": 1
+          },
+          "averageFirstKnockoutRound": 3.86,
+          "averageRounds": 7.736,
+          "averageRemainingHp": {
+            "player": 90.903,
+            "enemy": 0.792
+          },
+          "averageReinforcementAttacks": 5.952,
+          "averageReinforcementDamage": 335.56,
+          "outcomesReversedByReinforcement": 989,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 989
+          },
+          "averagePlaybackSeconds": 30.660719999999767
+        }
+      },
+      {
+        "order": [
+          "Support B",
+          "Ace",
+          "Support A"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 1,
+          "laneWinRates": {
+            "left": 1,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 0,
+            "center": 1,
+            "right": 0
+          },
+          "averageFirstKnockoutRound": 3.853,
+          "averageRounds": 7.223,
+          "averageRemainingHp": {
+            "player": 143.004,
+            "enemy": 0
+          },
+          "averageReinforcementAttacks": 3.922,
+          "averageReinforcementDamage": 205.308,
+          "outcomesReversedByReinforcement": 1000,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 1000
+          },
+          "averagePlaybackSeconds": 31.452060000000127
+        }
+      },
+      {
+        "order": [
+          "Support B",
+          "Support A",
+          "Ace"
+        ],
+        "metrics": {
+          "battles": 1000,
+          "winRate": 0.994,
+          "laneWinRates": {
+            "left": 0.994,
+            "center": 1,
+            "right": 1
+          },
+          "firstLaneBroken": {
+            "left": 0,
+            "center": 0,
+            "right": 1
+          },
+          "averageFirstKnockoutRound": 3.877,
+          "averageRounds": 7.669,
+          "averageRemainingHp": {
+            "player": 99.632,
+            "enemy": 0.402
+          },
+          "averageReinforcementAttacks": 5.618,
+          "averageReinforcementDamage": 306.956,
+          "outcomesReversedByReinforcement": 994,
+          "averageDoubleStrikes": 0,
+          "mvpFrequency": {
+            "Ace": 994
+          },
+          "averagePlaybackSeconds": 30.713459999999717
+        }
+      }
+    ]
+  },
+  "xpCurve": [
+    {
+      "level": 1,
+      "xpRequired": 55,
+      "ordinaryVictories": 4,
+      "firstDailyThenOrdinary": 3,
+      "defeats": 11
+    },
+    {
+      "level": 5,
+      "xpRequired": 115,
+      "ordinaryVictories": 7,
+      "firstDailyThenOrdinary": 6,
+      "defeats": 23
+    },
+    {
+      "level": 10,
+      "xpRequired": 190,
+      "ordinaryVictories": 11,
+      "firstDailyThenOrdinary": 10,
+      "defeats": 38
+    },
+    {
+      "level": 20,
+      "xpRequired": 340,
+      "ordinaryVictories": 19,
+      "firstDailyThenOrdinary": 19,
+      "defeats": 68
+    },
+    {
+      "level": 30,
+      "xpRequired": 490,
+      "ordinaryVictories": 28,
+      "firstDailyThenOrdinary": 27,
+      "defeats": 98
+    },
+    {
+      "level": 40,
+      "xpRequired": 640,
+      "ordinaryVictories": 36,
+      "firstDailyThenOrdinary": 35,
+      "defeats": 128
+    },
+    {
+      "level": 50,
+      "xpRequired": 790,
+      "ordinaryVictories": 44,
+      "firstDailyThenOrdinary": 44,
+      "defeats": 158
+    },
+    {
+      "level": 60,
+      "xpRequired": 940,
+      "ordinaryVictories": 53,
+      "firstDailyThenOrdinary": 52,
+      "defeats": 188
+    },
+    {
+      "level": 69,
+      "xpRequired": 1075,
+      "ordinaryVictories": 60,
+      "firstDailyThenOrdinary": 60,
+      "defeats": 215
+    }
+  ]
+}

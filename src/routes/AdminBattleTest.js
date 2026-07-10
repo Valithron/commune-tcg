@@ -1,153 +1,33 @@
-/* ============================================================================
-   Admin Battle Test Route
-   Phase 8 responsibility: provide an admin-only button for testing the real
-   protected battle reward write path without manual raw API calls.
-   ============================================================================ */
+/* Admin diagnostic for the production create -> pending -> finalize lifecycle. */
 
-import { createBattleAttemptId } from '../services/battleSquadSelection.js';
-import { getApiRoutes } from '../services/apiClient.js';
+import { createBattleAttempt, finalizeBattleAttempt } from '../services/battleApi.js';
+import { fetchBattleInventory, getBattleCardKey, getDefaultBattleSquad } from '../services/battleSquadSelection.js';
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function renderAppliedXpRows(xpApplied = []) {
-  if (!Array.isArray(xpApplied) || !xpApplied.length) {
-    return '<div class="empty-note">No XP application rows returned yet.</div>';
-  }
-
-  return xpApplied.map((row) => `
-    <div class="detail-row">
-      <span>${escapeHtml(row.cardTitle || row.cardId || 'Card')}</span>
-      <strong>+${escapeHtml(row.gainedXp || 0)} XP · Lv ${escapeHtml(row.previousLevel || 1)} → ${escapeHtml(row.nextLevel || row.previousLevel || 1)}</strong>
-    </div>
-  `).join('');
-}
-
-function renderResult(payload) {
-  if (!payload) {
-    return '<div class="empty-note">No battle has been run from this panel yet.</div>';
-  }
-
-  if (!payload.ok) {
-    return `
-      <div class="empty-note">Battle test failed: ${escapeHtml(payload.error || 'Unknown error')}</div>
-      <pre class="admin-debug-output">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
-    `;
-  }
-
-  const reward = payload.rewardApplied || {};
-  const simulation = payload.simulation || {};
-  const encounter = simulation.encounter || {};
-
-  return `
-    <div class="detail-list">
-      <div class="detail-row"><span>Phase</span><strong>${escapeHtml(payload.phase)}</strong></div>
-      <div class="detail-row"><span>Battle ID</span><strong>${escapeHtml(payload.battleId)}</strong></div>
-      <div class="detail-row"><span>Attempt ID</span><strong>${escapeHtml(payload.attemptId || payload.duplicateProtection?.attemptId || 'missing')}</strong></div>
-      <div class="detail-row"><span>Encounter</span><strong>${escapeHtml(encounter.name || payload.historyRow?.encounterId || 'Unknown')}</strong></div>
-      <div class="detail-row"><span>Result</span><strong>${simulation.victory ? 'Victory' : 'Loss'}</strong></div>
-      <div class="detail-row"><span>Gold</span><strong>+${escapeHtml(reward.gold || 0)}</strong></div>
-      <div class="detail-row"><span>Total XP</span><strong>+${escapeHtml(reward.totalXp || 0)}</strong></div>
-      <div class="detail-row"><span>Writes</span><strong>${escapeHtml((payload.writes || []).join(', ') || 'None')}</strong></div>
-    </div>
-
-    <section class="glass-panel admin-panel">
-      <span class="section-kicker">XP Applied</span>
-      <h2 class="section-title">Owned squad card progression</h2>
-      <div class="detail-list">
-        ${renderAppliedXpRows(payload.xpApplied)}
-      </div>
-    </section>
-
-    <details class="glass-panel admin-panel">
-      <summary class="section-title">Raw response</summary>
-      <pre class="admin-debug-output">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
-    </details>
-  `;
-}
+function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
 
 export function renderAdminBattleTest() {
-  return `
-    <section class="hero-panel">
-      <span class="section-kicker">Admin Battle Test</span>
-      <h2 class="hero-title">Run one protected test.</h2>
-      <p class="hero-copy">This admin-only panel runs the real Phase 8 battle reward path with a fresh attempt ID. Duplicate attempt protection is enforced by the backend.</p>
-      <div class="action-row">
-        <button class="button button-primary" type="button" data-admin-battle-test-run>Run Training Battle</button>
-        <a class="button button-secondary" href="#/admin/inventory">Inventory</a>
-      </div>
-    </section>
-
-    <section class="glass-panel admin-panel">
-      <span class="section-kicker">What this writes</span>
-      <h2 class="section-title">Phase 8 reward path</h2>
-      <div class="admin-checklist">
-        <div>Generates a fresh attemptId before POST /api/battles.</div>
-        <div>Validates the selected battle first.</div>
-        <div>Applies gold to user_resources once for that attempt.</div>
-        <div>Applies XP and level updates to owned squad cards once for that attempt.</div>
-        <div>Writes battle_history with attemptId, rewardApplied, and xpApplied details.</div>
-        <div>Does not write drops, tickets, stamina, energy, Vault grants, or auth changes.</div>
-      </div>
-    </section>
-
-    <section class="glass-panel admin-panel">
-      <span class="section-kicker">Result</span>
-      <h2 class="section-title">Latest admin test run</h2>
-      <div data-admin-battle-test-status class="empty-note">Ready to run Training Yard Goblin.</div>
-      <div data-admin-battle-test-result class="admin-test-result">
-        ${renderResult(null)}
-      </div>
-    </section>
-  `;
+  return `<section class="hero-panel"><span class="section-kicker">Admin Battle Test</span><h1 class="hero-title">Verify the authoritative lifecycle.</h1><p class="hero-copy">Creates Crossroads Patrol with the three strongest eligible owned cards, verifies the pending event log, then finalizes once.</p><div class="action-row"><button class="button button-primary" type="button" data-admin-battle-test-run>Run Protected Battle</button><a class="button button-secondary" href="#/admin/inventory">Inventory</a></div></section><section class="glass-panel admin-panel"><div class="admin-checklist"><div>Server selects seed and runs the canonical lane engine.</div><div>Creation spends 1 Energy and stores a pending result.</div><div>Finalization applies persisted Gold and XP once.</div><div>Duplicate create/finalize calls remain idempotent.</div></div></section><section class="glass-panel admin-panel"><span class="section-kicker">Result</span><h2>Latest run</h2><div class="empty-note" data-admin-battle-test-status>Ready.</div><pre class="admin-debug-output" data-admin-battle-test-result>No run yet.</pre></section>`;
 }
 
 export function initAdminBattleTest(root) {
   const button = root.querySelector('[data-admin-battle-test-run]');
   const status = root.querySelector('[data-admin-battle-test-status]');
-  const resultTarget = root.querySelector('[data-admin-battle-test-result]');
-
-  if (!button || !status || !resultTarget) {
-    return;
-  }
-
+  const output = root.querySelector('[data-admin-battle-test-result]');
+  if (!button) return;
   button.addEventListener('click', async () => {
-    const routes = getApiRoutes();
-    const attemptId = createBattleAttemptId();
-    button.disabled = true;
-    status.textContent = `Running Training Yard Goblin through POST /api/battles with attempt ${attemptId}...`;
-
+    button.disabled = true; status.textContent = 'Loading owned battle cards…';
     try {
-      const response = await fetch(routes.battles, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          encounterId: 'training-yard-goblin',
-          attemptId,
-        }),
-      });
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok || !payload) {
-        throw new Error(payload?.error || `Battle test failed with ${response.status}`);
-      }
-
-      status.textContent = payload.ok ? 'Battle test complete. Review the protected reward below.' : 'Battle test returned a validation error.';
-      resultTarget.innerHTML = renderResult(payload);
-    } catch (error) {
-      status.textContent = error.message;
-      resultTarget.innerHTML = renderResult({ ok: false, error: error.message });
-    } finally {
-      button.disabled = false;
-    }
+      const inventory = await fetchBattleInventory();
+      const ids = getDefaultBattleSquad(inventory.battleEligibleCards || []).map(getBattleCardKey);
+      if (ids.length !== 3) throw new Error('Three eligible owned cards are required.');
+      status.textContent = 'Creating pending authoritative attempt…';
+      const created = await createBattleAttempt({ encounterId: 'crossroads-patrol', orderedCardIds: ids });
+      if (created.attempt.status !== 'pending' || !created.attempt.result?.combat?.events?.length) throw new Error('Pending event log was not returned.');
+      status.textContent = 'Finalizing stored result once…';
+      const finalized = await finalizeBattleAttempt({ attemptId: created.attempt.attemptId });
+      status.textContent = 'Protected lifecycle passed.';
+      output.textContent = JSON.stringify({ attemptId: created.attempt.attemptId, rulesVersion: created.attempt.rulesVersion, encounterVersion: created.attempt.encounterVersion, eventCount: created.attempt.result.combat.events.length, outcome: created.attempt.result.combat.outcome, mvp: created.attempt.result.combat.mvp, energyAfter: created.energyAfter, reward: finalized.settlement.reward, xpApplied: finalized.settlement.xpApplied }, null, 2);
+    } catch (error) { status.textContent = error.message; output.textContent = escapeHtml(error.stack || error.message); }
+    finally { button.disabled = false; }
   });
 }

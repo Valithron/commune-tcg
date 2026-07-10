@@ -19,9 +19,10 @@ These routes render through `src/components/AppShell.js` with the player top bar
 | `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
 | `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
 | `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
-| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Compare squad power, rewards, and difficulty before choosing an encounter |
-| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Load saved squad, fill squad slots, and pick cards from thumbnail rows |
-| `#/battle/results?encounter=:encounterId&squadCardIds=:ids&attemptId=:attemptId` | `src/routes/BattleResults.js` | Auto-settle rewards safely, show thumbnails for battle cards, then let the player reveal rewards manually |
+| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Inspect the canonical three-enemy formation, rule, Energy, and rewards |
+| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Save explicit left/center/right order and view isolated-lane forecasts |
+| `#/battle/arena?attemptId=:attemptId` | `src/routes/BattleArena.js` | Full-screen stored-event playback, pause, inspection, recovery, skip, and retreat |
+| `#/battle/results?attemptId=:attemptId` | `src/routes/BattleResults.js` | Persisted result, MVP, automatic reward queue, XP, and level-ups |
 | `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
 
 ## Admin and diagnostic routes
@@ -64,12 +65,15 @@ These older diagnostic routes are redirected into the admin boundary by `src/mai
 | `/api/pull-simulate` | `functions/api/pull-simulate.js` | No-write pull simulation |
 | `/api/pulls` | `functions/api/pulls.js` | Resolve pulls and write owned cards/history |
 | `/api/pull-history` | `functions/api/pull-history.js` | Read pull history |
-| `/api/pull-resources` | `functions/api/pull-resources.js` | Read pull tickets and gold resources |
+| `/api/pull-resources` | `functions/api/pull-resources.js` | Read Pull Tickets, Gold, daily pull state, and Energy |
 | `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle cards, normalized image fields, and table diagnostics |
-| `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write battle simulation |
-| `/api/battle-squad` | `functions/api/battle-squad.js` | Read and save one preferred backend-owned battle squad |
-| `/api/battle-attempt` | `functions/api/battle-attempt.js` | Read whether a battle attempt has already resolved |
-| `/api/battles` | `functions/api/battles.js` | Resolve battle once per attempt and write battle_history, gold, XP, and levels |
+| `/api/battle-encounters` | `functions/api/battle-encounters.js` | Read the canonical versioned encounter registry |
+| `/api/battle-forecast` | `functions/api/battle-forecast.js` | Generate Favored/Even/Risky labels from isolated canonical simulations |
+| `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write canonical seeded lane simulation |
+| `/api/battle-squad` | `functions/api/battle-squad.js` | Read and save exactly three ordered owned card IDs |
+| `/api/battle-attempt` | `functions/api/battle-attempt.js` | Recover a specific attempt or latest pending attempt |
+| `/api/battles` | `functions/api/battles.js` | Create a pending authoritative attempt and spend Energy exactly once |
+| `/api/battle-finalize` | `functions/api/battle-finalize.js` | Finalize stored outcome or surrender and settle rewards exactly once |
 | `/api/battle-history` | `functions/api/battle-history.js` | Read battle history with reward and XP details |
 | `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 5 reward and XP contract |
 

@@ -112,7 +112,7 @@ function renderSimulatorResults(sim) {
     <div class="admin-checklist">
       <div><strong>${escapeHtml(typeConfig[sim.type].label)}</strong> into <strong>${escapeHtml(typeConfig[sim.enemyType].label)}</strong>: ${escapeHtml(titleCase(sim.matchupResult))} (${sim.matchupModifier > 0 ? '+' : ''}${Math.round(sim.matchupModifier * 100)}%).</div>
       <div>Rarity config: ${escapeHtml(rarityConfig[sim.rarity].label)} · budget ${escapeHtml(sim.budget)} · max level ${escapeHtml(sim.maxLevel)} · growth ${escapeHtml(sim.growthPerLevel)} · origin +${escapeHtml(sim.originBonusPercent)}%.</div>
-      <div>Battle currently compares Effective Squad Power against encounter Enemy Power. Ability effects are still not included.</div>
+      <div>Player battles now resolve through the canonical seeded three-lane engine. This card calculator remains a stat and matchup diagnostic; ability effects are still not included.</div>
     </div>
   `;
 }

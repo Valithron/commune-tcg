@@ -67,3 +67,21 @@ Meaningful files should start with a short ownership block explaining:
 - What should not be added there
 
 This is meant to prevent silent drift and patch sprawl.
+
+## Authoritative battle architecture
+
+The 3-on-3 battle system follows one directional flow:
+
+```text
+D1 owned cards + canonical encounter
+  -> backend card adapter
+  -> pure seeded engine
+  -> pending battle_attempts row + Energy debit
+  -> browser event-log playback
+  -> exactly-once finalize or surrender
+  -> Gold/XP/levels + battle_history
+```
+
+`shared/battle/battle-engine.js` is the only combat resolver. It performs no I/O and is reused by tests, the simulator, forecasts, MVP inputs, and backend creation. Browser playback never recalculates combat. `battle_attempts` stores the seed, rules/encounter/MVP versions, ordered formation, snapshots, event log, final state, outcome, and settlement status.
+
+The active arena route uses a dedicated battle shell rather than `AppShell`, which hides unrelated navigation without changing the shell behavior of other routes.

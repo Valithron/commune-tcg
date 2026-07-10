@@ -21,7 +21,7 @@ export function renderResourceInventory() {
       <h2 class="section-title">Open after Cloudflare deploy</h2>
       <div class="backend-endpoint-list">
         <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
-        <a href="${routes.battleSimulate}?encounterId=training-yard-goblin" target="_blank" rel="noreferrer"><span>Battle Simulate</span><strong>${routes.battleSimulate}</strong></a>
+        <a href="${routes.battleEncounters}" target="_blank" rel="noreferrer"><span>Battle Encounters</span><strong>${routes.battleEncounters}</strong></a>
         <a href="${routes.battleSquad}" target="_blank" rel="noreferrer"><span>Saved Battle Squad</span><strong>${routes.battleSquad}</strong></a>
         <a href="${routes.battleAttempt}?attemptId=replace-with-attempt-id" target="_blank" rel="noreferrer"><span>Battle Attempt Status</span><strong>${routes.battleAttempt}</strong></a>
         <a href="${routes.battleHistory}" target="_blank" rel="noreferrer"><span>Battle History</span><strong>${routes.battleHistory}</strong></a>
@@ -46,11 +46,11 @@ export function renderResourceInventory() {
       <h2 class="section-title">Verify Phase 9</h2>
       <div class="admin-checklist">
         <div>Open #/battle/squad.</div>
-        <div>Select one to three backend-owned cards.</div>
+        <div>Select exactly three backend-owned cards.</div>
         <div>Click Save Squad.</div>
         <div>Open #/battle/squad again without squadCardIds in the URL.</div>
         <div>Confirm the saved squad loads by default.</div>
-        <div>Start Battle and confirm the saved card IDs pass into Battle Results.</div>
+        <div>Start Battle and confirm the saved lane order reaches the full-screen arena.</div>
         <div>Confirm no rewards are written by saving the squad.</div>
       </div>
     </section>

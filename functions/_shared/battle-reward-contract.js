@@ -16,9 +16,9 @@ export const battleRewardContract = {
   rewardRules: {
     currency: 'gold',
     victoryGoldMultiplier: 1,
-    lossGoldMultiplier: 0.25,
+    lossGoldMultiplier: 0,
     victoryXpMultiplier: 1,
-    lossXpMultiplier: 0.35,
+    lossXpMultiplier: 0.25,
     pullTicketRewards: {
       enabled: false,
       rule: 'No pull-ticket battle rewards until the economy is explicitly designed.',
@@ -29,7 +29,7 @@ export const battleRewardContract = {
     },
     rounding: {
       gold: 'floor after multiplier',
-      xpPerCard: 'floor after multiplier; every selected squad card receives the full encounter XP amount',
+      xpPerCard: 'round to the nearest whole number after multiplier; every selected squad card receives the full encounter XP amount',
       totalSquadXp: 'xpPerCard multiplied by squad size for reporting only',
     },
   },
@@ -147,7 +147,7 @@ export function calculateBattleRewardPreview({ encounter, victory, squadSize = 1
   const goldMultiplier = victory ? battleRewardContract.rewardRules.victoryGoldMultiplier : battleRewardContract.rewardRules.lossGoldMultiplier;
   const xpMultiplier = victory ? battleRewardContract.rewardRules.victoryXpMultiplier : battleRewardContract.rewardRules.lossXpMultiplier;
   const gold = Math.floor(baseGold * goldMultiplier);
-  const xpPerCard = Math.floor(baseXp * xpMultiplier);
+  const xpPerCard = Math.round(baseXp * xpMultiplier);
   const totalSquadXp = xpPerCard * safeSquadSize;
 
   return {

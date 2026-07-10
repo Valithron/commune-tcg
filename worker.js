@@ -19,6 +19,9 @@ import * as battleInventory from './functions/api/battle-inventory.js';
 import * as battleSimulate from './functions/api/battle-simulate.js';
 import * as battleSquad from './functions/api/battle-squad.js';
 import * as battleAttempt from './functions/api/battle-attempt.js';
+import * as battleEncounters from './functions/api/battle-encounters.js';
+import * as battleForecast from './functions/api/battle-forecast.js';
+import * as battleFinalize from './functions/api/battle-finalize.js';
 import * as battles from './functions/api/battles.js';
 import * as battleHistory from './functions/api/battle-history.js';
 import * as submissions from './functions/api/submissions.js';
@@ -73,6 +76,9 @@ const routeModules = {
   '/api/battle-simulate': battleSimulate,
   '/api/battle-squad': battleSquad,
   '/api/battle-attempt': battleAttempt,
+  '/api/battle-encounters': battleEncounters,
+  '/api/battle-forecast': battleForecast,
+  '/api/battle-finalize': battleFinalize,
   '/api/battles': battles,
   '/api/battle-history': battleHistory,
   '/api/submissions': submissions,

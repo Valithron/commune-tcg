@@ -299,7 +299,7 @@ Approximate total XP from Level 1 to max:
 | Legendary | 60 | 28,230 |
 | Mythic | 70 | 38,030 |
 
-Battle XP payout values are not settled yet.
+Crossroads Patrol currently awards 18 XP per squad card on victory, +12 XP per card on the first daily victory, and 5 XP per card on defeat or retreat after rounding 25% of the normal value. These remain configurable for later economy validation.
 
 ## Duplicate and Shard Model
 
@@ -350,9 +350,9 @@ Current principles:
 
 The current target type modifier is:
 
-- Type advantage: +15% effectiveness.
-- Type disadvantage: -5% effectiveness.
-- Total swing between advantage and disadvantage: 20 percentage points.
+- Type advantage: +8% battle damage.
+- Type disadvantage: -3% battle damage.
+- Total swing between advantage and disadvantage: 11 percentage points.
 - Neutral matchup: no modifier.
 
 Design intent:
@@ -469,9 +469,9 @@ Battle should eventually consider:
 
 Initial type matchup balance target:
 
-- Advantage: +15% effectiveness.
-- Disadvantage: -5% effectiveness.
-- Total swing: 20 percentage points.
+- Advantage: +8% battle damage.
+- Disadvantage: -3% battle damage.
+- Total swing: 11 percentage points.
 
 Abilities are intentionally deferred until type matchups and stat ranges feel good.
 

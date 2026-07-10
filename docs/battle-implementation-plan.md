@@ -8,11 +8,11 @@ Implementation begins only when Sterling explicitly hands the approved plan to C
 
 ## Document Status
 
-**Phase:** Ready for Work handoff  
-**Design discovery:** Complete for the first battle build  
-**Implementation status:** Not yet authorized in this conversation  
-**Primary battle authority:** `docs/battle-design.md`  
-**Wider game authority:** `docs/game-design.md`  
+**Phase:** Ready for Work handoff
+**Design discovery:** Complete for the first battle build
+**Implementation status:** Implemented and verified for the first playable Crossroads Patrol build
+**Primary battle authority:** `docs/battle-design.md`
+**Wider game authority:** `docs/game-design.md`
 **Execution handoff:** `docs/battle-work-handoff.md`
 
 ## 1. Authority and Precedence

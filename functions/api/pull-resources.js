@@ -49,9 +49,21 @@ async function ensureDailyTicketColumn(env) {
   }
 }
 
+async function ensureEnergyColumns(env) {
+  if (!(await columnExists(env, 'user_resources', 'energy'))) {
+    try { await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN energy INTEGER NOT NULL DEFAULT 10').run(); }
+    catch (error) { if (!isDuplicateColumnError(error)) throw error; }
+  }
+  if (!(await columnExists(env, 'user_resources', 'energy_updated_at'))) {
+    try { await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN energy_updated_at TEXT').run(); }
+    catch (error) { if (!isDuplicateColumnError(error)) throw error; }
+  }
+}
+
 async function ensureResources(env, now, user) {
   await env.DB.prepare(userResourcesSql).run();
   await ensureDailyTicketColumn(env);
+  await ensureEnergyColumns(env);
 
   await env.DB.prepare(`
     INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, daily_ticket_claimed_on, created_at, updated_at)
@@ -66,6 +78,7 @@ async function readResources(env, user) {
       pull_tickets AS pullTickets,
       gold,
       daily_ticket_claimed_on AS dailyTicketClaimedOn,
+      energy,
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM user_resources
@@ -82,6 +95,7 @@ function shapeResources(row, user, mountainDate) {
     ownerDisplayName: user.displayName,
     pullTickets: Number(row?.pullTickets || 0),
     gold: Number(row?.gold || 0),
+    energy: Number(row?.energy ?? 10),
     dailyTicketClaimedOn: claimedOn,
     dailyTicketAvailable: claimedOn !== mountainDate,
     mountainDate,

@@ -1,77 +1,33 @@
-# Commune TCG Gacha Prototype
+# Commune TCG Gacha
 
-Phase 7.5 adds the Card Lab for real-data frame stabilization before Vault wiring.
+Vite single-page card-collection game deployed with Cloudflare Pages Functions, D1, and R2.
 
 ## Current status
 
-- Branch: `Gacha`
-- Phase: `7.5 - Card Lab and frame stabilization`
-- Data source: Library and Card Lab prefer read-only backend data with mock fallback; other gameplay screens remain mock data
-- Backend: read-only Library endpoint added, real game writes not connected yet
-- Deployment target: Cloudflare Pages-compatible app with Pages Functions
+The `Gacha` branch includes a complete first playable 3-on-3 PvE battle loop:
 
-## Completed scope
+1. Choose Crossroads Patrol.
+2. Inspect its three enemy lanes.
+3. arrange exactly three owned cards as left, center, and right.
+4. Review isolated-lane forecasts.
+5. Create one server-authoritative seeded attempt and spend 1 Energy.
+6. Watch the stored event log in a full-screen arena.
+7. Pause, inspect, change speed, enable Reduced Motion, retreat, resume, or skip.
+8. Finalize Gold and XP exactly once and view persisted MVP/results.
 
-Phase 1 established the Vite static app shell, bottom navigation, design tokens, reusable card component, and starter Home, Pull, Vault, and Library routes.
+The battle core is shared by backend resolution, automated tests, batch simulation, forecasts, event replay, and MVP analytics. Player battles no longer resolve through aggregate Squad Power.
 
-Phase 2 added pull confirmation, pull results, Vault card detail, Library card detail, Ticket Shop, route params, query-string parsing, and shared detail panels.
-
-Phase 3 added Battle hub, Encounter selection, Squad builder, Battle results, mock encounter data, and scoped battle styles.
-
-Phase 4 added Submit Card, Admin Dashboard, mock admin data, and backend contract docs.
-
-Phase 5 added Cloudflare Pages Function diagnostics for health, D1 table list, and R2 object sample.
-
-Phase 6 added resource inventory endpoints and documentation.
-
-Phase 7 added the read-only Library card endpoint, R2 image serving, async routes, and real cards from `cards.card_json`.
-
-Phase 7.5 adds:
-
-- `#/card-lab` frame inspection route
-- live title-length sampling from real Library cards
-- showcase, standard, and thumbnail CardFrame densities
-- no-ellipsis title handling with fixed title sizing per density
-- Library cards rendered without Locked badges
-- CardFrame context variants for future Vault, Pull, and Battle state
-- Card-frame design docs
-
-## Active routes
+## Battle routes
 
 ```text
-#/home
-#/pull
-#/pull/confirm?count=1
-#/pull/confirm?count=5
-#/pull/results?count=1
-#/pull/results?count=5
 #/battle
 #/battle/encounters
-#/battle/squad?encounter=training-yard-goblin
-#/battle/results?encounter=training-yard-goblin
-#/vault
-#/vault/card/:cardId
-#/library
-#/library/card/:cardId
-#/card-lab
-#/submit
-#/admin
-#/backend
-#/inventory
-#/shop
+#/battle/squad?encounter=crossroads-patrol
+#/battle/arena?attemptId=<attempt-id>
+#/battle/results?attemptId=<attempt-id>
 ```
 
-## Active API diagnostics, inventory, and read endpoints
-
-```text
-/api/health
-/api/schema
-/api/schema-details
-/api/images
-/api/images-summary
-/api/cards
-/api/card-image?key=<r2-object-key>
-```
+The arena uses a battle-only shell. All other player routes remain in `AppShell`; admin routes remain in `AdminShell`.
 
 ## Commands
 
@@ -79,91 +35,36 @@ Phase 7.5 adds:
 npm install
 npm run dev
 npm run build
+npm test
+npm run battle:simulate -- --iterations=1000
 npm run preview
 ```
 
-## Project structure
+## Battle architecture
 
 ```text
-functions/
-  _shared/                Shared Pages Function helpers
-  api/                    Read-only diagnostic, inventory, and Library endpoints
-src/
-  main.js                 App bootstrap, hash router, route params, async route rendering
-  components/             Reusable UI pieces, including canonical CardFrame
-  data/                   Mock data and Library data source
-  routes/                 Screen-level route renderers, including Card Lab
-  services/               Front-end API helper shell
-  styles/                 Design tokens, base CSS, components, cards, battle, phase4, card-lab
-docs/
-  architecture.md
-  backend-contracts.md
-  card-frame-design.md
-  cloudflare-bindings.md
-  cloudflare-resource-inventory.md
-  design-intake.md
-  phase-1-verification.md
-  phase-2-flow.md
-  phase-2-verification.md
-  phase-3-flow.md
-  phase-3-verification.md
-  phase-4-flow.md
-  phase-4-verification.md
-  phase-5-flow.md
-  phase-5-verification.md
-  phase-6-flow.md
-  phase-6-verification.md
-  phase-7-flow.md
-  phase-7-verification.md
-  phase-7-5-card-lab.md
-  route-map.md
+shared/battle/             Pure rules, RNG, engine, forecasts, MVP, simulator, encounters
+functions/_shared/         D1 card adapter and authoritative attempt lifecycle
+functions/api/             Create, recover, forecast, finalize, surrender, and history APIs
+src/services/              Browser transport and stored-event playback
+src/components/battle/     Canonical CardFrame battle extensions
+src/routes/                Hub, encounter, formation, arena, and persisted results
+tests/                     Engine, simulator, backend idempotency, and UI contract tests
 ```
 
-## Build discipline
+## Canonical terminology
 
-1. Keep route files thin. Put shared UI in components.
-2. Keep card rendering centralized in `src/components/CardFrame.js`.
-3. Keep design values in `src/styles/tokens.css`.
-4. Update README and docs when behavior, routes, architecture, or phase scope changes.
-5. Prefer mock fallbacks until the backend shape is proven.
-6. Extract reusable patterns from Stitch instead of pasting full mockup pages.
-7. Do not connect D1/R2 writes until backend contracts and permissions are explicit.
-8. Keep diagnostic, inventory, and Library read endpoints non-mutating until schema mapping is complete.
-9. Use `#/card-lab` before broad card-frame production changes.
+- ATK is the offensive stat; internal storage remains `pow` for compatibility.
+- DEF is mitigation.
+- SPD controls initiative, crit specialization, and Double-Strike eligibility.
+- Power or PWR is ATK + DEF + SPD.
+- Squad Power is the three-card total. It is a preview metric, not the combat resolver.
 
-## Canonical language
+## Guardrails
 
-| Concept | Label |
-|---|---|
-| Gacha action | Pull |
-| User-owned cards | Vault |
-| Global card pool | Library |
-| Battle team | Squad |
-| Gacha currency | Pull Tickets |
-| Soft currency | Gold |
-| Card creation flow | Submit Card |
-| Staff tools | Admin |
-
-## Backend note
-
-Cloudflare bindings are documented and now used for read-only Library discovery:
-
-```text
-env.DB
-env.CARD_IMAGES
-```
-
-Before Phase 8, confirm whether real ownership/user tables exist and record the findings in `docs/cloudflare-resource-inventory.md`.
-
-## Stat terminology
-
-Player-facing card stats use the following canonical language:
-
-- **ATK**: offensive output. The existing implementation and stored-data key remains `pow`.
-- **DEF**: durability or damage resistance.
-- **SPD**: initiative and speed-focused mechanics.
-- **Power**: ATK + DEF + SPD for one card. Use **PWR** only where space is constrained.
-- **Squad Power**: the sum of the selected cards' Power.
-- **Effective Power** or **Matchup Power**: an encounter-adjusted value after temporary type or battle modifiers.
-
-Compatibility parsers may continue accepting `pow`, `power`, `attack`, `atk`, and `strength` as legacy offensive-stat aliases. New UI copy must not expose the internal `pow` key as a player-facing label.
+- `src/components/CardFrame.js` remains the canonical card renderer.
+- The browser never chooses the reward-bearing seed, result, MVP, or rewards.
+- Pending attempts store the complete event log before playback.
+- Energy, finalization, surrender, daily bonus, Gold, XP, levels, and history are idempotent.
+- Refresh and disconnection never reroll a created attempt.
+- Abilities, PvP, equipment, evolution, trading, deep statuses, and shards remain deferred.

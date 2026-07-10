@@ -5,13 +5,13 @@
    ============================================================================ */
 
 import { mockCards } from './mockCards.js';
-import { mockEncounters } from './mockBattle.js';
+import { ENCOUNTERS } from '../../shared/battle/encounter-registry.js';
 
 export const mockAdminStats = {
   totalCards: mockCards.length,
   approvedCards: mockCards.length,
   pendingSubmissions: 3,
-  encounters: mockEncounters.length,
+  encounters: ENCOUNTERS.length,
   imageBucket: 'CARD_IMAGES',
   databaseBinding: 'DB',
 };

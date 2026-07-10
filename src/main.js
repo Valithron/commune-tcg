@@ -29,6 +29,8 @@ import './styles/card-standard-tuner.css';
 import './styles/battle.css';
 import './styles/battle-encounter-compact.css';
 import './styles/battle-squad-thumbnails.css';
+import './styles/battle-flow.css';
+import './styles/battle-arena.css';
 import './styles/phase4.css';
 import './styles/submit-crop-lab.css';
 import './styles/submit-card-preview.css';
@@ -53,6 +55,7 @@ import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
 import { initSquadBuilder, renderSquadBuilder } from './routes/SquadBuilder.js';
 import { initBattleResults, renderBattleResults } from './routes/BattleResults.js';
+import { initBattleArena, renderBattleArena } from './routes/BattleArena.js';
 import { initSubmitCardForm, renderSubmitCard } from './routes/SubmitCard.js';
 import { renderAdminIndex } from './routes/AdminIndex.js';
 import { initAdminBattleTest, renderAdminBattleTest } from './routes/AdminBattleTest.js';
@@ -85,6 +88,7 @@ const routeDefinitions = [
   { pattern: '/battle', navRoute: '/battle', shell: 'player', render: renderBattleHub },
   { pattern: '/battle/encounters', navRoute: '/battle', shell: 'player', render: renderEncounterSelect },
   { pattern: '/battle/squad', navRoute: '/battle', shell: 'player', render: renderSquadBuilder },
+  { pattern: '/battle/arena', navRoute: '/battle', shell: 'battle', render: renderBattleArena },
   { pattern: '/battle/results', navRoute: '/battle', shell: 'player', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', shell: 'player', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/admin', shell: 'admin', render: renderAdminIndex },
@@ -154,6 +158,7 @@ function renderError(error, shell) {
 }
 
 async function renderShell(route, content) {
+  if (route.shell === 'battle') return content;
   if (route.shell === 'admin') {
     return renderAdminShell({ activeRoute: route.navRoute, content });
   }
@@ -199,6 +204,7 @@ async function renderRoute() {
     else if (route.render === renderAdminSubmissionDetail) initAdminSubmissionDetail(appRoot);
     else if (route.render === renderSquadBuilder) initSquadBuilder(appRoot);
     else if (route.render === renderBattleResults) initBattleResults(appRoot);
+    else if (route.render === renderBattleArena) initBattleArena(appRoot);
     else if (route.render === renderCardLab) initCardFrameTuner(appRoot);
 
     scrollRouteToTop();

@@ -7,7 +7,7 @@ export function renderBackendStatus() {
     <section class="hero-panel">
       <span class="section-kicker">Admin Backend</span>
       <h2 class="hero-title">Bridge, then bind.</h2>
-      <p class="hero-copy">Backend checks now live inside the isolated admin shell. Phase 5 lets validated battles apply gold plus owned-card XP/levels while keeping drops, tickets, stamina, energy, and Vault grants deferred.</p>
+      <p class="hero-copy">Backend checks include the canonical seeded battle engine, pending attempt lifecycle, Energy, and exactly-once settlement.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/admin">Admin Home</a>
         <a class="button button-secondary" href="#/admin/inventory">Resource Inventory</a>
@@ -20,7 +20,7 @@ export function renderBackendStatus() {
       <div class="backend-endpoint-list">
         <a href="${routes.health}" target="_blank" rel="noreferrer"><span>Health</span><strong>${routes.health}</strong></a>
         <a href="${routes.battleInventory}" target="_blank" rel="noreferrer"><span>Battle Inventory</span><strong>${routes.battleInventory}</strong></a>
-        <a href="${routes.battleSimulate}?encounterId=training-yard-goblin" target="_blank" rel="noreferrer"><span>Battle Simulate</span><strong>${routes.battleSimulate}</strong></a>
+        <a href="${routes.battleEncounters}" target="_blank" rel="noreferrer"><span>Battle Encounters</span><strong>${routes.battleEncounters}</strong></a>
         <a href="${routes.battleHistory}" target="_blank" rel="noreferrer"><span>Battle History</span><strong>${routes.battleHistory}</strong></a>
         <a href="/api/battle-reward-contract" target="_blank" rel="noreferrer"><span>Battle Contract</span><strong>/api/battle-reward-contract</strong></a>
         <a href="${routes.pullResources}" target="_blank" rel="noreferrer"><span>Pull Resources</span><strong>${routes.pullResources}</strong></a>
@@ -39,12 +39,12 @@ export function renderBackendStatus() {
 
     <section class="glass-panel backend-panel">
       <span class="section-kicker">Safety</span>
-      <h2 class="section-title">Phase 5 guardrails</h2>
+      <h2 class="section-title">Battle guardrails</h2>
       <div class="admin-checklist">
         <div>This page is rendered by AdminShell, not AppShell.</div>
-        <div>POST /api/battles validates before any write.</div>
-        <div>Validated battles write battle_history, user_resources.gold, and owned card XP/level only.</div>
-        <div>No pull tickets, drops, stamina, energy, Vault grants, or auth changes are written.</div>
+        <div>POST /api/battles validates before pending-attempt and Energy writes.</div>
+        <div>POST /api/battle-finalize settles stored outcome, Gold, XP, levels, and history once.</div>
+        <div>No pull tickets, drops, shards, or Vault grants are written.</div>
       </div>
     </section>
   `;

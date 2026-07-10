@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch. Phase 10.6 adds semantic pull history fields.
+This document tracks the live backend contracts for the Gacha branch, including the authoritative battle-attempt lifecycle.
 
 ## Existing Cloudflare bindings
 
@@ -30,6 +30,14 @@ This document tracks the live backend contracts for the Gacha branch. Phase 10.6
 | `GET` | `/api/pull-history` | Read temporary Sterling pull history |
 | `POST` | `/api/pulls` | Live pull for temporary Sterling owner |
 | `POST` | `/api/pull-top-up` | Temporary Sterling ticket top-up for testing |
+| `GET` | `/api/battle-encounters` | Canonical versioned encounter registry |
+| `GET` | `/api/battle-inventory` | Signed-in user's normalized eligible owned cards |
+| `GET`/`POST` | `/api/battle-squad` | Read/save exactly three ordered lane IDs |
+| `POST` | `/api/battle-forecast` | Isolated-lane forecast labels; no writes |
+| `POST` | `/api/battles` | Create one seeded pending attempt and spend Energy |
+| `GET` | `/api/battle-attempt` | Recover a pending or settled attempt |
+| `POST` | `/api/battle-finalize` | Finalize stored result or surrender exactly once |
+| `GET` | `/api/battle-history` | Read finalized and surrendered battle audit rows |
 | `GET` | `/api/submissions` | Submitted card rows |
 | `POST` | `/api/submissions` | Create pending-review submission |
 | `GET` | `/api/admin/submissions` | Admin submission queue |
@@ -73,6 +81,8 @@ pull_tickets
 gold
 created_at
 updated_at
+energy
+energy_updated_at
 ```
 
 Temporary user:
@@ -90,6 +100,38 @@ Starting pull tickets:
 `GET /api/pull-resources` reads this table if it exists and otherwise reports starter values without creating rows.
 
 `POST /api/pull-top-up` creates the row if missing, then adds an allowed amount of tickets.
+
+Battle creation debits the canonical encounter Energy cost in the same D1 batch that creates the pending attempt. Current bootstrap Energy is 10. Failed validation or failed attempt creation spends no Energy.
+
+### battle_attempts
+
+Stores the server-selected seed and complete resolved battle before animation.
+
+```text
+attempt_id (primary key)
+user_id
+status: pending | settling | finalized | surrendered
+encounter_id / encounter_version
+rules_version / mvp_version
+seed
+ordered_card_ids
+result_json
+settlement_json
+settlement_token
+energy_spent
+surrender
+created_at / finalized_at
+```
+
+Creation is idempotent by `attempt_id`. Finalization uses a unique settlement token and status-guarded D1 batch so duplicate requests cannot duplicate Gold, XP, levels, or history.
+
+### battle_daily_victories
+
+Unique `(user_id, encounter_id, local_date)` records protect the first daily victory bonus using the encounter's `America/Denver` reset zone.
+
+### battle_history
+
+Finalized and surrendered attempts write one audit row keyed by a unique user/attempt index. `result_json` contains rules and encounter versions, snapshots, event log, outcome, MVP, applied reward, and XP applications.
 
 Allowed test top-ups:
 
@@ -181,7 +223,6 @@ Pull options:
 - Phase 10.6 uses temporary Sterling ownership.
 - Ticket top-up is a testing tool, not a real purchase flow.
 - Pull history semantics are text-only and do not add thumbnails or visual redesign.
-- Battle and rewards are unchanged.
-- Auth is still deferred.
+- Battle results and rewards are server-authoritative and use signed-in ownership.
 - Pull odds, tickets, Vault writes, and pull history are server-owned.
 - R2 image keys remain stored in D1, not raw public URLs.

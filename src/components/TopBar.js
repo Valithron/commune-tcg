@@ -29,12 +29,14 @@ async function loadTopBarResources(overrides = {}) {
     return {
       pullTickets: normalizeResourceValue(overrides.pullTickets ?? resources.pullTickets, mockUser.pullTickets),
       gold: normalizeResourceValue(overrides.gold ?? resources.gold, mockUser.gold),
+      energy: normalizeResourceValue(overrides.energy ?? resources.energy, 10),
       live: true,
     };
   } catch {
     return {
       pullTickets: normalizeResourceValue(overrides.pullTickets, mockUser.pullTickets),
       gold: normalizeResourceValue(overrides.gold, mockUser.gold),
+      energy: normalizeResourceValue(overrides.energy, 10),
       live: Boolean(Number.isFinite(Number(overrides.pullTickets)) || Number.isFinite(Number(overrides.gold))),
     };
   }
@@ -44,6 +46,7 @@ function renderResourcePills(resources) {
   return `
     <a class="resource-pill" href="#/shop" title="Open Ticket Shop">🎟 ${formatNumber(resources.pullTickets)}</a>
     <a class="resource-pill" href="#/shop" title="Open Ticket Shop">◎ ${formatNumber(resources.gold)}</a>
+    <a class="resource-pill" href="#/battle" title="Open Battle Hub">⚡ ${formatNumber(resources.energy)}</a>
   `;
 }
 

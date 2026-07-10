@@ -8,10 +8,10 @@ This document does not authorize implementation by itself. Implementation is gov
 
 ## Document Status
 
-**Phase:** Battle design complete enough for implementation planning  
-**Current objective:** Build and validate the first complete 3-on-3 PvE battle loop  
-**Implementation status:** Not yet authorized in this conversation  
-**Primary wider-game authority:** `docs/game-design.md`  
+**Phase:** Battle design complete enough for implementation planning
+**Current objective:** Build and validate the first complete 3-on-3 PvE battle loop
+**Implementation status:** First complete 3-on-3 PvE build implemented on `Gacha`; balance findings remain subject to live validation
+**Primary wider-game authority:** `docs/game-design.md`
 **Implementation authority:** `docs/battle-implementation-plan.md`
 
 ### Design-state labels
@@ -539,7 +539,7 @@ The simulator should tune initial weights so the system does not simply select t
 
 The results screen explains the choice in one concise line, for example:
 
-> **Battle MVP: Mermilf**  
+> **Battle MVP: Mermilf**
 > Won the first lane and dealt the most reinforcement damage.
 
 Defeats do not require an MVP in the first version.

@@ -5,18 +5,18 @@
    ============================================================================ */
 
 import { jsonResponse } from '../_shared/json.js';
-import { mockBattleEncounters } from '../_shared/battle-engine.js';
+import { ENCOUNTERS } from '../../shared/battle/encounter-registry.js';
 import { buildRewardContractSummary } from '../_shared/battle-reward-contract.js';
 
 export async function onRequestGet() {
   return jsonResponse({
     ok: true,
     source: 'shared battle reward contract',
-    ...buildRewardContractSummary(mockBattleEncounters),
+    ...buildRewardContractSummary(ENCOUNTERS.map((encounter) => ({ ...encounter, rewardGold: encounter.rewards.victory.gold, rewardXp: encounter.rewards.victory.xpPerCard }))),
     notes: [
       'This endpoint performs no writes.',
-      'Battle Phase 5 applies this contract only through POST /api/battles after validation.',
-      'Pull tickets, drops, stamina, energy, Vault grants, and auth changes remain deferred.',
+      'Attempt creation and reward finalization are separate authoritative operations.',
+      'Pull tickets, drops, and Vault grants remain deferred.',
     ],
   });
 }

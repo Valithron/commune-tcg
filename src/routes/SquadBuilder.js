@@ -1,278 +1,120 @@
-/* ============================================================================
-   Squad Builder Route
-   Phase 10F.1 responsibility: player-facing squad slot tray plus thumbnail card
-   rows in Available Cards. Mechanics stay the same.
-   ============================================================================ */
+/* Explicit left/center/right formation with tap placement, tap swap, filters,
+   canonical CardFrame rendering, and engine-backed isolated-lane forecasts. */
 
 import { renderCardFrame } from '../components/CardFrame.js';
-import { getEncounterById } from '../data/mockBattle.js';
-import {
-  battleSquadMaxSize,
-  buildBattleResultsHref,
-  buildSquadBuilderHref,
-  fetchBattleInventory,
-  fetchSavedBattleSquad,
-  getBattleCardKey,
-  getBattleSquadPower,
-  getEligibleBattleCards,
-  getSelectedBattleIds,
-  parseSquadCardIds,
-  resolveSelectedBattleSquad,
-  saveBattleSquad,
-  toggleBattleCardSelection,
-} from '../services/battleSquadSelection.js';
+import { toRenderableBattleCard } from '../components/battle/BattleCard.js';
+import { createBattleAttempt, fetchBattleEncounters, fetchFormationForecast } from '../services/battleApi.js';
+import { fetchBattleInventory, fetchSavedBattleSquad, getBattleCardKey, getBattleSquadPower, getEligibleBattleCards, parseSquadCardIds, resolveSelectedBattleSquad, saveBattleSquad } from '../services/battleSquadSelection.js';
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+const lanes = ['left', 'center', 'right'];
+function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+function cardStats(card) { return { atk: Number(card.stats?.atk ?? card.stats?.pow ?? 0), def: Number(card.stats?.def ?? 0), spd: Number(card.stats?.spd ?? 0) }; }
+function power(card) { const stats = cardStats(card); return Number(card.battlePower ?? stats.atk + stats.def + stats.spd); }
+
+function renderSlot(card, lane, index) {
+  if (!card) return `<button class="formation-slot is-empty" type="button" data-formation-slot="${index}"><span>${lane}</span><strong>+</strong><small>Tap, then choose a card</small><em data-forecast-lane="${lane}">Awaiting card</em></button>`;
+  return `<button class="formation-slot is-filled" type="button" data-formation-slot="${index}" data-card-id="${escapeHtml(getBattleCardKey(card))}"><span>${lane}</span><div>${renderCardFrame(card, { showOwnership: false, showStats: false, density: 'thumbnail', context: 'battle-formation' })}</div><strong>${escapeHtml(card.name)}</strong><small>Lv ${escapeHtml(card.level)} · PWR ${escapeHtml(power(card))}</small><em data-forecast-lane="${lane}">Calculating…</em></button>`;
 }
 
-function renderBattleCardThumb(card) {
-  return `
-    <div class="battle-card-thumb-frame" aria-hidden="true">
-      ${renderCardFrame(card, {
-        showOwnership: false,
-        showStats: false,
-        density: 'thumbnail',
-        context: 'battle-squad',
-      })}
-    </div>
-  `;
+function renderEnemy(encounter, lane) {
+  const source = encounter.enemies[lane];
+  const stats = source.stats;
+  const card = toRenderableBattleCard({ ...source, instanceId: source.id, lane, power: stats.atk + stats.def + stats.spd });
+  return `<div class="formation-enemy"><span>${lane}</span>${renderCardFrame(card, { showOwnership: false, showStats: false, density: 'thumbnail', context: 'battle-formation-enemy' })}<strong>${escapeHtml(source.name)}</strong><small>${escapeHtml(source.type)} · PWR ${escapeHtml(card.battlePower)}</small></div>`;
 }
 
-function getSavedSquadLabel(selectionInput) {
-  if (selectionInput.source === 'saved-squad') {
-    return 'Saved squad loaded';
-  }
-
-  if (selectionInput.source === 'url-query') {
-    return 'Custom lineup selected';
-  }
-
-  if (selectionInput.savedStatus === 'saved-squad-invalid-fell-back') {
-    return 'Saved squad needs an update';
-  }
-
-  return 'Using strongest available cards';
-}
-
-function renderBattleCardRow(card, { selected = false, href = '', disabled = false, note = '' } = {}) {
-  const tag = href && !disabled ? 'a' : 'div';
-  const hrefAttribute = tag === 'a' ? ` href="${href}"` : '';
-  const classes = [
-    'battle-card-row',
-    'battle-card-row-with-thumb',
-    selected ? 'battle-card-row-selected' : '',
-    disabled ? 'battle-card-row-disabled' : '',
-  ].filter(Boolean).join(' ');
-
-  return `
-    <${tag} class="${classes}"${hrefAttribute}>
-      ${renderBattleCardThumb(card)}
-      <div class="battle-card-row-copy">
-        <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
-        <strong>${escapeHtml(card.name)}</strong>
-        <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
-      </div>
-      <div class="battle-card-stat-stack">
-        <span aria-label="Attack ${escapeHtml(card.stats?.pow ?? 0)}, Defense ${escapeHtml(card.stats?.def ?? 0)}, Speed ${escapeHtml(card.stats?.spd ?? 0)}">A${escapeHtml(card.stats?.pow ?? 0)} · D${escapeHtml(card.stats?.def ?? 0)} · S${escapeHtml(card.stats?.spd ?? 0)}</span>
-        <strong aria-label="Power ${escapeHtml(card.battlePower || 0)}">PWR ${escapeHtml(card.battlePower || 0)}</strong>
-        ${note ? `<small>${escapeHtml(note)}</small>` : ''}
-      </div>
-    </${tag}>
-  `;
-}
-
-function renderSquadSlots({ encounter, selectedCards }) {
-  const selectedIds = getSelectedBattleIds(selectedCards);
-  const slots = Array.from({ length: battleSquadMaxSize }, (_, index) => selectedCards[index] || null);
-
-  return `
-    <div class="battle-squad-slot-tray">
-      ${slots.map((card, index) => {
-        const slotNumber = index + 1;
-
-        if (!card) {
-          return `
-            <div class="battle-squad-slot battle-squad-slot-empty">
-              <div class="battle-slot-plus">+</div>
-              <strong>Slot ${slotNumber}</strong>
-              <span>Tap a card below</span>
-            </div>
-          `;
-        }
-
-        const cardId = getBattleCardKey(card);
-        const nextIds = selectedIds.filter((id) => id !== cardId);
-
-        return `
-          <a class="battle-squad-slot battle-squad-slot-filled" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: nextIds })}">
-            <span class="battle-slot-label">Slot ${slotNumber}</span>
-            <strong>${escapeHtml(card.name)}</strong>
-            <small>Lv ${escapeHtml(card.level)} · PWR ${escapeHtml(card.battlePower || 0)}</small>
-            <em>Tap to remove</em>
-          </a>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-function renderAvailableCards({ encounter, cards, selectedCards }) {
-  const selectedIds = getSelectedBattleIds(selectedCards);
-  const selectedSet = new Set(selectedIds);
-  const full = selectedIds.length >= battleSquadMaxSize;
-
-  if (!cards.length) {
-    return '<div class="empty-note">No cards are ready for battle yet.</div>';
-  }
-
-  return cards.map((card) => {
-    const cardId = getBattleCardKey(card);
-    const selected = selectedSet.has(cardId);
-    const nextIds = toggleBattleCardSelection({ selectedIds, cardId });
-    const canAdd = selected || !full;
-
-    return renderBattleCardRow(card, {
-      selected,
-      disabled: !canAdd,
-      href: canAdd ? buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: nextIds }) : '',
-      note: selected ? 'In squad' : (full ? 'Squad full' : 'Tap to add'),
-    });
-  }).join('');
-}
-
-function getSelectionInput({ query, savedSquadPayload }) {
-  const queryIds = parseSquadCardIds(query.squadCardIds);
-  const savedIds = savedSquadPayload?.validForBattle ? parseSquadCardIds(savedSquadPayload.selectedIds) : [];
-
-  if (queryIds.length) {
-    return {
-      requestedIds: queryIds,
-      source: 'url-query',
-      savedStatus: savedSquadPayload?.saved ? 'saved-squad-available' : 'no-saved-squad',
-    };
-  }
-
-  if (savedIds.length) {
-    return {
-      requestedIds: savedIds,
-      source: 'saved-squad',
-      savedStatus: 'loaded-saved-squad',
-    };
-  }
-
-  return {
-    requestedIds: [],
-    source: 'default-highest-power',
-    savedStatus: savedSquadPayload?.saved ? 'saved-squad-invalid-fell-back' : 'no-saved-squad',
-  };
+function renderVaultCard(card, selectedIds) {
+  const id = getBattleCardKey(card);
+  const selected = selectedIds.includes(id);
+  const stats = cardStats(card);
+  return `<button class="formation-vault-card${selected ? ' is-selected' : ''}" type="button" data-vault-card-id="${escapeHtml(id)}" data-name="${escapeHtml(card.name.toLowerCase())}" data-type="${escapeHtml(card.type || card.cardType || 'neutral')}" data-rarity="${escapeHtml(card.rarity)}" data-power="${power(card)}" data-level="${escapeHtml(card.level || 1)}"><div>${renderCardFrame(card, { showOwnership: false, showStats: false, density: 'thumbnail', context: 'battle-formation-vault' })}</div><span><strong>${escapeHtml(card.name)}</strong><small>${escapeHtml(card.rarity)} · ${escapeHtml(card.typeLabel || card.type || 'Neutral')}</small><em>ATK ${stats.atk} · DEF ${stats.def} · SPD ${stats.spd}</em></span><b>PWR ${power(card)}</b></button>`;
 }
 
 export async function renderSquadBuilder({ query }) {
-  const encounter = getEncounterById(query.encounter);
-
   try {
-    const [inventory, savedSquadPayload] = await Promise.all([
-      fetchBattleInventory(),
-      fetchSavedBattleSquad().catch(() => null),
-    ]);
-    const eligibleCards = getEligibleBattleCards(inventory);
-    const selectionInput = getSelectionInput({ query, savedSquadPayload });
-    const selection = resolveSelectedBattleSquad(eligibleCards, selectionInput.requestedIds);
-    const selectedCards = selection.selected;
-    const selectedIds = getSelectedBattleIds(selectedCards);
-    const squadPower = getBattleSquadPower(selectedCards);
-    const powerDelta = squadPower - encounter.enemyPower;
-    const startHref = buildBattleResultsHref({ encounterId: encounter.id, squadCardIds: selectedIds });
-    const savedSquadLabel = getSavedSquadLabel(selectionInput);
-
-    return `
-      <section class="hero-panel">
-        <span class="section-kicker">Squad Builder</span>
-        <h2 class="hero-title">Choose your squad.</h2>
-        <p class="hero-copy">Fill up to three squad slots, then save your favorite lineup or start battle.</p>
-        <div class="action-row"><a class="button button-secondary" href="#/battle/encounters">Change Encounter</a></div>
-      </section>
-
-      <section class="glass-panel battle-summary-panel battle-live-panel battle-squad-builder-panel">
-        <span class="section-kicker">Your Squad</span>
-        <h2 class="section-title">Ready for ${escapeHtml(encounter.name)}</h2>
-        <div class="battle-score-grid">
-          <div class="battle-score-card"><span>Enemy Power</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-          <div class="battle-score-card"><span>Squad Power</span><strong>${escapeHtml(squadPower)}</strong></div>
-          <div class="battle-score-card"><span>Outlook</span><strong>${powerDelta >= 0 ? `Favored +${powerDelta}` : `Risky ${powerDelta}`}</strong></div>
-        </div>
-        ${renderSquadSlots({ encounter, selectedCards })}
-        <div class="battle-state-note battle-state-note-preview">
-          <strong>${escapeHtml(savedSquadLabel)}</strong>
-          <span>${selectedCards.length ? 'These cards will receive battle XP if rewards are claimed.' : 'Tap a card below to fill your first slot.'}</span>
-        </div>
-        <div class="action-row">
-          ${selectedCards.length ? `<a class="button button-primary" href="${startHref}">Start Battle</a>` : '<span class="button button-secondary" aria-disabled="true">Select a Card</span>'}
-          ${selectedCards.length ? `<button class="button button-secondary" type="button" data-save-battle-squad data-squad-card-ids="${escapeHtml(selectedIds.join(','))}">Save Squad</button>` : ''}
-        </div>
-        <div class="empty-note" data-save-battle-squad-status>${savedSquadPayload?.saved ? 'Saved squad available.' : 'No saved squad yet.'}</div>
-      </section>
-
-      <section>
-        <div class="section-heading">
-          <div>
-            <span class="section-kicker">Available Cards</span>
-            <h2 class="section-title">Tap cards to add or remove</h2>
-          </div>
-          <span class="status-pill">${eligibleCards.length} ready</span>
-        </div>
-        <div class="battle-card-list">
-          ${renderAvailableCards({ encounter, cards: eligibleCards, selectedCards })}
-        </div>
-      </section>
-    `;
+    const [encountersPayload, inventory, saved] = await Promise.all([fetchBattleEncounters(), fetchBattleInventory(), fetchSavedBattleSquad().catch(() => null)]);
+    const encounter = encountersPayload.encounters.find((item) => item.id === query.encounter) || encountersPayload.encounters[0];
+    const cards = getEligibleBattleCards(inventory);
+    const queryIds = parseSquadCardIds(query.squadCardIds);
+    const savedIds = saved?.validForBattle ? parseSquadCardIds(saved.selectedIds) : [];
+    const requestedIds = queryIds.length ? queryIds : savedIds;
+    const selected = resolveSelectedBattleSquad(cards, requestedIds).selected.slice(0, 3);
+    const selectedIds = selected.map(getBattleCardKey);
+    const slots = lanes.map((_, index) => selected[index] || null);
+    return `<section class="formation-page" data-formation-root data-encounter-id="${escapeHtml(encounter.id)}" data-formation-ids="${escapeHtml(selectedIds.join(','))}">
+      <header class="formation-header"><div><span class="section-kicker">Prepare Squad</span><h1>${escapeHtml(encounter.name)}</h1><p>${escapeHtml(encounter.rulesText)}</p></div><a class="button button-secondary" href="#/battle/encounters">Change Encounter</a></header>
+      <section class="formation-board"><div class="formation-row formation-enemy-row">${lanes.map((lane) => renderEnemy(encounter, lane)).join('')}</div><p class="formation-forecast-note"><strong>Lane forecasts exclude reinforcement.</strong> They estimate each isolated matchup and are not guarantees.</p><div class="formation-row formation-player-row">${slots.map((card, index) => renderSlot(card, lanes[index], index)).join('')}</div></section>
+      <section class="formation-summary"><div><span>Squad Power</span><strong data-squad-power>${escapeHtml(getBattleSquadPower(selected))}</strong></div><div><span>Formation</span><strong>${selected.length}/3</strong></div><button class="button button-secondary" type="button" data-save-formation ${selected.length === 3 ? '' : 'disabled'}>Save Formation</button><button class="button button-primary" type="button" data-begin-battle ${selected.length === 3 ? '' : 'disabled'}>Begin Battle · 1 Energy</button><p data-formation-status></p></section>
+      <section class="formation-vault"><div class="section-heading"><div><span class="section-kicker">Your Vault</span><h2>Choose owned cards</h2></div><span class="status-pill">${cards.length} eligible</span></div><div class="formation-filters"><input type="search" placeholder="Search cards" data-formation-search><select data-formation-type><option value="">All types</option>${['flame','tide','bloom','volt','shadow','radiant','neutral'].map((value) => `<option value="${value}">${value[0].toUpperCase() + value.slice(1)}</option>`).join('')}</select><select data-formation-rarity><option value="">All rarities</option>${['common','uncommon','rare','legendary','mythic'].map((value) => `<option value="${value}">${value[0].toUpperCase() + value.slice(1)}</option>`).join('')}</select><select data-formation-sort><option value="power">Power</option><option value="level">Level</option><option value="recent">Recent</option><option value="favorite">Favorite</option></select></div><div class="formation-vault-list" data-formation-list>${cards.map((card) => renderVaultCard(card, selectedIds)).join('')}</div></section>
+    </section>`;
   } catch (error) {
-    return `
-      <section class="hero-panel">
-        <span class="section-kicker">Squad Builder</span>
-        <h2 class="hero-title">Squad unavailable.</h2>
-        <p class="hero-copy">Your battle cards could not be loaded, so battle setup is paused for now.</p>
-        <div class="action-row"><a class="button button-secondary" href="#/battle">Back to Battle</a></div>
-      </section>
-      <section class="glass-panel battle-summary-panel">
-        <div class="empty-note">${escapeHtml(error.message)}</div>
-      </section>
-    `;
+    return `<section class="hero-panel"><span class="section-kicker">Prepare Squad</span><h1 class="hero-title">Formation unavailable.</h1><p>${escapeHtml(error.message)}</p><a class="button button-secondary" href="#/battle/encounters">Choose Encounter</a></section>`;
   }
 }
 
+function formationHref(encounterId, ids) { const params = new URLSearchParams({ encounter: encounterId }); if (ids.filter(Boolean).length) params.set('squadCardIds', ids.filter(Boolean).join(',')); return `#/battle/squad?${params}`; }
+
 export function initSquadBuilder(root) {
-  const button = root.querySelector('[data-save-battle-squad]');
-  const status = root.querySelector('[data-save-battle-squad-status]');
+  const page = root.querySelector('[data-formation-root]');
+  if (!page) return;
+  const encounterId = page.dataset.encounterId;
+  const ids = parseSquadCardIds(page.dataset.formationIds);
+  const activeKey = `commune-battle-active-slot:${encounterId}`;
+  let activeSlot = Number(sessionStorage.getItem(activeKey));
+  if (!Number.isInteger(activeSlot) || activeSlot < 0 || activeSlot > 2) activeSlot = Math.max(0, ids.findIndex((id) => !id));
+  const slots = [...page.querySelectorAll('[data-formation-slot]')];
+  const markActive = () => slots.forEach((slot, index) => slot.classList.toggle('is-active', index === activeSlot));
+  markActive();
 
-  if (!button || !status) {
-    return;
-  }
-
-  button.addEventListener('click', async () => {
-    const squadCardIds = parseSquadCardIds(button.getAttribute('data-squad-card-ids'));
-    button.disabled = true;
-    button.textContent = 'Saving...';
-    status.textContent = 'Saving your squad...';
-
-    try {
-      await saveBattleSquad({ squadCardIds });
-      status.textContent = 'Saved. This squad will load by default next time.';
-      button.textContent = 'Saved';
-      button.classList.add('button-resolved');
-      button.setAttribute('aria-disabled', 'true');
-    } catch (error) {
-      status.textContent = error.message;
-      button.disabled = false;
-      button.textContent = 'Save Squad';
-      button.classList.remove('button-resolved');
-      button.removeAttribute('aria-disabled');
+  slots.forEach((slot, index) => slot.addEventListener('click', () => {
+    if (activeSlot !== index && ids[activeSlot] && ids[index]) {
+      [ids[activeSlot], ids[index]] = [ids[index], ids[activeSlot]];
+      sessionStorage.setItem(activeKey, String(index));
+      window.location.hash = formationHref(encounterId, ids);
+      return;
     }
+    activeSlot = index;
+    sessionStorage.setItem(activeKey, String(index));
+    markActive();
+  }));
+
+  page.querySelectorAll('[data-vault-card-id]').forEach((button) => button.addEventListener('click', () => {
+    const cardId = button.dataset.vaultCardId;
+    const existing = ids.indexOf(cardId);
+    if (existing >= 0 && existing !== activeSlot) [ids[existing], ids[activeSlot]] = [ids[activeSlot], ids[existing]];
+    else ids[activeSlot] = cardId;
+    const nextEmpty = [0, 1, 2].find((index) => !ids[index]);
+    sessionStorage.setItem(activeKey, String(nextEmpty ?? activeSlot));
+    window.location.hash = formationHref(encounterId, ids);
+  }));
+
+  const search = page.querySelector('[data-formation-search]');
+  const type = page.querySelector('[data-formation-type]');
+  const rarity = page.querySelector('[data-formation-rarity]');
+  const sort = page.querySelector('[data-formation-sort]');
+  const filter = () => {
+    const cards = [...page.querySelectorAll('[data-vault-card-id]')];
+    const term = search.value.trim().toLowerCase();
+    cards.forEach((card) => { card.hidden = Boolean((term && !card.dataset.name.includes(term)) || (type.value && card.dataset.type !== type.value) || (rarity.value && card.dataset.rarity !== rarity.value)); });
+    cards.sort((a, b) => Number(b.dataset[sort.value] || 0) - Number(a.dataset[sort.value] || 0)).forEach((card) => page.querySelector('[data-formation-list]').append(card));
+  };
+  [search, type, rarity, sort].forEach((control) => control.addEventListener('input', filter));
+
+  const status = page.querySelector('[data-formation-status]');
+  page.querySelector('[data-save-formation]')?.addEventListener('click', async (event) => {
+    event.currentTarget.disabled = true; status.textContent = 'Saving left, center, and right…';
+    try { await saveBattleSquad({ squadCardIds: ids }); status.textContent = 'Formation saved.'; event.currentTarget.textContent = 'Saved'; }
+    catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; }
   });
+  page.querySelector('[data-begin-battle]')?.addEventListener('click', async (event) => {
+    event.currentTarget.disabled = true; event.currentTarget.textContent = 'Locking Formation…'; status.textContent = 'Creating the authoritative battle…';
+    try {
+      await saveBattleSquad({ squadCardIds: ids });
+      const payload = await createBattleAttempt({ encounterId, orderedCardIds: ids });
+      sessionStorage.removeItem(`commune-battle-entered:${payload.attempt.attemptId}`);
+      window.location.hash = `#/battle/arena?attemptId=${encodeURIComponent(payload.attempt.attemptId)}`;
+    } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; event.currentTarget.textContent = 'Begin Battle · 1 Energy'; }
+  });
+
+  if (ids.length === 3) fetchFormationForecast({ encounterId, orderedCardIds: ids }).then((payload) => payload.forecasts.forEach((forecast) => { const target = page.querySelector(`[data-forecast-lane="${forecast.lane}"]`); if (target) { target.textContent = forecast.label; target.className = `forecast-${forecast.label.toLowerCase()}`; target.setAttribute('aria-label', `${forecast.label} isolated lane forecast`); } })).catch(() => { page.querySelectorAll('[data-forecast-lane]').forEach((target) => { target.textContent = 'Forecast unavailable'; }); });
 }

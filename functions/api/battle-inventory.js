@@ -6,7 +6,8 @@
 
 import { getSessionUser } from '../_shared/auth.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
-import { mockBattleEncounters, normalizeOwnedBattleCard } from '../_shared/battle-engine.js';
+import { normalizeOwnedBattleCard } from '../_shared/battle-card-store.js';
+import { ENCOUNTERS } from '../../shared/battle/encounter-registry.js';
 
 const squadSize = 3;
 const candidateBattleTables = ['battle_history', 'battles', 'encounters', 'enemies', 'enemy_cards', 'battle_encounters', 'battle_rewards', 'user_squads', 'squads'];
@@ -21,18 +22,17 @@ function summarizeSquadRules(cards) { const sortedCards = [...cards].sort((a, b)
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
-  const url = new URL(request.url);
   const user = await getSessionUser(request, env);
   if (!user) return errorResponse('Sign in to read battle inventory.', 401);
-  const ownerUserId = url.searchParams.get('ownerUserId') || user.id;
-  const ownerDisplayName = ownerUserId === user.id ? user.displayName : ownerUserId;
+  const ownerUserId = user.id;
+  const ownerDisplayName = user.displayName;
 
   try {
     const [ownedRows, tableInventory] = await Promise.all([readOwnedRows(env, ownerUserId), readExistingBattleTables(env)]);
     const ownedCards = ownedRows.map(normalizeOwnedBattleCard);
     const battleEligibleCards = ownedCards.filter((card) => card.eligible);
     const ineligibleOwnedCards = ownedCards.filter((card) => !card.eligible);
-    const readiness = buildReadiness({ battleEligibleCards, mockEncounterCount: mockBattleEncounters.length, existingBattleTables: tableInventory.existingBattleTables, ownerDisplayName });
+    const readiness = buildReadiness({ battleEligibleCards, mockEncounterCount: ENCOUNTERS.length, existingBattleTables: tableInventory.existingBattleTables, ownerDisplayName });
 
     return jsonResponse({
       ok: true,
@@ -47,10 +47,10 @@ export async function onRequestGet({ env, request }) {
       battleEligibleCards,
       ineligibleOwnedCards,
       squadValidation: summarizeSquadRules(battleEligibleCards),
-      enemySources: [{ source: 'functions/_shared/battle-engine.js', type: 'shared-mock', status: 'present', recordCount: mockBattleEncounters.length, enemyStatModel: 'enemyPower plus enemyType for type matchups' }],
-      encounterSources: [{ source: 'functions/_shared/battle-engine.js', status: 'active-shared-source', encounters: mockBattleEncounters }],
+      enemySources: [{ source: 'shared/battle/encounter-registry.js', type: 'canonical-registry', status: 'present', recordCount: ENCOUNTERS.length, enemyStatModel: 'three normalized lane cards' }],
+      encounterSources: [{ source: 'shared/battle/encounter-registry.js', status: 'canonical', encounters: ENCOUNTERS }],
       tableInventory,
-      proposedBattleInputContract: { futureEndpoint: 'POST /api/battles', noWriteSimulationEndpoint: 'POST /api/battle-simulate', inputs: { ownerUserId: 'defaults to signed-in player', encounterId: 'required string matching a known encounter', squadCardIds: 'array of 1 to 3 owned card row ids or normalized card ids' }, validates: ['owner owns every selected card', 'each selected card is battle-eligible', 'squad size is between 1 and 3', 'no duplicate card ids in one squad', 'encounter id resolves to an available encounter', 'future stamina or energy cost before write-enabled battle starts'], writes: [], deferredWrites: ['drop grants', 'stamina or energy debit'] },
+      proposedBattleInputContract: { endpoint: 'POST /api/battles', noWriteSimulationEndpoint: 'GET /api/battle-simulate', inputs: { encounterId: 'canonical encounter ID', squadCardIds: 'exactly three owned card row IDs in left/center/right order' }, validates: ['signed-in user', 'ownership and eligibility', 'exactly three distinct IDs', 'encounter version', 'available Energy'], writes: ['pending attempt', 'Energy debit'], deferredWrites: ['rewards until finalize'] },
       readiness,
     });
   } catch (error) {
