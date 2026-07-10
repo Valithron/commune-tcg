@@ -39,12 +39,12 @@ function getStrongestVaultCard(cards = []) {
 
 function renderHomeActions() {
   return `
-    <div class="home-highlight-actions">
-      <a class="quick-card home-highlight-action" href="#/pull">
+    <div class="home-feature-actions">
+      <a class="home-feature-button" href="#/pull">
         <strong>Daily Pull</strong>
         <span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span>
       </a>
-      <a class="quick-card home-highlight-action" href="#/battle">
+      <a class="home-feature-button" href="#/battle">
         <strong>Battle</strong>
         <span>Pick a squad and test the current battle loop.</span>
       </a>
@@ -55,7 +55,7 @@ function renderHomeActions() {
 function renderVaultHighlight(strongestCard, displayName) {
   if (!strongestCard) {
     return `
-      <div class="home-highlight-empty">
+      <div class="home-feature-empty">
         <strong>No Vault cards yet</strong>
         <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
       </div>
@@ -64,7 +64,7 @@ function renderVaultHighlight(strongestCard, displayName) {
   }
 
   return `
-    <div class="home-highlight-card">
+    <div class="home-feature-card">
       ${renderCardFrame(strongestCard, {
         href: `#/vault/card/${strongestCard.id}`,
         context: 'vault',
@@ -134,7 +134,7 @@ export async function renderHome() {
         </div>
         <span class="status-pill">${strongestTotal} Total</span>
       </div>
-      <div class="home-highlight-grid">
+      <div class="home-feature-split">
         ${renderVaultHighlight(strongestCard, displayName)}
       </div>
     </section>
