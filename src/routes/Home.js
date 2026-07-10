@@ -7,6 +7,7 @@
 
 import { mockUser } from '../data/mockUser.js';
 import { getCachedAuthUser } from '../services/authClient.js';
+import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { loadVaultCards } from '../data/vaultData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
 
@@ -37,12 +38,25 @@ function getStrongestVaultCard(cards = []) {
     })[0] || null;
 }
 
-function renderHomeActions() {
+async function loadHomePullResources() {
+  try {
+    const routes = getApiRoutes();
+    const payload = await fetchJson(routes.pullResources, { cache: 'no-store' });
+    return payload.resources || null;
+  } catch {
+    return null;
+  }
+}
+
+function renderHomeActions({ dailyPullAvailable }) {
+  const dailyClass = dailyPullAvailable ? ' home-daily-pull-available' : '';
+  const dailyText = dailyPullAvailable ? 'Ready to claim now.' : 'Already claimed today.';
+
   return `
     <div class="home-feature-actions">
-      <a class="home-feature-button" href="#/pull">
+      <a class="home-feature-button${dailyClass}" href="#/pull">
         <strong>Daily Pull</strong>
-        <span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span>
+        <span>${dailyText}</span>
       </a>
       <a class="home-feature-button" href="#/battle">
         <strong>Battle</strong>
@@ -52,14 +66,14 @@ function renderHomeActions() {
   `;
 }
 
-function renderVaultHighlight(strongestCard, displayName) {
+function renderVaultHighlight(strongestCard, displayName, actionState) {
   if (!strongestCard) {
     return `
       <div class="home-feature-empty">
         <strong>No Vault cards yet</strong>
         <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
       </div>
-      ${renderHomeActions()}
+      ${renderHomeActions(actionState)}
     `;
   }
 
@@ -70,16 +84,20 @@ function renderVaultHighlight(strongestCard, displayName) {
         context: 'vault',
       })}
     </div>
-    ${renderHomeActions()}
+    ${renderHomeActions(actionState)}
   `;
 }
 
 export async function renderHome() {
   const user = getCachedAuthUser();
   const displayName = user?.displayName || user?.username || 'Player';
-  const vault = await loadVaultCards({ force: true });
+  const [vault, pullResources] = await Promise.all([
+    loadVaultCards({ force: true }),
+    loadHomePullResources(),
+  ]);
   const strongestCard = getStrongestVaultCard(vault?.cards || []);
   const strongestTotal = strongestCard ? getAggregateStats(strongestCard) : 0;
+  const dailyPullAvailable = pullResources?.dailyTicketAvailable ?? mockUser.dailyPullReady;
 
   return `
     <section class="hero-panel">
@@ -135,7 +153,7 @@ export async function renderHome() {
         <span class="status-pill">${strongestTotal} Total</span>
       </div>
       <div class="home-feature-split">
-        ${renderVaultHighlight(strongestCard, displayName)}
+        ${renderVaultHighlight(strongestCard, displayName, { dailyPullAvailable })}
       </div>
     </section>
   `;
