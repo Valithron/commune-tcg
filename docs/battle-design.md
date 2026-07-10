@@ -2,7 +2,7 @@
 
 Living design document for the Commune TCG battle system on the `Gacha` branch.
 
-This document records battle ideas, confirmed decisions, rejected directions, unresolved questions, and the reasoning behind major choices. It is a design document only. Nothing written here authorizes implementation unless Sterling explicitly requests implementation in a separate coding task.
+This document records confirmed decisions, serious proposals, rejected directions, unresolved questions, and the reasoning behind major choices. It is a design document only. Nothing here authorizes implementation unless Sterling explicitly requests implementation in a separate coding task.
 
 ## Document Status
 
@@ -24,8 +24,6 @@ When the documents overlap:
 
 ## Inherited Confirmed Direction
 
-The following constraints are inherited from `game-design.md`.
-
 ### Product and session shape
 
 - Commune TCG is a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social/anime-themed worldbuilding.
@@ -39,7 +37,7 @@ The following constraints are inherited from `game-design.md`.
 
 - A battle squad contains 3 cards.
 - The first combat model may use POW, DEF, SPD, Type, native/current rarity, and level.
-- A card's practical battlefield role should emerge from its stats, type, character, rarity, and later abilities rather than a rigid stored class.
+- A card's battlefield role should emerge from its stats, type, character, rarity, and later abilities rather than a rigid stored class.
 - Every card in the active squad should receive full battle XP in the first version.
 
 ### Encounter scope
@@ -149,15 +147,13 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 ### Locked pre-battle squad order
 
-**Rule:** The player arranges the three-card squad before battle and locks the order when battle begins.
+**Rule:** The player arranges the three-card squad before battle and locks the left, center, and right order when battle begins.
 
-**Intended experience:** Formation is a meaningful strategic commitment rather than something constantly corrected after seeing the battle unfold.
+**Intended experience:** Formation is a meaningful strategic commitment rather than something constantly corrected after battle begins.
 
 **Mechanical reason:** Locked order gives type matchups and stat profiles real pre-battle significance while keeping moment-to-moment combat light.
 
-**Known risks:** Enemy information must be presented clearly enough that the choice is informed. Routine battles may need a recommended formation option later.
-
-**Reconsider if:** Locked formation creates excessive trial-and-error because enemy matchups are hidden or misleading.
+**Known risks:** Enemy information must be clear enough that the choice is informed. Routine battles may later need a recommended formation option.
 
 ### Visible per-card HP
 
@@ -178,6 +174,28 @@ The first battle model should be considered unsuccessful if it becomes primarily
 **Mechanical reason:** This reduces input burden and reserves player attention for squad building and any later high-impact decisions.
 
 **Known risk:** The battle can become passive if formation is the only meaningful decision in every mode.
+
+### Natural lane reinforcement
+
+**Rule:** When a card defeats the enemy directly opposite it, the victorious card remains active with its current HP. On its next normal scheduled turn, it begins attacking the nearest adjacent surviving enemy using its own normal attack, POW, SPD, Type, and other applicable values.
+
+**Clarifications:**
+
+- The victorious card does not transfer or donate stats to an ally.
+- It does not merge with the allied card.
+- It does not receive a free attack, extra turn, or reinforcement damage bonus.
+- The allied card in the reinforced lane continues acting normally.
+- The result is a natural 2-on-1 created by two separate cards using their own turns.
+- A side-lane winner reinforces the center lane if the center enemy is still alive.
+- A center-lane winner may have two equally near adjacent lanes. The tie-break rule is still open.
+
+**Intended experience:** Winning a lane has an immediate payoff. A strong or beloved card can win its confrontation, remain visibly active, and help carry the squad.
+
+**Mechanical reason:** Reinforcement creates rollover victories and defeats, rewards strong formation, prevents victorious cards from standing idle, and requires no manual redirection interface.
+
+**Known risk:** The first knockout may snowball into a rapid numerical collapse. Initial safeguards are that assistance starts only on the winner's next scheduled turn and grants no extra action or damage bonus.
+
+**Reconsider if:** Testing shows the first knockout decides comparable battles too reliably or prevents the desired 30-to-60-second pitched fights.
 
 ### Auto-play support
 
@@ -200,8 +218,6 @@ The first battle model should be considered unsuccessful if it becomes primarily
 **Rule:** If the final design includes any manual in-battle targeting or tactical command, opening that interaction must pause combat.
 
 **Intended experience:** The player can make a considered choice without reflex pressure or losing actions while navigating the interface.
-
-**Mechanical reason:** This preserves the strategic rather than action-oriented character of the game and avoids punishing mobile input delay.
 
 **Known note:** This rule may have no practical effect if the final base model contains no manual in-battle commands.
 
@@ -229,14 +245,14 @@ Proposed flow:
 4. Each player card initially fights the enemy directly opposite it.
 5. Basic attacks happen automatically according to a turn or initiative system.
 6. Individual HP falls until cards are defeated.
-7. When one lane is won, the surviving card may begin attacking an adjacent surviving enemy on its later turns.
+7. A lane winner reinforces the nearest adjacent surviving lane on its next normal turn.
 8. The battle ends when all three cards on one side are defeated.
 
-This structure is not fully confirmed. Steps 4, 7, and the turn system remain under discussion.
+Steps 1 through 3, 6, and 7 are confirmed in principle. Initial fixed targeting, the turn structure, and the exact reinforcement tie-break remain open.
 
 ### Current direction against manual redirection
 
-Sterling's present instinct is that the base battle may not need manual target redirection at all.
+Sterling's present instinct is that the base battle may not need manual target redirection.
 
 That would make the primary skill expression:
 
@@ -246,89 +262,48 @@ That would make the primary skill expression:
 - Developing cards with useful stat and type profiles
 - Later, accounting for abilities or boss rules
 
-This is currently a **proposed direction**, not yet a permanent rule, because the system still needs a meaningful answer to whether difficult battles provide enough agency after formation is locked.
+This remains a proposed direction until the design proves that difficult battles offer enough agency after formation is locked.
 
-## Lane Victory and Assistance
+## Open Decision: Center-Lane Reinforcement Tie-Break
 
-The phrase **helping the adjacent card** does not currently mean transferring part of the winner's stats to its ally.
+A victorious side-lane card has one nearest adjacent lane: center. A victorious center card has two equally near adjacent lanes, so it needs an automatic priority rule when both enemies are alive.
 
-The recommended meaning is:
+Current candidates:
 
-- A card defeats the enemy directly opposite it.
-- The victorious card remains on the field with its current HP.
-- On its next scheduled action, it targets an adjacent surviving enemy.
-- It continues using its own POW, type, SPD, and normal attack.
-- The allied card in that lane continues attacking normally.
-- The result is a natural temporary 2-on-1, not a stat buff or merged card.
+### Option A: Rescue the endangered ally
 
-Example:
+Assist the lane whose allied card has the lower current HP percentage.
 
-```text
-Enemy Left      [defeated]      Enemy Right
-Player Left     Player Center   Player Right
-                       \\________ attacks right lane
-```
+**Effect:** Produces understandable rescue and clutch moments and helps prevent one weakened lane from collapsing.
 
-If Player Center defeated its opponent, it could begin contributing its own normal attacks against Enemy Right. It does not add 50% of its stats to Player Right. Both cards remain separate attackers with separate HP, turns, types, and future abilities.
+### Option B: Finish the weakest enemy
 
-### Why this is the leading candidate
+Attack the adjacent enemy with the lower current HP percentage.
 
-- Winning a lane has an immediate, visible payoff.
-- It naturally creates the rollover victories and defeats Sterling wants to see when preparation is very good or very poor.
-- A beloved card can visibly carry the team by winning its lane and then helping finish the others.
-- It keeps combat moving without a manual target-selection interface.
-- It is easier to understand than temporary stat-transfer mathematics.
+**Effect:** Maximizes efficient focus fire and creates faster snowballing.
 
-### Main risk
+### Option C: Prefer type advantage
 
-Lane assistance creates snowballing. The first defeated card can turn a 3-on-3 into a 3-on-2, after which the numerical advantage may accelerate the rest of the battle.
+Attack the adjacent enemy against which the reinforcing card has the better type matchup.
 
-Possible controls if snowballing proves excessive:
+**Effect:** Makes type identity continue to matter after the opening formation, but produces a more complex targeting rule.
 
-- Assistance begins only on the victorious card's next normal turn.
-- The assisting card receives no bonus damage or extra action.
-- It attacks only an adjacent lane, not any chosen enemy.
-- A turn system can prevent instant repeated attacks.
-- Defensive cards and high-HP survivors can still stall long enough for their other lane to win.
+### Option D: Fixed side priority
 
-## Open Decision: What Happens After a Lane Is Won?
+Always assist left first or right first.
 
-Choose one current direction:
+**Effect:** Extremely predictable and simple, but arbitrary.
 
-### Option A: Natural reinforcement
-
-The victorious card begins using its own normal attacks against an adjacent surviving enemy on later turns.
-
-**Effect:** Battles can snowball, strong formation is rewarded, and cards can produce visible carry moments.
-
-**Current recommendation:** Yes.
-
-### Option B: Pure lane duels
-
-The victorious card remains idle after defeating its opposing enemy while the other lanes finish independently.
-
-**Effect:** Early lane victories do not snowball, but a strong card can spend much of the battle doing nothing and cannot visibly carry its squad.
-
-### Option C: Support contribution
-
-The victorious card stops attacking and provides a temporary numerical bonus, shield, or stat contribution to an adjacent ally.
-
-**Effect:** This can preserve lane structure, but it introduces a less intuitive secondary formula and may make the card feel less physically present than simply attacking.
-
-### Option D: Another post-lane rule
-
-A different rule can be defined if none of the above captures the desired combat fantasy.
+**Current recommendation:** Option A, rescue the endangered ally. If allied HP percentages are tied, use the lower enemy HP percentage as the secondary tie-break, then a fixed side as the final deterministic tie-break.
 
 ## Still-Open Structural Questions
 
-These should be answered after the post-lane rule.
-
 1. Are the left, center, and right matchups fully fixed until one card in the lane is defeated?
-2. If a victorious card reinforces another lane, which lane takes priority when both adjacent enemies remain?
+2. What automatic rule resolves a center winner's equally near reinforcement choices?
 3. Does SPD determine a fixed action order, an action meter, or initiative only?
 4. Does each living card receive exactly one attack per round, or can high SPD eventually create extra actions?
 5. How are maximum HP and damage derived from POW and DEF?
-6. Should basic attacks have crits in the first version?
+6. Should basic attacks have critical hits in the first version?
 7. Should attacks ever miss, and if so, how much should SPD influence evasion?
 8. Do bosses use the same three-lane structure or deliberately break it?
 9. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
@@ -355,15 +330,16 @@ Battles should be capable of producing:
 | 2026-07-10 | Confirmed | Formation | The player's left, center, and right squad order is chosen and locked before combat. | Makes preparation and matchup placement meaningful without constant input. |
 | 2026-07-10 | Proposed | Targeting | The base battle may use fixed lanes with no manual target redirection. | Keeps combat fast, automatic, and formation-driven. |
 | 2026-07-10 | Confirmed | Interaction | Any future manual in-battle targeting or command must pause combat. | Prevents reflex pressure and mobile-input disadvantage. |
-| 2026-07-10 | Open | Lane victory | Decide whether a victorious card attacks an adjacent enemy, remains idle, or provides support. | This choice determines snowballing, carry moments, and lane identity. |
+| 2026-07-10 | Confirmed | Lane victory | A victorious card uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement, carry moments, and rollover results without stat transfer or manual targeting. |
+| 2026-07-10 | Open | Reinforcement tie-break | Decide which adjacent lane a victorious center card assists when both remain alive. | Both lanes are equally near, so the automatic choice must be predictable and legible. |
 
 ## Immediate Discovery Order
 
-1. Decide what a victorious lane card does next.
-2. Confirm whether initial targets are strictly fixed by lane.
+1. Confirm whether initial targets remain strictly fixed by lane until a knockout.
+2. Choose the center-lane reinforcement tie-break.
 3. Decide the turn and SPD model.
 4. Define maximum HP and the POW-versus-DEF damage relationship.
-5. Decide crit, miss, and damage-variance rules.
+5. Decide critical-hit, miss, and damage-variance rules.
 6. Build one ordinary encounter on paper.
 7. Simulate battle duration and stat value.
 8. Design the first boss structure.
