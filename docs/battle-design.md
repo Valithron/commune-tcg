@@ -122,6 +122,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 - A system that cannot be understood without reading a combat log
 - A system requiring bespoke character sprites
 - A system too elaborate to simulate and balance against the current card pool
+- A presentation where every hit receives maximum visual emphasis and important moments therefore stop feeling important
 
 ## Confirmed Battle Decisions
 
@@ -133,7 +134,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Mechanical reason:** This matches the accepted squad size and creates readable individual confrontations without requiring sprites.
 
-**Known risk:** Six vertical cards may become cramped on mobile. Battle views may need cropped or compressed card presentation while retaining recognizable art.
+**Known risk:** Six vertical cards may become cramped on mobile. Battle views should use compressed card presentation while retaining recognizable art.
 
 ### All six cards active
 
@@ -143,7 +144,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Mechanical reason:** This directly matches the desired visual of three cards facing three cards and creates three immediate matchups.
 
-**Known risk:** Simultaneous activity can become visually noisy. Attacks should still resolve in a readable sequence.
+**Known risk:** Simultaneous activity can become visually noisy. Attacks should resolve in a readable sequence.
 
 ### Locked pre-battle squad order
 
@@ -163,9 +164,9 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Mechanical reason:** Fixed lanes make pre-battle ordering consequential, keep targeting readable, and prevent universal focus fire from becoming the automatic best strategy.
 
-**Player-reference rationale:** The structure draws on the satisfying lane-pressure rhythm Sterling remembers from League of Legends. Each lane initially stands on its own; winning one creates pressure and allows that winner to affect the rest of the field.
+**Player-reference rationale:** The structure draws on the satisfying lane-pressure rhythm Sterling remembers from League of Legends. Each lane initially stands on its own. Winning one creates pressure and allows that winner to affect the rest of the field.
 
-**Known risk:** If lane matchups are too deterministic, the battle may feel decided entirely before it begins. Controlled variance, crits, SPD behavior, and later abilities may be needed to preserve suspense.
+**Known risk:** If lane matchups are too deterministic, battle may feel decided entirely before it begins. Controlled variance, crits, SPD behavior, and later abilities may be needed to preserve suspense.
 
 ### Visible per-card HP
 
@@ -185,7 +186,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Mechanical reason:** This reduces input burden and reserves player attention for squad building and any later high-impact decisions.
 
-**Known risk:** The battle can become passive if formation is the only meaningful decision in every mode.
+**Known risk:** Battle can become passive if formation is the only meaningful decision in every mode.
 
 ### Natural lane reinforcement
 
@@ -358,6 +359,355 @@ The simulator should compare bonus attacks earned over a standard battle, not on
 
 The conditional SPD meter is a strong design direction. It gives speed-focused cards a distinctive payoff without forcing every card into an action-meter interface. It should remain proposed until the actual stat distributions are loaded into a simulator and a breakpoint curve is tested.
 
+## Confirmed Player-Facing Battle Loop
+
+The primary player journey is:
+
+> Choose encounter, inspect the three enemy lanes, select and order the squad, lock formation, watch the lane battle unfold, recognize standout moments, collect progression rewards, then retry, continue, or edit the squad.
+
+The battle loop should have three reward tempos:
+
+1. **Anticipation before combat** through enemy inspection and formation decisions.
+2. **Readable dramatic spikes during combat** through crits, low-health survival, double strikes, lane wins, reinforcement, and final knockouts.
+3. **A compressed reward cascade after combat** through MVP recognition, XP, level-ups, currencies, and rare drops.
+
+### 1. Battle Hub
+
+**Confirmed structure:** The Battle Hub initially uses three large mode panels or buttons. It does not use a level map.
+
+Initial modes:
+
+- **Daily Skirmish:** Repeatable progression battle for card XP and ordinary resources.
+- **Challenge:** Stronger curated encounters that reward better squad selection and formation.
+- **Seasonal Boss:** Time-limited major encounter with distinctive presentation and rewards.
+
+Each panel should communicate only the most useful summary information, such as energy cost, primary reward, difficulty, available progress, or event time remaining.
+
+The hub should get the player into a useful ordinary battle with very few taps.
+
+### 2. Encounter preview
+
+The selected encounter presents the enemy squad in left, center, and right lanes before the player locks a formation.
+
+Each enemy card initially shows only concise card-face information:
+
+- Combined battle stat or power number
+- Type
+- Level
+- Rarity
+- Other compact identity information already appropriate to the normal card's bottom pills
+
+The initial preview should not expose a dense spreadsheet of POW, DEF, SPD, abilities, and formulas.
+
+**Confirmed interaction:** Tapping an enemy card expands it into a showcase-size view containing its complete available information, including:
+
+- Full card art and frame
+- POW, DEF, and SPD
+- Type
+- Level
+- Rarity
+- Combined battle power
+- Abilities, once abilities exist
+- Any encounter-specific modifiers that affect that card
+
+The information required to make a fair formation decision should be available. The player should not lose because ordinary enemy information was deliberately concealed.
+
+### 3. Squad selection and formation
+
+The player selects three owned cards and places them into left, center, and right positions beneath the enemy lanes.
+
+The formation screen should support:
+
+- Tapping an empty lane to choose a card
+- Dragging or swapping selected cards between lanes
+- Tapping any player card for a showcase-size inspection
+- Loading a saved squad
+- Filtering the available card list
+- A later recommended formation option for routine content, if useful
+
+Each lane may show a concise non-guaranteed forecast such as:
+
+- Favored
+- Even
+- Risky
+
+The forecast should help the player reason about the matchup without pretending to know the exact result.
+
+### 4. Formation lock-in
+
+When the player presses **Begin Battle**:
+
+1. The three player positions visually click or flash into place.
+2. The lane connections illuminate.
+3. A brief `FORMATION LOCKED` confirmation appears.
+4. The battle attempt and any energy cost are committed.
+5. The battle introduction begins.
+
+This should feel like a meaningful commitment rather than an ordinary form submission.
+
+### 5. Battle introduction
+
+A normal encounter introduction should remain short, approximately one to two seconds.
+
+Proposed sequence:
+
+1. Enemy cards slide into the upper row.
+2. Player cards slide into the lower row.
+3. A short `VS` or confrontation flash appears.
+4. The three lane lines ignite.
+5. Combat begins immediately.
+
+Ordinary battles should not show six long individual introductions. Bosses, first encounters, and exceptional cards may receive more elaborate introductions later.
+
+### 6. Portrait mobile battlefield
+
+**Confirmed direction:** The primary mobile battlefield is portrait-oriented.
+
+Layout:
+
+- Three compressed enemy cards across the upper section
+- Three compressed player cards across the lower section
+- Clear visual columns connecting each opposing lane
+- A center gap for attack trails, impact effects, and lane-state feedback
+
+The collectible art remains the visual focus. The card thumbnails should not be replaced by generic character sprites.
+
+Persistent controls should remain minimal:
+
+- Pause
+- Battle speed, such as `1x` and `2x`
+- Auto status
+- Retreat inside the pause interface, if retreat is allowed
+
+There is no normal attack button and no reflex timing control.
+
+### 7. Battlefield card information
+
+The battle view should use the established thumbnail geometry as its starting point but should not copy the existing Squad Builder thumbnail information rules unchanged.
+
+Current implementation facts:
+
+- The canonical thumbnail density hides the card nameplate.
+- The canonical thumbnail density hides the type chip while retaining compact rarity, character, and ability identity elements when they are not suppressed by context.
+- The current Squad Builder battle thumbnail is approximately `4.25rem` wide, falls to `3.7rem` on very small screens, uses a `5 / 7` aspect ratio, and intentionally hides the nameplate, identity line, ownership row, and stat row.
+- Therefore the current Squad Builder thumbnail effectively presents the art and rarity frame only.
+
+**Confirmed battle-specific direction:** The active battlefield should reuse the thumbnail size logic but add a compact battle HUD rather than relying on the current art-only Squad Builder thumbnail.
+
+At a glance, an active battle card should communicate:
+
+- Art and rarity frame
+- Individual HP
+- Type
+- Level
+- Rarity
+- Combined battle power or similarly concise aggregate
+- SPD bonus meter only when the card qualifies for that proposed mechanic
+- Status effects later, if introduced
+
+The full title, full stats, abilities, and detailed calculations should be available through a paused tap-to-expand showcase rather than permanently occupying the six-card battlefield.
+
+### 8. Standard attack feedback
+
+A normal attack should be fast and restrained:
+
+1. The attacking card leans, scales, or lunges toward its legal target.
+2. A type-colored trail or impact crosses the lane.
+3. The target card jolts.
+4. A damage number appears.
+5. The HP bar drains smoothly.
+6. The attacker returns to position.
+
+A basic hit should not receive full-screen flashes, heavy screen shake, long pauses, giant text, or the strongest sounds. Those effects must remain available for genuinely important moments.
+
+### 9. High-value battle moments
+
+#### Critical hit
+
+A critical hit may use:
+
+- Brief hit-stop
+- A slightly larger art or card zoom
+- Sharper sound
+- Larger damage number
+- Localized screen shake
+- A concise `CRITICAL` treatment
+
+The animation should remain short and sudden.
+
+#### SPD double strike
+
+If the conditional SPD mechanic survives testing:
+
+1. The first normal attack lands.
+2. The eligible card's meter flashes and spends its threshold.
+3. A compact speed or double-strike signal appears.
+4. The card immediately performs its follow-up normal attack.
+
+#### Low-health survival
+
+A card surviving at critically low HP may receive:
+
+- HP-bar flash
+- Frame pulse
+- Lane-local danger vignette
+- Tighter music or sound layer
+
+This should create tension without repeatedly covering the screen with large messages.
+
+#### Lane victory
+
+When a card defeats its opposing lane enemy:
+
+1. The defeated card dims, cracks, shatters, falls back, or otherwise leaves the field clearly.
+2. The lane connection breaks.
+3. The winning card receives a brief confirmation flash.
+4. A compact `LANE WON` treatment appears.
+5. A directional visual indicates the lane that card will reinforce.
+
+The first reinforcement attack may use a diagonal trail or support connection to show that the battlefield state has changed. It does not receive bonus damage merely because it is a reinforcement attack.
+
+#### Final-card and comeback state
+
+When one side is reduced to its final card, the presentation may emphasize the survivor through background dimming, music escalation, or stronger lane focus. This should support memorable last-card victories without silently granting unapproved comeback bonuses.
+
+### 10. Victory and final knockout
+
+The final knockout should receive more emphasis than an ordinary lane win:
+
+1. Brief impact pause
+2. Stronger defeat effect on the final enemy
+3. Player squad brightens or moves forward
+4. `VICTORY` appears
+5. The winning formation remains visible for a short beat
+6. Results begin
+
+Possible descriptive victory labels include:
+
+- Clean Sweep
+- Comeback
+- Last Card Standing
+- Perfect Formation
+- Rapid Victory
+
+These labels are presentation and recognition concepts first. Any mechanical reward attached to them remains open.
+
+### 11. Battle MVP showcase
+
+**Confirmed rule:** Every completed victory should showcase one Battle MVP card.
+
+The MVP should not be selected only by raw card stats or raw damage dealt. The system should recognize distinctive contributions such as:
+
+- Winning the first lane
+- Winning a difficult or disadvantaged lane
+- Reinforcement damage
+- Rescuing the lowest-HP allied lane
+- Multiple knockouts
+- Surviving at critically low HP
+- Producing an important SPD double strike
+- Dealing decisive boss damage
+- Remaining as the final surviving friendly card
+
+The result should explain the choice in one concise line, for example:
+
+> **Battle MVP: Flame Sterling**  
+> Won center lane and reinforced the endangered left lane.
+
+This supports the collection fantasy by creating stories about particular cards, including lower-rarity favorites, instead of reducing every result to the card with the largest number.
+
+### 12. Rewards sequence
+
+Rewards should arrive in a short hierarchy rather than appearing as one dense data table.
+
+Recommended order:
+
+1. Base currency and ordinary materials
+2. XP progress for all three squad cards
+3. Level-up moments and stat increases
+4. Milestone or ascension readiness, when applicable
+5. Rare rewards such as tickets, shards, special materials, or direct card drops
+
+Common rewards should resolve quickly. Rare rewards should receive stronger staging. Repeated players should eventually have a `Skip` or `Reveal All` option.
+
+### 13. Result actions
+
+Victory actions may include:
+
+- Battle Again
+- Next Encounter
+- Edit Squad
+- Battle Hub
+
+The primary action should match the content. Farming prioritizes `Battle Again`. Sequential challenge content prioritizes `Next Encounter`.
+
+Defeat actions may include:
+
+- Retry
+- Edit Formation
+- Change Squad
+- Battle Hub
+
+A defeat screen should provide one or two concise, accurate observations, such as a type-disadvantaged lane or a decisive SPD mismatch. It should teach a likely adjustment without producing a long automated combat report.
+
+### 14. Routine versus challenge cadence
+
+Routine progression should allow a very short path:
+
+1. Open Battle Hub.
+2. Select Daily Skirmish.
+3. Accept or lightly adjust the current squad.
+4. Watch the 30-to-60-second battle.
+5. Receive XP and ordinary rewards.
+6. Battle again or leave.
+
+Challenge and boss content may ask for more inspection, formation changes, and later tactical decisions.
+
+Previously cleared content may later support faster options such as `2x`, auto-repeat, quick resolution, or sweeps. Exact unlock and cost rules remain open.
+
+## Dopamine and Feedback Hierarchy
+
+Stronger effects must be reserved for rarer moments.
+
+### Tier 1: Constant feedback
+
+- Card movement
+- Damage numbers
+- HP movement
+- Light impact sounds
+
+### Tier 2: Tactical confirmation
+
+- Type effectiveness
+- Dodge or block, if implemented
+- SPD meter nearing full
+- Enemy entering low HP
+
+### Tier 3: Battle spikes
+
+- Critical hit
+- Double strike
+- Lane won
+- Reinforcement
+- Critical low-HP survival
+
+### Tier 4: Encounter climax
+
+- Final knockout
+- Comeback
+- Boss phase break
+- Victory
+
+### Tier 5: Progression reward
+
+- Level-up
+- Milestone level
+- Ascension readiness
+- Rare material
+- Pull ticket
+- Card drop
+
+If all attacks flash, shake, pause, and use the loudest sound, the real spikes will lose their value.
+
 ## Current Direction Against Manual Redirection
 
 Sterling's present instinct is that the base battle should not need manual target redirection.
@@ -384,6 +734,11 @@ This remains a proposed direction until the design proves that difficult battles
 8. Should attacks ever miss, and if so, how much should SPD influence evasion?
 9. Do bosses use the same three-lane structure or deliberately break it?
 10. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
+11. What specific encounters and reward amounts define Daily Skirmish, Challenge, and Seasonal Boss?
+12. When are battle speed, auto-repeat, quick resolution, or sweep options unlocked?
+13. What exact scoring formula selects the Battle MVP without making the result feel arbitrary?
+14. What information belongs in the battle thumbnail's compact HUD after mobile layout testing?
+15. What happens when the user taps a card during active combat: full pause and showcase, long-press inspection, or pause-menu-only inspection?
 
 ## Current Emotional Targets
 
@@ -397,6 +752,7 @@ Battles should be capable of producing:
 - Difficult boss victories
 - A favorite card winning its lane and carrying the squad
 - A true SPD-focused card charging toward and earning a decisive double strike
+- A specific card being recognized afterward for a distinctive contribution
 
 ## Decision Log
 
@@ -413,16 +769,20 @@ Battles should be capable of producing:
 | 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side card with the lower current HP percentage. | Produces a legible rescue behavior and reduces arbitrary targeting. |
 | 2026-07-10 | Proposed | SPD eligibility | Only cards with a genuinely SPD-focused stat profile should build toward routine bonus attacks. | Prevents universal meters and preserves a distinct speed-card identity. |
 | 2026-07-10 | Proposed | SPD timing | An earned bonus attack resolves as an immediate follow-up during the card's normal initiative turn. | Creates a satisfying double-strike moment without a separate chaotic action queue. |
+| 2026-07-10 | Confirmed | Battle Hub | Initial navigation uses Daily Skirmish, Challenge, and Seasonal Boss panels rather than a map. | Keeps the battle feature direct and appropriate to its supporting role in the larger collection game. |
+| 2026-07-10 | Confirmed | Enemy preview | Enemy cards initially show concise card-face information and expand on tap into a complete showcase view. | Supports fast scanning while preserving informed formation decisions. |
+| 2026-07-10 | Confirmed | Battlefield layout | Mobile battle uses a portrait 3-over-3 compressed-card layout. | Matches the existing thumbnail geometry and avoids requiring landscape rotation or sprites. |
+| 2026-07-10 | Confirmed | Battle MVP | Results showcase an MVP based on distinctive contributions beyond raw damage or total stats. | Creates memorable stories around individual collectible cards. |
 
 ## Immediate Discovery Order
 
-1. Preserve the conditional SPD system as a proposed model pending simulation.
-2. Define maximum HP and the POW-versus-DEF damage relationship.
-3. Decide critical-hit, miss, and damage-variance rules.
-4. Load representative card stat profiles into a battle simulator.
-5. Test SPD qualification forms, charge curves, and bonus-attack frequency.
-6. Build one ordinary encounter on paper.
-7. Simulate battle duration and stat value.
-8. Design the first boss structure.
+1. Define maximum HP and the POW-versus-DEF damage relationship.
+2. Decide critical-hit, miss, and damage-variance rules.
+3. Load representative card stat profiles into a battle simulator.
+4. Test SPD qualification forms, charge curves, and bonus-attack frequency.
+5. Build one ordinary Daily Skirmish encounter on paper.
+6. Simulate battle duration and stat value.
+7. Design the first Challenge encounter.
+8. Design the first Seasonal Boss structure.
 9. Define rewards, energy cost, failure cost, and repeat-play rules.
 10. Only then prepare an implementation specification.
