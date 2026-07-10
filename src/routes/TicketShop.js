@@ -34,39 +34,30 @@ async function loadResources() {
   }
 }
 
-function getOfferButtonCopy(offer, resources) {
-  if (!resources.resourceReadOk) {
-    return offer.daily ? 'Claim Ticket' : 'Buy Tickets';
-  }
-
-  if (offer.daily && !resources.dailyTicketAvailable) {
-    return 'Claimed Today';
-  }
-
-  if (offer.costGold > resources.gold) {
-    return 'Need Gold';
-  }
-
+function getOfferButtonCopy(offer) {
   return offer.daily ? 'Claim Ticket' : 'Buy Tickets';
 }
 
-function isOfferDisabled(offer, resources) {
+function getOfferStatus(offer, resources) {
   if (!resources.resourceReadOk) {
-    return false;
+    return 'Server will validate current bank state';
   }
 
-  return Boolean((offer.daily && !resources.dailyTicketAvailable) || offer.costGold > resources.gold);
+  if (offer.daily) {
+    return resources.dailyTicketAvailable
+      ? 'Available now'
+      : `Already claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}. Server will reject another claim until midnight Mountain Time.`;
+  }
+
+  if (offer.costGold > resources.gold) {
+    return `Costs ${formatNumber(offer.costGold)} gold. Current bank: ${formatNumber(resources.gold)}.`;
+  }
+
+  return `${formatNumber(offer.costGold)} gold from bank`;
 }
 
 function renderOfferCard(offer, resources) {
-  const disabled = isOfferDisabled(offer, resources);
-  const dailyStatus = !resources.resourceReadOk
-    ? 'Server will validate current bank state'
-    : offer.daily
-      ? resources.dailyTicketAvailable
-        ? 'Available now'
-        : `Claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}`
-      : `${formatNumber(offer.costGold)} gold from bank`;
+  const shouldWarn = resources.resourceReadOk && ((offer.daily && !resources.dailyTicketAvailable) || offer.costGold > resources.gold);
 
   return `
     <article class="shop-card">
@@ -74,13 +65,12 @@ function renderOfferCard(offer, resources) {
       <h3>${escapeHtml(offer.title)}</h3>
       <strong>${escapeHtml(offer.amount)}</strong>
       <p>${escapeHtml(offer.description)}</p>
-      <div class="empty-note">${escapeHtml(dailyStatus)}</div>
+      <div class="empty-note">${escapeHtml(getOfferStatus(offer, resources))}</div>
       <button
-        class="button ${disabled ? 'button-secondary' : 'button-primary'}"
+        class="button ${shouldWarn ? 'button-secondary' : 'button-primary'}"
         type="button"
         data-shop-offer-id="${escapeHtml(offer.id)}"
-        ${disabled ? 'disabled' : ''}
-      >${escapeHtml(getOfferButtonCopy(offer, resources))}</button>
+      >${escapeHtml(getOfferButtonCopy(offer))}</button>
     </article>
   `;
 }
@@ -128,14 +118,15 @@ export function initTicketShop(root) {
 
   root.querySelectorAll('[data-shop-offer-id]').forEach((button) => {
     button.addEventListener('click', async () => {
-      if (button.disabled) {
+      if (button.dataset.shopBusy === '1') {
         return;
       }
 
       const routes = getApiRoutes();
       const offerId = button.getAttribute('data-shop-offer-id') || '';
 
-      button.disabled = true;
+      button.dataset.shopBusy = '1';
+      button.setAttribute('aria-busy', 'true');
       if (status) {
         status.textContent = 'Updating bank...';
       }
@@ -161,7 +152,8 @@ export function initTicketShop(root) {
         if (status) {
           status.textContent = error.message;
         }
-        button.disabled = false;
+        button.dataset.shopBusy = '0';
+        button.removeAttribute('aria-busy');
       }
     });
   });
