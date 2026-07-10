@@ -190,6 +190,7 @@ async function renderRoute() {
     if (route.render === renderPull) initPull(appRoot);
     else if (route.render === renderPullReveal) initPullReveal(appRoot);
     else if (route.render === renderLibrary) initLibraryControls(appRoot);
+    else if (route.render === renderTicketShop) initTicketShop(appRoot);
     else if (route.render === renderSubmitCard) initSubmitCardForm(appRoot);
     else if (route.render === renderAdminBattleTest) initAdminBattleTest(appRoot);
     else if (route.render === renderAdminCardEditor) initAdminCardEditor(appRoot);
