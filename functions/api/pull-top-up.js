@@ -71,12 +71,27 @@ async function columnExists(env, tableName, columnName) {
   return (result.results || []).some((column) => column.name === columnName);
 }
 
+function isDuplicateColumnError(error) {
+  return String(error?.message || error || '').toLowerCase().includes('duplicate column');
+}
+
+async function ensureDailyTicketColumn(env) {
+  if (await columnExists(env, 'user_resources', 'daily_ticket_claimed_on')) {
+    return;
+  }
+
+  try {
+    await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN daily_ticket_claimed_on TEXT').run();
+  } catch (error) {
+    if (!isDuplicateColumnError(error)) {
+      throw error;
+    }
+  }
+}
+
 async function ensureResources(env, now, user) {
   await env.DB.prepare(userResourcesSql).run();
-
-  if (!(await columnExists(env, 'user_resources', 'daily_ticket_claimed_on'))) {
-    await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN daily_ticket_claimed_on TEXT').run();
-  }
+  await ensureDailyTicketColumn(env);
 
   await env.DB.prepare(`
     INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, daily_ticket_claimed_on, created_at, updated_at)
