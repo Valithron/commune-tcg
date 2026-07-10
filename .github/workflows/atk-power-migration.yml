@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: atk-power-terminology-migration
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   migrate-build-and-publish:
@@ -30,17 +30,57 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run terminology migration
-        run: python3 scripts/atk_power_migration.py
-
-      - name: Install build dependencies
-        run: npm install --no-package-lock --no-audit --no-fund
-
-      - name: Build production app
-        run: npm run build
-
-      - name: Record successful validation
+      - name: Migrate, validate, build, and publish
+        shell: bash
         run: |
+          set +e
+          LOG_FILE="$(mktemp)"
+          STATUS=0
+
+          run_logged() {
+            echo "> $*" | tee -a "$LOG_FILE"
+            "$@" >> "$LOG_FILE" 2>&1
+            local EXIT_CODE=$?
+            if [ "$EXIT_CODE" -ne 0 ]; then
+              STATUS="$EXIT_CODE"
+              echo "Command failed with exit code $EXIT_CODE: $*" | tee -a "$LOG_FILE"
+            fi
+            return "$EXIT_CODE"
+          }
+
+          run_logged python3 scripts/atk_power_migration.py
+
+          if [ "$STATUS" -eq 0 ]; then
+            run_logged npm install --no-package-lock --no-audit --no-fund
+          fi
+
+          if [ "$STATUS" -eq 0 ]; then
+            run_logged npm run build
+          fi
+
+          if [ "$STATUS" -eq 0 ]; then
+            run_logged git diff --check
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$STATUS" -ne 0 ]; then
+            git reset --hard HEAD
+            mkdir -p docs
+            {
+              echo "# ATK / Power Migration Workflow Failure"
+              echo
+              echo '```text'
+              cat "$LOG_FILE"
+              echo '```'
+            } > docs/atk-power-terminology-migration-failure.md
+            git add docs/atk-power-terminology-migration-failure.md
+            git commit -m "Report ATK Power migration workflow failure"
+            git push origin HEAD:Gacha
+            exit 0
+          fi
+
           cat >> docs/atk-power-terminology-migration.md <<'EOF'
 
           ## Execution result
@@ -50,17 +90,8 @@ jobs:
           - Internal `pow` compatibility assertions: passed
           EOF
 
-      - name: Validate patch formatting
-        run: git diff --check
-
-      - name: Commit and publish migration
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
           rm -f scripts/atk_power_migration.py .github/workflows/atk-power-migration.yml
           rmdir scripts 2>/dev/null || true
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --stat
           git commit -m "Migrate visible stat terminology to ATK and Power"
