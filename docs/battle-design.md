@@ -264,13 +264,74 @@ The current confirmed structural spine is a **locked-lane, semi-automatic 3-on-3
 2. The player selects three cards and arranges them into left, center, and right positions.
 3. The squad order is locked when battle begins.
 4. Each card attacks only the enemy directly opposite it while that opponent remains alive.
-5. Basic attacks happen automatically according to a turn or initiative system still to be chosen.
+5. Basic attacks happen automatically according to a turn or initiative system.
 6. Individual HP falls until cards are defeated.
 7. A lane winner reinforces the nearest adjacent surviving lane on its next normal turn.
 8. If a victorious center card can reinforce either side, it helps the allied card with the lower HP percentage.
 9. The battle ends when all three cards on one side are defeated.
 
-This establishes the field structure. The next major task is defining turns and the exact value of SPD.
+The field structure is confirmed. The leading turn-system proposal is documented below.
+
+## Proposed Hybrid SPD and Bonus-Action Model
+
+Sterling proposed a hybrid between strict round-based initiative and a free-running action-time meter. This is currently the strongest candidate for how SPD should work.
+
+### Proposed core rule
+
+- Combat proceeds in discrete rounds even if the presentation appears continuous.
+- Every living card receives one guaranteed normal attack each round.
+- SPD determines the order of those normal attacks, from fastest to slowest.
+- Each card also builds a separate speed-based bonus-action meter across rounds.
+- When that meter reaches its threshold, the card earns one additional normal attack.
+- Unused meter overflow carries forward rather than being discarded.
+
+This allows a sufficiently fast card to attack twice during a round occasionally without turning the battle into a chaotic real-time action queue.
+
+### Recommended guardrails
+
+- A card may receive no more than one bonus attack in the same round.
+- A bonus attack cannot generate another immediate bonus attack.
+- Bonus attacks use the card's current legal lane target and do not permit redirection.
+- Bonus attacks grant no inherent damage multiplier.
+- Meter progress should persist when a card wins its lane and begins reinforcing another lane.
+- The bonus-action cadence should be occasional rather than constant. Early tuning should aim for high-SPD cards to visibly earn extra attacks while preventing ordinary fast cards from doubling every round.
+
+### Why this model is promising
+
+- SPD gains visible offensive value beyond merely acting first.
+- Turn order remains readable and deterministic enough to follow.
+- Every surviving card still participates at least once per round.
+- Fast cards can create exciting burst windows and lane victories.
+- A nearly full meter creates anticipation before the extra attack arrives.
+- The model preserves the orderly lane structure and avoids the chaos of unrestricted action-time combat.
+- It gives Volt and other speed-biased cards a strong identity without requiring abilities.
+
+### Primary balance risk
+
+SPD would perform two valuable jobs at once:
+
+1. Acting earlier in the normal round order.
+2. Generating more attacks over time.
+
+That double benefit can make SPD the dominant stat if the meter formula is too generous. The threshold, charge curve, stat ranges, and one-bonus-per-round cap must therefore be tested mathematically before confirmation.
+
+The system should be rejected or reduced if high-SPD cards consistently win lanes before POW- or DEF-focused cards can express their strengths.
+
+### Visibility recommendation
+
+The meter should probably be visible but visually secondary to HP. A thin bar, ring, or small pip track would let players anticipate an extra attack and understand why it happened. A completely hidden meter would preserve surprise but weaken legibility and make bonus attacks feel arbitrary.
+
+The exact visual treatment remains open because six cards and six HP bars already create mobile-layout pressure.
+
+### Open timing detail
+
+When the meter fills, the bonus attack could resolve:
+
+- Immediately after that card's normal attack.
+- At the end of the current round in SPD order among all earned bonus attacks.
+- At the beginning of the next round before normal attacks.
+
+The timing should be deterministic and visually distinct. Immediate follow-up is the most dramatic option, while an end-of-round bonus phase is the clearest and easiest to balance.
 
 ## Current Direction Against Manual Redirection
 
@@ -289,13 +350,14 @@ This remains a proposed direction until the design proves that difficult battles
 ## Still-Open Structural Questions
 
 1. If allied HP percentages are tied when the center winner chooses a lane, what final deterministic tie-break applies?
-2. Does SPD determine a fixed action order, an action meter, or initiative only?
-3. Does each living card receive exactly one attack per round, or can high SPD eventually create extra actions?
-4. How are maximum HP and damage derived from POW and DEF?
-5. Should basic attacks have critical hits in the first version?
-6. Should attacks ever miss, and if so, how much should SPD influence evasion?
-7. Do bosses use the same three-lane structure or deliberately break it?
-8. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
+2. Should the hybrid round-and-bonus-meter SPD model be confirmed?
+3. When a speed meter fills, when exactly does the bonus attack resolve?
+4. Should the speed meter be visible as a bar, pips, a ring, or hidden?
+5. How are maximum HP and damage derived from POW and DEF?
+6. Should basic attacks have critical hits in the first version?
+7. Should attacks ever miss, and if so, how much should SPD influence evasion?
+8. Do bosses use the same three-lane structure or deliberately break it?
+9. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
 
 ## Current Emotional Targets
 
@@ -308,6 +370,7 @@ Battles should be capable of producing:
 - Fast rollover defeats after poor preparation
 - Difficult boss victories
 - A favorite card winning its lane and carrying the squad
+- A fast card visibly charging toward and earning a decisive extra attack
 
 ## Decision Log
 
@@ -322,14 +385,16 @@ Battles should be capable of producing:
 | 2026-07-10 | Confirmed | Interaction | Any future manual in-battle targeting or command must pause combat. | Prevents reflex pressure and mobile-input disadvantage. |
 | 2026-07-10 | Confirmed | Lane victory | A victorious card uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement, carry moments, and rollover results without stat transfer or manual targeting. |
 | 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side card with the lower current HP percentage. | Produces a legible rescue behavior and reduces arbitrary targeting. |
+| 2026-07-10 | Proposed | SPD | Use discrete rounds with SPD-based normal order and a persistent SPD-driven meter that occasionally grants one capped bonus attack. | Gives SPD meaningful extra-attack value while preserving readable turns and preventing free-running action chaos. |
 
 ## Immediate Discovery Order
 
-1. Decide the turn and SPD model.
-2. Define maximum HP and the POW-versus-DEF damage relationship.
-3. Decide critical-hit, miss, and damage-variance rules.
-4. Build one ordinary encounter on paper.
-5. Simulate battle duration and stat value.
-6. Design the first boss structure.
-7. Define rewards, energy cost, failure cost, and repeat-play rules.
-8. Only then prepare an implementation specification.
+1. Decide whether to confirm the hybrid SPD and bonus-action model.
+2. Decide exactly when an earned bonus attack resolves.
+3. Define maximum HP and the POW-versus-DEF damage relationship.
+4. Decide critical-hit, miss, and damage-variance rules.
+5. Build one ordinary encounter on paper.
+6. Simulate battle duration and stat value.
+7. Design the first boss structure.
+8. Define rewards, energy cost, failure cost, and repeat-play rules.
+9. Only then prepare an implementation specification.
