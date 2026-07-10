@@ -299,7 +299,7 @@ def update_admin_card_mechanics() -> None:
     replace_exact(
         path,
         "legacy pow/def/spd fields.",
-        "legacy `pow`/`def`/`spd` fields.",
+        "legacy <code>pow</code>/<code>def</code>/<code>spd</code> fields.",
     )
     replace_exact(
         path,
