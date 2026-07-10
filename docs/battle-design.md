@@ -141,7 +141,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Intended experience:** The screen presents a full squad confrontation rather than one fighter with two passive reserves.
 
-**Mechanical reason:** This directly matches the desired visual of three cards facing three cards and allows squad order to create three immediate matchups.
+**Mechanical reason:** This directly matches the desired visual of three cards facing three cards and creates three immediate matchups.
 
 **Known risk:** Simultaneous activity can become visually noisy. Attacks should still resolve in a readable sequence.
 
@@ -154,6 +154,20 @@ The first battle model should be considered unsuccessful if it becomes primarily
 **Mechanical reason:** Locked order gives type matchups and stat profiles real pre-battle significance while keeping moment-to-moment combat light.
 
 **Known risk:** Enemy information must be clear enough that the choice is informed. Routine battles may later need a recommended formation option.
+
+### Locked lane duels until a lane is won
+
+**Rule:** At the start of battle, each card attacks only the enemy directly opposite it. Left fights left, center fights center, and right fights right. A card cannot change targets while its original lane opponent remains alive.
+
+**Intended experience:** Battle begins as three simultaneous lane confrontations. The player watches each matchup develop and sees the formation decision pay off or fail before the field opens up.
+
+**Mechanical reason:** Fixed lanes make pre-battle ordering consequential, keep targeting readable, and prevent universal focus fire from becoming the automatic best strategy.
+
+**Player-reference rationale:** The structure draws on the satisfying lane-pressure rhythm Sterling remembers from League of Legends. Each lane initially stands on its own; winning one creates pressure and allows that winner to affect the rest of the field.
+
+**Known risk:** If lane matchups are too deterministic, the battle may feel decided entirely before it begins. Controlled variance, crits, SPD behavior, and later abilities may be needed to preserve suspense.
+
+**Reconsider if:** Testing shows one unfavorable lane is effectively unwinnable too often or the player lacks meaningful ways to recover from a bad formation.
 
 ### Visible per-card HP
 
@@ -242,29 +256,27 @@ Possible presentation tools include card lunges, scale pulses, impact flashes, s
 
 **Intended experience:** Battles are long enough to produce drama but short enough to fit several encounters into the normal daily loop.
 
-## Current Proposed Combat Spine
+## Current Combat Spine
 
-The current strongest structural candidate is a **fixed-lane, semi-automatic 3-on-3 battle**.
-
-Proposed flow:
+The current confirmed structural spine is a **locked-lane, semi-automatic 3-on-3 battle**.
 
 1. The enemy squad and relevant matchup information are shown.
 2. The player selects three cards and arranges them into left, center, and right positions.
 3. The squad order is locked when battle begins.
-4. Each player card initially fights the enemy directly opposite it.
-5. Basic attacks happen automatically according to a turn or initiative system.
+4. Each card attacks only the enemy directly opposite it while that opponent remains alive.
+5. Basic attacks happen automatically according to a turn or initiative system still to be chosen.
 6. Individual HP falls until cards are defeated.
 7. A lane winner reinforces the nearest adjacent surviving lane on its next normal turn.
 8. If a victorious center card can reinforce either side, it helps the allied card with the lower HP percentage.
 9. The battle ends when all three cards on one side are defeated.
 
-Steps 1 through 3 and 6 through 8 are confirmed in principle. Initial fixed targeting and the turn structure remain open.
+This establishes the field structure. The next major task is defining turns and the exact value of SPD.
 
-### Current direction against manual redirection
+## Current Direction Against Manual Redirection
 
-Sterling's present instinct is that the base battle may not need manual target redirection.
+Sterling's present instinct is that the base battle should not need manual target redirection.
 
-That would make the primary skill expression:
+Primary skill expression would therefore come from:
 
 - Reading the opposing formation
 - Choosing the correct three-card squad
@@ -276,15 +288,14 @@ This remains a proposed direction until the design proves that difficult battles
 
 ## Still-Open Structural Questions
 
-1. Are the left, center, and right matchups fully fixed until one card in the lane is defeated?
-2. If allied HP percentages are tied when the center winner chooses a lane, what final deterministic tie-break applies?
-3. Does SPD determine a fixed action order, an action meter, or initiative only?
-4. Does each living card receive exactly one attack per round, or can high SPD eventually create extra actions?
-5. How are maximum HP and damage derived from POW and DEF?
-6. Should basic attacks have critical hits in the first version?
-7. Should attacks ever miss, and if so, how much should SPD influence evasion?
-8. Do bosses use the same three-lane structure or deliberately break it?
-9. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
+1. If allied HP percentages are tied when the center winner chooses a lane, what final deterministic tie-break applies?
+2. Does SPD determine a fixed action order, an action meter, or initiative only?
+3. Does each living card receive exactly one attack per round, or can high SPD eventually create extra actions?
+4. How are maximum HP and damage derived from POW and DEF?
+5. Should basic attacks have critical hits in the first version?
+6. Should attacks ever miss, and if so, how much should SPD influence evasion?
+7. Do bosses use the same three-lane structure or deliberately break it?
+8. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
 
 ## Current Emotional Targets
 
@@ -306,19 +317,19 @@ Battles should be capable of producing:
 | 2026-07-10 | Confirmed | Scope | Existing constraints from `game-design.md` form the initial boundary. | Keeps battle compatible with accepted card, type, rarity, and progression rules. |
 | 2026-07-10 | Confirmed | Field | All 6 cards are active from the beginning of an ordinary 3-on-3 battle. | Matches the desired full-squad confrontation. |
 | 2026-07-10 | Confirmed | Formation | The player's left, center, and right squad order is chosen and locked before combat. | Makes preparation and matchup placement meaningful without constant input. |
-| 2026-07-10 | Proposed | Targeting | The base battle may use fixed lanes with no manual target redirection. | Keeps combat fast, automatic, and formation-driven. |
+| 2026-07-10 | Confirmed | Lanes | Initial targets remain strictly fixed by lane until one card in that lane is defeated. | Establishes three readable lane duels and makes formation the core opening strategy. |
+| 2026-07-10 | Proposed | Targeting | The base battle may use no manual target redirection. | Keeps combat fast, automatic, and formation-driven. |
 | 2026-07-10 | Confirmed | Interaction | Any future manual in-battle targeting or command must pause combat. | Prevents reflex pressure and mobile-input disadvantage. |
 | 2026-07-10 | Confirmed | Lane victory | A victorious card uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement, carry moments, and rollover results without stat transfer or manual targeting. |
 | 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side card with the lower current HP percentage. | Produces a legible rescue behavior and reduces arbitrary targeting. |
 
 ## Immediate Discovery Order
 
-1. Confirm whether initial targets remain strictly fixed by lane until a knockout.
-2. Decide the turn and SPD model.
-3. Define maximum HP and the POW-versus-DEF damage relationship.
-4. Decide critical-hit, miss, and damage-variance rules.
-5. Build one ordinary encounter on paper.
-6. Simulate battle duration and stat value.
-7. Design the first boss structure.
-8. Define rewards, energy cost, failure cost, and repeat-play rules.
-9. Only then prepare an implementation specification.
+1. Decide the turn and SPD model.
+2. Define maximum HP and the POW-versus-DEF damage relationship.
+3. Decide critical-hit, miss, and damage-variance rules.
+4. Build one ordinary encounter on paper.
+5. Simulate battle duration and stat value.
+6. Design the first boss structure.
+7. Define rewards, energy cost, failure cost, and repeat-play rules.
+8. Only then prepare an implementation specification.
