@@ -37,29 +37,40 @@ function getStrongestVaultCard(cards = []) {
     })[0] || null;
 }
 
+function renderHomeActions() {
+  return `
+    <div class="home-highlight-actions">
+      <a class="quick-card home-highlight-action" href="#/pull">
+        <strong>Daily Pull</strong>
+        <span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span>
+      </a>
+      <a class="quick-card home-highlight-action" href="#/battle">
+        <strong>Battle</strong>
+        <span>Pick a squad and test the current battle loop.</span>
+      </a>
+    </div>
+  `;
+}
+
 function renderVaultHighlight(strongestCard, displayName) {
   if (!strongestCard) {
     return `
-      <div class="quick-grid">
-        <div class="quick-card">
-          <strong>No Vault cards yet</strong>
-          <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
-        </div>
-        <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
-        <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
+      <div class="home-highlight-empty">
+        <strong>No Vault cards yet</strong>
+        <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
       </div>
+      ${renderHomeActions()}
     `;
   }
 
   return `
-    ${renderCardFrame(strongestCard, {
-      href: `#/vault/card/${strongestCard.id}`,
-      context: 'vault',
-    })}
-    <div class="quick-grid">
-      <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
-      <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
+    <div class="home-highlight-card">
+      ${renderCardFrame(strongestCard, {
+        href: `#/vault/card/${strongestCard.id}`,
+        context: 'vault',
+      })}
     </div>
+    ${renderHomeActions()}
   `;
 }
 
@@ -123,7 +134,7 @@ export async function renderHome() {
         </div>
         <span class="status-pill">${strongestTotal} Total</span>
       </div>
-      <div class="card-grid">
+      <div class="home-highlight-grid">
         ${renderVaultHighlight(strongestCard, displayName)}
       </div>
     </section>
