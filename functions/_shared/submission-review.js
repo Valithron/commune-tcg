@@ -1,7 +1,7 @@
 import { rollApprovalProfile } from './approval-rolls.js';
 import { buildApprovedTemplateTraits } from './card-mechanics.js';
 import { ensureSubmissionSchema, getSubmissionById } from './submission-store.js';
-import { getCardTypeSummary, normalizeCardType, normalizeCardTypePool } from './type-config.js';
+import { getCardTypeSummary, normalizeCardType, normalizeCardTypeOdds, normalizeCardTypePool, typeOddsToPool } from './type-config.js';
 
 const temporaryReviewerId = 'temporary-admin-sterling';
 const allowedActions = new Set(['approve', 'needs_changes', 'reject']);
@@ -22,115 +22,59 @@ function buildApprovedCardJson(submission, now, approvalProfile) {
   const creatorUserId = cleanText(submission.submitterUserId || '', 120);
   const creatorDisplayNameOverride = cleanText(submission.creatorDisplayNameOverride || '', 120);
   const submitterDisplayName = cleanText(submission.submitterDisplayName || creatorDisplayName, 120);
-  const suggestedTypePool = normalizeCardTypePool(submission.typeSuggestions || submission.typeSuggestionsJson || submission.originalSuggestedCardType || submission.suggestedCardType || submission.cardType || 'neutral', ['neutral'], { max: 3 });
-  const approvedTypePool = normalizeCardTypePool(submission.approvedTypePool || submission.approvedTypePoolJson || submission.cardType || 'neutral', [templateTraits.type || 'neutral'], { max: 3 });
+  const suggestedTypePool = normalizeCardTypePool(submission.typeSuggestions || submission.typeSuggestionsJson || submission.cardType || 'neutral', ['neutral'], { max: 3 });
+  const approvedTypeOdds = normalizeCardTypeOdds(submission.approvedTypeOdds || submission.approvedTypeOddsJson, submission.approvedTypePool || suggestedTypePool, { max: 7 });
+  const approvedTypePool = typeOddsToPool(approvedTypeOdds, suggestedTypePool);
+  const approvedType = approvedTypePool[0] || 'neutral';
+  const approvedTypeSummary = getCardTypeSummary(approvedType);
   const suggestedType = suggestedTypePool[0] || 'neutral';
   const suggestedTypeSummary = getCardTypeSummary(suggestedType);
 
   return JSON.stringify({
-    id: buildApprovedCardId(submission),
-    name: submission.cardName,
-    character: submission.characterId,
-    character_id: submission.characterId,
-    cid: submission.characterId,
-    type: templateTraits.type,
-    cardType: templateTraits.cardType,
-    card_type: templateTraits.cardType,
-    category: titleCase(templateTraits.typeLabel || templateTraits.type),
-    suggestedType,
-    suggested_type: suggestedType,
-    suggestedTypeLabel: suggestedTypeSummary.label,
-    suggested_type_label: suggestedTypeSummary.label,
-    suggestedTypePool,
-    suggested_type_pool: suggestedTypePool,
-    approvedType: templateTraits.type,
-    approved_type: templateTraits.type,
-    approvedTypePool,
-    approved_type_pool: approvedTypePool,
-    typeLabel: templateTraits.typeLabel,
-    type_label: templateTraits.typeLabel,
-    typeColor: templateTraits.typeColor,
-    type_color: templateTraits.typeColor,
-    typeIdentity: templateTraits.typeIdentity,
-    type_identity: templateTraits.typeIdentity,
-    typeStatBias: templateTraits.typeStatBias,
-    type_stat_bias: templateTraits.typeStatBias,
-    creator: creatorDisplayName,
-    creator_name: creatorDisplayName,
-    creatorDisplayName,
-    creator_display_name: creatorDisplayName,
-    creatorDisplayNameOverride,
-    creator_display_name_override: creatorDisplayNameOverride,
-    creatorUserId,
-    creator_user_id: creatorUserId,
-    submitterDisplayName,
-    submitter_display_name: submitterDisplayName,
-    submitterUserId: creatorUserId,
-    submitter_user_id: creatorUserId,
+    id: buildApprovedCardId(submission), name: submission.cardName,
+    character: submission.characterId, character_id: submission.characterId, cid: submission.characterId,
+    type: approvedType, cardType: approvedType, card_type: approvedType, category: titleCase(approvedTypeSummary.label),
+    suggestedType, suggested_type: suggestedType, suggestedTypeLabel: suggestedTypeSummary.label, suggested_type_label: suggestedTypeSummary.label,
+    suggestedTypePool, suggested_type_pool: suggestedTypePool,
+    approvedType, approved_type: approvedType, approvedTypePool, approved_type_pool: approvedTypePool,
+    approvedTypeOdds, approved_type_odds: approvedTypeOdds, typeOdds: approvedTypeOdds, type_odds: approvedTypeOdds,
+    typeLabel: approvedTypeSummary.label, type_label: approvedTypeSummary.label,
+    typeColor: approvedTypeSummary.color, type_color: approvedTypeSummary.color,
+    typeIdentity: approvedTypeSummary.coreIdentity, type_identity: approvedTypeSummary.coreIdentity,
+    typeStatBias: approvedTypeSummary.statBias, type_stat_bias: approvedTypeSummary.statBias,
+    creator: creatorDisplayName, creator_name: creatorDisplayName, creatorDisplayName, creator_display_name: creatorDisplayName,
+    creatorDisplayNameOverride, creator_display_name_override: creatorDisplayNameOverride,
+    creatorUserId, creator_user_id: creatorUserId,
+    submitterDisplayName, submitter_display_name: submitterDisplayName, submitterUserId: creatorUserId, submitter_user_id: creatorUserId,
     mechanicsVersion: templateTraits.mechanicsVersion,
-    rarity: templateTraits.rarity,
-    rarity_source: templateTraits.raritySource,
-    raritySource: templateTraits.raritySource,
+    rarity: templateTraits.rarity, rarity_source: templateTraits.raritySource, raritySource: templateTraits.raritySource,
     rarity_suggestion: submission.raritySuggestion,
-    targetRarity: approvalProfile?.targetRarity || templateTraits.targetRarity,
-    target_rarity: approvalProfile?.targetRarity || templateTraits.targetRarity,
-    finalRarityOverride: approvalProfile?.finalRarityOverride || '',
-    final_rarity_override: approvalProfile?.finalRarityOverride || '',
-    rarityRoll: approvalProfile?.rarityRoll || null,
-    rarity_roll: approvalProfile?.rarityRoll || null,
-    traitSource: templateTraits.traitSource,
-    trait_source: templateTraits.traitSource,
-    statsSource: templateTraits.statsSource,
-    stats_source: templateTraits.statsSource,
-    statBudget: templateTraits.statBudget,
-    stat_budget: templateTraits.statBudget,
-    staticStatBudget: templateTraits.staticStatBudget,
-    static_stat_budget: templateTraits.staticStatBudget,
-    ownedStatBudgetRange: templateTraits.ownedStatBudgetRange,
-    owned_stat_budget_range: templateTraits.ownedStatBudgetRange,
-    copyStatBudgetVariance: templateTraits.copyStatBudgetVariance,
-    copy_stat_budget_variance: templateTraits.copyStatBudgetVariance,
-    statArchetype: templateTraits.statArchetype,
-    stat_archetype: templateTraits.statArchetype,
-    baseStats: templateTraits.baseStats,
-    base_stats: templateTraits.baseStats,
-    progressionRules: templateTraits.progressionRules,
-    progression_rules: templateTraits.progressionRules,
-    levelCap: templateTraits.levelCap,
-    level_cap: templateTraits.levelCap,
-    maxLevel: templateTraits.maxLevel,
-    max_level: templateTraits.maxLevel,
-    growthPerLevel: templateTraits.growthPerLevel,
-    growth_per_level: templateTraits.growthPerLevel,
-    originRarity: templateTraits.originRarity,
-    origin_rarity: templateTraits.originRarity,
-    originBonusPercent: templateTraits.originBonusPercent,
-    origin_bonus_percent: templateTraits.originBonusPercent,
-    originBonusMultiplier: templateTraits.originBonusMultiplier,
-    origin_bonus_multiplier: templateTraits.originBonusMultiplier,
-    stats,
-    pow: stats.pow,
-    def: stats.def,
-    spd: stats.spd,
-    flavor: submission.flavorText,
-    flavor_text: submission.flavorText,
-    ability: submission.abilityText || '',
-    ability_text: submission.abilityText || '',
-    abilityIcon: '✦',
-    image_key: submission.imageKey,
-    imageKey: submission.imageKey,
-    crop: cropJson,
-    crop_json: cropJson,
-    image_crop: cropJson,
-    imageCrop: cropJson,
-    source: 'card_submissions',
-    source_submission_id: submission.id,
-    approved_by: temporaryReviewerId,
-    approved_at: now,
-    createdAt: now,
-    created_at: now,
-    updatedAt: now,
-    updated_at: now,
+    targetRarity: approvalProfile?.targetRarity || templateTraits.targetRarity, target_rarity: approvalProfile?.targetRarity || templateTraits.targetRarity,
+    finalRarityOverride: approvalProfile?.finalRarityOverride || '', final_rarity_override: approvalProfile?.finalRarityOverride || '',
+    rarityRoll: approvalProfile?.rarityRoll || null, rarity_roll: approvalProfile?.rarityRoll || null,
+    traitSource: templateTraits.traitSource, trait_source: templateTraits.traitSource,
+    statsSource: templateTraits.statsSource, stats_source: templateTraits.statsSource,
+    statBudget: templateTraits.statBudget, stat_budget: templateTraits.statBudget,
+    staticStatBudget: templateTraits.staticStatBudget, static_stat_budget: templateTraits.staticStatBudget,
+    ownedStatBudgetRange: templateTraits.ownedStatBudgetRange, owned_stat_budget_range: templateTraits.ownedStatBudgetRange,
+    copyStatBudgetVariance: templateTraits.copyStatBudgetVariance, copy_stat_budget_variance: templateTraits.copyStatBudgetVariance,
+    statArchetype: approvedType, stat_archetype: approvedType,
+    baseStats: templateTraits.baseStats, base_stats: templateTraits.baseStats,
+    progressionRules: templateTraits.progressionRules, progression_rules: templateTraits.progressionRules,
+    levelCap: templateTraits.levelCap, level_cap: templateTraits.levelCap,
+    maxLevel: templateTraits.maxLevel, max_level: templateTraits.maxLevel,
+    growthPerLevel: templateTraits.growthPerLevel, growth_per_level: templateTraits.growthPerLevel,
+    originRarity: templateTraits.originRarity, origin_rarity: templateTraits.originRarity,
+    originBonusPercent: templateTraits.originBonusPercent, origin_bonus_percent: templateTraits.originBonusPercent,
+    originBonusMultiplier: templateTraits.originBonusMultiplier, origin_bonus_multiplier: templateTraits.originBonusMultiplier,
+    stats, pow: stats.pow, def: stats.def, spd: stats.spd,
+    flavor: submission.flavorText, flavor_text: submission.flavorText,
+    ability: submission.abilityText || '', ability_text: submission.abilityText || '', abilityIcon: '✦',
+    image_key: submission.imageKey, imageKey: submission.imageKey,
+    crop: cropJson, crop_json: cropJson, image_crop: cropJson, imageCrop: cropJson,
+    source: 'card_submissions', source_submission_id: submission.id,
+    approved_by: temporaryReviewerId, approved_at: now,
+    createdAt: now, created_at: now, updatedAt: now, updated_at: now,
   });
 }
 
@@ -142,26 +86,20 @@ async function upsertApprovedLibraryCard(env, submission, now, approvalProfile) 
   return approvedCardId;
 }
 
-async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, creatorDisplayNameOverride, approvedTypePoolJson, now) {
+async function updateSubmissionReview(env, submission, action, reviewNotes, approvedCardId, creatorDisplayNameOverride, approvedTypePoolJson, approvedTypeOddsJson, now) {
   await env.DB.prepare(`
     UPDATE card_submissions
-    SET moderation_status = ?,
-        review_notes = ?,
-        creator_display_name_override = ?,
-        approved_type_pool_json = ?,
-        approved_card_id = ?,
-        reviewed_at = ?,
-        reviewed_by = ?,
-        updated_at = ?
+    SET moderation_status = ?, review_notes = ?, creator_display_name_override = ?,
+        approved_type_pool_json = ?, approved_type_odds_json = ?, approved_card_id = ?,
+        reviewed_at = ?, reviewed_by = ?, updated_at = ?
     WHERE id = ?
-  `).bind(statusFromAction(action), reviewNotes, creatorDisplayNameOverride, approvedTypePoolJson || submission.approvedTypePoolJson || '', approvedCardId || submission.approvedCardId || '', now, temporaryReviewerId, now, submission.id).run();
+  `).bind(statusFromAction(action), reviewNotes, creatorDisplayNameOverride, approvedTypePoolJson || submission.approvedTypePoolJson || '', approvedTypeOddsJson || submission.approvedTypeOddsJson || '', approvedCardId || submission.approvedCardId || '', now, temporaryReviewerId, now, submission.id).run();
 }
 
-export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '', approvedCardType = '', approvedCardTypes = [] }) {
+export async function reviewSubmission(env, { id, action, reviewNotes = '', creatorDisplayName = '', targetRarity = '', finalRarityOverride = '', approvedCardType = '', approvedCardTypes = [], approvedTypeOdds = [] }) {
   await ensureSubmissionSchema(env);
   const normalizedAction = String(action || '').trim().toLowerCase();
   if (!allowedActions.has(normalizedAction)) return { ok: false, status: 400, error: 'Unsupported review action.' };
-
   const submission = await getSubmissionById(env, id);
   if (!submission) return { ok: false, status: 404, error: 'Submission was not found.' };
   if (!['pending_review', 'needs_changes'].includes(submission.moderationStatus)) return { ok: false, status: 409, error: 'Submission is not reviewable in its current status.', submission };
@@ -169,8 +107,11 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
   const now = new Date().toISOString();
   const cleanedNotes = cleanText(reviewNotes);
   const creatorOverride = cleanText(creatorDisplayName, 120) || cleanText(submission.creatorDisplayNameOverride || '', 120);
-  const approvedTypePool = normalizeCardTypePool(approvedCardTypes?.length ? approvedCardTypes : approvedCardType || submission.typeSuggestions || submission.cardType || 'neutral', ['neutral'], { max: 3 });
+  const fallbackPool = normalizeCardTypePool(approvedCardTypes?.length ? approvedCardTypes : approvedCardType || submission.typeSuggestions || submission.cardType || 'neutral', ['neutral'], { max: 7 });
+  const normalizedOdds = normalizeCardTypeOdds(approvedTypeOdds, fallbackPool, { max: 7 });
+  const approvedTypePool = typeOddsToPool(normalizedOdds, fallbackPool);
   const approvedTypePoolJson = JSON.stringify(approvedTypePool);
+  const approvedTypeOddsJson = JSON.stringify(normalizedOdds);
   const normalizedApprovedType = normalizeCardType(approvedTypePool[0] || approvedCardType || submission.cardType || 'neutral');
   const submissionForReview = {
     ...submission,
@@ -178,6 +119,8 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
     suggestedCardType: submission.cardType,
     approvedTypePool,
     approvedTypePoolJson,
+    approvedTypeOdds: normalizedOdds,
+    approvedTypeOddsJson,
     cardType: normalizedApprovedType,
     creatorDisplayNameOverride: creatorOverride,
     creatorDisplayName: creatorOverride || submission.creatorDisplayName,
@@ -192,7 +135,7 @@ export async function reviewSubmission(env, { id, action, reviewNotes = '', crea
     approvedCardId = await upsertApprovedLibraryCard(env, submissionForReview, now, approvalProfile);
   }
 
-  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, creatorOverride, normalizedAction === 'approve' ? approvedTypePoolJson : '', now);
+  await updateSubmissionReview(env, submission, normalizedAction, cleanedNotes, approvedCardId, creatorOverride, normalizedAction === 'approve' ? approvedTypePoolJson : '', normalizedAction === 'approve' ? approvedTypeOddsJson : '', now);
   const updatedSubmission = await getSubmissionById(env, id);
-  return { ok: true, status: 200, action: normalizedAction, approvedCardId, approvalProfile, approvedCardType: normalizedApprovedType, approvedTypePool, submission: updatedSubmission, reviewerId: temporaryReviewerId, creatorDisplayName: updatedSubmission?.creatorDisplayName || '' };
+  return { ok: true, status: 200, action: normalizedAction, approvedCardId, approvalProfile, approvedCardType: normalizedApprovedType, approvedTypePool, approvedTypeOdds: normalizedOdds, submission: updatedSubmission, reviewerId: temporaryReviewerId, creatorDisplayName: updatedSubmission?.creatorDisplayName || '' };
 }
