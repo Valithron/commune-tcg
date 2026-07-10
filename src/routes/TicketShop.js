@@ -17,6 +17,7 @@ async function loadResources() {
       dailyTicketClaimedOn: resources.dailyTicketClaimedOn || '',
       mountainDate: resources.mountainDate || '',
       dailyResetTimeZone: resources.dailyResetTimeZone || 'America/Denver',
+      resourceReadOk: true,
     };
   } catch {
     return {
@@ -24,15 +25,20 @@ async function loadResources() {
       gold: 0,
       source: 'Unavailable',
       ownerDisplayName: 'Player',
-      dailyTicketAvailable: false,
+      dailyTicketAvailable: true,
       dailyTicketClaimedOn: '',
       mountainDate: '',
       dailyResetTimeZone: 'America/Denver',
+      resourceReadOk: false,
     };
   }
 }
 
 function getOfferButtonCopy(offer, resources) {
+  if (!resources.resourceReadOk) {
+    return offer.daily ? 'Claim Ticket' : 'Buy Tickets';
+  }
+
   if (offer.daily && !resources.dailyTicketAvailable) {
     return 'Claimed Today';
   }
@@ -45,16 +51,22 @@ function getOfferButtonCopy(offer, resources) {
 }
 
 function isOfferDisabled(offer, resources) {
+  if (!resources.resourceReadOk) {
+    return false;
+  }
+
   return Boolean((offer.daily && !resources.dailyTicketAvailable) || offer.costGold > resources.gold);
 }
 
 function renderOfferCard(offer, resources) {
   const disabled = isOfferDisabled(offer, resources);
-  const dailyStatus = offer.daily
-    ? resources.dailyTicketAvailable
-      ? 'Available now'
-      : `Claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}`
-    : `${formatNumber(offer.costGold)} gold from bank`;
+  const dailyStatus = !resources.resourceReadOk
+    ? 'Server will validate current bank state'
+    : offer.daily
+      ? resources.dailyTicketAvailable
+        ? 'Available now'
+        : `Claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}`
+      : `${formatNumber(offer.costGold)} gold from bank`;
 
   return `
     <article class="shop-card">
@@ -91,9 +103,9 @@ export async function renderTicketShop() {
       <div class="detail-list">
         <div class="detail-row"><span>${escapeHtml(resources.source)} Tickets</span><strong>🎟 ${formatNumber(resources.tickets)}</strong></div>
         <div class="detail-row"><span>Gold Bank</span><strong>◎ ${formatNumber(resources.gold)}</strong></div>
-        <div class="detail-row"><span>Daily Claim</span><strong>${resources.dailyTicketAvailable ? 'Available' : 'Claimed'}</strong></div>
+        <div class="detail-row"><span>Daily Claim</span><strong>${resources.resourceReadOk ? (resources.dailyTicketAvailable ? 'Available' : 'Claimed') : 'Unknown'}</strong></div>
         <div class="detail-row"><span>Account</span><strong>${escapeHtml(resources.ownerDisplayName)}</strong></div>
-        <div class="detail-row"><span>Status</span><strong data-shop-status>Ready</strong></div>
+        <div class="detail-row"><span>Status</span><strong data-shop-status>${resources.resourceReadOk ? 'Ready' : 'Resource read failed. Try an exchange and the server will validate it.'}</strong></div>
       </div>
     </section>
 
@@ -124,7 +136,9 @@ export function initTicketShop(root) {
       const offerId = button.getAttribute('data-shop-offer-id') || '';
 
       button.disabled = true;
-      status.textContent = 'Updating bank...';
+      if (status) {
+        status.textContent = 'Updating bank...';
+      }
 
       try {
         const response = await fetch(routes.pullTopUp, {
@@ -139,10 +153,14 @@ export function initTicketShop(root) {
         }
 
         const goldCopy = payload.goldCost ? ` Gold ${formatNumber(payload.goldBefore)} -> ${formatNumber(payload.goldAfter)}.` : '';
-        status.textContent = `${payload.offerTitle}: +${payload.ticketAmount} ticket${payload.ticketAmount === 1 ? '' : 's'}. Tickets ${formatNumber(payload.ticketsBefore)} -> ${formatNumber(payload.ticketsAfter)}.${goldCopy}`;
+        if (status) {
+          status.textContent = `${payload.offerTitle}: +${payload.ticketAmount} ticket${payload.ticketAmount === 1 ? '' : 's'}. Tickets ${formatNumber(payload.ticketsBefore)} -> ${formatNumber(payload.ticketsAfter)}.${goldCopy}`;
+        }
         window.setTimeout(() => window.location.reload(), 700);
       } catch (error) {
-        status.textContent = error.message;
+        if (status) {
+          status.textContent = error.message;
+        }
         button.disabled = false;
       }
     });
