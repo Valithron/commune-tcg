@@ -4,25 +4,52 @@
    authored at the large showcase ratio and scale down with the card face.
    ============================================================================ */
 
-.tcg-card--rarity-frame .card-art {
-  z-index: 1;
+.tcg-card--rarity-frame {
+  border-color: color-mix(in srgb, var(--rarity-color) 34%, transparent);
+  box-shadow: 0 0 0.72rem rgba(0, 0, 0, 0.34);
+}
+
+.tcg-card--rarity-frame[data-rarity='uncommon'],
+.tcg-card--rarity-frame[data-rarity='rare'],
+.tcg-card--rarity-frame[data-rarity='legendary'],
+.tcg-card--rarity-frame[data-rarity='mythic'] {
+  box-shadow: 0 0 0.82rem color-mix(in srgb, var(--rarity-color) 18%, transparent), 0 0.85rem 1.55rem rgba(0, 0, 0, 0.22);
 }
 
 .tcg-card--rarity-frame::before {
   z-index: 2;
+  opacity: 0.36;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rarity-color) 18%, transparent), transparent 54%);
+}
+
+.tcg-card--rarity-frame .card-art {
+  z-index: 1;
 }
 
 .card-rarity-frame-overlay {
   position: absolute;
-  inset: 0;
+  inset: -0.18rem;
   z-index: 3;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: calc(100% + 0.36rem);
+  height: calc(100% + 0.36rem);
+  max-width: none;
   object-fit: fill;
-  border-radius: inherit;
+  border-radius: calc(var(--radius-lg) + 0.12rem);
   pointer-events: none;
   user-select: none;
+}
+
+.tcg-card--showcase .card-rarity-frame-overlay {
+  inset: -0.22rem;
+  width: calc(100% + 0.44rem);
+  height: calc(100% + 0.44rem);
+}
+
+.tcg-card--thumbnail .card-rarity-frame-overlay {
+  inset: -0.1rem;
+  width: calc(100% + 0.2rem);
+  height: calc(100% + 0.2rem);
 }
 
 .tcg-card--rarity-frame .card-nameplate,
@@ -32,7 +59,22 @@
   z-index: 4;
 }
 
-.tcg-card--rarity-frame .card-nameplate,
+.tcg-card--rarity-frame .card-nameplate {
+  left: calc(var(--card-nameplate-x) + 1.2%);
+  width: calc(var(--card-nameplate-w) - 2.4%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.58));
+  box-shadow: 0 0.35rem 0.82rem rgba(0, 0, 0, 0.28);
+}
+
 .tcg-card--rarity-frame .card-identity-line {
-  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.32);
+  left: calc(var(--card-pills-x) + 1.4%);
+  width: calc(var(--card-pills-w) - 2.8%);
+  border-bottom-width: 1px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.56));
+  box-shadow: 0 0.28rem 0.72rem rgba(0, 0, 0, 0.26);
+}
+
+.tcg-card--rarity-frame .card-stat {
+  background: rgba(0, 0, 0, 0.62);
+  box-shadow: inset 0 0.12rem 0.26rem rgba(0, 0, 0, 0.58), 0 0.16rem 0.4rem rgba(0, 0, 0, 0.24);
 }
