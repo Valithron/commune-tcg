@@ -187,7 +187,7 @@ async function renderRoute() {
     appRoot.innerHTML = await renderShell(route, content);
     fitCardTitles(appRoot);
 
-    if (route.render === renderPull) initPull(appRoot);
+    if (route.render === renderPull || route.render === renderPullConfirm) initPull(appRoot);
     else if (route.render === renderPullReveal) initPullReveal(appRoot);
     else if (route.render === renderLibrary) initLibraryControls(appRoot);
     else if (route.render === renderTicketShop) initTicketShop(appRoot);
