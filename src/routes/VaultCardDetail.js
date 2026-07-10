@@ -5,7 +5,7 @@
    ============================================================================ */
 
 import { renderCardDetailPanel } from '../components/CardDetailPanel.js';
-import { findVaultCardById, getVaultSourceLabel } from '../data/vaultData.js';
+import { findVaultCardById } from '../data/vaultData.js';
 
 function formatVaultOwnerName(vault) {
   return String(vault.ownerDisplayName || vault.selectedOwnerUserId || 'User')
@@ -31,8 +31,6 @@ export async function renderVaultCardDetail({ params }) {
     `;
   }
 
-  const sourceLabel = getVaultSourceLabel(vault);
-
   return `
     <section class="hero-panel">
       <span class="section-kicker">Owned Card</span>
@@ -40,7 +38,6 @@ export async function renderVaultCardDetail({ params }) {
       <p class="hero-copy">This card is resolved from ${ownerName}'s signed-in Vault.</p>
       <div class="action-row"><a class="button button-secondary" href="#/vault">Back to Vault</a></div>
     </section>
-    <div class="empty-note">Source: ${sourceLabel}</div>
     ${renderCardDetailPanel(card, { context: 'vault' })}
   `;
 }
