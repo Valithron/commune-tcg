@@ -1,60 +1,64 @@
 # Commune TCG Battle Design
 
-Living design document for the Commune TCG battle system on the `Gacha` branch.
+Living design authority for the Commune TCG battle system on the `Gacha` branch.
 
-This file is the single authority for battle-specific design. It records confirmed decisions, active first-test values, serious proposals, rejected directions, unresolved questions, and the reasoning behind major choices. It is a design document only. Nothing here authorizes implementation unless Sterling explicitly requests implementation in a separate coding task.
+This document defines what the battle system is, how it should feel, and what the player should experience. It contains confirmed rules, active test values, visual direction, encounter design, economy test values, deferred systems, and remaining balance-validation work.
+
+This document does not authorize implementation by itself. Implementation is governed by `docs/battle-implementation-plan.md` and begins only when Sterling explicitly hands the approved plan to ChatGPT Work.
 
 ## Document Status
 
-**Phase:** Combat-model definition and encounter design  
-**Current objective:** Finish the smallest battle system that is fun, readable, replayable, expandable, and suitable for short mobile sessions before combat implementation begins.  
-**Implementation status:** Not authorized.  
-**Primary related document:** `docs/game-design.md`
+**Phase:** Battle design complete enough for implementation planning  
+**Current objective:** Build and validate the first complete 3-on-3 PvE battle loop  
+**Implementation status:** Not yet authorized in this conversation  
+**Primary wider-game authority:** `docs/game-design.md`  
+**Implementation authority:** `docs/battle-implementation-plan.md`
 
 ### Design-state labels
 
-- **Confirmed:** Accepted rule or product direction.
-- **Active test value:** Accepted for the first playable test, but still subject to tuning.
-- **Serious proposal:** Worth isolated testing, but not approved as a rule.
-- **Open question:** Unresolved and not safe to infer during implementation.
-- **Rejected direction:** Deliberately excluded unless new evidence justifies reconsideration.
+- **Confirmed:** Approved rule or player-facing behavior.
+- **Active test value:** Approved for the first build and simulator pass, but still tunable.
+- **Validation required:** Implement as configurable and test before treating the value as final balance.
+- **Deferred:** Deliberately outside the first complete battle build.
+- **Rejected:** Deliberately excluded unless later evidence justifies reopening it.
 
-## Relationship to the Main Game Design
+## 1. Relationship to the Main Game Design
 
-The main game-design document defines the wider collection, rarity, type, progression, economy, and product direction. This document narrows the discussion to battle.
+`docs/game-design.md` governs the wider product, card model, rarity, types, progression, collection, and economy. This document governs battle-specific mechanics and presentation.
 
 When the documents overlap:
 
-1. Confirmed rules in `game-design.md` remain authoritative unless intentionally revised here.
-2. Battle-specific detail should live here.
-3. Any battle decision that changes the wider economy or permanent card model should eventually also be reflected in `game-design.md`.
-4. Unsettled ideas must remain labeled as open or proposed.
-5. Numbers labeled as first-test values are accepted for implementation testing, but not guaranteed final production values.
+1. Confirmed wider-game rules in `game-design.md` remain authoritative unless intentionally revised here.
+2. Battle-specific mechanics and visual behavior live here.
+3. Any battle decision that materially changes the wider economy or permanent card model should also be reflected in `game-design.md`.
+4. The implementation plan may explain how to build a rule, but it must not invent or revise the rule.
 
-## Inherited Product Direction
+## 2. Product Direction
 
 ### Product and session shape
 
 - Commune TCG is a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social or anime-themed worldbuilding.
 - It is not intended to become a deep competitive tabletop TCG.
 - The target audience is casual-to-midcore.
-- A normal daily session should take approximately 5 to 10 minutes, with optional longer play.
-- Ordinary battles should generally fit within approximately 30 to 60 seconds.
-- Battle should support the collection fantasy rather than replace it.
-- Casual players should be able to use favorite cards, while strategic players should gain meaningful advantages from preparation.
+- A normal daily session should take roughly 5 to 10 minutes, with optional longer play.
+- Ordinary battles should generally fit within roughly 30 to 60 seconds.
+- Battle supports the collection fantasy rather than replacing it.
+- Casual players should be able to use favorite cards, while strategic players gain meaningful advantages from squad selection and formation.
 
 ### Squad and card inputs
 
-- A battle squad contains 3 cards.
+- A battle squad contains exactly 3 cards for the first complete battle system.
 - The first combat model uses ATK, DEF, SPD, Type, rarity, and level.
-- A card's battlefield role should emerge from its stats, type, character, rarity, and later abilities rather than a rigid stored class.
-- Every card in the active squad should receive full battle XP in the first version.
+- A card's role emerges from its stats, type, rarity, level, and later abilities rather than a rigid stored class.
+- Every card in the active squad receives the full approved battle XP amount unless the encounter explicitly states otherwise.
 
-### Encounter scope
+### Initial encounter scope
 
-- Initial targets are PvE random enemies, curated challenges, and seasonal bosses.
-- User PvP is a possible future system, not a present requirement.
-- Energy is intended to pace battle attempts.
+- Daily Skirmish
+- Curated Challenge encounters
+- Seasonal Boss encounters
+
+User PvP remains a possible future system, not a requirement for the first battle build.
 
 ### Current types
 
@@ -66,11 +70,11 @@ When the documents overlap:
 - Radiant
 - Neutral
 
-Type biases the distribution of ATK, DEF, and SPD without increasing the total stat budget by itself.
+Type biases stat distribution without increasing total stat budget by itself.
 
-### Deliberately deferred systems
+### Deferred systems
 
-The first testable battle model should not depend on:
+The first complete battle build does not depend on:
 
 - Card abilities
 - Physical and Mystic damage categories
@@ -78,155 +82,130 @@ The first testable battle model should not depend on:
 - Evolution
 - PvP
 - Trading
-- Deep class or role systems
 - Equipment
-- Deep status-effect systems
+- Deep classes
+- Deep status systems
+- Manual basic-attack targeting
+- Reflex or timing mechanics
+- Bespoke battle sprites
+- Penetrate, trample, damage spillover, or overkill transfer
+- Random ordinary misses
 
-## Battle Design Goals
+## 3. Battle Design Goals
 
-### 1. Make collected cards feel alive
+### Make collected cards feel alive
 
-Battle should turn a card from an image and stat block into a character the player recognizes, develops, favors, and remembers using.
+Battle should turn a card from an image and stat block into a recognizable combatant that the player develops, favors, and remembers.
 
-### 2. Support progression and challenge play
+### Reward preparation without demanding constant input
 
-Routine battles should provide low-friction leveling and resources. Difficult encounters should reward correct squad construction, matchup reading, and later tactical intervention.
+The player should not command every basic attack. The primary ordinary-battle skill expression is choosing cards and arranging left, center, and right lanes before combat.
 
-### 3. Produce meaningful decisions without constant input
+### Preserve favorite-card viability
 
-The player should not manually command every basic attack. The system still needs enough meaningful preparation that it is not merely a Squad Power comparison with animation.
+Type, rarity, level, and optimization should matter without making a favorite card automatically unusable whenever it is not mathematically ideal.
 
-### 4. Preserve favorite-card viability
+### Preserve suspense without letting luck dominate
 
-Type, rarity, level, and optimization should matter without making a beloved card automatically unusable when it is not mathematically ideal.
+Good preparation should strongly improve expected outcomes. Controlled randomness should create crits, low-HP survival, close ties, and occasional upsets without routinely defeating superior preparation.
 
-### 5. Reward preparation without eliminating suspense
+### Keep outcomes legible
 
-Good squad construction should strongly improve the expected outcome. Controlled uncertainty should create crits, low-HP survival, clutch wins, and occasional upsets without allowing luck to routinely defeat superior preparation.
+Players should understand why a card acted first, hit hard, survived, won a lane, reinforced, or earned MVP.
 
-### 6. Make outcomes legible
+### Respect production scope
 
-Players should understand why a card acted first, hit hard, survived, won a lane, or reinforced another lane. Important calculations should be represented through clear visual feedback.
+The battle system must work with existing card artwork and the canonical card renderer. It must not require unique combat sprites for every card.
 
-### 7. Respect production scope
+## 4. Failure Conditions to Avoid
 
-The battle system must work with existing card artwork. It must not require bespoke battle sprites for every outfit, scene, theme, or card variant.
-
-## Failure Conditions to Avoid
-
-The first battle model should be considered unsuccessful if it becomes primarily any of the following:
+The first battle model is unsuccessful if it becomes primarily any of the following:
 
 - A static Squad Power comparison with decorative animation
-- A long chain of obvious manual choices
-- A system where routine progression requires constant attention
+- A long chain of obvious manual commands
+- A system where routine progression demands constant attention
 - A system where SPD permanently dominates ATK and DEF
-- A system where DEF creates slow, tedious stalls
+- A system where DEF creates tedious deadlocks
 - A system where type disadvantage invalidates favorite cards
 - A system where randomness overwhelms preparation
-- A system that cannot be understood without reading a combat log
+- A system that cannot be understood without reading logs
 - A system requiring bespoke character sprites
-- A system too elaborate to simulate and balance against the current card pool
-- A presentation where every hit receives maximum emphasis and important moments stop feeling important
-- A formation system where the two supporting squad slots become decorative because one ace always decides the battle
+- A system too elaborate to simulate and balance
+- A presentation where every hit receives maximum emphasis
+- A formation system where one ace makes both support slots decorative
+- A battle UI too crowded to read on a portrait mobile screen
 
-## Core Stat Identities
-
-Each core stat should have one primary identity and only a small number of secondary expressions.
+## 5. Core Stat Identities
 
 ### ATK
 
 Primary identity: larger outgoing hits.
 
 - ATK determines raw basic-attack damage.
-- High-ATK cards naturally produce the largest critical hits because crits multiply their larger base hit.
-- ATK does not independently increase crit chance.
+- High-ATK cards naturally produce larger critical hits because crits multiply the underlying hit.
+- ATK does not independently raise crit chance.
 
 Player fantasy:
 
-> This card is going to hit hard.
+> This card hits hard.
 
 ### DEF
 
 Primary identity: continuous incoming-damage mitigation.
 
-- DEF reduces every incoming hit through a diminishing-returns armor formula.
-- DEF does not increase maximum HP.
+- DEF reduces every incoming damaging hit through diminishing returns.
+- DEF does not increase maximum HP in the first build.
 - DEF does not use flat `ATK - DEF` subtraction.
 - DEF does not inherently create random block events.
-- Future Shadow abilities may add dramatic armor surges, blocks, resistance, drain, sacrifice, or negation.
 
 Player fantasy:
 
-> This card is not going down easily.
+> This card is difficult to bring down.
 
 ### SPD
 
 Primary identity: tempo.
 
-- SPD determines normal attack order.
-- SPD specialization modestly increases critical-hit chance.
-- Genuine SPD specialists can earn occasional Follow-Up strikes.
-- SPD increases the frequency of impactful moments, not the size of each hit.
+- SPD determines initiative order.
+- SPD specialization modestly raises critical-hit chance.
+- Genuine SPD specialists can earn Double-Strikes.
+- SPD increases impactful moments rather than the size of each hit.
 
 Player fantasy:
 
-> This card is going to act first and do clutch, speedy things.
+> This card acts first and creates clutch speed moments.
 
 ### Power
 
-- **Power** or compact **PWR** means ATK + DEF + SPD for one card.
-- **Squad Power** means the sum of the selected cards' Power.
-- **Effective Power** or **Matchup Power** means a temporary encounter-adjusted estimate.
+- **Power**, or compact **PWR**, means ATK + DEF + SPD for one card.
+- **Squad Power** means the total Power of the three selected cards.
+- **Effective Power** or **Matchup Power** is a temporary encounter-adjusted estimate.
 - Power is not damage and is not directly inserted into combat formulas.
-- Temporary matchup modifiers must never overwrite permanent Power shown in the Library, Vault, or normal card details.
-- Equal Squad Power does not guarantee equal battle strength because stat concentration, lane routing, and reinforcement matter.
+- Equal Squad Power does not guarantee equal battle strength because stat concentration, formation, initiative, and reinforcement matter.
+- Existing stored offensive keys may remain `pow`, but player-facing battle text uses `ATK`.
 
-## Confirmed First-Test Combat Package
+## 6. Confirmed First-Test Combat Package
 
-These values are accepted for the first playable combat test. They are not guaranteed final production balance values.
-
-### Round structure
-
-- Combat proceeds in discrete rounds even if presentation appears continuous.
-- Every living card receives one guaranteed normal attack each round.
-- Cards act from highest SPD to lowest SPD.
-- The exact deterministic tie-break for equal SPD remains open.
+These are active first-build values. They must be centralized and versioned so simulation can tune them without rule duplication.
 
 ### Maximum HP
-
-Normal cards use universal level-scaled HP:
 
 ```text
 Max HP = 240 + (Level - 1) × 5
 ```
 
-| Level | Max HP |
-| ---: | ---: |
-| 1 | 240 |
-| 10 | 285 |
-| 20 | 335 |
-| 30 | 385 |
-| 40 | 435 |
-| 50 | 485 |
-| 60 | 535 |
-| 70 | 585 |
+Rules:
 
-Rules and intent:
-
-- All normal cards use the same base HP formula in the first test.
-- Rarity does not add a separate direct HP bonus.
+- All normal cards use this formula in the first build.
+- Rarity does not add hidden HP.
 - DEF does not create maximum HP.
-- Higher-rarity cards survive through better rolled stats, level ceilings, and stronger DEF rather than hidden rarity HP.
-- Future Bloom abilities may increase HP, healing, regeneration, growth, or protection.
-- Bosses may use separate HP rules.
+- Bosses may later use separate HP rules.
 
 ### Raw damage
 
 ```text
 Raw Damage = 20 + ATK × 2.5
 ```
-
-The fixed base prevents low-rarity fights from becoming excessively slow while still allowing ATK to matter strongly.
 
 ### DEF mitigation
 
@@ -236,30 +215,13 @@ Damage After DEF = Raw Damage × 40 / (40 + DEF)
 
 The armor constant is `40` for the first test.
 
-This creates continuous diminishing returns:
-
-- Every point of DEF helps.
-- DEF cannot reduce ordinary damage to zero.
-- High DEF remains useful without creating invincible stalls.
-
 ### Type modifier
-
-The accepted first-test type package is:
 
 - Advantage: `×1.08`
 - Disadvantage: `×0.97`
 - Neutral: `×1.00`
 
-This replaces the earlier battle-test target of +15% and -5%.
-
-Reasoning:
-
-- The older package crossed whole-hit defeat breakpoints too often between otherwise comparable cards.
-- The current package gives correct formation a meaningful edge without allowing type alone to erase similar stat quality.
-- Type advantage should strengthen an already favorable rarity or stat matchup rather than artificially normalize it.
-- A Legendary Tide card should still decisively defeat a Common Flame card.
-
-### Current type chart
+### Type chart
 
 | Attacker ↓ / Defender → | Flame | Tide | Bloom | Volt | Shadow | Radiant | Neutral |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -273,9 +235,9 @@ Reasoning:
 
 Legend:
 
-- `+` means the attacker uses `×1.08`.
-- `-` means the attacker uses `×0.97`.
-- `=` means the attacker uses `×1.00`.
+- `+` uses `×1.08`.
+- `-` uses `×0.97`.
+- `=` uses `×1.00`.
 
 ### Normal damage variance
 
@@ -283,23 +245,13 @@ Legend:
 Random Variance = ×0.95 to ×1.05
 ```
 
-Intent:
-
-- Repeated attacks should not always display identical damage.
-- The range is small enough that preparation remains more important than luck.
-- The interface does not need to announce ordinary variance.
+The interface does not need to announce ordinary variance.
 
 ### Critical hits
-
-First-test critical rules:
 
 - Base crit chance: `5%`
 - Maximum normal crit chance: `10%`
 - Crit multiplier: `×1.5`
-- SPD specialization increases crit chance.
-- ATK naturally controls crit size through the underlying hit.
-
-First-test SPD crit formula:
 
 ```text
 Average Non-SPD Stat = (ATK + DEF) / 2
@@ -308,19 +260,10 @@ Crit Bonus = min(5%, SPD Specialization × 10%)
 Crit Chance = 5% + Crit Bonus
 ```
 
-| Profile | ATK | DEF | SPD | Approx. crit chance |
-| --- | ---: | ---: | ---: | ---: |
-| Balanced | 20 | 20 | 20 | 5.0% |
-| Mildly fast | 20 | 18 | 22 | 6.6% |
-| SPD specialist | 18 | 17 | 25 | 9.3% |
-| Extreme SPD | 16 | 16 | 28 | 10.0% cap |
-
-This keeps crits exciting rather than routine and avoids giving SPD an unbounded scaling advantage.
-
-### Final normal-hit structure
+### Final normal-hit calculation
 
 ```text
-Final Damage =
+Calculated Damage =
 (20 + ATK × 2.5)
 × [40 / (40 + defender DEF)]
 × Type Modifier
@@ -328,11 +271,129 @@ Final Damage =
 × 1.5 if critical
 ```
 
-Exact rounding order, minimum-damage handling, and integer display rules remain open for implementation specification.
+Confirmed precision rules:
 
-## Confirmed First-Test SPD Follow-Up Package
+1. Keep full precision through the complete calculation.
+2. Round the final calculated result once to the nearest whole number.
+3. A successful damaging hit deals at least 1 damage.
+4. Remaining HP cannot fall below 0.
+5. The displayed damage number shows the full calculated integer, including overkill.
+6. Applied damage for analytics and MVP is capped at the target's remaining HP before the hit.
+7. Normal attacks do not randomly miss.
+8. Explicit future effects such as Dodge, Immunity, or Barrier may create a miss or zero-damage result, but ordinary attacks cannot.
 
-The first test uses a conditional Follow-Up mechanic for genuine SPD specialists.
+## 7. Round and Turn Resolution
+
+### Round visibility
+
+- Combat proceeds in discrete rounds.
+- The ordinary battlefield presentation does not foreground round numbers.
+- Round numbers appear in battle logs and debugging tools.
+
+### Start-of-round snapshot
+
+At the start of each round:
+
+1. Read every living card's current SPD after buffs or debuffs already active at that moment.
+2. Build the complete action order from highest SPD to lowest SPD.
+3. Resolve equal-SPD ties through seeded random priority for that round.
+4. Snapshot the order for the entire round.
+
+Mid-round SPD changes affect the next round. They do not reorder the current round.
+
+### Equal-SPD tie behavior
+
+- Equal-SPD priority is resolved independently each round.
+- The tie result comes from the battle's seeded RNG.
+- The same inputs and seed reproduce the same tie results.
+- One side does not receive permanent tie preference for the entire battle.
+
+### Scheduled actions and death
+
+- Every living card is scheduled for one normal turn when the round begins.
+- A card acts only if it is still alive when its scheduled turn arrives.
+- A faster knockout cancels the defeated card's pending turn.
+- A defeated card is removed from legal targeting and future turn eligibility immediately.
+- There is no finish-the-round-before-dying behavior.
+
+### Retargeting before an action
+
+If a card's intended target was defeated before its scheduled turn:
+
+- The card finds the next legal enemy and attacks.
+- Allied assistance must not cause the card to waste its turn.
+- A living card does not idle while a legal enemy exists unless a future explicit status effect prevents acting.
+
+### Battle end
+
+- The battle ends immediately when the final enemy on either side reaches 0 HP.
+- Remaining scheduled actions in that round do not resolve.
+- No attacks target an empty battlefield.
+
+## 8. Battlefield and Targeting Rules
+
+### Field
+
+- Three player cards face three enemy cards.
+- All six cards are active from the beginning.
+- Lanes are left, center, and right.
+- Cards remain upright on both sides.
+
+### Formation
+
+- The player selects and orders exactly three owned eligible cards before combat.
+- Formation locks when battle begins.
+- The player cannot swap lanes during ordinary combat.
+
+### Home-lane targeting
+
+- Left attacks left, center attacks center, and right attacks right while the opposing home-lane card remains alive.
+- A card cannot choose a different target while its home-lane enemy remains alive.
+
+### Natural reinforcement
+
+When a card defeats its home-lane opponent:
+
+- The winner remains active at current HP.
+- It receives no immediate free attack, bonus turn, stat transfer, or merge.
+- It begins cross-lane reinforcement on its next scheduled normal turn.
+- The allied card already fighting in that lane continues acting normally.
+- The result is a natural 2-on-1 produced by separate cards using their own turns.
+
+### Side-lane routing
+
+- A left or right lane winner attacks center next if center remains occupied.
+- If center is already empty, it attacks the remaining legal enemy.
+- Once only one enemy remains, every living opposing card targets that enemy on its scheduled turn.
+
+### Center routing
+
+If the center card wins while both side enemies remain alive:
+
+1. Compare the current HP percentages of the two allied side cards.
+2. Reinforce the side containing the allied card with the lower HP percentage.
+3. If allied HP percentages are exactly tied, target the side enemy with the lower current HP percentage.
+4. If enemy HP percentages are also exactly tied, use seeded randomness.
+
+### Reinforcement cues
+
+- No persistent arrow, path, or UI marker is required to show where a card will reinforce.
+- Cross-lane intent should read naturally when the attack motion occurs.
+- The first cross-lane attack may use a diagonal type-colored trail, but no standing reinforcement indicator remains afterward.
+
+### Cross-lane damage validation
+
+Cross-lane damage is configurable for simulator testing:
+
+- `100%`: current control and default first implementation value
+- `85%`: mild Assist Attack tax candidate
+- `70%`: strong Assist Attack tax candidate
+
+The first implementation defaults to 100% unless reproducible simulation demonstrates excessive ace snowballing. Any adopted reduction must be visible and explainable. It must never be a hidden penalty.
+
+## 9. Double-Strike
+
+**Double-Strike** is the player-facing term for the SPD-specialist extra strike. Do not use `Follow-Up` in normal player-facing UI.
 
 ### Eligibility
 
@@ -346,81 +407,65 @@ SPD is at least 15% higher than DEF
 
 This is a relative profile check, not an absolute SPD requirement.
 
-Why:
+### Starting state
 
-- A high-rarity balanced card should not qualify merely because all its numbers are large.
-- A low-rarity card can qualify if its rolled profile is genuinely speed-focused.
-- Volt cards will often approach qualification, but not every Volt card should automatically receive the mechanic.
-- No rigid stored `speed class` is required.
+- Eligible cards begin ordinary battles at 0 charge.
+- Future abilities may begin partially charged.
+- Non-eligible cards display no Double-Strike meter.
 
-### Meter behavior
+### Charge timing
 
-- Non-qualifying cards display no Follow-Up meter.
-- Qualifying cards display a small secondary meter or pip track.
-- Meter builds according to how far SPD exceeds the eligibility threshold.
-- Meter progress carries through a lane victory and reinforcement.
-- Maximum one Follow-Up can occur per round.
-- A Follow-Up cannot generate another Follow-Up.
-- Bosses and future abilities may explicitly override normal eligibility.
+- Charge is added at the beginning of the eligible card's scheduled turn.
+- A card defeated before its scheduled turn gains no charge that round.
+- Meter charge carries through lane victory and reinforcement.
+- Excess charge above the threshold carries over after the strike.
+- Maximum one Double-Strike can occur per round.
+- A Double-Strike cannot generate another Double-Strike.
 
-Target pacing for simulation:
+### First-test charge tiers
 
-- Near threshold: about one Follow-Up every 6 to 7 rounds
-- Strong specialization: about one every 4 to 5 rounds
-- Extreme specialization: about one every 3 to 4 rounds
+The meter threshold is 100 charge.
 
-The exact charge equation remains open.
+| SPD relationship | Charge per scheduled turn | Normal trigger pace |
+| --- | ---: | ---: |
+| SPD 15% to 24% above both ATK and DEF | 17 | About every 6 turns |
+| SPD 25% to 39% above both | 20 | Every 5 turns |
+| SPD 40% to 54% above both | 25 | Every 4 turns |
+| SPD 55% or more above both | 34 | About every 3 turns |
 
-### Follow-Up strike
+These are active test values and must be simulator-configurable.
+
+### Strike resolution
 
 When the meter is full during the card's normal turn:
 
-1. The guaranteed normal attack resolves.
-2. The meter flashes and spends its threshold.
-3. The card immediately performs a Follow-Up against its current legal lane target.
+1. The normal attack resolves first.
+2. If the original target survives and remains legal, the meter spends 100 charge.
+3. The card immediately performs Double-Strike against that target.
 
 ```text
-Follow-Up Damage = 30% of the equivalent normal calculated hit
+Double-Strike Damage = 30% of the equivalent normal calculated hit
 ```
+
+Rules:
 
 - It cannot crit.
-- It uses the normal type and DEF calculations.
-- It uses normal ±5% variance.
-- It does not permit manual target redirection.
-- It does not grant another action.
-- It uses the card's current legal target after lane-state changes.
+- It uses normal type, DEF, and ±5% variance calculations.
+- It cannot be manually redirected.
+- It does not grant another normal action.
+- If the normal attack defeats the lane opponent, Double-Strike does not retarget.
+- In that case, the full meter remains stored for the card's next scheduled turn.
+- A full-strength second normal attack remains rejected because action denial made SPD too dominant.
 
-Presentation terminology:
+## 10. Combat Pacing Targets
 
-- Mechanical term: **Follow-Up**
-- Exciting visual treatment may say: **DOUBLE STRIKE**
+### Comparable lane target
 
-### Rejected full second attack
-
-A full-strength immediate second normal attack was rejected for the first test.
-
-A complete extra attack does more than add damage. It can create early knockouts that deny the opponent's next scheduled action. Combined with acting first and critting more often, this made SPD specialists dominate comparable profiles.
-
-The 30% non-critting Follow-Up preserves the speed fantasy without turning SPD into the automatic best stat.
-
-## Combat Pacing Targets
-
-### Comparable matchup target
-
-A neutral duel between cards of similar rarity, level, and Power should generally require:
+A neutral duel between comparable cards should generally require:
 
 ```text
-5 to 7 normal attack rounds to defeat one card
+5 to 7 normal attacks to defeat one card
 ```
-
-This leaves room for:
-
-- Crits
-- Low-HP survival
-- SPD initiative
-- Follow-Ups
-- Lane wins
-- Reinforcement
 
 ### Expected mismatch behavior
 
@@ -431,803 +476,646 @@ This leaves room for:
 | Strong advantage plus favorable type | About 3 to 4 attacks |
 | Extreme rarity, level, and type mismatch | Potentially 2 to 3 attacks |
 
-The system should not artificially protect weak cards from obviously unfavorable matchups.
+The system should not artificially protect weak cards from obvious mismatches. A Legendary Tide card should decisively defeat a Common Flame card.
 
-Example design expectation:
+### Full battle target
 
-- Mermilf is Legendary Tide with 27 ATK, 27 DEF, and 25 SPD.
-- Fire Fox is Common Flame with 11 ATK, 10 DEF, and 10 SPD.
-- Mermilf should wreck Fire Fox.
-- That result validates rarity, stat quality, type strategy, and progression rather than indicating an unfair fight.
+- Ordinary battles should generally resolve in roughly 7 to 8 rounds under representative conditions.
+- The player-facing presentation should generally last roughly 30 to 60 seconds at 1×.
+- Exact duration and win-rate claims must come from the reproducible simulator.
 
-### Full-battle pacing target
+## 11. Confirmed Formation Findings
 
-The first 3-on-3 exploratory pass produced battles that generally resolved in approximately 7 to 8 rounds. That supports the target of roughly 30 to 60 seconds when normal attacks remain restrained and higher battle speeds are available.
-
-Exact duration measurements should be regenerated from a reproducible simulator before they become canonical balance data.
-
-## Real-Card Test Pool
-
-The first representative sample used seven Level 1 owned cards covering all seven types:
-
-| Card | Type | ATK | DEF | SPD | Power |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Mermilf | Tide | 27 | 27 | 25 | 79 |
-| Infinidagger! | Volt | 22 | 18 | 23 | 63 |
-| Galilee Mount | Radiant | 14 | 13 | 14 | 41 |
-| Nevermore Command | Shadow | 10 | 12 | 10 | 32 |
-| Fire Fox | Flame | 11 | 10 | 10 | 31 |
-| Master of the Green | Neutral | 11 | 10 | 10 | 31 |
-| Ramen Specialist | Bloom | 9 | 10 | 9 | 28 |
-
-### Confirmed findings from duel testing
-
-- The HP, ATK, and DEF package placed comparable mirror fights around the desired 5 to 7 rounds.
-- Universal `+5 HP per level` stayed much more stable across levels than `+8 HP per level`.
-- Infinidagger acted as a fast attacker and gained a modest crit bonus, but did not qualify as a true SPD specialist.
-- None of the seven sampled cards qualified for Follow-Up under the 15% rule, which is acceptable. The mechanic should be uncommon and profile-driven.
-- Severe rarity and Power gaps remained decisive.
-- The earlier +15% and -5% type package was too deterministic between comparable cards.
-- The accepted +8% and -3% package produced a meaningful edge without making type alone an automatic win.
-- Whole-hit defeat breakpoints still matter, so the package remains subject to tuning during real playtests.
-
-## First Full 3-on-3 Formation Pass
-
-### Test squads
-
-**Squad A, 138 Squad Power**
-
-- Mermilf
-- Fire Fox
-- Ramen Specialist
-
-**Squad B, 136 Squad Power**
-
-- Infinidagger!
-- Galilee Mount
-- Nevermore Command
-
-All 36 possible formation pairings were explored under the accepted combat package.
-
-### Simulation rigor boundary
-
-The design conclusions from this pass are retained, but precise percentages are not canonical yet. A reproducible simulator should regenerate exact win rates, reinforcement counts, remaining HP, and MVP frequencies before those values are treated as authoritative.
-
-Unresolved implementation details must not be silently canonized during simulation. Until decided, testing should neutralize or evenly distribute:
-
-- Equal-SPD attack priority
-- Equal-HP center reinforcement priority
-- Damage-display rounding
-
-### Confirmed qualitative findings
+The first representative 3-on-3 pass established the following qualitative conclusions:
 
 - Formation materially changes outcomes.
-- Center placement has distinct strategic value because it can reinforce either side, but center is not automatically the best slot for the strongest card.
-- Matchup routing matters more than simply placing the strongest card in center.
+- Center has distinct strategic value but is not automatically the best slot for the strongest card.
+- Matchup routing matters more than placing the strongest card in center by default.
 - The first lane winner often becomes a major outcome driver.
-- Natural reinforcement can overturn the apparent result of the three isolated lane duels.
-- Concentrated ace power is more valuable than the same Squad Power distributed evenly across three cards.
-- The current damage, DEF, crit, and type package still produces healthy pacing.
-- The +8% and -3% type package is not the source of the observed imbalance. Rarity, stat concentration, first-break timing, and reinforcement are the dominant forces.
-- The ace-carry fantasy is desirable, but the other two squad slots must still feel consequential.
+- Reinforcement can overturn the apparent result of isolated lane forecasts.
+- Concentrated ace power is more valuable than the same Squad Power distributed evenly.
+- Ace carry is desirable, but support slots must remain consequential.
+- Type modifiers are not the primary source of observed imbalance.
+- Precise win rates remain noncanonical until regenerated by a reproducible simulator.
 
-### Good decisions produced by the current structure
+## 12. Formation Forecasts
 
-- Matching Fire Fox into Nevermore Command creates a real, readable favorable lane instead of sacrificing Fire Fox into a clearly superior card.
-- Choosing Mermilf's first target changes how quickly the ace becomes available to reinforce.
-- Center placement creates flexible rescue potential without becoming mandatory.
-- Players can understand why a formation worked by observing the first lane break and reinforcement route.
+### Player-facing labels
 
-### Dominant behavior to monitor
-
-The strongest general strategy in this sample is:
-
-> Place the strongest ace where it wins quickly and emerges with enough HP to attack multiple lanes.
-
-This is strategically legitimate and supports the collection fantasy. It becomes unhealthy only if it consistently makes the other two squad slots decorative.
-
-### False-choice warning
-
-Three lane forecasts must not be presented as three independent votes.
-
-A formation may be projected to lose two opening lanes and still win because one overwhelmingly strong lane winner crosses over and carries. The formation screen must teach reinforcement pressure rather than implying that winning two isolated lane forecasts guarantees victory.
-
-### Breakpoints observed
-
-- Mermilf reliably defeats the lower-rarity enemies quickly enough to begin reinforcing with meaningful HP remaining.
-- Fire Fox versus Nevermore Command is the only clearly contestable low-rarity pairing in this sample.
-- Ramen Specialist loses most available isolated lanes, so its placement is mainly about delaying the enemy, shaping first-break timing, and influencing reinforcement routes.
-- This sample is intentionally narrow and should not be used to globally rebalance rarity or type.
-
-## Confirmed Battlefield Structure
-
-### 3-on-3 field
-
-- The primary battle shows 3 player cards facing 3 enemy cards.
-- All 6 cards are active from the beginning.
-- The field uses left, center, and right lanes.
-
-### Locked prebattle order
-
-- The player arranges the three-card squad before battle.
-- The formation locks when battle begins.
-- The player cannot casually swap lanes after seeing early results.
-
-### Strict lane duels
-
-- Left attacks left, center attacks center, and right attacks right.
-- A card cannot change targets while its original lane opponent remains alive.
-- Formation is the core opening strategic decision.
-
-### Visible individual HP
-
-- Every active card has an individual visible HP bar.
-- HP supports clutch survival, lane state, healing, protection, drain, and boss mechanics.
-
-### Automatic basic attacks
-
-- Basic attacks happen automatically.
-- There is no normal attack button.
-- The base system uses no reflex taps or timing meters.
-
-### Natural lane reinforcement
-
-When a card defeats the enemy directly opposite it:
-
-- The winner remains active at its current HP.
-- It receives no free attack, bonus turn, reinforcement damage bonus, stat transfer, or merge.
-- On its next normal scheduled turn, it attacks the nearest adjacent surviving enemy.
-- The allied card in that lane continues acting normally.
-- The result is a natural 2-on-1 made from separate cards using their own turns.
-- A side-lane winner reinforces center if center is still occupied.
-
-### Center reinforcement priority
-
-If the center card wins while both side enemies remain alive:
-
-- It reinforces the side containing the allied card with the lower current HP percentage.
-- If both sides have exactly equal HP percentage, a deterministic tie-break remains open.
-
-### Reinforcement health warning
-
-Reinforcement is confirmed as a major outcome driver. The current 100% cross-lane attack remains the active control rule, but broader testing must determine whether ace concentration creates excessive snowballing.
-
-Do not weaken the core damage package merely to compensate for a structural reinforcement issue.
-
-### Battle end
-
-The battle ends when all three cards on one side are defeated.
-
-## Formation Forecasts
-
-Honest lane forecasts are feasible, but they must describe expected duel quality rather than guarantee the final squad result.
-
-### First forecast bands
-
-- **Favored:** estimated isolated-lane win chance of 65% or higher
+- **Favored:** estimated isolated-lane win chance of 65% or greater
 - **Even:** estimated isolated-lane win chance of 36% to 64%
 - **Risky:** estimated isolated-lane win chance of 35% or lower
 
-These bands are active UX test values, not final probability language.
+### Forecast method
 
-### Forecast rules
+- Forecasts use repeated isolated-lane simulations from the canonical battle engine.
+- They use the same card stats, damage rules, initiative, crit, type, variance, and Double-Strike rules as combat.
+- They do not include cross-lane reinforcement.
+- The player sees the category, not the exact percentage.
+- The formation screen states that lane forecasts do not include reinforcement.
+- Forecast labels are non-guaranteed.
+- Three lane labels must not be presented as three independent votes for the final battle result.
 
-- Forecasts must be explicitly non-guaranteed.
-- Forecasts should initially evaluate the direct lane duel.
-- Hidden reinforcement assumptions should not be folded into a simple lane label.
-- A separate squad-level observation may explain likely reinforcement pressure.
-- The UI should avoid fake numerical precision unless a future forecast model is proven stable and explainable.
+A future squad-level observation may explain reinforcement pressure, but it is not required for the first complete implementation.
 
-Possible squad-level observations:
+## 13. Battle MVP
 
-- Strong early reinforcement potential
-- Center can support either side
-- Two lanes are projected to break early
-- Formation relies heavily on one ace
+Every completed victory showcases one Battle MVP.
 
-These are explanations, not additional hidden ratings.
+MVP uses a versioned weighted contribution model that considers:
 
-## Confirmed Player-Facing Battle Loop
+- Actual HP removed, excluding wasted overkill
+- Knockouts
+- Winning the first lane
+- Winning any lane
+- Cross-lane reinforcement contribution
+- Final knockout
+- Survival
+- Critically low-HP survival
+- Double-Strikes
+- Other approved decisive contributions
 
-The primary player journey is:
+The simulator should tune initial weights so the system does not simply select the highest-Power card or highest raw-damage card every time.
 
-> Choose encounter, inspect the enemy lanes, select and order the squad, lock formation, watch the lane battle unfold, recognize standout moments, collect progression rewards, then retry, continue, or edit the squad.
+The results screen explains the choice in one concise line, for example:
 
-The loop uses three reward tempos:
+> **Battle MVP: Mermilf**  
+> Won the first lane and dealt the most reinforcement damage.
 
-1. **Anticipation before combat:** enemy inspection and formation decisions.
-2. **Readable spikes during combat:** crits, low-health survival, Follow-Ups, lane wins, reinforcement, and final knockouts.
-3. **Compressed reward cascade after combat:** MVP recognition, XP, level-ups, currencies, and rare drops.
+Defeats do not require an MVP in the first version.
 
-## Battle Hub
+## 14. Battle Hub and Encounter Flow
 
 Initial Battle Hub modes:
 
-- **Daily Skirmish:** repeatable progression battle for card XP and ordinary resources.
-- **Challenge:** stronger curated encounters that reward squad selection and formation.
-- **Seasonal Boss:** time-limited major encounter with distinctive presentation and rewards.
+- **Daily Skirmish:** repeatable card XP and ordinary resources
+- **Challenge:** stronger curated formation puzzles
+- **Seasonal Boss:** time-limited major encounters
 
-The first Battle Hub does not use a level map.
+The first Battle Hub does not require a level map.
 
-## Encounter Preview
+### Separate screens
 
-The selected encounter shows the enemy squad in left, center, and right lanes before formation lock.
+Encounter selection and squad formation are separate screens.
 
-Each enemy card initially shows concise information such as:
+The encounter screen answers:
 
-- Power
-- Type
-- Level
-- Rarity
-- Other compact card-face identity pills
+> Do I want to fight this encounter?
 
-Tapping an enemy card expands it into a showcase-size view containing:
+The formation screen answers:
 
-- Full card art and frame
+> How should I arrange my squad?
+
+### Encounter preview content
+
+The encounter preview shows:
+
+- Encounter name
+- Difficulty
+- Background or enemy-group art
+- Three enemy cards in left, center, and right order
+- Enemy Squad Power
+- Recommended Power range
+- Energy cost
+- Base rewards
+- Visible special rule, when present
+- `Prepare Squad` action
+
+Lane forecasts do not appear until the player's formation exists.
+
+### Formation screen
+
+The formation screen shows:
+
+1. Encounter name and compact rule summary
+2. Enemy left, center, and right row
+3. One forecast position per lane
+4. Player left, center, and right slots
+5. Selected-squad controls
+6. Searchable and filterable Vault card list
+7. Squad Power
+8. `Begin Battle`
+
+Interactions:
+
+- Tap an empty slot and then tap a Vault card to place it.
+- Tap occupied slots to swap.
+- Support drag-and-drop where reliable, but do not require dragging.
+- Tap a card to inspect it.
+- Save the ordered left, center, and right formation.
+- Search and filter by type and rarity.
+- Sort by Power, level, recent, or favorite.
+
+## 15. Battle Creation and Commitment
+
+When the player presses `Begin Battle`:
+
+1. Validate the signed-in player, encounter, formation, ownership, eligibility, and Energy.
+2. Lock the formation.
+3. Spend 1 Energy only after the server can successfully create the battle attempt.
+4. Generate or select the authoritative seed.
+5. Resolve and store the complete battle as a pending attempt.
+6. Enter the full-screen battlefield.
+7. Animate the stored event log.
+
+If validation or attempt creation fails, the player remains on formation and Energy is not spent.
+
+Victory, defeat, retreat, and skipping animation all consume the committed Energy.
+
+## 16. Full-Screen Battlefield Layout
+
+### Full-screen mode
+
+- The active battlefield occupies the full screen.
+- Normal app navigation, Vault, Library, Pull, top-level tabs, and other app UI are hidden.
+- Exit is available only through the pause menu.
+
+### Visual personality
+
+Use a hybrid style:
+
+- Calm, elegant, readable card battlefield during ordinary action
+- Stronger anime-style emphasis for crits, Double-Strikes, lane victories, final knockouts, and results
+
+### Background
+
+- Use a reusable darkened arena foundation.
+- Layer encounter-specific art, color, or environmental treatment behind it.
+- Preserve card and HP readability over background spectacle.
+
+### Card treatment
+
+- Mobile uses the existing battle thumbnail-size card treatment or a deliberate extension of it.
+- Preserve card art, rarity frame, type, level, HP, and Double-Strike meter where relevant.
+- Do not show permanent card names on the compact mobile battlefield.
+- Desktop may use larger cards and a wider layout later.
+- Enemy cards remain upright, not rotated or upside down.
+
+### 3-over-3 structure
+
+```text
+Enemy Left       Enemy Center       Enemy Right
+
+            central combat space
+
+Player Left      Player Center      Player Right
+```
+
+Lanes are implied by placement and attack motion. Do not use strong permanent lane borders.
+
+### HP placement
+
+- Enemy HP bars sit below enemy cards, facing inward.
+- Player HP bars sit above player cards, facing inward.
+- The battlefield normally shows bars without exact fractions.
+- Exact current and maximum HP appear in inspection.
+
+### Idle state
+
+- Active combat may use very subtle glow, shimmer, or idle movement.
+- Paused combat freezes completely.
+- Reduced-motion mode removes or greatly limits idle movement.
+
+## 17. Battle Controls and Inspection
+
+### Persistent controls
+
+A compact control cluster provides:
+
+- Pause
+- `1× / 2×` speed
+
+Sound, logs, reduced motion, and retreat live inside pause rather than permanently occupying the battlefield.
+
+### Pause menu
+
+Pause freezes:
+
+- Event playback
+- Card movement
+- Damage numbers
+- Camera effects
+- Timers
+- Idle motion
+
+The pause interface must not cover the battlefield cards. Cards remain selectable for inspection while paused.
+
+Pause options:
+
+- Resume
+- Battle speed
+- Sound
+- Battle log
+- Reduced Motion
+- Retreat / Exit
+
+### Card inspection while running
+
+- Tapping a card opens an expanded inspection view.
+- Opening inspection does not pause combat.
+- Combat continues behind the panel.
+- The inspection panel blocks accidental taps through to the battlefield.
+- Pause remains accessible while inspection is open.
+- Inspection shows a snapshot taken when the panel opens.
+- Snapshot HP and status values do not update live.
+- Closing and reopening refreshes the snapshot.
+
+### Inspection layout
+
+Mobile:
+
+- Prioritize the full collectible card.
+- Place a compact battle-information strip beneath it.
+
+Desktop:
+
+- Use a split view with large card presentation and battle information beside it.
+
+Inspection may show:
+
+- Full card
+- Snapshot current and maximum HP
 - ATK, DEF, and SPD
-- Type
-- Level
-- Rarity
-- Power
-- Abilities when abilities exist
-- Encounter-specific modifiers
+- Type relationship against current target
+- Current crit chance
+- Double-Strike eligibility and meter
+- Active encounter modifiers
+- Active buffs and debuffs when those systems exist
 
-The player should not lose because ordinary enemy information was deliberately concealed.
+## 18. Battle Presentation and Timing
 
-## Squad Selection and Formation
+### Opening sequence
 
-The formation screen should support:
+Target duration: roughly 2 to 3 seconds at 1×.
 
-- Tapping an empty lane to choose a card
-- Dragging or swapping cards between lanes
-- Tapping a player card for showcase inspection
-- Loading a saved squad
-- Searching the vault
-- Filtering by type and rarity
-- Sorting by Power, level, recent, or favorite
-- A later recommended formation option for routine content, if useful
+1. Encounter background fades in.
+2. Enemy cards settle into the upper row.
+3. Player cards rise into the lower row.
+4. `FORMATION LOCKED` appears briefly.
+5. `BATTLE START` appears briefly.
+6. The first attack begins.
 
-Each lane may show Favored, Even, or Risky after a player card is assigned.
+Reduced motion uses quick fades and minimal travel.
 
-## Formation Lock-In
+### Normal attack
 
-When the player presses **Begin Battle**:
+Target duration at 1×: roughly 0.7 to 0.9 seconds per attack.
 
-1. Player positions visually click or flash into place.
-2. Lane connections illuminate.
-3. A brief `FORMATION LOCKED` confirmation appears.
-4. The attempt and any energy cost are committed.
-5. The short battle introduction begins.
+1. The attacker performs a small lean, lift, or forward lunge.
+2. A simple trail or impact uses the attacker's type color.
+3. The target jolts locally.
+4. The damage number appears.
+5. The HP bar drains.
+6. The attacker returns to position.
 
-The lock transition should take less than one second before the normal battle introduction.
+Normal attacks do not use elaborate flames, water, lightning, vines, or similar elemental effects. Elaborate effects are reserved for future abilities.
 
-## Battle Introduction
+At 2×, timing compresses while crits, Double-Strikes, lane victories, and final knockouts remain readable.
 
-A normal encounter introduction should last about one to two seconds:
+### Damage numbers
 
-1. Enemy cards slide into the upper row.
-2. Player cards slide into the lower row.
-3. A short `VS` flash appears.
-4. Lane lines ignite.
-5. Combat begins.
+- The main number remains bright and legible.
+- A glow, outline, slash, or accent uses the attacker's type color.
+- The number drifts slightly upward.
+- It fades before the next attack in that area.
+- Old numbers do not pile up.
+- Critical and Double-Strike labels may linger slightly longer.
+- The number shows full calculated damage, including overkill.
 
-Ordinary battles should not show six long individual introductions.
+### Critical hit
 
-## Daily Skirmish Encounter 01: Crossroads Patrol
+- Brief hit-stop
+- Stronger local target shake
+- Small camera punch-in
+- Larger damage number
+- `CRITICAL`
+- Sharper impact sound
+- No default full-screen flash
 
-This encounter is a complete paper design, not yet an approved economy specification.
+A critical hit feels stronger than a normal attack but less important than lane victory or the final knockout.
+
+### Double-Strike presentation
+
+1. The normal attack lands.
+2. A very brief pause occurs.
+3. The meter flashes and spends charge.
+4. `DOUBLE-STRIKE` appears near the attacker.
+5. A faster second lunge or trail lands.
+6. A smaller secondary damage number appears.
+
+If the normal attack defeats the lane opponent, Double-Strike does not trigger and the full meter remains stored.
+
+### Low HP
+
+Below 25% HP:
+
+- The HP bar pulses subtly.
+- The card gains a faint local danger edge or vignette.
+- No constant screen shake or repeating alarm is used.
+- The animated warning freezes while paused.
+- Reduced motion uses a static warning edge.
+
+### Defeat and lane victory
+
+When a card reaches 0 HP:
+
+1. HP empties immediately.
+2. The card jolts and briefly desaturates.
+3. The frame cracks, fragments, dissolves, fades, or drops out.
+4. The defeated card leaves an empty slot.
+5. The lane connection visually breaks.
+6. The winner receives a brief `LANE WON` pulse.
+
+The remaining cards do not collapse inward. No persistent reinforcement arrow appears.
+
+### Battle end
+
+1. The final knockout receives the strongest impact treatment.
+2. Remaining cards hold position.
+3. The background darkens slightly.
+4. `VICTORY` or `DEFEAT` appears.
+5. On victory, the MVP card receives a brief highlight.
+6. The player may tap to continue early, or the game advances after a short pause.
+
+Defeat does not require an MVP highlight.
+
+## 19. Recovery, Connectivity, and Retreat
+
+### Refresh or app interruption
+
+The server result is resolved and stored before animation begins.
+
+Returning to an unfinished pending attempt shows:
+
+- `Resume Battle`
+- `Skip to Results`
+
+Resume continues from the nearest locally stored event checkpoint. If no checkpoint exists, replay may begin from the start. The battle never rerolls.
+
+### Connection loss
+
+- If the server created the attempt, the result and Energy commitment remain safe.
+- The client reconnects and then offers Resume or Skip to Results.
+- If the server never created the attempt, no result, rewards, or Energy cost is committed.
+
+### Playback failure
+
+- The server result always wins.
+- If playback fails or desynchronizes, stop the animation.
+- Show a clear interruption message.
+- Proceed to results.
+- Rewards never depend on animation completing.
+
+### Retreat
+
+- Retreat is available through pause.
+- Retreat converts the pending attempt into a defeat.
+- Retreat grants the normal reduced defeat rewards.
+- Energy remains spent.
+- Retreat cannot be used for a free reroll.
+
+## 20. Reduced Motion and Accessibility
+
+Reduced Motion is accessible from the pause menu and should respect a saved preference.
+
+Reduced-motion behavior:
+
+- Cards fade or shift slightly instead of lunging.
+- No camera zoom.
+- No shake.
+- No idle floating.
+- Damage numbers move minimally.
+- Crit, Double-Strike, lane victory, and final knockout use labels, contrast, and color emphasis instead of heavy motion.
+- Combat timing remains similar so accessibility does not create a speed advantage.
+
+General accessibility:
+
+- Never communicate Favored, Even, Risky, type advantage, or low HP through color alone.
+- Important information must remain understandable without sound.
+- Keep positions stable.
+- Keep damage and HP legible at 2×.
+- Use large mobile targets for cards and controls.
+- Preserve readable contrast over encounter backgrounds.
+
+## 21. Results and Reward Presentation
+
+### Results structure
+
+1. Victory or Defeat heading
+2. MVP on victory
+3. Short battle summary
+4. Gold and other currencies
+5. XP for all three cards
+6. Individual XP progress
+7. Level-up moments
+8. Optional battle highlights
+9. Final action choices
+
+Actions:
+
+- `Battle Again`
+- `Edit Formation`
+- `Choose Encounter`
+- `Battle Hub`
+
+### Automatic reward queue
+
+Routine results do not require a manual `Reveal Rewards` button.
+
+Rewards present automatically in a short succession:
+
+1. Gold and ordinary currency
+2. Special drops, when applicable
+3. XP for each card
+4. Individual level-ups
+5. Later unlocks or milestones
+
+Interaction:
+
+- Tapping the active presentation advances to the next queued item.
+- `Skip All` jumps to the complete results summary.
+- Rare future drops may receive stronger staging than routine Gold and XP.
+- Reward writes remain protected and exactly once regardless of presentation skips.
+
+## 22. Daily Skirmish 01: Crossroads Patrol
 
 ### Purpose
 
-Teach lane forecasts, formation lock, first lane victory, and natural reinforcement without requiring abilities.
+Teach forecasts, formation lock, first lane victory, and natural reinforcement without abilities.
 
-### Encounter identity
+### Identity
 
 - Mode: Daily Skirmish
 - Name: Crossroads Patrol
 - Recommended Squad Power: approximately 90 to 110
-- Energy cost proposal: 1
+- Energy cost: 1
 - Expected battle length: approximately 30 to 45 seconds at 1×
 - Repeatable: yes
-- First-clear bonus: yes, once per daily reset
+- First-victory bonus: once per daily reset
 
 ### Enemy formation
 
 **Left**
 
 - Flame Common
-- Moderate ATK, low DEF, average SPD
-- Forecast lesson: vulnerable to Tide, dangerous to Bloom
+- Moderate ATK
+- Low DEF
+- Average SPD
 
 **Center**
 
 - Neutral Uncommon
 - Balanced stats
-- Forecast lesson: no type shortcut; use raw card quality
 
 **Right**
 
 - Shadow Common
-- Higher DEF, lower SPD
-- Forecast lesson: Radiant or Flame can create an earlier lane break
+- Higher DEF
+- Lower SPD
 
-### Encounter modifier
+### Encounter rule
 
 No hidden stat modifier.
 
-Visible rule card:
+Visible teaching text:
 
 > First lane winners reinforce adjacent lanes on their next turn.
 
-This encounter should teach the normal battle rules rather than introduce a gimmick.
+### Active reward test values
 
-### Reward proposal
-
-**Base victory**
+**Victory**
 
 - 20 Gold
 - 18 XP to each squad card
-- Small chance of universal dust
 
 **First victory of the day**
 
 - Additional 40 Gold
 - Additional 12 XP to each squad card
-- One small character-shard bundle or equivalent early progression material
 
-**Defeat**
+**Defeat or retreat**
 
-- No full material reward
-- 25% of normal card XP to reduce frustration and preserve the value of trying
-- Energy failure cost remains an open economy decision
+- No Gold
+- 25% of normal XP, rounded to a whole number
 
-These values remain proposals until battle XP, gold pacing, and energy costs are designed against the wider economy.
+Do not add shards until a real shard system exists.
 
-### Difficulty behavior
+Validation required:
 
-The enemy squad should be generated from a narrow approved stat band, not fully random rarity chaos. Daily Skirmish is routine progression content. It should reward sensible placement without demanding an optimized vault.
+- Compare 18 XP and the +12 first-win XP against the actual level-up curve.
+- Confirm that Daily Skirmish progression is meaningful without trivializing levels.
+- Keep these values configurable until that test is complete.
 
-### Completion labels
+## 23. Server-Authoritative Attempt Lifecycle
 
-Possible non-mechanical result labels:
+The player experience requires two distinct concepts: stored battle result and finalized reward outcome.
 
-- Clean Sweep
-- Strong Formation
-- Last Card Standing
-- Rapid Victory
+### Create pending attempt
 
-Do not attach bonus rewards until the labels are proven reliable and non-exploitable.
+On `Begin Battle`:
 
-## Battle Page Wireframe Direction
+1. Validate all inputs.
+2. Spend Energy atomically with successful attempt creation.
+3. Resolve the seeded battle.
+4. Store the complete authoritative result as pending.
+5. Return the event log for presentation.
 
-### Screen 1: Encounter preview and formation
+### Finalize
 
-Portrait structure from top to bottom:
+- Completing playback or selecting `Skip to Results` finalizes the stored victory or defeat and applies rewards exactly once.
+- Retreat finalizes the attempt as surrendered and applies defeat rewards.
+- Refresh or disconnection leaves the attempt pending and recoverable.
+- Playback failure skips to results and finalizes the stored outcome.
+- Duplicate requests never duplicate Energy cost or rewards.
 
-1. **Compact top bar**
-   - Back
-   - Encounter name
-   - Energy cost
-   - Help icon
+## 24. Validation Requirements Before Balance Lock
 
-2. **Enemy formation row**
-   - Three compressed cards in left, center, and right lanes
-   - Type, level, rarity, and PWR visible
-   - Tap opens showcase inspection
+The reproducible simulator must test:
 
-3. **Lane forecast band**
-   - One compact forecast per lane
-   - Favored, Even, or Risky
-   - Small type relationship icon
-   - Reinforcement-path hint appears only after all three player cards are placed
+- Balanced squads
+- Ace plus two weak cards versus three medium cards
+- ATK-heavy squads
+- DEF-heavy squads
+- Genuine SPD specialists
+- Higher-level and mixed-level squads
+- Type-matchup distributions
+- All formation permutations
+- Equal-SPD ties across many seeds
+- Double-Strike frequencies by tier
+- 100%, 85%, and 70% cross-lane damage
+- Forecast-category calibration
+- MVP frequency and explanation quality
+- Crossroads Patrol XP against level requirements
+- Battle duration at 1× and 2×
 
-4. **Player formation row**
-   - Three lane slots
-   - Tap to select
-   - Drag or tap-swap between occupied lanes
-   - Selected card receives a clear outline, not only color
+The default first implementation remains 100% cross-lane damage unless the simulator demonstrates unhealthy snowballing.
 
-5. **Squad tray**
-   - Search
-   - Type filter
-   - Rarity filter
-   - Sort by Power, level, recent, or favorite
-   - Saved squad control
+## 25. Rejected Directions
 
-6. **Sticky action area**
-   - Squad Power
-   - Enemy Squad Power
-   - Begin Battle
-
-### Screen 2: Formation lock transition
-
-- Player cards snap into lanes.
-- Lane lines illuminate.
-- `FORMATION LOCKED` appears briefly.
-- Energy commits at this point.
-- Enemy and player rows transition directly into the battlefield.
-
-### Screen 3: Active battlefield
-
-**Top section**
-
-- Three enemy cards
-- HP bars directly attached to cards
-- Type icon and level
-- Status region reserved but empty in version one
-
-**Middle section**
-
-- Three lane channels
-- Attack trails and impact effects
-- Broken-lane state
-- Diagonal reinforcement path
-- Compact round indicator optional; do not foreground it unless testing shows value
-
-**Bottom section**
-
-- Three player cards
-- HP bars
-- Follow-Up meter only for qualified cards
-
-**Persistent controls**
-
-- Pause
-- 1× or 2× speed
-- Auto indicator
-- Retreat inside pause, if retreat is allowed
-
-### Battlefield card information
-
-At a glance, an active battle card should communicate:
-
-- Art and rarity frame
-- Individual HP
-- Type
-- Level
-- Rarity
-- Power or another concise aggregate
-- Follow-Up meter only when the card qualifies
-- Status effects later, if introduced
-
-Full title, stats, abilities, and calculations should be available through paused tap-to-expand inspection.
-
-### Interaction
-
-- Auto-play must be supported.
-- The base battle does not need manual target redirection.
-- Any future manual targeting or tactical command must pause combat.
-- Prebattle formation is the main normal-battle skill expression.
-- Tapping a card during active combat should pause and open inspection.
-- Combat should not continue behind a modal.
-
-The inspection panel should show:
-
-- Full card
-- Current and maximum HP
-- ATK, DEF, and SPD
-- Type relationship against current target
-- Current crit chance
-- Follow-Up eligibility and meter when relevant
-- Concise explanation of active encounter modifiers
-
-## Battle Presentation
-
-### Standard attack
-
-A normal attack should be fast and restrained:
-
-1. The attacker leans, scales, or lunges.
-2. A type-colored trail or impact crosses the lane.
-3. The target jolts.
-4. A damage number appears.
-5. The HP bar drains smoothly.
-6. The attacker returns to position.
-
-A normal hit should not receive full-screen flashes, heavy shake, long pauses, giant text, or the strongest sounds.
-
-### Type effectiveness
-
-Type advantage should receive a small local accent, not a full dramatic interruption. The player should understand that the matchup helped without mistaking it for a crit or special ability.
-
-### Critical hit
-
-A critical hit may use:
-
-- Brief hit-stop
-- Slightly larger card zoom
-- Sharper sound
-- Larger damage number
-- Localized screen shake
-- Concise `CRITICAL` treatment
-
-### Follow-Up or Double Strike
-
-1. The first normal attack lands.
-2. The qualifying card's meter flashes and spends.
-3. A compact speed signal appears.
-4. The card immediately performs its 30% Follow-Up.
-
-### Low-health survival
-
-A card surviving at critically low HP may receive:
-
-- HP-bar flash
-- Frame pulse
-- Lane-local danger vignette
-- Tighter sound or music layer
-
-### Lane victory
-
-When a card defeats its opposing lane enemy:
-
-1. The defeated card clearly leaves or dims from the field.
-2. The lane connection breaks.
-3. The winner receives a brief confirmation flash.
-4. A compact `LANE WON` treatment appears.
-5. A directional visual indicates the lane it will reinforce.
-
-The first reinforcement attack may use a diagonal trail. Under the active control rule, it receives no damage bonus or penalty.
-
-### Final-card and comeback state
-
-When one side is reduced to its final card, presentation may emphasize the survivor through background dimming, music escalation, or stronger lane focus. This does not silently grant a comeback bonus.
-
-### Final knockout and victory
-
-The final knockout receives more emphasis than an ordinary lane win:
-
-1. Brief impact pause
-2. Stronger defeat effect
-3. Player squad brightens or moves forward
-4. `VICTORY` appears
-5. Winning formation remains visible briefly
-6. Results begin
-
-Possible descriptive labels:
-
-- Clean Sweep
-- Comeback
-- Last Card Standing
-- Perfect Formation
-- Rapid Victory
-
-Mechanical rewards for these labels remain open.
-
-## Battle MVP
-
-Every completed victory should showcase one Battle MVP card.
-
-MVP should not be selected only by raw stats or raw damage. Contributions may include:
-
-- Winning the first lane
-- Winning a difficult or disadvantaged lane
-- Reinforcement damage
-- Rescuing the lowest-HP allied lane
-- Multiple knockouts
-- Surviving at critically low HP
-- Producing an important Follow-Up
-- Dealing decisive boss damage
-- Remaining as the final surviving friendly card
-
-The result should explain the choice in one concise line.
-
-Example:
-
-> **Battle MVP: Flame Sterling**  
-> Won center lane and reinforced the endangered left lane.
-
-The first 3-on-3 pass confirmed that a dominant ace will often deserve MVP. The scoring model must still preserve room for meaningful support contributions when a weaker card wins a key lane or delays a dangerous enemy.
-
-## Rewards and Results
-
-Rewards should arrive in a short hierarchy:
-
-1. Base currency and ordinary materials
-2. XP progress for all three squad cards
-3. Level-up moments and stat increases
-4. Milestone or ascension readiness
-5. Rare rewards such as tickets, shards, special materials, or direct card drops
-
-Common rewards should resolve quickly. Rare rewards should receive stronger staging. Repeated players should eventually have `Skip` or `Reveal All`.
-
-Victory actions may include:
-
-- Battle Again
-- Next Encounter
-- Edit Squad
-- Battle Hub
-
-Defeat actions may include:
-
-- Retry
-- Edit Formation
-- Change Squad
-- Battle Hub
-
-A defeat screen should provide one or two concise and accurate observations, such as a type-disadvantaged lane, an early lane break, or a decisive SPD mismatch.
-
-## Dopamine and Feedback Hierarchy
-
-Stronger effects must be reserved for rarer moments.
-
-### Tier 1: Constant feedback
-
-- Card movement
-- Damage numbers
-- HP movement
-- Light impact sounds
-
-### Tier 2: Tactical confirmation
-
-- Type effectiveness
-- Follow-Up meter nearing full
-- Enemy entering low HP
-- Future block, dodge, or status feedback if implemented
-
-### Tier 3: Battle spikes
-
-- Critical hit
-- Double Strike
-- Lane won
-- Reinforcement
-- Critical low-HP survival
-
-### Tier 4: Encounter climax
-
-- Final knockout
-- Comeback
-- Boss phase break
-- Victory
-
-### Tier 5: Progression reward
-
-- Level-up
-- Milestone level
-- Ascension readiness
-- Rare material
-- Pull ticket
-- Card drop
-
-## Accessibility and Readability
-
-- Never communicate Favored, Even, Risky, type advantage, or low HP through color alone.
-- Support reduced motion.
-- Keep damage numbers and HP changes legible at 2× speed.
-- Use stable card positions so players can track lanes without chasing moving UI.
-- Give pause-and-inspect a large mobile target.
-- Reinforcement paths must be visually distinct from normal lane attacks.
-- Important information should remain understandable without audio.
-- Animation intensity should preserve clarity on small portrait screens.
-
-## Current Emotional Targets
-
-Battles should be capable of producing:
-
-- Large attacks and critical-hit spikes
-- Surviving at very low HP
-- Pitched fights between comparable squads
-- Fast rollover victories after excellent preparation
-- Fast rollover defeats after poor preparation
-- Difficult boss victories
-- A favorite card winning its lane and carrying the squad
-- A true SPD specialist charging toward a decisive Double Strike
-- A specific card being recognized afterward for a distinctive contribution
-- A powerful ace rescuing a collapsing formation without making supporting cards feel irrelevant
-
-## Serious Proposals for the Next Test Pass
-
-### Cross-lane Assist Attack efficiency
-
-Test an off-lane reinforcement-efficiency modifier only if broader simulations confirm that ace concentration dominates too strongly.
-
-Candidate isolated test values:
-
-- 100% cross-lane damage: current control
-- 85% cross-lane damage: mild support tax
-- 70% cross-lane damage: strong support tax
-
-Preferred terminology if this rule is adopted:
-
-- Home-lane attack: normal attack
-- Cross-lane attack: **Assist Attack**
-
-Any reduction must be communicated visibly. Hidden reduced damage would make combat feel inconsistent.
-
-This proposal is not confirmed.
-
-### Squad-level forecast observation
-
-Test whether one short formation-level note improves understanding without cluttering the screen.
-
-Examples:
-
-- Strong early reinforcement potential
-- Formation relies heavily on one ace
-- Center can rescue either side
-
-This proposal is not confirmed.
-
-## Rejected Immediate Reactions
-
-- Do not reduce Mermilf's stats because she performed like a Legendary.
-- Do not increase type penalties to counter rarity concentration.
+- Do not rebalance a Legendary merely because it defeats Commons decisively.
+- Do not increase type punishment to counter rarity concentration.
 - Do not give losing lanes artificial survival protection.
 - Do not remove reinforcement after one narrow sample.
 - Do not normalize squads by Squad Power during combat.
-- Do not grant free attacks on lane victory.
-- Do not weaken the entire damage package to solve a reinforcement-structure concern.
-- Do not treat three lane forecasts as three independent votes.
-- Do not publish precise simulation percentages as canonical until a reproducible simulator generates them.
+- Do not grant a free attack on lane victory.
+- Do not weaken base damage to solve reinforcement concerns.
+- Do not treat three lane forecasts as independent votes.
+- Do not publish precise win rates without reproducible simulation.
+- Do not add random ordinary misses.
+- Do not allow Double-Strike to retarget after its normal attack wins the lane.
+- Do not add overkill spillover in the first build.
+- Do not use persistent reinforcement arrows.
+- Do not pause combat merely because the player opens card inspection.
+- Do not require manual reward reveal for routine Gold and XP.
 
-## Still-Open Questions
+## 26. Deferred Questions
 
-1. What deterministic tie-break applies when two living cards have equal SPD?
-2. What deterministic tie-break applies when a center winner sees equal allied HP percentages?
-3. What exact equation controls Follow-Up meter charge above the 15% eligibility threshold?
-4. Should the Follow-Up meter use a thin bar, pips, or another compact treatment?
-5. What rounding order and minimum-damage rule should final damage use?
-6. Should ordinary attacks ever miss?
-7. Should SPD later affect dodge, accuracy, or anti-dodge, or remain limited to initiative, crit chance, and Follow-Up?
-8. Do bosses use the normal three-lane structure or deliberately break it?
-9. Is prebattle formation enough agency for ordinary battles once real playtesting begins?
-10. What exact reward amounts define Daily Skirmish, Challenge, and Seasonal Boss?
-11. When are battle speed, auto-repeat, quick resolution, or sweep options unlocked?
-12. What exact scoring formula selects Battle MVP without making the result feel arbitrary?
-13. What information belongs in the compact battlefield HUD after mobile layout testing?
-14. Does broader testing confirm that cross-lane reinforcement needs a damage-efficiency modifier?
-15. Should the UI distinguish `Assist Attack` from a normal home-lane attack?
-16. Should formation preview include a squad-level reinforcement observation in addition to lane forecasts?
-17. What exact model should generate forecasts without exposing fake precision?
-18. Should a forecast use only isolated lane odds, or also surface projected first-break timing?
-19. Does the center rescue rule remain strategically distinct when squads are more evenly distributed?
-20. Is 18 XP per Daily Skirmish card appropriate relative to the accepted XP curve?
-21. Does a failed Daily Skirmish consume energy?
-22. Should routine encounters show round count at all?
-23. Does the accepted +8% and -3% type package remain healthy after testing larger pools, higher levels, and abilities?
-24. How often should one ace be able to carry two substantially weaker allies before support-card identity feels suppressed?
+These do not block the first complete battle implementation:
 
-## Decision Log
+1. Should SPD later affect dodge, accuracy, or anti-dodge?
+2. Should bosses use ordinary three-lane structure or deliberately break it?
+3. Is prebattle formation enough agency after real playtesting?
+4. When should auto-repeat, quick resolution, or sweep unlock?
+5. Should a squad-level reinforcement observation join lane forecasts?
+6. Should forecasts later surface projected first-break timing?
+7. What rewards define later Challenge and Seasonal Boss encounters?
+8. When do abilities, healing, barriers, and deeper statuses enter battle?
+9. Should defeats later showcase a Standout Card?
+10. Should special effects be permitted to start Double-Strike partially charged?
 
-| Date | Status | Topic | Decision or question | Reasoning summary |
-| --- | --- | --- | --- | --- |
-| 2026-07-10 | Confirmed | Process | Battle design will be explored in a discussion-first document before implementation. | Prevents scattered chat decisions and premature combat code. |
-| 2026-07-10 | Confirmed | Field | All 6 cards are active from the beginning of an ordinary 3-on-3 battle. | Matches the desired full-squad confrontation. |
-| 2026-07-10 | Confirmed | Formation | Left, center, and right squad order is chosen and locked before combat. | Makes preparation and matchup placement meaningful. |
-| 2026-07-10 | Confirmed | Lanes | Initial targets remain strictly fixed by lane until a card is defeated. | Establishes readable lane duels and formation strategy. |
-| 2026-07-10 | Confirmed | Interaction | Any future manual battle command pauses combat. | Prevents reflex pressure and mobile-input disadvantage. |
-| 2026-07-10 | Confirmed | Lane victory | A winner uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement and carry moments without free actions. |
-| 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side with lower HP percentage. | Produces legible rescue behavior. |
-| 2026-07-10 | Confirmed | HP | Normal-card HP is `240 + 5 × (Level - 1)` for the first test. | Keeps comparable fights near 5 to 7 attacks across levels. |
-| 2026-07-10 | Active test value | Damage | Raw damage is `20 + ATK × 2.5`. | Prevents low-rarity stalls while preserving ATK value. |
-| 2026-07-10 | Active test value | DEF | DEF uses continuous mitigation `40 / (40 + DEF)`. | Avoids flat subtraction and creates diminishing returns. |
-| 2026-07-10 | Active test value | Variance | Normal attacks use ±5% damage variance. | Keeps repeated hits visually interesting without letting luck dominate. |
-| 2026-07-10 | Active test value | Crits | Base crit is 5%, SPD specialization can raise it to 10%, and crit damage is 1.5×. | Gives SPD a modest precision identity while ATK controls crit size. |
-| 2026-07-10 | Active test value | SPD eligibility | Follow-Up requires SPD at least 15% above both ATK and DEF. | Identifies true speed specialists without rigid classes or absolute thresholds. |
-| 2026-07-10 | Active test value | Follow-Up | Follow-Up is an immediate 30% non-critting strike with no chaining. | Preserves double-strike fantasy without allowing full extra attacks to dominate. |
-| 2026-07-10 | Active test value | Type balance | Advantage is +8%, disadvantage is -3%, neutral is unchanged. | Produces a meaningful edge without near-automatic comparable-card wins. |
-| 2026-07-10 | Confirmed | Battle Hub | Initial navigation uses Daily Skirmish, Challenge, and Seasonal Boss panels. | Keeps battle direct and appropriate to its supporting role. |
-| 2026-07-10 | Confirmed | Enemy preview | Enemy cards show concise information and expand on tap for complete inspection. | Supports fast scanning and informed formation. |
-| 2026-07-10 | Confirmed | Battlefield layout | Mobile battle uses a portrait 3-over-3 compressed-card layout. | Avoids landscape dependence and bespoke sprites. |
-| 2026-07-10 | Confirmed | Battle MVP | Results showcase an MVP based on distinctive contribution rather than raw damage alone. | Creates memorable stories around collectible cards. |
-| 2026-07-10 | Confirmed finding | Formation value | Formation materially changes outcomes, and center has distinct but not dominant strategic value. | Routing, first-break timing, and reinforcement access matter more than a universal best slot. |
-| 2026-07-10 | Confirmed finding | Reinforcement | Reinforcement is a major outcome driver and can overturn isolated lane expectations. | Lane forecasts must not be presented as independent votes. |
-| 2026-07-10 | Confirmed finding | Squad Power | Equal Squad Power does not imply equal battle strength when one squad concentrates power in an ace. | Concentrated strength converts lane wins into cross-lane pressure. |
-| 2026-07-10 | Confirmed finding | Pacing | The current core package remains healthy for the next test pass. | Full battles generally fit the desired round and session target without changing damage math. |
-| 2026-07-10 | Serious proposal | Assist Attack | Test 85% and 70% cross-lane damage against the current 100% control. | Isolates reinforcement snowballing without nerfing rarity, type, or base combat. |
-| 2026-07-10 | Proposed encounter | Daily Skirmish | Crossroads Patrol is the first complete routine encounter design. | Teaches forecasts, formation, first lane break, and reinforcement without abilities. |
-| 2026-07-10 | Confirmed process | Documentation | Simulation findings are merged into this file rather than maintained as a separate addendum. | Keeps one coherent living authority and prevents design archaeology. |
+## 27. Decision Log
 
-## Immediate Discovery Order
+| Date | Status | Topic | Decision |
+| --- | --- | --- | --- |
+| 2026-07-10 | Confirmed | Round snapshot | Turn order is calculated once at round start from current SPD. Mid-round SPD changes apply next round. |
+| 2026-07-10 | Confirmed | Equal SPD | Seeded priority is rerolled independently each round. |
+| 2026-07-10 | Confirmed | Knockout timing | A card killed before its turn loses that turn and is removed immediately. |
+| 2026-07-10 | Confirmed | Retargeting | A living card finds another legal target rather than wasting its scheduled turn. |
+| 2026-07-10 | Confirmed | Damage precision | Calculate at full precision, round once to nearest integer, and enforce minimum 1 successful damage. |
+| 2026-07-10 | Confirmed | Misses | Ordinary attacks do not miss. |
+| 2026-07-10 | Confirmed | Overkill | Show full calculated damage, but cap applied contribution at remaining HP. |
+| 2026-07-10 | Confirmed | Reinforcement timing | Lane winners reinforce on their next scheduled normal turn, never immediately. |
+| 2026-07-10 | Confirmed | Center tie | Equal allied HP uses lower enemy HP, then seeded randomness if still tied. |
+| 2026-07-10 | Confirmed | Double-Strike | Automatic tiered meter, 0 starting charge, overflow retained, 30% strike, no retarget after lane kill. |
+| 2026-07-10 | Confirmed | Visual style | Hybrid readable card board with anime-style emphasis reserved for major moments. |
+| 2026-07-10 | Confirmed | Mobile field | Upright 3-over-3 thumbnail cards, inward HP bars, implied lanes, hidden compact names. |
+| 2026-07-10 | Confirmed | Inspection | Opening inspection does not pause battle and shows a snapshot, not live updates. |
+| 2026-07-10 | Confirmed | Full-screen battle | Active combat hides normal app navigation; exit lives in pause. |
+| 2026-07-10 | Confirmed | Recovery | Pending stored battles can resume or skip to results without rerolling. |
+| 2026-07-10 | Confirmed | Retreat | Retreat consumes Energy and grants normal defeat rewards. |
+| 2026-07-10 | Confirmed | Results | Routine rewards auto-present in sequence with tap-to-advance and Skip All. |
+| 2026-07-10 | Validation required | Reinforcement damage | Implement 100%, 85%, and 70% configurability; default to 100% pending simulation. |
+| 2026-07-10 | Active test value | Daily Skirmish | 1 Energy, 20 Gold, 18 XP per card, +40 Gold and +12 XP first daily victory, 25% XP on defeat. |
 
-1. Build or specify a reproducible combat simulator before publishing precise balance percentages.
-2. Test broader squad shapes under the current 100% reinforcement control.
-3. Compare 100%, 85%, and 70% cross-lane Assist Attack damage as an isolated variable.
-4. Define the exact Follow-Up meter charge equation.
-5. Decide SPD and reinforcement tie-break rules.
-6. Decide damage rounding and minimum-damage behavior.
-7. Validate Crossroads Patrol rewards against the wider XP, gold, and energy economy.
-8. Continue mobile battle-page wireframe and interaction design.
-9. Design the first Challenge encounter.
-10. Design the first Seasonal Boss structure.
-11. Define rewards, energy cost, failure cost, repeat-play, speed, and sweep rules.
+## 28. Next Step
+
+The design discovery phase is complete for the first build.
+
+Next actions:
+
+1. Follow `docs/battle-implementation-plan.md`.
+2. Build the canonical seeded engine and simulator first.
+3. Validate reinforcement damage, forecast calibration, MVP weights, and XP pacing.
+4. Implement the server-authoritative pending-attempt lifecycle.
+5. Build the separate encounter, formation, full-screen battle, and results flows.
+6. Complete recovery, accessibility, smoke testing, documentation, and final implementation report.
