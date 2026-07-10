@@ -14,8 +14,7 @@
 
 .tcg-card--rarity-frame[data-rarity='uncommon'],
 .tcg-card--rarity-frame[data-rarity='rare'],
-.tcg-card--rarity-frame[data-rarity='legendary'],
-.tcg-card--rarity-frame[data-rarity='mythic'] {
+.tcg-card--rarity-frame[data-rarity='legendary'] {
   box-shadow:
     0 0 0 0.14rem color-mix(in srgb, var(--rarity-color) 42%, transparent),
     0 0 1.12rem color-mix(in srgb, var(--rarity-color) 30%, transparent),
@@ -23,10 +22,10 @@
 }
 
 .tcg-card--rarity-frame[data-rarity='mythic'] {
-  border-color: color-mix(in srgb, var(--rarity-color) 28%, transparent);
+  border-color: transparent;
   box-shadow:
-    0 0 0 0.08rem color-mix(in srgb, var(--rarity-color) 24%, transparent),
-    0 0 1.02rem color-mix(in srgb, var(--rarity-color) 26%, transparent),
+    0 0 1.4rem rgba(155, 92, 255, 0.32),
+    0 0 0.6rem rgba(155, 92, 255, 0.18),
     0 0.85rem 1.55rem rgba(0, 0, 0, 0.22);
 }
 
@@ -37,8 +36,8 @@
 }
 
 .tcg-card--rarity-frame[data-rarity='mythic']::before {
-  opacity: 0.34;
-  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rarity-color) 18%, transparent), transparent 56%);
+  opacity: 0.18;
+  background: radial-gradient(circle at 50% 0%, rgba(155, 92, 255, 0.14), transparent 58%);
 }
 
 .tcg-card--rarity-frame .card-art {
