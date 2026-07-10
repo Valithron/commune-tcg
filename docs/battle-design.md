@@ -153,7 +153,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Mechanical reason:** Locked order gives type matchups and stat profiles real pre-battle significance while keeping moment-to-moment combat light.
 
-**Known risks:** Enemy information must be clear enough that the choice is informed. Routine battles may later need a recommended formation option.
+**Known risk:** Enemy information must be clear enough that the choice is informed. Routine battles may later need a recommended formation option.
 
 ### Visible per-card HP
 
@@ -177,7 +177,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 ### Natural lane reinforcement
 
-**Rule:** When a card defeats the enemy directly opposite it, the victorious card remains active with its current HP. On its next normal scheduled turn, it begins attacking the nearest adjacent surviving enemy using its own normal attack, POW, SPD, Type, and other applicable values.
+**Rule:** When a card defeats the enemy directly opposite it, the victorious card remains active with its current HP. On its next normal scheduled turn, it begins attacking the nearest adjacent surviving enemy using its own normal attack and applicable stats.
 
 **Clarifications:**
 
@@ -186,8 +186,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 - It does not receive a free attack, extra turn, or reinforcement damage bonus.
 - The allied card in the reinforced lane continues acting normally.
 - The result is a natural 2-on-1 created by two separate cards using their own turns.
-- A side-lane winner reinforces the center lane if the center enemy is still alive.
-- A center-lane winner may have two equally near adjacent lanes. The tie-break rule is still open.
+- A side-lane winner reinforces center if the center enemy is still alive.
 
 **Intended experience:** Winning a lane has an immediate payoff. A strong or beloved card can win its confrontation, remain visibly active, and help carry the squad.
 
@@ -196,6 +195,16 @@ The first battle model should be considered unsuccessful if it becomes primarily
 **Known risk:** The first knockout may snowball into a rapid numerical collapse. Initial safeguards are that assistance starts only on the winner's next scheduled turn and grants no extra action or damage bonus.
 
 **Reconsider if:** Testing shows the first knockout decides comparable battles too reliably or prevents the desired 30-to-60-second pitched fights.
+
+### Center-lane reinforcement priority
+
+**Rule:** If the center card wins its lane while both side enemies remain alive, it reinforces the side containing the allied card with the lower current HP percentage.
+
+**Intended experience:** The center card appears to rescue the ally in greater danger, creating understandable clutch and comeback moments.
+
+**Mechanical reason:** This is more emotionally legible than arbitrary left or right priority and less aggressively snowballing than always targeting the weakest enemy.
+
+**Open edge case:** If both allied side cards have exactly the same HP percentage, a final deterministic tie-break is still needed.
 
 ### Auto-play support
 
@@ -239,16 +248,17 @@ The current strongest structural candidate is a **fixed-lane, semi-automatic 3-o
 
 Proposed flow:
 
-1. The enemy squad and its relevant matchup information are shown.
+1. The enemy squad and relevant matchup information are shown.
 2. The player selects three cards and arranges them into left, center, and right positions.
 3. The squad order is locked when battle begins.
 4. Each player card initially fights the enemy directly opposite it.
 5. Basic attacks happen automatically according to a turn or initiative system.
 6. Individual HP falls until cards are defeated.
 7. A lane winner reinforces the nearest adjacent surviving lane on its next normal turn.
-8. The battle ends when all three cards on one side are defeated.
+8. If a victorious center card can reinforce either side, it helps the allied card with the lower HP percentage.
+9. The battle ends when all three cards on one side are defeated.
 
-Steps 1 through 3, 6, and 7 are confirmed in principle. Initial fixed targeting, the turn structure, and the exact reinforcement tie-break remain open.
+Steps 1 through 3 and 6 through 8 are confirmed in principle. Initial fixed targeting and the turn structure remain open.
 
 ### Current direction against manual redirection
 
@@ -264,42 +274,10 @@ That would make the primary skill expression:
 
 This remains a proposed direction until the design proves that difficult battles offer enough agency after formation is locked.
 
-## Open Decision: Center-Lane Reinforcement Tie-Break
-
-A victorious side-lane card has one nearest adjacent lane: center. A victorious center card has two equally near adjacent lanes, so it needs an automatic priority rule when both enemies are alive.
-
-Current candidates:
-
-### Option A: Rescue the endangered ally
-
-Assist the lane whose allied card has the lower current HP percentage.
-
-**Effect:** Produces understandable rescue and clutch moments and helps prevent one weakened lane from collapsing.
-
-### Option B: Finish the weakest enemy
-
-Attack the adjacent enemy with the lower current HP percentage.
-
-**Effect:** Maximizes efficient focus fire and creates faster snowballing.
-
-### Option C: Prefer type advantage
-
-Attack the adjacent enemy against which the reinforcing card has the better type matchup.
-
-**Effect:** Makes type identity continue to matter after the opening formation, but produces a more complex targeting rule.
-
-### Option D: Fixed side priority
-
-Always assist left first or right first.
-
-**Effect:** Extremely predictable and simple, but arbitrary.
-
-**Current recommendation:** Option A, rescue the endangered ally. If allied HP percentages are tied, use the lower enemy HP percentage as the secondary tie-break, then a fixed side as the final deterministic tie-break.
-
 ## Still-Open Structural Questions
 
 1. Are the left, center, and right matchups fully fixed until one card in the lane is defeated?
-2. What automatic rule resolves a center winner's equally near reinforcement choices?
+2. If allied HP percentages are tied when the center winner chooses a lane, what final deterministic tie-break applies?
 3. Does SPD determine a fixed action order, an action meter, or initiative only?
 4. Does each living card receive exactly one attack per round, or can high SPD eventually create extra actions?
 5. How are maximum HP and damage derived from POW and DEF?
@@ -331,17 +309,16 @@ Battles should be capable of producing:
 | 2026-07-10 | Proposed | Targeting | The base battle may use fixed lanes with no manual target redirection. | Keeps combat fast, automatic, and formation-driven. |
 | 2026-07-10 | Confirmed | Interaction | Any future manual in-battle targeting or command must pause combat. | Prevents reflex pressure and mobile-input disadvantage. |
 | 2026-07-10 | Confirmed | Lane victory | A victorious card uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement, carry moments, and rollover results without stat transfer or manual targeting. |
-| 2026-07-10 | Open | Reinforcement tie-break | Decide which adjacent lane a victorious center card assists when both remain alive. | Both lanes are equally near, so the automatic choice must be predictable and legible. |
+| 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side card with the lower current HP percentage. | Produces a legible rescue behavior and reduces arbitrary targeting. |
 
 ## Immediate Discovery Order
 
 1. Confirm whether initial targets remain strictly fixed by lane until a knockout.
-2. Choose the center-lane reinforcement tie-break.
-3. Decide the turn and SPD model.
-4. Define maximum HP and the POW-versus-DEF damage relationship.
-5. Decide critical-hit, miss, and damage-variance rules.
-6. Build one ordinary encounter on paper.
-7. Simulate battle duration and stat value.
-8. Design the first boss structure.
-9. Define rewards, energy cost, failure cost, and repeat-play rules.
-10. Only then prepare an implementation specification.
+2. Decide the turn and SPD model.
+3. Define maximum HP and the POW-versus-DEF damage relationship.
+4. Decide critical-hit, miss, and damage-variance rules.
+5. Build one ordinary encounter on paper.
+6. Simulate battle duration and stat value.
+7. Design the first boss structure.
+8. Define rewards, energy cost, failure cost, and repeat-play rules.
+9. Only then prepare an implementation specification.
