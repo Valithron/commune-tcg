@@ -19,7 +19,15 @@ async function readPayload(request) {
     finalRarityOverride: formData.get('final_rarity_override'),
     approvedCardType: formData.get('approved_card_type'),
     approvedCardTypes: formData.getAll('approved_card_types'),
+    approvedTypeOdds: formData.get('approved_type_odds'),
   };
+}
+
+function parseTypeOdds(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') return value;
+  if (typeof value !== 'string' || !value.trim()) return [];
+  try { return JSON.parse(value); } catch { return []; }
 }
 
 export async function onRequestPost({ env, request }) {
@@ -36,6 +44,7 @@ export async function onRequestPost({ env, request }) {
       finalRarityOverride: payload.finalRarityOverride,
       approvedCardType: payload.approvedCardType,
       approvedCardTypes: payload.approvedCardTypes,
+      approvedTypeOdds: parseTypeOdds(payload.approvedTypeOdds),
     });
 
     if (!result.ok) {
@@ -45,17 +54,18 @@ export async function onRequestPost({ env, request }) {
     return jsonResponse({
       ok: true,
       source: 'D1 card_submissions + cards',
-      phase: 'card-mechanics-v2',
+      phase: 'weighted-type-pools',
       action: result.action,
       approvedCardId: result.approvedCardId || '',
       approvedCardType: result.approvedCardType || '',
       approvedTypePool: result.approvedTypePool || [],
+      approvedTypeOdds: result.approvedTypeOdds || [],
       approvalProfile: result.approvalProfile || null,
       creatorDisplayName: result.creatorDisplayName || '',
       submission: result.submission,
       warnings: [
         'Temporary reviewer placeholder is used until real admin authorization exists.',
-        'Approval now uses target rarity, optional rarity override, approved type pool, stat budgets, level caps, and origin bonus metadata.',
+        'Approved type odds now govern pull-time owned-card type rolls and stat allocation.',
       ],
     });
   } catch (error) {
