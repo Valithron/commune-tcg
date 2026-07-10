@@ -1,7 +1,6 @@
 /* ============================================================================
    Submission Store Helper
-   Phase 9.3 responsibility: shared D1 schema bootstrap, row normalization,
-   list reads, and single-submission lookup. Approval remains deferred.
+   Shared D1 schema bootstrap, row normalization, list reads, and lookup.
    ============================================================================ */
 
 const createTableSql = `
@@ -15,6 +14,7 @@ const createTableSql = `
     card_type TEXT NOT NULL,
     type_suggestions_json TEXT,
     approved_type_pool_json TEXT,
+    approved_type_odds_json TEXT,
     rarity_suggestion TEXT NOT NULL,
     pow INTEGER NOT NULL,
     def INTEGER NOT NULL,
@@ -40,57 +40,29 @@ const additiveColumns = [
   ['creator_display_name_override', 'TEXT'],
   ['type_suggestions_json', 'TEXT'],
   ['approved_type_pool_json', 'TEXT'],
+  ['approved_type_odds_json', 'TEXT'],
 ];
 
 async function addColumnIfMissing(env, columnName, definition) {
   try {
     await env.DB.prepare(`ALTER TABLE card_submissions ADD COLUMN ${columnName} ${definition}`).run();
   } catch (error) {
-    if (!String(error?.message || '').toLowerCase().includes('duplicate column')) {
-      throw error;
-    }
+    if (!String(error?.message || '').toLowerCase().includes('duplicate column')) throw error;
   }
 }
 
-function cleanText(value, maxLength = 500) {
-  return String(value || '').trim().slice(0, maxLength);
-}
-
-function safeParseJson(value, fallback = []) {
-  if (!value || typeof value !== 'string') return fallback;
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-}
+function cleanText(value, maxLength = 500) { return String(value || '').trim().slice(0, maxLength); }
+function safeParseJson(value, fallback = []) { if (!value || typeof value !== 'string') return fallback; try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } }
 
 export async function ensureSubmissionSchema(env) {
   await env.DB.prepare(createTableSql).run();
-
-  for (const [columnName, definition] of additiveColumns) {
-    await addColumnIfMissing(env, columnName, definition);
-  }
-
+  for (const [columnName, definition] of additiveColumns) await addColumnIfMissing(env, columnName, definition);
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_card_submissions_status ON card_submissions (moderation_status)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_card_submissions_created ON card_submissions (created_at)').run();
 }
 
 function resolveCreatorDisplayName(row) {
-  return cleanText(
-    row.creator_display_name_override
-      || row.creatorDisplayName
-      || row.creator_display_name
-      || row.creator_name
-      || row.creator
-      || row.submitter_display_name
-      || row.submitterDisplayName
-      || row.submitter_user_id
-      || row.submitterUserId
-      || 'Unknown',
-    120
-  );
+  return cleanText(row.creator_display_name_override || row.creatorDisplayName || row.creator_display_name || row.creator_name || row.creator || row.submitter_display_name || row.submitterDisplayName || row.submitter_user_id || row.submitterUserId || 'Unknown', 120);
 }
 
 export function normalizeSubmissionRow(row) {
@@ -98,6 +70,7 @@ export function normalizeSubmissionRow(row) {
   const creatorDisplayName = resolveCreatorDisplayName(row);
   const typeSuggestions = safeParseJson(row.type_suggestions_json, row.card_type ? [row.card_type] : []);
   const approvedTypePool = safeParseJson(row.approved_type_pool_json, []);
+  const approvedTypeOdds = safeParseJson(row.approved_type_odds_json, []);
 
   return {
     id: row.id,
@@ -112,12 +85,10 @@ export function normalizeSubmissionRow(row) {
     typeSuggestionsJson: row.type_suggestions_json || JSON.stringify(typeSuggestions),
     approvedTypePool,
     approvedTypePoolJson: row.approved_type_pool_json || JSON.stringify(approvedTypePool),
+    approvedTypeOdds,
+    approvedTypeOddsJson: row.approved_type_odds_json || JSON.stringify(approvedTypeOdds),
     raritySuggestion: row.rarity_suggestion,
-    stats: {
-      pow: Number(row.pow),
-      def: Number(row.def),
-      spd: Number(row.spd),
-    },
+    stats: { pow: Number(row.pow), def: Number(row.def), spd: Number(row.spd) },
     flavorText: row.flavor_text,
     abilityText: row.ability_text || '',
     imageKey: row.image_key,
@@ -138,115 +109,52 @@ export function normalizeSubmissionRow(row) {
 
 export async function insertSubmission(env, submission) {
   await ensureSubmissionSchema(env);
-
   await env.DB.prepare(`
     INSERT INTO card_submissions (
-      id,
-      submitter_user_id,
-      submitter_display_name,
-      creator_display_name_override,
-      card_name,
-      character_id,
-      card_type,
-      type_suggestions_json,
-      approved_type_pool_json,
-      rarity_suggestion,
-      pow,
-      def,
-      spd,
-      flavor_text,
-      ability_text,
-      image_key,
-      image_original_name,
-      image_mime_type,
-      image_size_bytes,
-      crop_json,
-      moderation_status,
-      review_notes,
-      approved_card_id,
-      created_at,
-      updated_at,
-      reviewed_at,
-      reviewed_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, submitter_user_id, submitter_display_name, creator_display_name_override,
+      card_name, character_id, card_type, type_suggestions_json,
+      approved_type_pool_json, approved_type_odds_json, rarity_suggestion,
+      pow, def, spd, flavor_text, ability_text, image_key, image_original_name,
+      image_mime_type, image_size_bytes, crop_json, moderation_status,
+      review_notes, approved_card_id, created_at, updated_at, reviewed_at, reviewed_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    submission.id,
-    submission.submitterUserId,
-    submission.submitterDisplayName,
-    submission.creatorDisplayNameOverride || '',
-    submission.cardName,
-    submission.characterId,
-    submission.cardType,
+    submission.id, submission.submitterUserId, submission.submitterDisplayName,
+    submission.creatorDisplayNameOverride || '', submission.cardName,
+    submission.characterId, submission.cardType,
     submission.typeSuggestionsJson || JSON.stringify(submission.typeSuggestions || [submission.cardType]),
-    submission.approvedTypePoolJson || '',
-    submission.raritySuggestion,
-    submission.pow,
-    submission.def,
-    submission.spd,
-    submission.flavorText,
-    submission.abilityText,
-    submission.imageKey,
-    submission.imageOriginalName,
-    submission.imageMimeType,
-    submission.imageSizeBytes,
-    submission.cropJson,
-    submission.moderationStatus,
-    submission.reviewNotes,
-    submission.approvedCardId,
-    submission.createdAt,
-    submission.updatedAt,
-    submission.reviewedAt,
-    submission.reviewedBy
+    submission.approvedTypePoolJson || '', submission.approvedTypeOddsJson || '',
+    submission.raritySuggestion, submission.pow, submission.def, submission.spd,
+    submission.flavorText, submission.abilityText, submission.imageKey,
+    submission.imageOriginalName, submission.imageMimeType, submission.imageSizeBytes,
+    submission.cropJson, submission.moderationStatus, submission.reviewNotes,
+    submission.approvedCardId, submission.createdAt, submission.updatedAt,
+    submission.reviewedAt, submission.reviewedBy
   ).run();
 }
 
-export async function updateSubmissionApprovedTypePool(env, submissionId, approvedTypePoolJson) {
+export async function updateSubmissionApprovedTypePool(env, submissionId, approvedTypePoolJson, approvedTypeOddsJson = '') {
   await ensureSubmissionSchema(env);
   await env.DB.prepare(`
     UPDATE card_submissions
-    SET approved_type_pool_json = ?,
-        updated_at = ?
+    SET approved_type_pool_json = ?, approved_type_odds_json = ?, updated_at = ?
     WHERE id = ?
-  `).bind(
-    approvedTypePoolJson || '',
-    new Date().toISOString(),
-    submissionId
-  ).run();
+  `).bind(approvedTypePoolJson || '', approvedTypeOddsJson || '', new Date().toISOString(), submissionId).run();
 }
 
 export async function listSubmissions(env, { limit = 100, status = '' } = {}) {
   await ensureSubmissionSchema(env);
-
   const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 200);
-
   if (status) {
-    const result = await env.DB.prepare(`
-      SELECT * FROM card_submissions
-      WHERE moderation_status = ?
-      ORDER BY created_at DESC
-      LIMIT ?
-    `).bind(status, safeLimit).all();
-
+    const result = await env.DB.prepare('SELECT * FROM card_submissions WHERE moderation_status = ? ORDER BY created_at DESC LIMIT ?').bind(status, safeLimit).all();
     return (result.results || []).map(normalizeSubmissionRow);
   }
-
-  const result = await env.DB.prepare(`
-    SELECT * FROM card_submissions
-    ORDER BY created_at DESC
-    LIMIT ?
-  `).bind(safeLimit).all();
-
+  const result = await env.DB.prepare('SELECT * FROM card_submissions ORDER BY created_at DESC LIMIT ?').bind(safeLimit).all();
   return (result.results || []).map(normalizeSubmissionRow);
 }
 
 export async function getSubmissionById(env, submissionId) {
   await ensureSubmissionSchema(env);
-
-  const row = await env.DB.prepare(`
-    SELECT * FROM card_submissions
-    WHERE id = ?
-    LIMIT 1
-  `).bind(String(submissionId || '')).first();
-
+  const row = await env.DB.prepare('SELECT * FROM card_submissions WHERE id = ? LIMIT 1').bind(String(submissionId || '')).first();
   return row ? normalizeSubmissionRow(row) : null;
 }
