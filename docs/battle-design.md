@@ -167,8 +167,6 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Known risk:** If lane matchups are too deterministic, the battle may feel decided entirely before it begins. Controlled variance, crits, SPD behavior, and later abilities may be needed to preserve suspense.
 
-**Reconsider if:** Testing shows one unfavorable lane is effectively unwinnable too often or the player lacks meaningful ways to recover from a bad formation.
-
 ### Visible per-card HP
 
 **Rule:** Each active card has an individual visible HP bar.
@@ -193,7 +191,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Rule:** When a card defeats the enemy directly opposite it, the victorious card remains active with its current HP. On its next normal scheduled turn, it begins attacking the nearest adjacent surviving enemy using its own normal attack and applicable stats.
 
-**Clarifications:**
+Clarifications:
 
 - The victorious card does not transfer or donate stats to an ally.
 - It does not merge with the allied card.
@@ -207,8 +205,6 @@ The first battle model should be considered unsuccessful if it becomes primarily
 **Mechanical reason:** Reinforcement creates rollover victories and defeats, rewards strong formation, prevents victorious cards from standing idle, and requires no manual redirection interface.
 
 **Known risk:** The first knockout may snowball into a rapid numerical collapse. Initial safeguards are that assistance starts only on the winner's next scheduled turn and grants no extra action or damage bonus.
-
-**Reconsider if:** Testing shows the first knockout decides comparable battles too reliably or prevents the desired 30-to-60-second pitched fights.
 
 ### Center-lane reinforcement priority
 
@@ -226,23 +222,15 @@ The first battle model should be considered unsuccessful if it becomes primarily
 
 **Intended experience:** Routine leveling and repeated farming do not become chores.
 
-**Mechanical reason:** Battle serves the collection and progression loop as well as challenge content.
-
 **Known risk:** If auto-play is fully optimal in all content, manual or preparatory play may feel pointless.
 
 ### No reflex-timing mechanic
 
 **Rule:** The base combat model should not use reaction meters, timed taps, or reflex-based execution.
 
-**Intended experience:** Success comes from collection development, matchup understanding, and strategic choices rather than dexterity or latency.
-
 ### Manual interaction pauses combat
 
 **Rule:** If the final design includes any manual in-battle targeting or tactical command, opening that interaction must pause combat.
-
-**Intended experience:** The player can make a considered choice without reflex pressure or losing actions while navigating the interface.
-
-**Known note:** This rule may have no practical effect if the final base model contains no manual in-battle commands.
 
 ### Card-based presentation without bespoke sprites
 
@@ -253,8 +241,6 @@ Possible presentation tools include card lunges, scale pulses, impact flashes, s
 ### Target battle duration
 
 **Rule:** A normal battle should take approximately 30 to 60 seconds of active combat time, excluding pauses for player decisions.
-
-**Intended experience:** Battles are long enough to produce drama but short enough to fit several encounters into the normal daily loop.
 
 ## Current Combat Spine
 
@@ -272,66 +258,105 @@ The current confirmed structural spine is a **locked-lane, semi-automatic 3-on-3
 
 The field structure is confirmed. The leading turn-system proposal is documented below.
 
-## Proposed Hybrid SPD and Bonus-Action Model
+## Proposed Conditional SPD Bonus-Action Model
 
-Sterling proposed a hybrid between strict round-based initiative and a free-running action-time meter. This is currently the strongest candidate for how SPD should work.
+Sterling proposed a hybrid between strict round-based initiative and a free-running action-time meter. The refined direction is that bonus-action charging should be a special result of a genuinely SPD-focused stat profile, not a universal meter possessed by every normal card.
 
 ### Proposed core rule
 
 - Combat proceeds in discrete rounds even if the presentation appears continuous.
 - Every living card receives one guaranteed normal attack each round.
 - SPD determines the order of those normal attacks, from fastest to slowest.
-- Each card also builds a separate speed-based bonus-action meter across rounds.
-- When that meter reaches its threshold, the card earns one additional normal attack.
-- Unused meter overflow carries forward rather than being discarded.
+- Only cards that meet a defined SPD-focus qualification receive a bonus-action meter.
+- Eligible cards build meter based on how far their SPD exceeds the qualification breakpoint.
+- When the meter reaches its threshold, the card earns one additional normal attack during its normal initiative turn.
+- The likely presentation is an immediate follow-up attack after that card's guaranteed attack.
+- Meter overflow carries forward rather than being discarded.
+- Normal cards that do not qualify as SPD-focused never gain a routine second attack merely by surviving long enough.
+- Bosses or future abilities may explicitly override the normal eligibility rule.
 
-This allows a sufficiently fast card to attack twice during a round occasionally without turning the battle into a chaotic real-time action queue.
+This allows genuinely fast cards to attack twice in a round occasionally without turning all combat into a universal action-meter system.
 
-### Recommended guardrails
+### Eligibility must come from stats, not a stored class
 
+The game currently avoids rigid battlefield classes. Therefore the system should not store a manual `speed card` role merely to unlock this mechanic.
+
+The qualification should be calculated from the card's effective stat profile. Serious candidate forms include:
+
+- SPD must be the card's highest core stat and exceed the next-highest stat by a tested percentage.
+- SPD must represent at least a tested percentage of the card's POW + DEF + SPD total.
+- SPD must exceed the average of POW and DEF by a tested ratio.
+
+The exact number is intentionally unsettled. Example thresholds such as a 10%, 15%, or 20% lead are test candidates, not accepted rules.
+
+### Why a relative threshold is preferable
+
+An absolute SPD number would behave poorly across rarity, level, evolution, and future stat growth. A relative stat-profile test is more stable because it asks whether the card is actually built around speed rather than merely whether it has reached a high level.
+
+This also preserves organic roles:
+
+- A Volt card will often qualify because its type biases SPD upward.
+- A non-Volt card with an unusually speed-heavy rolled profile may also qualify.
+- A high-level defensive or power card will not accidentally become a double-attacker merely because all of its stats increased.
+
+### Recommended meter behavior
+
+- Non-qualifying cards should display no bonus-action meter.
+- Qualifying cards should display a small, visually secondary meter or pip track.
+- Near-threshold SPD cards should earn bonus attacks rarely.
+- Extreme SPD-focused cards should earn them more often.
 - A card may receive no more than one bonus attack in the same round.
 - A bonus attack cannot generate another immediate bonus attack.
 - Bonus attacks use the card's current legal lane target and do not permit redirection.
 - Bonus attacks grant no inherent damage multiplier.
-- Meter progress should persist when a card wins its lane and begins reinforcing another lane.
-- The bonus-action cadence should be occasional rather than constant. Early tuning should aim for high-SPD cards to visibly earn extra attacks while preventing ordinary fast cards from doubling every round.
+- Meter progress persists when a card wins its lane and begins reinforcing another lane.
 
-### Why this model is promising
+### Timing judgment
 
-- SPD gains visible offensive value beyond merely acting first.
-- Turn order remains readable and deterministic enough to follow.
-- Every surviving card still participates at least once per round.
-- Fast cards can create exciting burst windows and lane victories.
-- A nearly full meter creates anticipation before the extra attack arrives.
-- The model preserves the orderly lane structure and avoids the chaos of unrestricted action-time combat.
-- It gives Volt and other speed-biased cards a strong identity without requiring abilities.
+Resolving the earned bonus attack during the card's normal initiative slot is viable and more satisfying than a detached end-of-round bonus phase.
 
-### Primary balance risk
+Proposed sequence:
 
-SPD would perform two valuable jobs at once:
+1. At the start of a round, eligible cards receive SPD-derived meter progress.
+2. Cards act in normal SPD order.
+3. On an eligible card's turn, it performs its guaranteed attack.
+4. If its meter is full, it immediately performs one follow-up normal attack and spends the threshold amount.
+5. The remaining cards continue acting in initiative order.
+
+This creates a visible double-strike moment while keeping all actions inside the normal turn sequence.
+
+### Primary balance risks
+
+SPD would perform two valuable jobs:
 
 1. Acting earlier in the normal round order.
-2. Generating more attacks over time.
+2. Generating extra attacks over time for qualifying cards.
 
-That double benefit can make SPD the dominant stat if the meter formula is too generous. The threshold, charge curve, stat ranges, and one-bonus-per-round cap must therefore be tested mathematically before confirmation.
+That double benefit can make SPD dominant if the eligibility threshold or charge curve is too generous. The model must be simulated against actual Common through Mythic stat ranges before confirmation.
 
-The system should be rejected or reduced if high-SPD cards consistently win lanes before POW- or DEF-focused cards can express their strengths.
+Specific failure signs:
 
-### Visibility recommendation
+- Most Volt cards double-attack every round.
+- A qualifying speed card consistently defeats a comparable opponent before that opponent can meaningfully act.
+- POW-focused cards cannot match the speed card's total damage.
+- DEF-focused cards cannot survive long enough for their durability to matter.
+- Small SPD differences abruptly separate excellent cards from useless cards.
 
-The meter should probably be visible but visually secondary to HP. A thin bar, ring, or small pip track would let players anticipate an extra attack and understand why it happened. A completely hidden meter would preserve surprise but weaken legibility and make bonus attacks feel arbitrary.
+### Breakpoint design warning
 
-The exact visual treatment remains open because six cards and six HP bars already create mobile-layout pressure.
+A sharp binary threshold can create a cliff where one point of SPD changes a card from ordinary to dramatically superior. The preferred design should soften that cliff.
 
-### Open timing detail
+Possible methods:
 
-When the meter fills, the bonus attack could resolve:
+- Qualification unlocks the meter, but charge rate begins very slowly near the threshold.
+- Eligibility uses a narrow transition band rather than one exact point.
+- The first qualifying tier may earn roughly one bonus attack over several rounds, while only extreme SPD profiles approach a more frequent cadence.
 
-- Immediately after that card's normal attack.
-- At the end of the current round in SPD order among all earned bonus attacks.
-- At the beginning of the next round before normal attacks.
+The simulator should compare bonus attacks earned over a standard battle, not only whether a card technically qualifies.
 
-The timing should be deterministic and visually distinct. Immediate follow-up is the most dramatic option, while an end-of-round bonus phase is the clearest and easiest to balance.
+### Current judgment
+
+The conditional SPD meter is a strong design direction. It gives speed-focused cards a distinctive payoff without forcing every card into an action-meter interface. It should remain proposed until the actual stat distributions are loaded into a simulator and a breakpoint curve is tested.
 
 ## Current Direction Against Manual Redirection
 
@@ -350,14 +375,15 @@ This remains a proposed direction until the design proves that difficult battles
 ## Still-Open Structural Questions
 
 1. If allied HP percentages are tied when the center winner chooses a lane, what final deterministic tie-break applies?
-2. Should the hybrid round-and-bonus-meter SPD model be confirmed?
-3. When a speed meter fills, when exactly does the bonus attack resolve?
-4. Should the speed meter be visible as a bar, pips, a ring, or hidden?
-5. How are maximum HP and damage derived from POW and DEF?
-6. Should basic attacks have critical hits in the first version?
-7. Should attacks ever miss, and if so, how much should SPD influence evasion?
-8. Do bosses use the same three-lane structure or deliberately break it?
-9. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
+2. Should the conditional SPD bonus-action model be confirmed after simulation?
+3. Which relative stat-profile test should define SPD-focus eligibility?
+4. How should meter charge scale above the eligibility breakpoint?
+5. Should the bonus meter appear as a thin bar, pips, or another compact treatment?
+6. How are maximum HP and damage derived from POW and DEF?
+7. Should basic attacks have critical hits in the first version?
+8. Should attacks ever miss, and if so, how much should SPD influence evasion?
+9. Do bosses use the same three-lane structure or deliberately break it?
+10. Is pre-battle formation the only player decision in ordinary battles, with deeper interaction reserved for bosses or later abilities?
 
 ## Current Emotional Targets
 
@@ -370,7 +396,7 @@ Battles should be capable of producing:
 - Fast rollover defeats after poor preparation
 - Difficult boss victories
 - A favorite card winning its lane and carrying the squad
-- A fast card visibly charging toward and earning a decisive extra attack
+- A true SPD-focused card charging toward and earning a decisive double strike
 
 ## Decision Log
 
@@ -385,16 +411,18 @@ Battles should be capable of producing:
 | 2026-07-10 | Confirmed | Interaction | Any future manual in-battle targeting or command must pause combat. | Prevents reflex pressure and mobile-input disadvantage. |
 | 2026-07-10 | Confirmed | Lane victory | A victorious card uses later normal turns to attack the nearest adjacent surviving enemy. | Creates natural reinforcement, carry moments, and rollover results without stat transfer or manual targeting. |
 | 2026-07-10 | Confirmed | Reinforcement priority | A victorious center card helps the allied side card with the lower current HP percentage. | Produces a legible rescue behavior and reduces arbitrary targeting. |
-| 2026-07-10 | Proposed | SPD | Use discrete rounds with SPD-based normal order and a persistent SPD-driven meter that occasionally grants one capped bonus attack. | Gives SPD meaningful extra-attack value while preserving readable turns and preventing free-running action chaos. |
+| 2026-07-10 | Proposed | SPD eligibility | Only cards with a genuinely SPD-focused stat profile should build toward routine bonus attacks. | Prevents universal meters and preserves a distinct speed-card identity. |
+| 2026-07-10 | Proposed | SPD timing | An earned bonus attack resolves as an immediate follow-up during the card's normal initiative turn. | Creates a satisfying double-strike moment without a separate chaotic action queue. |
 
 ## Immediate Discovery Order
 
-1. Decide whether to confirm the hybrid SPD and bonus-action model.
-2. Decide exactly when an earned bonus attack resolves.
-3. Define maximum HP and the POW-versus-DEF damage relationship.
-4. Decide critical-hit, miss, and damage-variance rules.
-5. Build one ordinary encounter on paper.
-6. Simulate battle duration and stat value.
-7. Design the first boss structure.
-8. Define rewards, energy cost, failure cost, and repeat-play rules.
-9. Only then prepare an implementation specification.
+1. Preserve the conditional SPD system as a proposed model pending simulation.
+2. Define maximum HP and the POW-versus-DEF damage relationship.
+3. Decide critical-hit, miss, and damage-variance rules.
+4. Load representative card stat profiles into a battle simulator.
+5. Test SPD qualification forms, charge curves, and bonus-attack frequency.
+6. Build one ordinary encounter on paper.
+7. Simulate battle duration and stat value.
+8. Design the first boss structure.
+9. Define rewards, energy cost, failure cost, and repeat-play rules.
+10. Only then prepare an implementation specification.
