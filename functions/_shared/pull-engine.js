@@ -2,7 +2,7 @@ import { rollOwnedCopyStatProfile } from './approval-rolls.js';
 import { buildOwnedCopyTraits, calculateEffectiveStats, normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
 import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
-import { normalizeCardTypePool } from './type-config.js';
+import { chooseWeightedCardType, normalizeCardTypeOdds, normalizeCardTypePool } from './type-config.js';
 
 export const temporaryPullUserId = 'sterling';
 export const temporaryPullUserDisplayName = 'Sterling';
@@ -39,7 +39,6 @@ function imageUrlFromKey(key) { const imageKey = String(key || '').trim(); if (!
 function readImageKey(card) { return card.imageKey || card.image_key || card.image_path || card.image || card.image_url || card.art_url || card.art_key || card.object_key || card.r2_key || ''; }
 function readImageUrl(card, imageKey = readImageKey(card)) { return card.imageUrl || card.image_url || card.artUrl || card.art_url || imageUrlFromKey(imageKey); }
 function readCrop(card) { return card.crop || card.crop_json || card.cropJson || card.image_crop || card.imageCrop || {}; }
-function chooseRandomType(pool) { const normalized = normalizeCardTypePool(pool, ['neutral'], { max: 3 }); return normalized[Math.floor(randomFloat() * normalized.length)] || normalized[0] || 'neutral'; }
 function resolvePullUser(user = null) { return { id: String(user?.id || user?.slotId || temporaryPullUserId), displayName: String(user?.displayName || user?.username || temporaryPullUserDisplayName) }; }
 
 async function tableExists(env, tableName) { const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first(); return Boolean(row); }
@@ -98,8 +97,9 @@ function creatorFields(baseCard) { const creatorDisplayName = cleanText(baseCard
 function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now, owner = null }) {
   const activeUser = resolvePullUser(owner);
   const creator = creatorFields(baseCard);
-  const approvedTypePool = normalizeCardTypePool(baseCard.approvedTypePool || baseCard.approved_type_pool || baseCard.type || baseCard.cardType || 'neutral', ['neutral'], { max: 3 });
-  const selectedType = chooseRandomType(approvedTypePool);
+  const approvedTypePool = normalizeCardTypePool(baseCard.approvedTypePool || baseCard.approved_type_pool || baseCard.type || baseCard.cardType || 'neutral', ['neutral'], { max: 7 });
+  const approvedTypeOdds = normalizeCardTypeOdds(baseCard.approvedTypeOdds || baseCard.approved_type_odds || baseCard.typeOdds || baseCard.type_odds, approvedTypePool, { max: 7 });
+  const selectedType = chooseWeightedCardType(approvedTypeOdds, randomFloat(), approvedTypePool);
   const templateBaseStats = normalizeBaseStats(baseCard);
   const ownedStatProfile = rollOwnedCopyStatProfile({ rarity: baseCard.rarity, source: { ...baseCard, cardType: selectedType, type: selectedType, statArchetype: selectedType } });
   const baseStats = ownedStatProfile.stats;
@@ -127,10 +127,12 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now, owner = nul
     card_type: selectedType,
     approvedTypePool,
     approved_type_pool: approvedTypePool,
+    approvedTypeOdds,
+    approved_type_odds: approvedTypeOdds,
     selectedType,
     selected_type: selectedType,
-    selectedTypeSource: approvedTypePool.length > 1 ? 'pull_type_pool_roll' : 'single_approved_type',
-    selected_type_source: approvedTypePool.length > 1 ? 'pull_type_pool_roll' : 'single_approved_type',
+    selectedTypeSource: approvedTypeOdds.length > 1 ? 'weighted_pull_type_roll' : 'single_approved_type',
+    selected_type_source: approvedTypeOdds.length > 1 ? 'weighted_pull_type_roll' : 'single_approved_type',
     category: ownedStatProfile.typeLabel || baseCard.category,
     typeLabel: ownedStatProfile.typeLabel,
     type_label: ownedStatProfile.typeLabel,
