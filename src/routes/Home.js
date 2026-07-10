@@ -46,16 +46,10 @@ function renderVaultHighlight(strongestCard, displayName) {
           <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
         </div>
         <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
-        <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
         <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
       </div>
     `;
   }
-
-  const totalStats = getAggregateStats(strongestCard);
-  const pow = Number(strongestCard.stats?.pow || 0);
-  const def = Number(strongestCard.stats?.def || 0);
-  const spd = Number(strongestCard.stats?.spd || 0);
 
   return `
     ${renderCardFrame(strongestCard, {
@@ -63,14 +57,8 @@ function renderVaultHighlight(strongestCard, displayName) {
       context: 'vault',
     })}
     <div class="quick-grid">
-      <a class="quick-card" href="#/vault/card/${strongestCard.id}">
-        <strong>${escapeHtml(strongestCard.name || 'Strongest Card')}</strong>
-        <span>Strongest owned card by total stats: ${totalStats} · POW ${pow} / DEF ${def} / SPD ${spd}</span>
-      </a>
       <a class="quick-card" href="#/pull"><strong>Daily Pull</strong><span>${mockUser.dailyPullReady ? 'Ready to claim in the prototype flow.' : 'Already claimed today.'}</span></a>
-      <a class="quick-card" href="#/library"><strong>Library</strong><span>Preview the global pool before backend rules exist.</span></a>
       <a class="quick-card" href="#/battle"><strong>Battle</strong><span>Pick a squad and test the current battle loop.</span></a>
-      <a class="quick-card" href="#/vault"><strong>Vault</strong><span>Review ${escapeHtml(displayName)}'s owned cards.</span></a>
     </div>
   `;
 }
