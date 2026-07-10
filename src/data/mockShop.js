@@ -5,7 +5,9 @@ export const shopOffers = [
     amount: '1 Ticket',
     ticketAmount: 1,
     price: 'Free',
-    description: 'Temporary testing top-up for the daily loop.',
+    costGold: 0,
+    daily: true,
+    description: 'Claim once per Mountain Time day. Resets at midnight.',
   },
   {
     id: 'gold-ticket-bundle',
@@ -13,7 +15,9 @@ export const shopOffers = [
     amount: '5 Tickets',
     ticketAmount: 5,
     price: '1,000 Gold',
-    description: 'Temporary testing bundle. Gold is not spent yet.',
+    costGold: 1000,
+    daily: false,
+    description: 'Spend gold from your signed-in account bank.',
   },
   {
     id: 'founders-cache',
@@ -21,6 +25,8 @@ export const shopOffers = [
     amount: '12 Tickets',
     ticketAmount: 12,
     price: '2,000 Gold',
-    description: 'Large testing bundle for pull flow QA.',
+    costGold: 2000,
+    daily: false,
+    description: 'Larger exchange paid from your signed-in account bank.',
   },
 ];
