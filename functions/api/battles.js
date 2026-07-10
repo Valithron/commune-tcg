@@ -54,7 +54,7 @@ export async function onRequestPost({ env, request }) {
       validation: simulationResult.validation,
       requested: { ...simulationResult.requested, attemptId },
       guardrails: ['Validated battle result was required before writes.', 'A unique attemptId was required before writes.', 'Effective stats and type matchup power were used for the battle result.', 'Gold was applied to the signed-in user_resources row.', 'XP and levels were applied to owned card rows only.', 'Battle history was written with attemptId, reward, and XP application details.', 'No pull tickets were granted.', 'No drops or card grants were written.', 'No stamina or energy was written.'],
-      nextStep: 'Verify preview and settlement use the same matchup-adjusted squad power before adding saved abilities, drops, or stamina.',
+      nextStep: 'Verify preview and settlement use the same Effective Squad Power before adding saved abilities, drops, or stamina.',
     });
   } catch (error) {
     if (error.code === 'duplicate-battle-attempt') return jsonResponse({ ok: false, phase: 'auth-current-user-battle', readOnly: false, writesPerformed: false, writes: [], error: error.message, code: error.code, attemptId: error.attemptId, existingBattleId: error.existingBattleId, guardrails: ['Duplicate battle attempt detected before rewards were applied again.', 'No gold, XP, level, stamina, energy, Vault, or card ownership writes occurred on the duplicate request.'] }, { status: 409 });

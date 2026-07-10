@@ -92,7 +92,7 @@ created_at
 - Card name required, max 25 characters.
 - Flavor text required, max 220 characters.
 - Ability text optional, max 220 characters.
-- POW, DEF, and SPD are clamped from 1 to 10.
+- ATK, DEF, and SPD are clamped from 1 to 10.
 - Rarity must be one of common, uncommon, rare, legendary, mythic.
 - Character must be one of the seven commune characters.
 - Card type must be one of the allowed type list.

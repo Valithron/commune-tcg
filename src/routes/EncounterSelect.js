@@ -70,8 +70,8 @@ function renderEncounterCard(encounter, squadPower) {
       </div>
 
       <div class="encounter-quick-grid">
-        <div><span>Rec.</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
-        <div><span>Your</span><strong>${escapeHtml(squadPower)}</strong></div>
+        <div><span>Enemy PWR</span><strong>${escapeHtml(encounter.enemyPower)}</strong></div>
+        <div><span>Squad PWR</span><strong>${escapeHtml(squadPower)}</strong></div>
         <div><span>Outlook</span><strong>${escapeHtml(outlook)}</strong></div>
       </div>
 

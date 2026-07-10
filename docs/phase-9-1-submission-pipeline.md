@@ -30,7 +30,7 @@ Current fields shown:
 - Category
 - Rarity Suggestion
 - Flavor Text
-- POW
+- ATK
 - DEF
 - SPD
 - Card Art Upload Placeholder

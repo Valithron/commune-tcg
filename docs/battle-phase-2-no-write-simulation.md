@@ -80,7 +80,7 @@ highest battlePower eligible cards first
 capped at 3 cards
 ```
 
-Battle power is still diagnostic/simple:
+Power is still diagnostic/simple:
 
 ```text
 pow + def + spd + level

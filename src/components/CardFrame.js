@@ -41,13 +41,13 @@ const cardTypeMap = {
 
 function renderStats(stats = {}) {
   return [
-    ['POW', stats.pow ?? 1],
-    ['DEF', stats.def ?? 1],
-    ['SPD', stats.spd ?? 1],
-  ].map(([label, value]) => `
-    <span class="card-stat">
-      <span class="card-stat-label">${label}</span>
-      <span class="card-stat-value">${escapeHtml(String(value))}</span>
+    ['ATK', 'Attack', stats.pow ?? 1],
+    ['DEF', 'Defense', stats.def ?? 1],
+    ['SPD', 'Speed', stats.spd ?? 1],
+  ].map(([label, spokenLabel, value]) => `
+    <span class="card-stat" aria-label="${escapeHtml(`${spokenLabel} ${value}`)}">
+      <span class="card-stat-label" aria-hidden="true">${label}</span>
+      <span class="card-stat-value" aria-hidden="true">${escapeHtml(String(value))}</span>
     </span>
   `).join('');
 }

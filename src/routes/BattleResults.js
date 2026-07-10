@@ -1,7 +1,7 @@
 /* ============================================================================
    Battle Results Route
    Phase 6 responsibility: show card-frame thumbnails, reward settlement, and
-   frontend battle preview using type matchup-adjusted battle power.
+   frontend battle preview using type Effective Power.
    ============================================================================ */
 
 import { renderCardFrame } from '../components/CardFrame.js';
@@ -53,7 +53,7 @@ function getLeadCard(cards = []) { return [...cards].sort((a, b) => Number(b.bat
 function renderLeadCard(card) {
   if (!card) return '';
   const matchupText = card.matchupResult && card.matchupResult !== 'neutral'
-    ? ` · ${card.matchupResult} matchup ${card.baseBattlePower || card.battlePower}→${card.battlePower}`
+    ? ` · ${card.matchupResult} matchup · Power ${card.baseBattlePower || card.battlePower} → Effective Power ${card.battlePower}`
     : '';
   return `
     <section class="battle-lead-card battle-lead-card-with-thumb glass-panel">
@@ -62,9 +62,9 @@ function renderLeadCard(card) {
       <div class="battle-lead-copy">
         <span class="section-kicker">${escapeHtml(card.rarity)} · ${escapeHtml(card.category)}</span>
         <h2>${escapeHtml(card.name)}</h2>
-        <p>Led the squad with ${escapeHtml(card.battlePower || 0)} adjusted battle power${escapeHtml(matchupText)}.</p>
+        <p>Led the squad with Effective Power ${escapeHtml(card.battlePower || 0)}${escapeHtml(matchupText)}.</p>
       </div>
-      <div class="battle-lead-stat"><span>Power</span><strong>${escapeHtml(card.battlePower || 0)}</strong></div>
+      <div class="battle-lead-stat"><span>Effective Power</span><strong aria-label="Effective Power ${escapeHtml(card.battlePower || 0)}">Eff. PWR ${escapeHtml(card.battlePower || 0)}</strong></div>
     </section>
   `;
 }
@@ -83,7 +83,7 @@ function renderSquadRows(cards = [], note = 'Will gain XP') {
   if (!cards.length) return '<div class="empty-note">No squad cards selected.</div>';
   return cards.map((card) => {
     const matchupNote = card.matchupResult && card.matchupResult !== 'neutral'
-      ? `${card.matchupResult}: ${card.baseBattlePower || card.battlePower}→${card.battlePower}`
+      ? `${card.matchupResult}: Power ${card.baseBattlePower || card.battlePower} → Effective Power ${card.battlePower}`
       : note;
     return `
       <div class="battle-card-row battle-card-row-with-thumb battle-card-row-selected">
@@ -94,8 +94,8 @@ function renderSquadRows(cards = [], note = 'Will gain XP') {
           <small>Level ${escapeHtml(card.level)}${card.maxLevel ? `/${escapeHtml(card.maxLevel)}` : ''} · ${escapeHtml(card.xp)} XP · ${escapeHtml(card.typeLabel || card.type || 'Type')}</small>
         </div>
         <div class="battle-card-stat-stack">
-          <span>P${escapeHtml(card.stats?.pow ?? 0)} D${escapeHtml(card.stats?.def ?? 0)} S${escapeHtml(card.stats?.spd ?? 0)}</span>
-          <strong>${escapeHtml(card.battlePower || 0)}</strong>
+          <span aria-label="Attack ${escapeHtml(card.stats?.pow ?? 0)}, Defense ${escapeHtml(card.stats?.def ?? 0)}, Speed ${escapeHtml(card.stats?.spd ?? 0)}">A${escapeHtml(card.stats?.pow ?? 0)} · D${escapeHtml(card.stats?.def ?? 0)} · S${escapeHtml(card.stats?.spd ?? 0)}</span>
+          <strong aria-label="Effective Power ${escapeHtml(card.battlePower || 0)}">Eff. PWR ${escapeHtml(card.battlePower || 0)}</strong>
           <small>${escapeHtml(matchupNote)}</small>
         </div>
       </div>
@@ -189,8 +189,8 @@ export async function renderBattleResults({ query }) {
         <div class="section-heading"><div><span class="section-kicker">Combat Summary</span><h2 class="section-title">What happened</h2></div></div>
         <div class="battle-log">
           <div>${escapeHtml(selectedCards[0]?.name || 'Your squad')} led ${selectedCards.length} card(s) against ${escapeHtml(encounter.name)}.</div>
-          <div>Your matchup-adjusted squad power was ${escapeHtml(squadPower)} against enemy power ${escapeHtml(encounter.enemyPower)}.</div>
-          <div>${victory ? `Your squad won by ${margin} power.` : `Your squad fell short by ${Math.abs(margin)} power.`}</div>
+          <div>Your Effective Squad Power was ${escapeHtml(squadPower)} against Enemy Power ${escapeHtml(encounter.enemyPower)}.</div>
+          <div>${victory ? `Your squad won with a Power margin of ${margin}.` : `Your squad fell short by a Power margin of ${Math.abs(margin)}.`}</div>
         </div>
       </section>
     `;

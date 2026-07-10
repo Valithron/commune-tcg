@@ -47,7 +47,7 @@ On `#/battle/squad`, the Available Cards list now renders:
 ```text
 left: compact card-frame thumbnail
 middle: rarity, category, card name, level, XP
-right: stats, battle power, selection state
+right: stats, Power, selection state
 ```
 
 The thumbnail uses the canonical `renderCardFrame` component instead of a one-off image implementation.

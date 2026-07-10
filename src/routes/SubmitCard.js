@@ -112,7 +112,7 @@ export function renderSubmitCard() {
           <label><span>Lore / Flavor Text</span><textarea name="flavor_text" maxlength="220" required placeholder="In the silence between stars, the Arbiter watches..."></textarea></label>
           <input name="ability_text" type="hidden" value="" />
           <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
-          <div class="empty-note submit-review-note">Final POW, DEF, SPD, final rarity, and pull-pool eligibility are controlled by admin approval.</div>
+          <div class="empty-note submit-review-note">Final ATK, DEF, SPD, final rarity, and pull-pool eligibility are controlled by admin approval.</div>
           <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
           <div class="empty-note submit-status" data-submit-card-status hidden></div>
         </section>

@@ -79,8 +79,8 @@ function renderBattleCardRow(card, { selected = false, href = '', disabled = fal
         <small>Level ${escapeHtml(card.level)} · ${escapeHtml(card.xp)} XP</small>
       </div>
       <div class="battle-card-stat-stack">
-        <span>P${escapeHtml(card.stats?.pow ?? 0)} D${escapeHtml(card.stats?.def ?? 0)} S${escapeHtml(card.stats?.spd ?? 0)}</span>
-        <strong>${escapeHtml(card.battlePower || 0)}</strong>
+        <span aria-label="Attack ${escapeHtml(card.stats?.pow ?? 0)}, Defense ${escapeHtml(card.stats?.def ?? 0)}, Speed ${escapeHtml(card.stats?.spd ?? 0)}">A${escapeHtml(card.stats?.pow ?? 0)} · D${escapeHtml(card.stats?.def ?? 0)} · S${escapeHtml(card.stats?.spd ?? 0)}</span>
+        <strong aria-label="Power ${escapeHtml(card.battlePower || 0)}">PWR ${escapeHtml(card.battlePower || 0)}</strong>
         ${note ? `<small>${escapeHtml(note)}</small>` : ''}
       </div>
     </${tag}>
@@ -113,7 +113,7 @@ function renderSquadSlots({ encounter, selectedCards }) {
           <a class="battle-squad-slot battle-squad-slot-filled" href="${buildSquadBuilderHref({ encounterId: encounter.id, squadCardIds: nextIds })}">
             <span class="battle-slot-label">Slot ${slotNumber}</span>
             <strong>${escapeHtml(card.name)}</strong>
-            <small>Lv ${escapeHtml(card.level)} · ${escapeHtml(card.battlePower || 0)} Power</small>
+            <small>Lv ${escapeHtml(card.level)} · PWR ${escapeHtml(card.battlePower || 0)}</small>
             <em>Tap to remove</em>
           </a>
         `;

@@ -8,7 +8,7 @@ Approval controls balance. Pulling controls ownership and collectible variation.
 
 Users may suggest a target rarity and up to 3 types at submission, but approval is the balance gate. Admin review can either roll from the target rarity table or manually override the final rarity, and admin review chooses the approved type pool used for pull-time type rolling.
 
-Pulling must not reroll base rarity. Pulling may roll narrow owned-copy POW/DEF/SPD budget variance inside the approved rarity's allowed range. Pulling may also roll one owned-copy type from the approved type pool.
+Pulling must not reroll base rarity. Pulling may roll narrow owned-copy ATK/DEF/SPD budget variance inside the approved rarity's allowed range. Pulling may also roll one owned-copy type from the approved type pool.
 
 ## Rarity assignment
 
@@ -51,7 +51,7 @@ Type affects stat-budget allocation bias only. It does not change total stat bud
 
 Current stat allocation tendencies:
 
-| Type | POW tendency | DEF tendency | SPD tendency |
+| Type | ATK tendency | DEF tendency | SPD tendency |
 | --- | ---: | ---: | ---: |
 | Flame | +10% | -5% | 0% |
 | Tide | 0% | +5% | +5% |
@@ -70,14 +70,14 @@ Battle stat resolution:
 1. Read owned Vault card JSON.
 2. If the card has mechanics metadata, calculate effective stats from `baseStats`, `copyTraits`, `progression.level`, `progressionRules`, and `originBonusPercent`.
 3. If the card is legacy-only, fall back to legacy `stats/pow/def/spd + level` behavior.
-4. Use effective stat total as base battle power for mechanics cards.
+4. Use effective stat total as Power for mechanics cards.
 5. Apply type matchup modifier against the encounter enemy type.
-6. Compare matchup-adjusted squad power against enemy power.
+6. Compare Effective Squad Power against enemy power.
 
 Current matchup modifiers:
 
-- Advantage: +15% battle power.
-- Disadvantage: -5% battle power.
+- Advantage: +15% Power.
+- Disadvantage: -5% Power.
 - Neutral: 0%.
 
 Current typed mock encounters:
@@ -88,7 +88,7 @@ Calendar Hydra: Shadow
 Storm Forge Wyrm: Flame
 ```
 
-Frontend preview and backend reward settlement both use the same Phase 6 idea: effective stats first, then type matchup-adjusted battle power.
+Frontend preview and backend reward settlement both use the same Phase 6 idea: effective stats first, then type Effective Power.
 
 ## Phase 7 admin simulator
 
@@ -100,9 +100,9 @@ The Admin Mechanics page now includes a no-write simulator for:
 - level and max level
 - growth per level
 - origin bonus
-- effective POW/DEF/SPD
+- effective ATK/DEF/SPD
 - enemy type matchup
-- adjusted battle power
+- Effective Power
 
 The simulator is for math preview only. It does not mutate card rows, grant XP, change pulls, or implement evolution. It exists so evolution and ability scaling can be tuned before new write paths are added.
 
@@ -122,7 +122,7 @@ Mythic:    static 80, owned roll 74-86, max level 70, +6 total stats per level, 
 
 Approval uses the static budget so the Library template stays stable. Pulling rolls the owned-copy budget inside the allowed range.
 
-The system distributes the stat budget into POW/DEF/SPD using the selected type's stat allocation bias. For Library templates, the selected type is the first approved type. For pulled Vault copies, the selected type is rolled from the approved type pool.
+The system distributes the stat budget into ATK/DEF/SPD using the selected type's stat allocation bias. For Library templates, the selected type is the first approved type. For pulled Vault copies, the selected type is rolled from the approved type pool.
 
 Legacy inputs like `support`, `battle`, `defense`, `training`, and `utility` are normalized into the accepted 7-type model for compatibility.
 
@@ -214,7 +214,7 @@ Effective stats are calculated from:
 - copyTraits.statBonus
 - originBonusPercent
 
-Current level-growth implementation distributes total growth across POW/DEF/SPD. Ability scaling, evolution formulas, equipment, buffs, and debuffs are not implemented yet.
+Current level-growth implementation distributes total growth across ATK/DEF/SPD. Ability scaling, evolution formulas, equipment, buffs, and debuffs are not implemented yet.
 
 ## Compatibility rule
 
@@ -244,3 +244,9 @@ These are intentionally not settled in this pass:
 - Real sequential mint numbers
 - Ability strength by rarity
 - Ability effects in battle
+
+## Player-facing stat names and compatibility
+
+The official display labels are **ATK**, **DEF**, and **SPD**. A card's **Power** is `ATK + DEF + SPD`; **PWR** is permitted only as a compact display abbreviation.
+
+This terminology change does not authorize a data migration. Stored cards and internal mechanics continue to use `pow` as the canonical offensive-stat key. Normalizers must keep accepting existing `pow`, `power`, `attack`, `atk`, and `strength` aliases and resolve them into the compatible internal field. No stat value, budget, growth rule, rarity rule, type bias, or battle formula changes as part of this display migration.

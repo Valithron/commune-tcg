@@ -17,7 +17,7 @@ The Submit Card screen shows the future form shape:
 - Category
 - Rarity suggestion
 - Flavor text
-- POW / DEF / SPD
+- ATK / DEF / SPD
 - Art upload placeholder
 
 No data is submitted in Phase 4. The submit button is intentionally a preview-only link.

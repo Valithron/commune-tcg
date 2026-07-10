@@ -33,7 +33,7 @@ The route shows:
 - character
 - type
 - rarity suggestion
-- POW, DEF, SPD
+- ATK, DEF, SPD
 - flavor text
 - ability text
 - image key

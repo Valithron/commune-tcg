@@ -36,7 +36,7 @@ When the documents overlap:
 ### Squad and card inputs
 
 - A battle squad contains 3 cards.
-- The first combat model may use POW, DEF, SPD, Type, native/current rarity, and level.
+- The first combat model may use ATK, DEF, SPD, Type, native/current rarity, and level.
 - A card's battlefield role should emerge from its stats, type, character, rarity, and later abilities rather than a rigid stored class.
 - Every card in the active squad should receive full battle XP in the first version.
 
@@ -64,7 +64,7 @@ Current matchup target:
 - Disadvantage: -5% effectiveness
 - Neutral: no modifier
 
-Type should also bias the distribution of POW, DEF, and SPD without increasing the card's total stat budget by itself.
+Type should also bias the distribution of ATK, DEF, and SPD without increasing the card's total stat budget by itself.
 
 ### Deliberately deferred systems
 
@@ -115,7 +115,7 @@ The first battle model should be considered unsuccessful if it becomes primarily
 - A static squad-power comparison with decorative animation
 - A long chain of obvious manual choices
 - A system where routine progression requires constant attention
-- A system where SPD permanently dominates POW and DEF
+- A system where SPD permanently dominates ATK and DEF
 - A system where DEF creates slow, tedious stalls
 - A system where type disadvantage invalidates favorite cards
 - A system where randomness overwhelms preparation
@@ -285,8 +285,8 @@ The game currently avoids rigid battlefield classes. Therefore the system should
 The qualification should be calculated from the card's effective stat profile. Serious candidate forms include:
 
 - SPD must be the card's highest core stat and exceed the next-highest stat by a tested percentage.
-- SPD must represent at least a tested percentage of the card's POW + DEF + SPD total.
-- SPD must exceed the average of POW and DEF by a tested ratio.
+- SPD must represent at least a tested percentage of the card's ATK + DEF + SPD total.
+- SPD must exceed the average of ATK and DEF by a tested ratio.
 
 The exact number is intentionally unsettled. Example thresholds such as a 10%, 15%, or 20% lead are test candidates, not accepted rules.
 
@@ -339,7 +339,7 @@ Specific failure signs:
 
 - Most Volt cards double-attack every round.
 - A qualifying speed card consistently defeats a comparable opponent before that opponent can meaningfully act.
-- POW-focused cards cannot match the speed card's total damage.
+- ATK-focused cards cannot match the speed card's total damage.
 - DEF-focused cards cannot survive long enough for their durability to matter.
 - Small SPD differences abruptly separate excellent cards from useless cards.
 
@@ -397,16 +397,16 @@ Each enemy card initially shows only concise card-face information:
 - Rarity
 - Other compact identity information already appropriate to the normal card's bottom pills
 
-The initial preview should not expose a dense spreadsheet of POW, DEF, SPD, abilities, and formulas.
+The initial preview should not expose a dense spreadsheet of ATK, DEF, SPD, abilities, and formulas.
 
 **Confirmed interaction:** Tapping an enemy card expands it into a showcase-size view containing its complete available information, including:
 
 - Full card art and frame
-- POW, DEF, and SPD
+- ATK, DEF, and SPD
 - Type
 - Level
 - Rarity
-- Combined battle power
+- Power
 - Abilities, once abilities exist
 - Any encounter-specific modifiers that affect that card
 
@@ -501,7 +501,7 @@ At a glance, an active battle card should communicate:
 - Type
 - Level
 - Rarity
-- Combined battle power or similarly concise aggregate
+- Power or similarly concise aggregate
 - SPD bonus meter only when the card qualifies for that proposed mechanic
 - Status effects later, if introduced
 
@@ -729,7 +729,7 @@ This remains a proposed direction until the design proves that difficult battles
 3. Which relative stat-profile test should define SPD-focus eligibility?
 4. How should meter charge scale above the eligibility breakpoint?
 5. Should the bonus meter appear as a thin bar, pips, or another compact treatment?
-6. How are maximum HP and damage derived from POW and DEF?
+6. How are maximum HP and damage derived from ATK and DEF?
 7. Should basic attacks have critical hits in the first version?
 8. Should attacks ever miss, and if so, how much should SPD influence evasion?
 9. Do bosses use the same three-lane structure or deliberately break it?
@@ -776,7 +776,7 @@ Battles should be capable of producing:
 
 ## Immediate Discovery Order
 
-1. Define maximum HP and the POW-versus-DEF damage relationship.
+1. Define maximum HP and the ATK-versus-DEF damage relationship.
 2. Decide critical-hit, miss, and damage-variance rules.
 3. Load representative card stat profiles into a battle simulator.
 4. Test SPD qualification forms, charge curves, and bonus-attack frequency.
@@ -786,3 +786,16 @@ Battles should be capable of producing:
 8. Design the first Seasonal Boss structure.
 9. Define rewards, energy cost, failure cost, and repeat-play rules.
 10. Only then prepare an implementation specification.
+
+## Battle Stat Terminology
+
+Battle presentation uses these terms consistently:
+
+- **ATK**, **DEF**, and **SPD** are the three permanent core stats.
+- **Power** or compact **PWR** means ATK + DEF + SPD for one card.
+- **Squad Power** means the sum of the selected cards' Power.
+- **Effective Power** or **Matchup Power** means a card's temporary encounter-adjusted Power after type modifiers or other temporary effects.
+- **Effective Squad Power** means the sum of encounter-adjusted card values used for that matchup.
+- **Enemy Power** means the encounter benchmark or the enemy card's permanent combined total, as context requires.
+
+Power is not damage. ATK is not the combined total. A temporary matchup modifier must never silently overwrite the permanent Power shown in the collection, Library, Vault, or ordinary card detail.

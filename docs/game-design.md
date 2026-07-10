@@ -62,7 +62,7 @@ For example:
 
 - Shadow Cydney with high DEF may function as a tank.
 - Radiant Cydney with regen may function as support.
-- Flame Cydney with high POW may function as a burst attacker.
+- Flame Cydney with high ATK may function as a burst attacker.
 
 The UI may describe likely role behavior, but role should not control battle logic yet.
 
@@ -243,7 +243,7 @@ Design intent:
 
 ### Rarity Assignment at Approval
 
-Submission stores a submitter-facing target rarity, but submitters do not choose POW, DEF, SPD, final rarity, or final power.
+Submission stores a submitter-facing target rarity, but submitters do not choose ATK, DEF, SPD, final rarity, or final power.
 
 Approval uses:
 
@@ -402,7 +402,7 @@ Types should influence stat identity modestly, while rarity, level, and native r
 Important implementation direction:
 
 - Type stat percentages should be treated as stat-budget allocation bias, not final stat multipliers.
-- Type should change how the total stat budget is distributed across POW, DEF, and SPD.
+- Type should change how the total stat budget is distributed across ATK, DEF, and SPD.
 - Type should not usually increase the final total stat budget by itself.
 
 Current accepted rule of thumb:
@@ -412,7 +412,7 @@ Current accepted rule of thumb:
 - Tradeoff bias: about -5% away from that stat's share of the budget when needed.
 - Neutral: no bias.
 
-| Type | POW tendency | DEF tendency | SPD tendency | Notes |
+| Type | ATK tendency | DEF tendency | SPD tendency | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Flame | +10% | -5% | 0% | Harder-hitting, slightly more fragile |
 | Tide | 0% | +5% | +5% | Flexible, evasive, control/support flavor |
@@ -437,7 +437,7 @@ A battle squad should use 3 cards.
 
 Each card contributes:
 
-- POW
+- ATK
 - DEF
 - SPD
 - Type
@@ -488,7 +488,7 @@ Current accepted direction:
 
 - Physical and Mystic should be attack or ability tags, not new core stats.
 - Do not add separate Physical Attack, Mystic Attack, Physical Defense, or Mystic Defense stats in the first version.
-- POW, DEF, and SPD remain the core stat model.
+- ATK, DEF, and SPD remain the core stat model.
 - Damage categories should not be implemented until the first battle model works.
 - Damage categories may later interact with enemy weaknesses, resistances, card abilities, and boss design.
 - Initial future modifiers should be modest if added, such as +10% into a weakness or -10% into a resistance.
@@ -652,7 +652,7 @@ First version should simulate:
 - Type stat allocation bias
 - Origin bonus
 - XP to next level and total XP to max
-- Effective POW, DEF, and SPD
+- Effective ATK, DEF, and SPD
 - Comparison against another card
 
 First version should not include abilities, evolution costs, or shards unless those systems are already mathematically settled.
@@ -701,3 +701,21 @@ Next likely design priorities:
 4. Define the first testable battle model.
 5. Define the vault grouped-copy display model.
 6. Plan the admin mechanics simulator.
+
+## Canonical Stat Terminology
+
+The three permanent core stats are:
+
+- **ATK** controls offensive output.
+- **DEF** controls durability or damage resistance, pending the final combat formula.
+- **SPD** controls initiative and potential speed-focused mechanics.
+- **Power** is the combined ATK + DEF + SPD total for one card.
+- **PWR** is the compact abbreviation for Power when space is limited.
+- **Squad Power** is the combined Power of all selected cards.
+- **Effective Power** or **Matchup Power** is a temporary encounter-adjusted value after type modifiers or other temporary effects.
+
+A card's permanent Power must remain distinct from its temporary Effective Power. The UI must not present an encounter-adjusted result as though the permanent card value changed.
+
+### Internal compatibility
+
+Existing code, D1 payloads, generated card JSON, normalizers, progression systems, simulations, and API responses may continue using `pow`, `stats.pow`, `baseStats.pow`, and `effectiveStats.pow`. The internal `pow` key is the canonical compatibility field for the offensive stat; **ATK** is the official player-facing term. Existing aliases such as `power`, `attack`, `atk`, and `strength` remain accepted where normalization already supports them.

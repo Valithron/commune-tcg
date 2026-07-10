@@ -41,7 +41,8 @@ function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').r
 function toNumber(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
 function clamp(value, min, max) { return Math.min(Math.max(Number(value) || 0, min), max); }
 function titleCase(value) { return String(value || '').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function statLine(stats = {}) { return `POW ${escapeHtml(stats.pow ?? 1)} / DEF ${escapeHtml(stats.def ?? 1)} / SPD ${escapeHtml(stats.spd ?? 1)}`; }
+function statLine(stats = {}) { return `ATK ${escapeHtml(stats.pow ?? 1)} / DEF ${escapeHtml(stats.def ?? 1)} / SPD ${escapeHtml(stats.spd ?? 1)}`; }
+function statTotal(stats = {}) { return Number(stats.pow ?? 0) + Number(stats.def ?? 0) + Number(stats.spd ?? 0); }
 function optionList(options, selectedValue) { return options.map(([value, label]) => `<option value="${escapeHtml(value)}"${String(value) === String(selectedValue) ? ' selected' : ''}>${escapeHtml(label)}</option>`).join(''); }
 function typeOptions(selectedValue = 'neutral') { return optionList(Object.entries(typeConfig).map(([value, config]) => [value, config.label]), selectedValue); }
 function rarityOptions(selectedValue = 'rare') { return optionList(Object.entries(rarityConfig).map(([value, config]) => [value, config.label]), selectedValue); }
@@ -106,12 +107,12 @@ function renderSimulatorResults(sim) {
       ${renderMetric('Base stats', statLine(sim.baseStats))}
       ${renderMetric('Level growth', statLine(sim.growth))}
       ${renderMetric('Effective stats', statLine(sim.effectiveStats), 'is-live')}
-      ${renderMetric('Battle power', `${sim.baseBattlePower} → ${sim.adjustedBattlePower}`)}
+      ${renderMetric('Power → Effective Power', `${sim.baseBattlePower} → ${sim.adjustedBattlePower}`)}
     </div>
     <div class="admin-checklist">
       <div><strong>${escapeHtml(typeConfig[sim.type].label)}</strong> into <strong>${escapeHtml(typeConfig[sim.enemyType].label)}</strong>: ${escapeHtml(titleCase(sim.matchupResult))} (${sim.matchupModifier > 0 ? '+' : ''}${Math.round(sim.matchupModifier * 100)}%).</div>
       <div>Rarity config: ${escapeHtml(rarityConfig[sim.rarity].label)} · budget ${escapeHtml(sim.budget)} · max level ${escapeHtml(sim.maxLevel)} · growth ${escapeHtml(sim.growthPerLevel)} · origin +${escapeHtml(sim.originBonusPercent)}%.</div>
-      <div>Battle currently compares matchup-adjusted squad power against encounter enemy power. Ability effects are still not included.</div>
+      <div>Battle currently compares Effective Squad Power against encounter Enemy Power. Ability effects are still not included.</div>
     </div>
   `;
 }
@@ -138,7 +139,10 @@ function renderTemplateRow(card) {
       <td>${escapeHtml(card.type || card.statArchetype || 'neutral')}</td>
       <td>${escapeHtml(card.creatorDisplayName || 'Unknown')}</td>
       <td class="admin-number-cell">${escapeHtml(card.statBudget ?? 0)}</td>
-      <td>${escapeHtml(statLine(card.stats))}</td>
+      <td class="admin-number-cell">${escapeHtml(card.stats?.pow ?? 1)}</td>
+      <td class="admin-number-cell">${escapeHtml(card.stats?.def ?? 1)}</td>
+      <td class="admin-number-cell">${escapeHtml(card.stats?.spd ?? 1)}</td>
+      <td class="admin-number-cell"><strong>${escapeHtml(statTotal(card.stats))}</strong></td>
       <td>${card.placeholder ? '<span class="status-pill">Needs repair</span>' : '<span class="empty-note">Healthy</span>'}</td>
     </tr>
   `;
@@ -154,8 +158,8 @@ function renderTemplateTable(payload) {
       </div>
       <div class="admin-card-table-scroll">
         <table class="admin-card-table">
-          <thead><tr><th>Card</th><th>Founder Rarity</th><th>Type</th><th>Creator</th><th>Budget</th><th>Stats</th><th>Status</th></tr></thead>
-          <tbody data-card-mechanics-table-body>${rows.length ? rows.map(renderTemplateRow).join('') : '<tr><td colspan="7" class="empty-note">No template cards were found.</td></tr>'}</tbody>
+          <thead><tr><th>Card</th><th>Founder Rarity</th><th>Type</th><th>Creator</th><th>Stat Budget</th><th>ATK</th><th>DEF</th><th>SPD</th><th>Power</th><th>Status</th></tr></thead>
+          <tbody data-card-mechanics-table-body>${rows.length ? rows.map(renderTemplateRow).join('') : '<tr><td colspan="10" class="empty-note">No template cards were found.</td></tr>'}</tbody>
         </table>
       </div>
     </div>
@@ -181,7 +185,7 @@ function renderFounderRarityTool(payload) {
       <div class="admin-checklist">
         <div>Target spread for this pool: <strong>${escapeHtml(formatRaritySpread(payload.founderPoolTarget))}</strong>.</div>
         <div>Current selected spread: <strong data-founder-selected-spread>${escapeHtml(formatRaritySpread(payload.byRarity))}</strong>.</div>
-        <div>Randomize and apply will pick cards randomly, assign exact target counts, then recompute rarity budgets, pull ranges, level caps, growth, origin bonus, and legacy pow/def/spd fields.</div>
+        <div>Randomize and apply will pick cards randomly, assign exact target counts, then recompute rarity budgets, pull ranges, level caps, growth, origin bonus, and legacy <code>pow</code>/<code>def</code>/<code>spd</code> fields.</div>
       </div>
       <label class="admin-inline-check"><input type="checkbox" data-founder-reset-owned /> Clear owned test copies after applying</label>
       <div class="action-row"><button class="button button-primary" type="button" data-founder-rarity-randomize>Randomize and Apply Target Spread</button><button class="button button-secondary" type="button" data-founder-rarity-apply>Apply Selected Dropdowns</button></div>
@@ -197,7 +201,7 @@ function renderSimulator() {
     <section class="glass-panel admin-panel" data-mechanics-simulator>
       <span class="section-kicker">Phase 7 Simulator</span>
       <h2 class="section-title">Mechanics math preview</h2>
-      <p class="hero-copy">No-write simulator for rarity budget, type bias, level growth, origin bonus, effective stats, and battle matchup power.</p>
+      <p class="hero-copy">No-write simulator for rarity budget, type bias, level growth, origin bonus, effective stats, Power, and matchup-adjusted Effective Power.</p>
       <div class="admin-card-editor-grid">
         <label><span>Rarity</span><select name="sim_rarity">${rarityOptions('rare')}</select></label>
         <label><span>Type</span><select name="sim_type">${typeOptions('radiant')}</select></label>

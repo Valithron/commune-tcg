@@ -150,7 +150,7 @@ export async function renderHome() {
           <span class="section-kicker">Vault Highlight</span>
           <h2 class="section-title">Strongest Owned Card</h2>
         </div>
-        <span class="status-pill">${strongestTotal} Total</span>
+        <span class="status-pill">Power ${strongestTotal}</span>
       </div>
       <div class="home-feature-split">
         ${renderVaultHighlight(strongestCard, displayName, { dailyPullAvailable })}

@@ -154,3 +154,16 @@ env.CARD_IMAGES
 ```
 
 Before Phase 8, confirm whether real ownership/user tables exist and record the findings in `docs/cloudflare-resource-inventory.md`.
+
+## Stat terminology
+
+Player-facing card stats use the following canonical language:
+
+- **ATK**: offensive output. The existing implementation and stored-data key remains `pow`.
+- **DEF**: durability or damage resistance.
+- **SPD**: initiative and speed-focused mechanics.
+- **Power**: ATK + DEF + SPD for one card. Use **PWR** only where space is constrained.
+- **Squad Power**: the sum of the selected cards' Power.
+- **Effective Power** or **Matchup Power**: an encounter-adjusted value after temporary type or battle modifiers.
+
+Compatibility parsers may continue accepting `pow`, `power`, `attack`, `atk`, and `strength` as legacy offensive-stat aliases. New UI copy must not expose the internal `pow` key as a player-facing label.

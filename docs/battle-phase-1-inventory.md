@@ -52,7 +52,7 @@ Current battle eligibility rule:
 ```text
 owned by ownerUserId
 card_json parses cleanly
-normalized POW/DEF/SPD are finite
+normalized ATK/DEF/SPD are finite
 card is not explicitly disabled by card_json
 ```
 
@@ -146,7 +146,7 @@ duplicate cards allowed: false
 default selection: highest battlePower cards first, capped at 3, until saved squads exist
 ```
 
-Battle power is diagnostic only for now:
+Power is diagnostic only for now:
 
 ```text
 pow + def + spd + level

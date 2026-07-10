@@ -28,7 +28,7 @@ export function renderBattleHub() {
           <span class="section-kicker">Readiness</span>
           <h2 class="section-title">Squad Status</h2>
         </div>
-        <span class="status-pill">Power ${squadPower}</span>
+        <span class="status-pill">Squad Power ${squadPower}</span>
       </div>
       <div class="stat-grid">
         <div class="stat-panel"><span class="stat-label">Squad</span><span class="stat-value">${squad.length}</span></div>
@@ -51,7 +51,7 @@ export function renderBattleHub() {
             <h3>${encounter.name}</h3>
             <p>${encounter.description}</p>
             <div class="battle-meta-row">
-              <span>Power ${encounter.enemyPower}</span>
+              <span>Enemy PWR ${encounter.enemyPower}</span>
               <span>⚡ deferred</span>
             </div>
           </a>

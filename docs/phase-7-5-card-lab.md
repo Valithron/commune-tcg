@@ -31,7 +31,7 @@ Before the density rows, Card Lab renders a detail/stat sheet preview:
 
 - one showcase-size card
 - title and flavor/description copy outside the card face
-- expanded POW / DEF / SPD panels
+- expanded ATK / DEF / SPD panels
 - identity fields
 - creator and provenance fields
 - art fields
