@@ -1,9 +1,8 @@
 /* ============================================================================
    Commune TCG Type Config
 
-   Phase 2 responsibility: centralize the accepted 7-type model, stat allocation
-   bias, display labels, and matchup chart. Type bias affects stat-budget
-   distribution only. It does not change total stat budget.
+   Centralizes the accepted 7-type model, stat allocation bias, display labels,
+   matchup chart, type pools, and weighted pull-time type odds.
    ============================================================================ */
 
 export const communeCardTypeOrder = Object.freeze([
@@ -23,83 +22,13 @@ export const typeMatchupModifiers = Object.freeze({
 });
 
 export const communeCardTypes = Object.freeze({
-  flame: {
-    type: 'flame',
-    label: 'Flame',
-    color: 'red',
-    coreIdentity: 'Power, aggression, burst damage',
-    statWeights: { pow: 1.10, def: 0.95, spd: 1.00 },
-    statBias: { pow: 10, def: -5, spd: 0 },
-    matchups: {
-      flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral',
-    },
-  },
-  tide: {
-    type: 'tide',
-    label: 'Tide',
-    color: 'blue',
-    coreIdentity: 'Flow, healing, control',
-    statWeights: { pow: 1.00, def: 1.05, spd: 1.05 },
-    statBias: { pow: 0, def: 5, spd: 5 },
-    matchups: {
-      flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral',
-    },
-  },
-  bloom: {
-    type: 'bloom',
-    label: 'Bloom',
-    color: 'green',
-    coreIdentity: 'Growth, sustain, nature',
-    statWeights: { pow: 1.00, def: 1.10, spd: 0.95 },
-    statBias: { pow: 0, def: 10, spd: -5 },
-    matchups: {
-      flame: 'disadvantage', tide: 'advantage', bloom: 'neutral', volt: 'advantage', shadow: 'disadvantage', radiant: 'neutral', neutral: 'neutral',
-    },
-  },
-  volt: {
-    type: 'volt',
-    label: 'Volt',
-    color: 'yellow',
-    coreIdentity: 'Speed, energy, disruption',
-    statWeights: { pow: 1.05, def: 0.95, spd: 1.10 },
-    statBias: { pow: 5, def: -5, spd: 10 },
-    matchups: {
-      flame: 'neutral', tide: 'advantage', bloom: 'disadvantage', volt: 'neutral', shadow: 'disadvantage', radiant: 'advantage', neutral: 'neutral',
-    },
-  },
-  shadow: {
-    type: 'shadow',
-    label: 'Shadow',
-    color: 'black',
-    coreIdentity: 'Evil defense, drain, corruption, sacrifice, tricks',
-    statWeights: { pow: 1.00, def: 1.10, spd: 0.95 },
-    statBias: { pow: 0, def: 10, spd: -5 },
-    matchups: {
-      flame: 'disadvantage', tide: 'neutral', bloom: 'advantage', volt: 'advantage', shadow: 'neutral', radiant: 'disadvantage', neutral: 'neutral',
-    },
-  },
-  radiant: {
-    type: 'radiant',
-    label: 'Radiant',
-    color: 'white-gold',
-    coreIdentity: 'Healing, protection, holy or heroic power',
-    statWeights: { pow: 1.05, def: 1.05, spd: 1.00 },
-    statBias: { pow: 5, def: 5, spd: 0 },
-    matchups: {
-      flame: 'advantage', tide: 'disadvantage', bloom: 'neutral', volt: 'disadvantage', shadow: 'advantage', radiant: 'neutral', neutral: 'neutral',
-    },
-  },
-  neutral: {
-    type: 'neutral',
-    label: 'Neutral',
-    color: 'tan',
-    coreIdentity: 'Balanced, mundane, flexible, comedy cards',
-    statWeights: { pow: 1.00, def: 1.00, spd: 1.00 },
-    statBias: { pow: 0, def: 0, spd: 0 },
-    matchups: {
-      flame: 'neutral', tide: 'neutral', bloom: 'neutral', volt: 'neutral', shadow: 'neutral', radiant: 'neutral', neutral: 'neutral',
-    },
-  },
+  flame: { type: 'flame', label: 'Flame', color: 'red', coreIdentity: 'Power, aggression, burst damage', statWeights: { pow: 1.10, def: 0.95, spd: 1.00 }, statBias: { pow: 10, def: -5, spd: 0 }, matchups: { flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral' } },
+  tide: { type: 'tide', label: 'Tide', color: 'blue', coreIdentity: 'Flow, healing, control', statWeights: { pow: 1.00, def: 1.05, spd: 1.05 }, statBias: { pow: 0, def: 5, spd: 5 }, matchups: { flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral' } },
+  bloom: { type: 'bloom', label: 'Bloom', color: 'green', coreIdentity: 'Growth, sustain, nature', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'advantage', bloom: 'neutral', volt: 'advantage', shadow: 'disadvantage', radiant: 'neutral', neutral: 'neutral' } },
+  volt: { type: 'volt', label: 'Volt', color: 'yellow', coreIdentity: 'Speed, energy, disruption', statWeights: { pow: 1.05, def: 0.95, spd: 1.10 }, statBias: { pow: 5, def: -5, spd: 10 }, matchups: { flame: 'neutral', tide: 'advantage', bloom: 'disadvantage', volt: 'neutral', shadow: 'disadvantage', radiant: 'advantage', neutral: 'neutral' } },
+  shadow: { type: 'shadow', label: 'Shadow', color: 'black', coreIdentity: 'Evil defense, drain, corruption, sacrifice, tricks', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'neutral', bloom: 'advantage', volt: 'advantage', shadow: 'neutral', radiant: 'disadvantage', neutral: 'neutral' } },
+  radiant: { type: 'radiant', label: 'Radiant', color: 'white-gold', coreIdentity: 'Healing, protection, holy or heroic power', statWeights: { pow: 1.05, def: 1.05, spd: 1.00 }, statBias: { pow: 5, def: 5, spd: 0 }, matchups: { flame: 'advantage', tide: 'disadvantage', bloom: 'neutral', volt: 'disadvantage', shadow: 'advantage', radiant: 'neutral', neutral: 'neutral' } },
+  neutral: { type: 'neutral', label: 'Neutral', color: 'tan', coreIdentity: 'Balanced, mundane, flexible, comedy cards', statWeights: { pow: 1.00, def: 1.00, spd: 1.00 }, statBias: { pow: 0, def: 0, spd: 0 }, matchups: { flame: 'neutral', tide: 'neutral', bloom: 'neutral', volt: 'neutral', shadow: 'neutral', radiant: 'neutral', neutral: 'neutral' } },
 });
 
 const typeAliases = Object.freeze({
@@ -112,14 +41,9 @@ const typeAliases = Object.freeze({
   mundane: 'neutral', comedy: 'neutral', utility: 'neutral', craft: 'neutral', alchemy: 'neutral', balanced: 'neutral', none: 'neutral', random: 'neutral',
 });
 
-function cleanText(value, maxLength = 80) {
-  return String(value || '').trim().toLowerCase().slice(0, maxLength);
-}
-
-function safeParseJson(value) {
-  if (!value || typeof value !== 'string') return null;
-  try { return JSON.parse(value); } catch { return null; }
-}
+function cleanText(value, maxLength = 80) { return String(value || '').trim().toLowerCase().slice(0, maxLength); }
+function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
+function toWeight(value) { const parsed = Number(value); return Number.isFinite(parsed) && parsed > 0 ? parsed : 0; }
 
 export function normalizeCardType(value, fallback = 'neutral') {
   const raw = cleanText(value || fallback);
@@ -134,21 +58,14 @@ export function normalizeCardType(value, fallback = 'neutral') {
   return communeCardTypes[fallback] ? fallback : 'neutral';
 }
 
-export function normalizeCardTypePool(value, fallback = ['neutral'], { max = 3 } = {}) {
+export function normalizeCardTypePool(value, fallback = ['neutral'], { max = 7 } = {}) {
   const parsed = typeof value === 'string' && value.trim().startsWith('[') ? safeParseJson(value) : null;
-  const rawList = Array.isArray(value)
-    ? value
-    : Array.isArray(parsed)
-      ? parsed
-      : typeof value === 'string' && value.includes(',')
-        ? value.split(',')
-        : value
-          ? [value]
-          : fallback;
+  const rawList = Array.isArray(value) ? value : Array.isArray(parsed) ? parsed : typeof value === 'string' && value.includes(',') ? value.split(',') : value ? [value] : fallback;
   const normalized = [];
 
   for (const item of rawList) {
-    const type = normalizeCardType(item, '');
+    const rawType = typeof item === 'object' && item ? item.type : item;
+    const type = normalizeCardType(rawType, '');
     if (type && communeCardTypes[type] && !normalized.includes(type)) normalized.push(type);
     if (normalized.length >= max) break;
   }
@@ -157,43 +74,49 @@ export function normalizeCardTypePool(value, fallback = ['neutral'], { max = 3 }
   return normalizeCardTypePool(fallback, ['neutral'], { max });
 }
 
-export function getCardTypeConfig(value) {
-  return communeCardTypes[normalizeCardType(value)] || communeCardTypes.neutral;
+export function normalizeCardTypeOdds(value, fallback = ['neutral'], { max = 7 } = {}) {
+  const parsed = typeof value === 'string' ? safeParseJson(value) : value;
+  const source = Array.isArray(parsed) ? parsed : parsed && typeof parsed === 'object' ? Object.entries(parsed).map(([type, weight]) => ({ type, weight })) : [];
+  const byType = new Map();
+
+  for (const item of source) {
+    const type = normalizeCardType(typeof item === 'string' ? item : item?.type, '');
+    const weight = toWeight(typeof item === 'string' ? 1 : item?.weight ?? item?.odds ?? item?.probability ?? item?.percent);
+    if (!type || !communeCardTypes[type] || weight <= 0) continue;
+    byType.set(type, (byType.get(type) || 0) + weight);
+    if (byType.size >= max) break;
+  }
+
+  if (!byType.size) {
+    const pool = normalizeCardTypePool(fallback, ['neutral'], { max });
+    const evenWeight = 100 / pool.length;
+    return pool.map((type) => ({ type, weight: evenWeight }));
+  }
+
+  const total = [...byType.values()].reduce((sum, weight) => sum + weight, 0);
+  return [...byType.entries()].map(([type, weight]) => ({
+    type,
+    weight: Number(((weight / total) * 100).toFixed(4)),
+  }));
 }
 
-export function getTypeStatWeights(value) {
-  return { ...getCardTypeConfig(value).statWeights };
+export function typeOddsToPool(value, fallback = ['neutral']) {
+  return normalizeCardTypeOdds(value, fallback).map((entry) => entry.type);
 }
 
-export function getTypeStatBias(value) {
-  return { ...getCardTypeConfig(value).statBias };
+export function chooseWeightedCardType(value, randomValue = Math.random(), fallback = ['neutral']) {
+  const odds = normalizeCardTypeOdds(value, fallback);
+  let roll = Math.min(Math.max(Number(randomValue) || 0, 0), 0.999999999) * 100;
+  for (const entry of odds) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.type;
+  }
+  return odds[odds.length - 1]?.type || 'neutral';
 }
 
-export function getTypeMatchup(attackerType, defenderType) {
-  const attacker = getCardTypeConfig(attackerType);
-  const defender = normalizeCardType(defenderType);
-  const result = attacker.matchups[defender] || 'neutral';
-
-  return {
-    attackerType: attacker.type,
-    defenderType: defender,
-    result,
-    modifier: typeMatchupModifiers[result] ?? 0,
-  };
-}
-
-export function getCardTypeSummary(value) {
-  const config = getCardTypeConfig(value);
-  return {
-    type: config.type,
-    label: config.label,
-    color: config.color,
-    coreIdentity: config.coreIdentity,
-    statBias: { ...config.statBias },
-    statWeights: { ...config.statWeights },
-  };
-}
-
-export function summarizeCardTypePool(value) {
-  return normalizeCardTypePool(value).map(getCardTypeSummary);
-}
+export function getCardTypeConfig(value) { return communeCardTypes[normalizeCardType(value)] || communeCardTypes.neutral; }
+export function getTypeStatWeights(value) { return { ...getCardTypeConfig(value).statWeights }; }
+export function getTypeStatBias(value) { return { ...getCardTypeConfig(value).statBias }; }
+export function getTypeMatchup(attackerType, defenderType) { const attacker = getCardTypeConfig(attackerType); const defender = normalizeCardType(defenderType); const result = attacker.matchups[defender] || 'neutral'; return { attackerType: attacker.type, defenderType: defender, result, modifier: typeMatchupModifiers[result] ?? 0 }; }
+export function getCardTypeSummary(value) { const config = getCardTypeConfig(value); return { type: config.type, label: config.label, color: config.color, coreIdentity: config.coreIdentity, statBias: { ...config.statBias }, statWeights: { ...config.statWeights } }; }
+export function summarizeCardTypePool(value) { return normalizeCardTypePool(value).map(getCardTypeSummary); }
