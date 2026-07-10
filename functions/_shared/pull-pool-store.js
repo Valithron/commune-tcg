@@ -1,11 +1,10 @@
 /* ============================================================================
    Pull Pool Store
-   Phase 10.2 responsibility: shared read-only pull-pool reader used by pull
-   diagnostics and no-write simulation.
+   Shared read-only pull-pool reader used by pull diagnostics and live pulls.
    ============================================================================ */
 
 import { normalizeBaseStats, normalizeProgressionRules } from './card-mechanics.js';
-import { getCardTypeSummary, normalizeCardType, normalizeCardTypePool } from './type-config.js';
+import { getCardTypeSummary, normalizeCardType, normalizeCardTypeOdds, normalizeCardTypePool, typeOddsToPool } from './type-config.js';
 
 export const allowedRarities = ['common', 'uncommon', 'rare', 'legendary', 'mythic'];
 
@@ -73,7 +72,9 @@ export function normalizeCardRow(row) {
   const growthPerLevel = progressionRules.growthPerLevel;
   const staticStatBudget = toNumber(payload.staticStatBudget ?? payload.static_stat_budget, statBudget);
   const ownedStatBudgetRange = normalizeBudgetRange(payload.ownedStatBudgetRange || payload.owned_stat_budget_range, { min: staticStatBudget - growthPerLevel, max: staticStatBudget + growthPerLevel });
-  const approvedTypePool = normalizeCardTypePool(payload.approvedTypePool || payload.approved_type_pool || payload.type || payload.card_type || 'neutral', ['neutral'], { max: 3 });
+  const legacyPool = normalizeCardTypePool(payload.approvedTypePool || payload.approved_type_pool || payload.type || payload.card_type || 'neutral', ['neutral'], { max: 7 });
+  const approvedTypeOdds = normalizeCardTypeOdds(payload.approvedTypeOdds || payload.approved_type_odds || payload.typeOdds || payload.type_odds, legacyPool, { max: 7 });
+  const approvedTypePool = typeOddsToPool(approvedTypeOdds, legacyPool);
   const suggestedTypePool = normalizeCardTypePool(payload.suggestedTypePool || payload.suggested_type_pool || payload.suggestedType || payload.suggested_type || approvedTypePool, approvedTypePool, { max: 3 });
   const cardType = normalizeCardType(payload.type || payload.card_type || approvedTypePool[0] || payload.role || payload.element || 'neutral');
   const typeSummary = getCardTypeSummary(cardType);
@@ -90,6 +91,8 @@ export function normalizeCardRow(row) {
     category: String(payload.category || typeSummary.label || 'Library'),
     suggestedTypePool,
     approvedTypePool,
+    approvedTypeOdds,
+    typeOdds: approvedTypeOdds,
     approvedType: approvedTypePool[0] || cardType,
     typeLabel: typeSummary.label,
     typeColor: typeSummary.color,
@@ -117,7 +120,7 @@ export function normalizeCardRow(row) {
     abilityIcon: String(payload.abilityIcon || payload.ability_icon || payload.icon || '✦'),
     baseStats,
     stats: { ...baseStats },
-    flavor: String(payload.flavor || payload.flavor_text || payload.description || 'A pull-eligible Library card.'),
+    flavor: String(payload.flavor || payload.flavor_text || payload.flavorText || payload.effect || payload.description || 'A pull-eligible Library card.'),
     imageKey,
     imageUrl: imageUrlFromKey(imageKey),
     crop,
@@ -142,8 +145,8 @@ export function summarizeByRarity(cards) { return allowedRarities.reduce((summar
 export function buildReadiness(cards, byRarity) {
   if (!cards.length) return { status: 'no-pull-pool-cards', summary: 'No unowned Library cards are currently eligible for pulls.', nextStep: 'Approve at least one submission or seed unowned Library cards before pull simulation.' };
   const missingRarities = allowedRarities.filter((rarity) => byRarity[rarity] === 0);
-  if (missingRarities.length) return { status: 'pool-ready-with-rarity-gaps', summary: 'Pull pool has cards, but one or more rarity buckets are empty.', nextStep: 'Phase 10.2 can simulate pulls with fallback behavior, or seed missing rarity buckets first.', missingRarities };
-  return { status: 'ready-for-pull-simulation', summary: 'Pull pool has unowned Library cards across all configured rarity buckets.', nextStep: 'Build write-enabled pulls only after simulation verifies cleanly.' };
+  if (missingRarities.length) return { status: 'pool-ready-with-rarity-gaps', summary: 'Pull pool has cards, but one or more rarity buckets are empty.', nextStep: 'Pulls can use fallback behavior, or missing rarity buckets can be seeded first.', missingRarities };
+  return { status: 'ready-for-pull-simulation', summary: 'Pull pool has unowned Library cards across all configured rarity buckets.', nextStep: 'Pull pool is ready.' };
 }
 
 export async function readPullPool(env) {
