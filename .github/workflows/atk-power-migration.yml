@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Migrate, validate, build, and publish
         shell: bash
@@ -90,6 +90,7 @@ jobs:
           - Internal `pow` compatibility assertions: passed
           EOF
 
+          rm -f docs/atk-power-terminology-migration-failure.md
           rm -f scripts/atk_power_migration.py .github/workflows/atk-power-migration.yml
           rmdir scripts 2>/dev/null || true
           git add -A
