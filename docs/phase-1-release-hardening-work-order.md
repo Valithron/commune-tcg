@@ -167,6 +167,7 @@ Use coherent commits such as:
 * Route and API inventory
 * Authentication regression tests
 * Economy transaction tests
+* Energy regeneration correction and tests
 * Recovery fixes
 * Telemetry schema documentation
 * Low-risk defect fixes
@@ -197,6 +198,7 @@ Phase 1 includes:
 * Administrator authorization audit
 * Economy and transaction integrity audit
 * Pull and reward idempotency
+* Energy regeneration repair and validation
 * Interruption and recovery testing
 * Error-state quality
 * Telemetry foundation design
@@ -264,6 +266,7 @@ The receiving thread may perform the following on the phase branch when supporte
 * Replace unsafe wrong-user compatibility fallback behavior with authenticated ownership when intended behavior is already unambiguous
 * Fix isolated idempotency defects without changing costs, rewards, odds, or progression values
 * Add logging needed to reproduce defects, provided private data is excluded
+* Implement the pre-authorized Energy regeneration correction in Section 6.2.1
 
 Every implementation must still be recorded, tested, previewed, and presented for final merge approval.
 
@@ -276,7 +279,7 @@ Pause before implementing any change to:
 * Gold rewards
 * Ticket rewards
 * Energy costs
-* Energy regeneration
+* Energy regeneration other than the specific pre-authorized correction in Section 6.2.1
 * XP rates
 * Level curves
 * Battle difficulty
@@ -303,6 +306,55 @@ Pause before implementing any change to:
 * Telemetry administrator presentation
 
 Telemetry is approved in principle, but design approval is required before implementation.
+
+## 6.2.1 Pre-authorized Energy regeneration correction
+
+Energy currently begins at 10 and is spent by battle attempts, but the current resource path does not apply elapsed-time regeneration. A player who spends the available Energy can therefore become unable to continue battling indefinitely. Treat this as a known **P1 playability defect** and address it early in Phase 1 after the baseline and ownership-sensitive resource path are understood.
+
+The approved first-test Energy contract is:
+
+* Maximum Energy: `10`
+* Ordinary encounter cost: retain the existing configured encounter cost, currently `1` for Crossroads Patrol
+* Regeneration rate: `1 Energy every 30 minutes`
+* Empty-to-full time: `5 hours`
+* Regeneration stops at the cap of `10`
+* Partial elapsed intervals must be preserved rather than discarded
+* Regeneration must be server-authoritative and calculated from persisted timestamps
+* Apply regeneration before returning resource state and before validating or debiting a battle attempt
+* Multiple tabs, refreshes, retries, and repeated reads must not duplicate Energy
+* Clock skew, missing timestamps, future timestamps, and malformed timestamps must fail safely
+* Existing players with a missing `energy_updated_at` value must receive an explicit, documented backfill behavior that does not erase valid Energy or grant repeated refills
+
+This correction is authorized without a separate consultation with Sterling. Work mode should choose the smallest reliable implementation that keeps one source of truth and avoids a scheduled background job when lazy elapsed-time reconciliation is sufficient.
+
+For this first correction, Energy regeneration is **not** shortened or modified by:
+
+* Gold
+* Pull tickets
+* Any new currency
+* Purchasable refills
+* Advertisements
+* Battle victory or defeat
+* First-win rewards
+* Missions
+* Card traits
+* Account level
+* Passive farming
+* Items, boosts, or temporary multipliers
+
+Do not add an Energy refill shop, bonus-energy reward, over-cap Energy, or gameplay accelerator during Phase 1. Those are later economy and daily-loop decisions.
+
+The Phase 1 report must state:
+
+* The implemented rate and cap
+* The exact timestamp and rounding behavior
+* Backfill behavior for existing resource rows
+* Where regeneration is applied
+* Test coverage and preview evidence
+* Whether the architecture leaves a safe extension point for future currency or gameplay modifiers
+* Confirmation that no currency or gameplay currently shortens the 30-minute interval
+
+Sterling may countermand or retune this value after implementation evidence, but Work mode should not pause before implementing this approved contract.
 
 ## 6.3 Immediate stop and notification conditions
 
@@ -602,6 +654,12 @@ Map tests to:
 * Surrender
 * First daily victory
 * Energy debit
+* Energy regeneration after one complete interval
+* Energy regeneration across multiple intervals
+* Partial-interval preservation
+* Energy cap enforcement
+* Existing-row timestamp backfill
+* Concurrent or repeated Energy reconciliation
 * Gold reward
 * Card XP
 * Card level-up
@@ -622,7 +680,7 @@ Do not refactor whole modules merely to improve testability unless separately ap
 
 ### Exit condition
 
-The repository contains a coverage-by-domain summary and new regression coverage for the highest-confidence risks that can be tested without broad redesign.
+The repository contains a coverage-by-domain summary and new regression coverage for the highest-confidence risks that can be tested without broad redesign. Energy regeneration must have direct tests for elapsed time, caps, malformed timestamps, and repeated reads or debits.
 
 ---
 
@@ -703,6 +761,10 @@ No wrong-user mutation may remain unexplained.
 
 Prove that resources, cards, history, and rewards remain internally consistent.
 
+### Early-priority Energy correction
+
+After establishing the baseline and tracing resource ownership, reproduce and repair the known non-recharging Energy defect before lower-priority economy polish. Implement the Section 6.2.1 contract, add regression coverage, and verify it in preview before treating repeated battle play as testable.
+
 ### Transaction scenarios
 
 Create before-and-after evidence for:
@@ -729,6 +791,16 @@ Create before-and-after evidence for:
 * Reward finalization
 * First daily victory
 * Energy debit
+* Energy at zero before any interval elapses
+* Energy after 29 minutes and 59 seconds
+* Energy after one 30-minute interval
+* Energy after multiple 30-minute intervals
+* Energy reconciliation after a long absence
+* Energy cap at 10
+* Energy debit immediately after elapsed-time reconciliation
+* Multiple tabs or concurrent reads during regeneration
+* Missing, malformed, and future `energy_updated_at` values
+* Existing-player row backfill
 * Gold reward
 * Card XP
 * Multi-level XP overflow
@@ -755,6 +827,12 @@ Prove or disprove:
 * Interrupted battle playback does not duplicate settlement.
 * Surrender follows the intended contract.
 * XP overflow carries correctly.
+* Energy regenerates by exactly one point per completed 30-minute interval.
+* Partial recharge progress is retained.
+* Energy never regenerates above 10.
+* A battle sees regenerated Energy before rejecting or debiting the attempt.
+* Repeated reads or tabs cannot mint duplicate Energy.
+* No currency or gameplay action currently shortens the recharge interval.
 * Displayed balances match database balances.
 * Client optimism cannot permanently disagree with server state.
 
@@ -771,7 +849,7 @@ Real test accounts may be used, but:
 
 ### Exit condition
 
-Every critical transaction has a recorded expected and actual result, and every inconsistency is fixed, approval-gated, or explicitly accepted as remaining risk.
+Every critical transaction has a recorded expected and actual result, and every inconsistency is fixed, approval-gated, or explicitly accepted as remaining risk. A player who spends Energy must be able to regain it under the approved 30-minute contract without administrator intervention.
 
 ---
 
@@ -805,6 +883,9 @@ Test or simulate:
 * Malformed session storage
 * Multiple tabs using one account
 * Service worker or cache mismatch where applicable
+* Concurrent resource reads while an Energy interval completes
+* Resource read failure during Energy reconciliation
+* Battle creation at the exact recharge boundary
 
 ### Recovery questions
 
@@ -821,6 +902,7 @@ For each scenario, determine:
 * Does stale state survive logout or account switching?
 * Can Pull Again freeze after interrupted reveal state?
 * Can battle playback resume from stored events?
+* Can Energy reconciliation be safely repeated after a failed response?
 
 ### Error-state requirements
 
@@ -837,7 +919,7 @@ Do not expose stack traces, secrets, raw SQL, or private data.
 
 ### Exit condition
 
-Critical actions have a documented safe-retry contract, unrecoverable states are listed, and no verified duplicate charge or reward remains.
+Critical actions have a documented safe-retry contract, unrecoverable states are listed, and no verified duplicate charge, reward, or Energy grant remains.
 
 ---
 
@@ -950,6 +1032,10 @@ The event model is approved and, if implementation is approved within Phase 1, v
 
 Convert verified findings into reliability improvements without opening a general redesign.
 
+### Required early defect
+
+The Energy regeneration defect is already reported and pre-authorized. Record it in the defect ledger, reproduce it, implement the Section 6.2.1 contract, and verify it before spending substantial effort on P2 or P3 polish. This priority does not supersede an active P0 security, ownership, corruption, or production-outage issue.
+
 ### Defect process
 
 For every defect:
@@ -1000,6 +1086,7 @@ Do not present inference as fact.
 
 * Core loop cannot complete
 * Login, pulls, battle, or rewards regularly fail
+* Energy cannot regenerate and permanently blocks repeated battle play
 * Major economy exploit
 * Common mobile layout is unusable
 * Player is trapped
@@ -1057,6 +1144,7 @@ Before human testing:
 * Preview bindings and data risk are known.
 * Test accounts and starting resources are recorded.
 * Known P0 defects are resolved.
+* Energy regeneration is implemented and verified well enough to support repeated battle testing.
 * Test scripts do not require technical knowledge from the casual tester.
 
 ### Sterling test
@@ -1071,6 +1159,7 @@ Sterling should test:
 * Squad creation and reordering
 * Battle interruption
 * Retry behavior
+* Energy depletion and later recharge
 * Administrator surfaces
 * Resource consistency
 * Unusual navigation
@@ -1185,6 +1274,8 @@ Clearly list:
 * Telemetry decisions
 * Merge approval
 
+The Energy regeneration value in Section 6.2.1 is already approved for the first test implementation. Report it as an implemented product decision rather than reopening it for pre-implementation approval.
+
 #### Status report
 
 Include:
@@ -1225,7 +1316,7 @@ Use at least:
 Use at least:
 
 | Date | Environment | Player | Resource | Amount | Direction | Reason | Operator | Before | After | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## 11.3 Deployment ledger
 
@@ -1292,11 +1383,15 @@ For any additive schema proposal:
 * Confirm compatibility with current production data
 * Obtain approval when it materially affects production
 
+The Energy correction may use the existing `energy` and `energy_updated_at` columns. If an additive migration is still required, keep it minimal, idempotent, and backward-compatible.
+
 ## 12.4 Data correction
 
 Do not silently “repair” unexpected player state.
 
 First preserve evidence and explain the transaction path that produced it.
+
+The one-time handling of missing Energy timestamps must be documented as migration or backfill behavior, covered by tests, and designed so repeated reads cannot repeatedly grant Energy.
 
 ---
 
@@ -1314,7 +1409,7 @@ For every verified conflict:
 
 Do not rewrite design history unnecessarily. Preserve useful historical context when clearly labeled.
 
-At minimum, resolve or explicitly classify the four known conflicts in Section 7.
+At minimum, resolve or explicitly classify the four known conflicts in Section 7 and document the implemented Energy regeneration contract in the appropriate canonical game and backend documents.
 
 ---
 
@@ -1332,6 +1427,7 @@ Phase 1 may be recommended for merge only when all applicable gates are satisfie
 * No wrong-user mutation remains.
 * No duplicate charging remains.
 * No duplicate settlement remains.
+* No duplicate Energy regeneration remains.
 * Recovery behavior is documented.
 
 ## Account and security integrity
@@ -1349,6 +1445,10 @@ Phase 1 may be recommended for merge only when all applicable gates are satisfie
 * Repeated input is idempotent or safely rejected.
 * Pull counts, history, card creation, and balances reconcile.
 * Battle settlement and rewards reconcile.
+* Energy regenerates at 1 point per 30 completed minutes and caps at 10.
+* Partial recharge time is preserved.
+* Battle debit sees the reconciled Energy value.
+* No currency or gameplay system shortens the recharge interval in Phase 1.
 * Displayed resources match persisted resources.
 
 ## Playability
@@ -1357,6 +1457,7 @@ Phase 1 may be recommended for merge only when all applicable gates are satisfie
 * Primary actions work on release-critical devices.
 * Errors do not trap the player.
 * Pull and battle flows recover safely.
+* A depleted player can regain Energy without administrator intervention.
 * Cydney can complete a basic session without technical guidance.
 
 ## Telemetry
@@ -1371,6 +1472,7 @@ Phase 1 may be recommended for merge only when all applicable gates are satisfie
 * No Phase 2 work has been smuggled into Phase 1.
 * No broad rewrite has occurred.
 * No unapproved economy or progression values changed.
+* The Energy correction remains within the explicit Section 6.2.1 authorization.
 * Remaining risks are explicit.
 * Every implementation is reviewable.
 
@@ -1385,7 +1487,8 @@ Provide a status update at meaningful boundaries, approximately:
 * After baseline and branch creation
 * After route and API inventory
 * After automated coverage analysis
-* After ownership and economy audits
+* After ownership audit and the early Energy correction
+* After the wider economy audit
 * At the telemetry approval checkpoint
 * Before human preview testing
 * At final approval package
@@ -1400,6 +1503,13 @@ Every status update should include:
 * Current risks
 * Next work package
 * Any decision required
+
+The update following the Energy correction must report:
+
+* The implemented 30-minute rate and cap of 10
+* Timestamp and backfill behavior
+* Whether the fix is verified in preview
+* Whether any currency or gameplay currently affects recharge
 
 Report P0 findings immediately rather than waiting for the next scheduled update.
 
@@ -1418,19 +1528,20 @@ This work order is complete when:
 5. Required automated gates were run and recorded.
 6. Critical coverage gaps were addressed or documented.
 7. Authentication, ownership, and admin boundaries were audited.
-8. Economy transactions were reconciled.
-9. Failure and recovery behavior was tested.
-10. Telemetry design received an explicit decision.
-11. Approved telemetry implementation, if included, was verified.
-12. Controlled low-risk fixes were tested.
-13. Known documentation conflicts were resolved or classified.
-14. A preview was tested on release-critical devices.
-15. Sterling and Cydney release-confidence evidence was recorded.
-16. Remaining P0 and P1 risks are absent, fixed, or explicitly accepted where acceptance is safe.
-17. The final Phase 1 report gives a GO, CONDITIONAL GO, or NO-GO recommendation.
-18. Sterling receives a final approval package.
-19. The branch remains unmerged until Sterling approves.
-20. Phase 2 has not begun.
+8. Energy regeneration is implemented at 1 per 30 minutes, capped at 10, and verified against duplicate, timestamp, boundary, and backfill cases.
+9. Economy transactions were reconciled.
+10. Failure and recovery behavior was tested.
+11. Telemetry design received an explicit decision.
+12. Approved telemetry implementation, if included, was verified.
+13. Controlled low-risk fixes were tested.
+14. Known documentation conflicts were resolved or classified.
+15. A preview was tested on release-critical devices.
+16. Sterling and Cydney release-confidence evidence was recorded.
+17. Remaining P0 and P1 risks are absent, fixed, or explicitly accepted where acceptance is safe.
+18. The final Phase 1 report gives a GO, CONDITIONAL GO, or NO-GO recommendation.
+19. Sterling receives a final approval package.
+20. The branch remains unmerged until Sterling approves.
+21. Phase 2 has not begun.
 
 ---
 
@@ -1444,11 +1555,13 @@ Proceed autonomously through safe audit, documentation, testing, and clearly low
 
 Use evidence, not assumptions.
 
+Prioritize the known Energy regeneration defect after baseline and ownership verification. Implement the pre-authorized rate of 1 Energy per 30 minutes, capped at 10, without adding currency purchases or gameplay accelerators.
+
 Do not confuse passing tests with complete confidence.
 
 Do not fabricate human feedback or Cloudflare dashboard facts.
 
-Do not change economy, progression, or major design behavior without approval.
+Do not change economy, progression, or major design behavior without approval, except for the explicit Energy regeneration authorization in Section 6.2.1.
 
 Do not merge without Sterling's explicit approval.
 
@@ -1466,7 +1579,9 @@ Use the following message when handing this order to Work mode:
 >
 > Treat `docs/quality-playability-roadmap.md` as the governing program roadmap. Complete Phase 1 only. Create `phase/release-hardening` from the latest verified `main`, open a draft pull request, maintain the required evidence files, and follow every approval gate in the work order.
 >
-> Proceed autonomously through safe audits, tests, documentation, and low-risk fixes. Pause for Sterling only when the work order requires an approval-gated product, economy, telemetry, data, or merge decision.
+> Proceed autonomously through safe audits, tests, documentation, and low-risk fixes. After baseline and resource-ownership verification, prioritize the known Energy regeneration defect. Implement the pre-authorized contract of 1 Energy every 30 minutes, capped at 10, with no currency purchase or gameplay accelerator in Phase 1. Report the exact timestamp, backfill, test, and preview behavior after implementation.
+>
+> Pause for Sterling only when the work order requires an approval-gated product, economy, telemetry, data, or merge decision. The Energy regeneration contract in Section 6.2.1 is already approved and does not require a pre-implementation pause.
 >
 > When reporting progress or requesting a decision, include the current branch, commit, approximate completion percentage, verified findings, risks, and recommended next action.
 >
