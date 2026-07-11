@@ -5,6 +5,7 @@
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
+import { getAdminSessionUser } from '../_shared/auth.js';
 
 function getExtension(key) {
   const lastSegment = key.split('/').pop() || '';
@@ -27,10 +28,14 @@ function toSortedEntries(map) {
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }) {
+  if (!env.DB) {
+    return errorResponse('D1 binding DB is not available for admin authorization.', 503);
+  }
   if (!env.CARD_IMAGES) {
     return errorResponse('R2 binding CARD_IMAGES is not available.', 503);
   }
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     const listing = await env.CARD_IMAGES.list({ limit: 200 });

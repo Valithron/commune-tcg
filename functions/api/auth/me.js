@@ -1,5 +1,5 @@
 import { errorResponse, jsonResponse } from '../../_shared/json.js';
-import { clearSessionCookie, destroySession, ensureAuthSchema, getSessionUser } from '../../_shared/auth.js';
+import { clearSessionCookie, destroySession, ensureAuthSchema, getSessionUser, isAdminUser } from '../../_shared/auth.js';
 
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
@@ -16,7 +16,7 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    return jsonResponse({ ok: true, user: user || null }, { status: user ? 200 : 401 });
+    return jsonResponse({ ok: true, user: user ? { ...user, isAdmin: isAdminUser(user, env) } : null }, { status: user ? 200 : 401 });
   } catch (error) {
     return errorResponse('Failed to read auth session.', 500, error.message);
   }

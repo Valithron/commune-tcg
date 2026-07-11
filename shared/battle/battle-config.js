@@ -42,7 +42,7 @@ export const TYPE_MATCHUPS = Object.freeze({
 });
 
 export const TYPE_COLORS = Object.freeze({
-  flame: '#ef5b5b', tide: '#58a6ff', bloom: '#5ac878', volt: '#f2cc60', shadow: '#9a7bd8', radiant: '#f6e6a6', neutral: '#c5ad87',
+  flame: '#E85D4F', tide: '#2F80ED', bloom: '#45B36B', volt: '#F2C94C', shadow: '#5B3A8E', radiant: '#F6D77A', neutral: '#A99A86',
 });
 
 export const MVP_WEIGHTS = Object.freeze({
@@ -70,4 +70,3 @@ export function createBattleRules(overrides = {}) {
     playback: { ...BATTLE_RULES.playback, ...(overrides.playback || {}) },
   };
 }
-

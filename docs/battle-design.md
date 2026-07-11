@@ -1,6 +1,6 @@
-# Commune TCG Battle Design
+# Imago Core Battle Design
 
-Living design authority for the Commune TCG battle system on the `Gacha` branch.
+Living design authority for the Imago Core battle system on the canonical release branch.
 
 This document defines what the battle system is, how it should feel, and what the player should experience. It contains confirmed rules, active test values, visual direction, encounter design, economy test values, deferred systems, and remaining balance-validation work.
 
@@ -10,7 +10,7 @@ This document does not authorize implementation by itself. Implementation is gov
 
 **Phase:** Battle design complete enough for implementation planning
 **Current objective:** Build and validate the first complete 3-on-3 PvE battle loop
-**Implementation status:** First complete 3-on-3 PvE build implemented on `Gacha`; balance findings remain subject to live validation
+**Implementation status:** First complete 3-on-3 PvE build implemented; balance findings remain subject to live validation
 **Primary wider-game authority:** `docs/game-design.md`
 **Implementation authority:** `docs/battle-implementation-plan.md`
 
@@ -37,7 +37,7 @@ When the documents overlap:
 
 ### Product and session shape
 
-- Commune TCG is a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social or anime-themed worldbuilding.
+- Imago Core is a character-collection digital CCG with pull acquisition, light squad battles, and social or anime-themed variants.
 - It is not intended to become a deep competitive tabletop TCG.
 - The target audience is casual-to-midcore.
 - A normal daily session should take roughly 5 to 10 minutes, with optional longer play.

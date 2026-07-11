@@ -20,23 +20,23 @@ const rarityFrameAssets = {
 };
 
 const characterMap = [
-  { key: 'cydney', name: 'Cydney', abbr: 'CY', color: '#789461' },
-  { key: 'sterling', name: 'Sterling', abbr: 'ST', color: '#c4c5db' },
-  { key: 'ryan', name: 'Ryan', abbr: 'RY', color: '#a98cff' },
-  { key: 'gabi', name: 'Gabi', abbr: 'GA', color: '#8ccdff' },
-  { key: 'cooper', name: 'Cooper', abbr: 'CO', color: '#ff8f70' },
-  { key: 'kenly', name: 'Kenly', abbr: 'KE', color: '#73e1c2' },
-  { key: 'ashley', name: 'Ashley', abbr: 'AS', color: '#ff9ccf' },
+  { key: 'cydney', name: 'Cydney', abbr: 'CY', color: 'var(--identity-cydney)' },
+  { key: 'sterling', name: 'Sterling', abbr: 'ST', color: 'var(--identity-sterling)' },
+  { key: 'ryan', name: 'Ryan', abbr: 'RY', color: 'var(--identity-ryan)' },
+  { key: 'gabi', name: 'Gabi', abbr: 'GA', color: 'var(--identity-gabi)' },
+  { key: 'cooper', name: 'Cooper', abbr: 'CO', color: 'var(--identity-cooper)' },
+  { key: 'kenly', name: 'Kenly', abbr: 'KE', color: 'var(--identity-kenly)' },
+  { key: 'ashley', name: 'Ashley', abbr: 'AS', color: 'var(--identity-ashley)' },
 ];
 
 const cardTypeMap = {
-  flame: { label: 'Flame', color: '#E85D4F', textColor: '#101014' },
-  tide: { label: 'Tide', color: '#2F80ED', textColor: '#f7f9ff' },
-  bloom: { label: 'Bloom', color: '#45B36B', textColor: '#101014' },
-  volt: { label: 'Volt', color: '#F2C94C', textColor: '#101014' },
-  shadow: { label: 'Shadow', color: '#5B3A8E', textColor: '#f7f9ff' },
-  radiant: { label: 'Radiant', color: '#F6D77A', textColor: '#101014' },
-  neutral: { label: 'Neutral', color: '#A99A86', textColor: '#101014' },
+  flame: { label: 'Flame', color: 'var(--type-flame)', textColor: '#101014' },
+  tide: { label: 'Tide', color: 'var(--type-tide)', textColor: '#f7f9ff' },
+  bloom: { label: 'Bloom', color: 'var(--type-bloom)', textColor: '#101014' },
+  volt: { label: 'Volt', color: 'var(--type-volt)', textColor: '#101014' },
+  shadow: { label: 'Shadow', color: 'var(--type-shadow)', textColor: '#f7f9ff' },
+  radiant: { label: 'Radiant', color: 'var(--type-radiant)', textColor: '#101014' },
+  neutral: { label: 'Neutral', color: 'var(--type-neutral)', textColor: '#101014' },
 };
 
 function renderStats(stats = {}) {
@@ -125,7 +125,7 @@ function normalizeCharacterKey(value) {
 
 function findCharacter(card) {
   const cid = normalizeCharacterKey(card.cid) || normalizeCharacterKey(card.character) || normalizeCharacterKey(card.character_id) || normalizeCharacterKey(card.characterId);
-  return characterMap.find((character) => character.key === cid) || { key: 'unknown', name: 'Unknown', abbr: '??', color: '#9da2b7' };
+  return characterMap.find((character) => character.key === cid) || { key: 'unknown', name: 'Unknown', abbr: '??', color: 'var(--identity-unknown)' };
 }
 
 function normalizeCardType(value) {

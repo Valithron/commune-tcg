@@ -1,6 +1,7 @@
 import { errorResponse, jsonResponse } from '../../_shared/json.js';
 import { rollApprovalProfile } from '../../_shared/approval-rolls.js';
 import { buildApprovedTemplateTraits, normalizeBaseStats, normalizeRarity } from '../../_shared/card-mechanics.js';
+import { getAdminSessionUser } from '../../_shared/auth.js';
 
 const allowedActions = new Set([
   'audit',
@@ -536,8 +537,9 @@ async function randomizeFounderPoolRarities(env, { resetOwnedCopies = false } = 
   };
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     return jsonResponse(await auditMechanics(env));
@@ -548,6 +550,7 @@ export async function onRequestGet({ env }) {
 
 export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     const payload = await request.json().catch(() => ({}));

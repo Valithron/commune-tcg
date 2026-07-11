@@ -1,5 +1,5 @@
 /* ============================================================================
-   Commune TCG Gacha - App Bootstrap
+   Imago Core - App Bootstrap
    Phase 10F.3 responsibility: keep player/admin routes separate, load battle
    presentation overrides, and reset scroll on route changes.
    ============================================================================ */
@@ -185,6 +185,13 @@ async function renderRoute() {
     const authUser = await loadAuthUser();
     if (!authUser) return renderAuthGate({ redirectTo: path });
     if (currentToken !== renderToken) return;
+    if (route.shell === 'admin' && !authUser.isAdmin) {
+      appRoot.innerHTML = await renderAppShell({
+        activeRoute: '/home',
+        content: renderError(new Error('This route requires an Imago Core administrator account.'), 'player'),
+      });
+      return;
+    }
 
     const content = await route.render({ params: route.params || {}, query });
     if (currentToken !== renderToken) return;

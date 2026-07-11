@@ -1,5 +1,5 @@
 /* ============================================================================
-   Commune TCG Type Config
+   Imago Core Type Config
 
    Centralizes the accepted 7-type model, stat allocation bias, display labels,
    matchup chart, type pools, and weighted pull-time type odds.
@@ -22,13 +22,13 @@ export const typeMatchupModifiers = Object.freeze({
 });
 
 export const communeCardTypes = Object.freeze({
-  flame: { type: 'flame', label: 'Flame', color: 'red', coreIdentity: 'Power, aggression, burst damage', statWeights: { pow: 1.10, def: 0.95, spd: 1.00 }, statBias: { pow: 10, def: -5, spd: 0 }, matchups: { flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral' } },
-  tide: { type: 'tide', label: 'Tide', color: 'blue', coreIdentity: 'Flow, healing, control', statWeights: { pow: 1.00, def: 1.05, spd: 1.05 }, statBias: { pow: 0, def: 5, spd: 5 }, matchups: { flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral' } },
-  bloom: { type: 'bloom', label: 'Bloom', color: 'green', coreIdentity: 'Growth, sustain, nature', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'advantage', bloom: 'neutral', volt: 'advantage', shadow: 'disadvantage', radiant: 'neutral', neutral: 'neutral' } },
-  volt: { type: 'volt', label: 'Volt', color: 'yellow', coreIdentity: 'Speed, energy, disruption', statWeights: { pow: 1.05, def: 0.95, spd: 1.10 }, statBias: { pow: 5, def: -5, spd: 10 }, matchups: { flame: 'neutral', tide: 'advantage', bloom: 'disadvantage', volt: 'neutral', shadow: 'disadvantage', radiant: 'advantage', neutral: 'neutral' } },
-  shadow: { type: 'shadow', label: 'Shadow', color: 'black', coreIdentity: 'Evil defense, drain, corruption, sacrifice, tricks', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'neutral', bloom: 'advantage', volt: 'advantage', shadow: 'neutral', radiant: 'disadvantage', neutral: 'neutral' } },
-  radiant: { type: 'radiant', label: 'Radiant', color: 'white-gold', coreIdentity: 'Healing, protection, holy or heroic power', statWeights: { pow: 1.05, def: 1.05, spd: 1.00 }, statBias: { pow: 5, def: 5, spd: 0 }, matchups: { flame: 'advantage', tide: 'disadvantage', bloom: 'neutral', volt: 'disadvantage', shadow: 'advantage', radiant: 'neutral', neutral: 'neutral' } },
-  neutral: { type: 'neutral', label: 'Neutral', color: 'tan', coreIdentity: 'Balanced, mundane, flexible, comedy cards', statWeights: { pow: 1.00, def: 1.00, spd: 1.00 }, statBias: { pow: 0, def: 0, spd: 0 }, matchups: { flame: 'neutral', tide: 'neutral', bloom: 'neutral', volt: 'neutral', shadow: 'neutral', radiant: 'neutral', neutral: 'neutral' } },
+  flame: { type: 'flame', label: 'Flame', color: '#E85D4F', coreIdentity: 'Power, aggression, burst damage', statWeights: { pow: 1.10, def: 0.95, spd: 1.00 }, statBias: { pow: 10, def: -5, spd: 0 }, matchups: { flame: 'neutral', tide: 'disadvantage', bloom: 'advantage', volt: 'neutral', shadow: 'advantage', radiant: 'disadvantage', neutral: 'neutral' } },
+  tide: { type: 'tide', label: 'Tide', color: '#2F80ED', coreIdentity: 'Flow, healing, control', statWeights: { pow: 1.00, def: 1.05, spd: 1.05 }, statBias: { pow: 0, def: 5, spd: 5 }, matchups: { flame: 'advantage', tide: 'neutral', bloom: 'disadvantage', volt: 'disadvantage', shadow: 'neutral', radiant: 'advantage', neutral: 'neutral' } },
+  bloom: { type: 'bloom', label: 'Bloom', color: '#45B36B', coreIdentity: 'Growth, sustain, nature', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'advantage', bloom: 'neutral', volt: 'advantage', shadow: 'disadvantage', radiant: 'neutral', neutral: 'neutral' } },
+  volt: { type: 'volt', label: 'Volt', color: '#F2C94C', coreIdentity: 'Speed, energy, disruption', statWeights: { pow: 1.05, def: 0.95, spd: 1.10 }, statBias: { pow: 5, def: -5, spd: 10 }, matchups: { flame: 'neutral', tide: 'advantage', bloom: 'disadvantage', volt: 'neutral', shadow: 'disadvantage', radiant: 'advantage', neutral: 'neutral' } },
+  shadow: { type: 'shadow', label: 'Shadow', color: '#5B3A8E', coreIdentity: 'Defense, drain, corruption, sacrifice, and tricks', statWeights: { pow: 1.00, def: 1.10, spd: 0.95 }, statBias: { pow: 0, def: 10, spd: -5 }, matchups: { flame: 'disadvantage', tide: 'neutral', bloom: 'advantage', volt: 'advantage', shadow: 'neutral', radiant: 'disadvantage', neutral: 'neutral' } },
+  radiant: { type: 'radiant', label: 'Radiant', color: '#F6D77A', coreIdentity: 'Healing, protection, holy or heroic power', statWeights: { pow: 1.05, def: 1.05, spd: 1.00 }, statBias: { pow: 5, def: 5, spd: 0 }, matchups: { flame: 'advantage', tide: 'disadvantage', bloom: 'neutral', volt: 'disadvantage', shadow: 'advantage', radiant: 'neutral', neutral: 'neutral' } },
+  neutral: { type: 'neutral', label: 'Neutral', color: '#A99A86', coreIdentity: 'Balanced, mundane, flexible, comedy cards', statWeights: { pow: 1.00, def: 1.00, spd: 1.00 }, statBias: { pow: 0, def: 0, spd: 0 }, matchups: { flame: 'neutral', tide: 'neutral', bloom: 'neutral', volt: 'neutral', shadow: 'neutral', radiant: 'neutral', neutral: 'neutral' } },
 });
 
 const typeAliases = Object.freeze({

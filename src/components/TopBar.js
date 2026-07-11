@@ -85,9 +85,9 @@ export async function renderTopBar() {
 
   return `
     <header class="app-topbar">
-      <a class="brand-mark" href="#/home" aria-label="Commune TCG Home">
-        <span class="brand-kicker">Commune TCG</span>
-        <h1 class="brand-title">Gacha</h1>
+      <a class="brand-mark" href="#/home" aria-label="Imago Core Home">
+        <span class="brand-kicker">Imago</span>
+        <h1 class="brand-title">Core</h1>
       </a>
       <div class="topbar-right">
         ${renderUserPill()}

@@ -24,6 +24,7 @@ import * as battleForecast from './functions/api/battle-forecast.js';
 import * as battleFinalize from './functions/api/battle-finalize.js';
 import * as battles from './functions/api/battles.js';
 import * as battleHistory from './functions/api/battle-history.js';
+import * as battleRewardContract from './functions/api/battle-reward-contract.js';
 import * as submissions from './functions/api/submissions.js';
 import * as adminCards from './functions/api/admin/cards.js';
 import * as adminCardMechanics from './functions/api/admin/card-mechanics.js';
@@ -81,6 +82,7 @@ const routeModules = {
   '/api/battle-finalize': battleFinalize,
   '/api/battles': battles,
   '/api/battle-history': battleHistory,
+  '/api/battle-reward-contract': battleRewardContract,
   '/api/submissions': submissions,
   '/api/admin/cards': adminCards,
   '/api/admin/card-mechanics': adminCardMechanics,
@@ -120,7 +122,7 @@ function serveAssets(request, env) {
     return env.ASSETS.fetch(request);
   }
 
-  return new Response('Commune TCG Worker is missing the ASSETS binding. Deploy with wrangler.toml [assets].', {
+  return new Response('Imago Core Worker is missing the ASSETS binding. Deploy with wrangler.toml [assets].', {
     status: 500,
     headers: { 'content-type': 'text/plain; charset=utf-8' },
   });

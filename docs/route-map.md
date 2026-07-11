@@ -1,82 +1,116 @@
-# Route Map
+# Imago Core Route Map
+
+`src/main.js` is the browser route source of truth. `worker.js` is the Worker API dispatch source of truth.
 
 ## Player routes
 
-These routes render through `src/components/AppShell.js` with the player top bar and bottom nav.
+| Route | File | Purpose |
+|---|---|---|
+| `#/home` | `src/routes/Home.js` | Player dashboard, daily/battle actions, and strongest owned card |
+| `#/pull` | `src/routes/Pull.js` | Pull chamber, options, history, and confirmation entry |
+| `#/pull/confirm` | `src/routes/PullConfirm.js` | Compatibility confirmation route |
+| `#/pull/reveal` | `src/routes/PullReveal.js` | Single or multi resolved-card reveal |
+| `#/pull/results` | `src/routes/PullResults.js` | Post-reveal results state |
+| `#/pull/history` | `src/routes/PullHistory.js` | Player pull history |
+| `#/vault` | `src/routes/Vault.js` | Owned-card collection, search, filters, sorting, and duplicates |
+| `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Owned-card detail |
+| `#/library` | `src/routes/Library.js` | Global template catalog, search, filters, and sorting |
+| `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Library template detail |
+| `#/shop` | `src/routes/TicketShop.js` | Daily ticket and Gold exchanges |
+| `#/battle` | `src/routes/BattleHub.js` | Battle entry and readiness |
+| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Encounter formation, rules, cost, and rewards |
+| `#/battle/squad` | `src/routes/SquadBuilder.js` | Ordered squad selection and lane forecasts |
+| `#/battle/arena` | `src/routes/BattleArena.js` | Full-screen stored-event playback and controls |
+| `#/battle/results` | `src/routes/BattleResults.js` | Persisted outcome, MVP, reward queue, XP, and retry |
+| `#/submit` | `src/routes/SubmitCard.js` | Player card submission and crop preview |
+
+Player routes use `AppShell`, except the arena, which uses a dedicated battle shell.
+
+## Administrator routes
 
 | Route | File | Purpose |
 |---|---|---|
-| `#/home` | `src/routes/Home.js` | Player dashboard and quick actions |
-| `#/pull` | `src/routes/Pull.js` | Gacha entry point and ticket CTA |
-| `#/pull/confirm?count=1` | `src/routes/PullConfirm.js` | Confirm a 1-pull ticket spend |
-| `#/pull/confirm?count=5` | `src/routes/PullConfirm.js` | Confirm a 5-pull ticket spend |
-| `#/pull/results?count=1` | `src/routes/PullResults.js` | Show pull result |
-| `#/pull/results?count=5` | `src/routes/PullResults.js` | Show five-pull result |
-| `#/pull/history` | `src/routes/PullHistory.js` | Show pull history |
-| `#/vault` | `src/routes/Vault.js` | Owned card collection |
-| `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Owned card detail screen |
-| `#/library` | `src/routes/Library.js` | Global card pool preview |
-| `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Global template detail screen |
-| `#/shop` | `src/routes/TicketShop.js` | Ticket shop layout |
-| `#/battle` | `src/routes/BattleHub.js` | Battle hub and readiness summary |
-| `#/battle/encounters` | `src/routes/EncounterSelect.js` | Inspect the canonical three-enemy formation, rule, Energy, and rewards |
-| `#/battle/squad?encounter=:encounterId&squadCardIds=:ids` | `src/routes/SquadBuilder.js` | Save explicit left/center/right order and view isolated-lane forecasts |
-| `#/battle/arena?attemptId=:attemptId` | `src/routes/BattleArena.js` | Full-screen stored-event playback, pause, inspection, recovery, skip, and retreat |
-| `#/battle/results?attemptId=:attemptId` | `src/routes/BattleResults.js` | Persisted result, MVP, automatic reward queue, XP, and level-ups |
-| `#/submit` | `src/routes/SubmitCard.js` | Player-facing card submission form shape |
-
-## Admin and diagnostic routes
-
-These routes render through `src/components/AdminShell.js`. Admin navigation intentionally contains no links back to player routes.
-
-| Route | File | Purpose |
-|---|---|---|
-| `#/admin` | `src/routes/AdminIndex.js` | Isolated admin and diagnostics hub |
-| `#/admin/battle-check` | `src/routes/AdminBattleTest.js` | Button-based protected battle reward write check |
+| `#/admin` | `src/routes/AdminIndex.js` | Protected admin and diagnostics hub |
+| `#/admin/battle-check` | `src/routes/AdminBattleTest.js` | Protected battle reward write check |
+| `#/admin/cards` | `src/routes/AdminCardEditor.js` | Library card editor, creator, art, crop, rarity, and types |
+| `#/admin/card-mechanics` | `src/routes/AdminCardMechanics.js` | Mechanics audit, stats, founder rarity, and repair actions |
+| `#/admin/submit-crop-lab` | `src/routes/AdminSubmitCropLab.js` | Submission crop diagnostics |
 | `#/admin/submissions` | `src/routes/AdminDashboard.js` | Submission review queue |
-| `#/admin/submission/:submissionId` | `src/routes/AdminSubmissionDetail.js` | Submission review detail and server-owned review actions |
-| `#/admin/backend` | `src/routes/BackendStatus.js` | Backend status and diagnostic endpoint links |
-| `#/admin/inventory` | `src/routes/ResourceInventory.js` | Resource inventory and verification checklist |
-| `#/admin/card-lab` | `src/routes/CardLab.js` | Card frame inspection and tuning diagnostics |
+| `#/admin/submission/:submissionId` | `src/routes/AdminSubmissionDetail.js` | Review detail, creator, rarity, type odds, approve/reject |
+| `#/admin/backend` | `src/routes/BackendStatus.js` | Backend status and diagnostic links |
+| `#/admin/inventory` | `src/routes/ResourceInventory.js` | D1/R2 inventory and verification checklist |
+| `#/admin/card-lab` | `src/routes/CardLab.js` | Canonical card renderer inspection and tuning |
 
-## Legacy admin redirects
+The browser requires `user.isAdmin` before rendering an admin shell. Every `/api/admin/*` endpoint independently enforces the server allowlist.
 
-These older diagnostic routes are redirected into the admin boundary by `src/main.js`.
+Legacy browser redirects:
 
-| Legacy route | Redirects to |
+| Old route | Target |
 |---|---|
 | `#/backend` | `#/admin/backend` |
 | `#/inventory` | `#/admin/inventory` |
 | `#/card-lab` | `#/admin/card-lab` |
 
-## Active API endpoints
+## Authentication APIs
 
-| Endpoint | File | Purpose |
+| Method | Path | Purpose |
 |---|---|---|
-| `/api/health` | `functions/api/health.js` | Confirm function runtime and binding availability |
-| `/api/schema` | `functions/api/schema.js` | Read D1 table names from `sqlite_master` |
-| `/api/schema-details` | `functions/api/schema-details.js` | Read D1 columns and indexes using PRAGMA metadata |
-| `/api/images` | `functions/api/images.js` | Read a small R2 object sample |
-| `/api/images-summary` | `functions/api/images-summary.js` | Summarize sampled R2 key patterns |
-| `/api/cards` | `functions/api/cards.js` | Read and normalize Library cards from D1 |
-| `/api/card-image?key=...` | `functions/api/card-image.js` | Read a single R2 card-art object by key |
-| `/api/vault` | `functions/api/vault.js` | Read owned Vault cards |
-| `/api/pull-pool` | `functions/api/pull-pool.js` | Read pull-eligible pool diagnostics |
-| `/api/pull-simulate` | `functions/api/pull-simulate.js` | No-write pull simulation |
-| `/api/pulls` | `functions/api/pulls.js` | Resolve pulls and write owned cards/history |
-| `/api/pull-history` | `functions/api/pull-history.js` | Read pull history |
-| `/api/pull-resources` | `functions/api/pull-resources.js` | Read Pull Tickets, Gold, daily pull state, and Energy |
-| `/api/battle-inventory` | `functions/api/battle-inventory.js` | Read battle cards, normalized image fields, and table diagnostics |
-| `/api/battle-encounters` | `functions/api/battle-encounters.js` | Read the canonical versioned encounter registry |
-| `/api/battle-forecast` | `functions/api/battle-forecast.js` | Generate Favored/Even/Risky labels from isolated canonical simulations |
-| `/api/battle-simulate` | `functions/api/battle-simulate.js` | No-write canonical seeded lane simulation |
-| `/api/battle-squad` | `functions/api/battle-squad.js` | Read and save exactly three ordered owned card IDs |
-| `/api/battle-attempt` | `functions/api/battle-attempt.js` | Recover a specific attempt or latest pending attempt |
-| `/api/battles` | `functions/api/battles.js` | Create a pending authoritative attempt and spend Energy exactly once |
-| `/api/battle-finalize` | `functions/api/battle-finalize.js` | Finalize stored outcome or surrender and settle rewards exactly once |
-| `/api/battle-history` | `functions/api/battle-history.js` | Read battle history with reward and XP details |
-| `/api/battle-reward-contract` | `functions/api/battle-reward-contract.js` | Read Battle Phase 5 reward and XP contract |
+| `GET` | `/api/auth/users` | List known player slots and setup status |
+| `GET` | `/api/auth/me` | Read active session and admin policy flag |
+| `POST` | `/api/auth/setup-pin` | Set username/PIN and establish session |
+| `POST` | `/api/auth/login` | Verify PIN and establish session |
+| `POST` | `/api/auth/logout` | Destroy session and clear cookie |
 
-## Routing implementation note
+## Player and collection APIs
 
-The Gacha app currently uses hash routing because it is safer for a static Cloudflare Pages app. Phase 10F.3 keeps the same routing model, but route renders now reset scroll to the top after mounting the new shell. This keeps Battle Results from opening halfway down the page after the player starts a battle from a scrolled Squad Builder screen.
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Runtime identity and binding availability |
+| `GET` | `/api/cards` | Normalized Library templates |
+| `GET` | `/api/card-image` | One R2 image by validated key |
+| `GET` | `/api/vault` | Current player's owned cards and duplicates |
+| `GET` | `/api/vault-inventory` | Vault schema and normalization diagnostics |
+| `GET` | `/api/pull-resources` | Tickets, Gold, daily state, and Energy |
+| `POST` | `/api/pull-top-up` | Daily claim or Gold-to-ticket transaction |
+| `GET` | `/api/pull-pool` | Pull pool diagnostics |
+| `GET` | `/api/pull-simulate` | No-write pull simulation |
+| `POST` | `/api/pulls` | Resolve pull and write ownership/history |
+| `GET` | `/api/pull-history` | Current player's pull history |
+| `POST` | `/api/submissions` | Create player card submission |
+
+## Battle APIs
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/battle-inventory` | Battle-eligible owned cards |
+| `GET` | `/api/battle-encounters` | Versioned encounter registry |
+| `GET/POST` | `/api/battle-squad` | Read or save ordered squad |
+| `GET` | `/api/battle-forecast` | Isolated lane forecast |
+| `GET` | `/api/battle-simulate` | No-write seeded simulation |
+| `GET` | `/api/battle-attempt` | Recover a pending or specific attempt |
+| `POST` | `/api/battles` | Create authoritative attempt and debit Energy |
+| `POST` | `/api/battle-finalize` | Exactly-once finalize or surrender |
+| `GET` | `/api/battle-history` | Persisted battle history |
+| `GET` | `/api/battle-reward-contract` | Reward and XP contract |
+
+## Administrator and diagnostic APIs
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET/POST/DELETE` | `/api/admin/cards` | Protected Library card management |
+| `GET/POST` | `/api/admin/card-mechanics` | Protected mechanics audit and mutations |
+| `GET` | `/api/admin/submissions` | Protected review queue |
+| `GET` | `/api/admin/submission` | Protected submission detail |
+| `POST` | `/api/admin/submission-action` | Protected approval/rejection mutation |
+| `GET` | `/api/schema` | D1 table diagnostics |
+| `GET` | `/api/schema-details` | D1 columns/index diagnostics |
+| `GET` | `/api/images` | R2 object sample |
+| `GET` | `/api/images-summary` | R2 key summary |
+| `GET` | `/api/submission-inventory` | Submission schema inventory |
+| `GET` | `/api/submission-review-audit` | Submission-review diagnostics |
+
+All schema, R2 inventory, submission audit, pull-pool, pull-simulation, and battle-simulation endpoints require the same administrator session policy even when their historical URL is not under `/api/admin/*`. `/api/health` remains intentionally public and reveals only service identity and binding booleans.
+
+## Routing behavior
+
+Imago Core uses hash routing so static asset delivery can always return the SPA shell. Route changes reset document, app-root, and main-content scroll positions. The battle arena removes normal app navigation. Unknown player routes return Home, while unknown admin routes return Admin Home and still pass admin policy.

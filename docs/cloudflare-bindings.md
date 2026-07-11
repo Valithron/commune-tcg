@@ -1,6 +1,6 @@
 # Cloudflare Bindings
 
-These bindings already exist in the Cloudflare Pages project and should be used when the backend phase begins.
+These live bindings support Imago Core. Branch promotion must preserve them and must not create replacement data resources.
 
 ## Current bindings
 
@@ -18,6 +18,8 @@ env.DB
 env.CARD_IMAGES
 ```
 
-## Phase note
+## Deployment note
 
-Phase 2 does not connect to either binding. This document exists so the future backend phase does not rediscover or rename already-provisioned infrastructure.
+The checked-in `wrangler.toml` declares the Worker asset binding but does not contain D1 database IDs or R2 bucket configuration. The resources may be connected through the existing Cloudflare project/deployment environment. Verify `DB` and `CARD_IMAGES` on the target Worker before any production deploy from a new branch. Do not guess resource IDs, create new databases, or deploy a configuration that would detach the live bindings.
+
+The Worker identifier remains `commune-tcg-gacha` for infrastructure compatibility. This is a historical deployment ID; the product is Imago Core.

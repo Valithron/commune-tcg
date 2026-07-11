@@ -152,7 +152,7 @@
 }
 
 .button-primary {
-  background: linear-gradient(135deg, #f1d36d 0%, var(--color-primary) 45%, #9f7f22 100%);
+  background: linear-gradient(135deg, var(--color-primary-highlight) 0%, var(--color-primary) 45%, var(--color-primary-shadow) 100%);
   color: var(--color-primary-dark);
   box-shadow: 0 0 1.5rem var(--color-primary-glow);
 }

@@ -1,14 +1,14 @@
-# Commune TCG Game Design
+# Imago Core Game Design
 
-Living design document for the Commune TCG gacha branch.
+Living design authority for Imago Core on the canonical release branch.
 
 This document captures the current game model, design laws, open questions, and implementation direction. It should be updated as the design evolves. The goal is to keep the game's purpose and mechanics from living only in chat threads.
 
 ## Current Project Framing
 
-**✨ Commune TCG is best understood as a character-collection RPG with TCG presentation, gacha acquisition, light squad battles, and social/anime themed worldbuilding. ✨**
+**Imago Core is a premium character-collection digital CCG where human identity is forged into collectible artifacts.**
 
-It is not currently intended to become a deep competitive tabletop TCG. The current target is a casual-to-midcore daily game where players collect different versions of Commune characters, build small squads, battle daily encounters and seasonal bosses, upgrade favorite cards, and grow a personal vault.
+It is not currently intended to become a deep competitive tabletop TCG. The current target is a casual-to-midcore daily game where players collect variants of the seven central characters, build small squads, battle daily encounters and seasonal bosses, upgrade favorite cards, and grow a personal Vault.
 
 ## Core Fantasy
 
@@ -20,7 +20,7 @@ The strongest comparison points are:
 - Idle RPGs: daily rewards, upgrades, light progression, optional longer play.
 - League of Legends skin lines: the same characters expressed through different thematic worlds, not a unified crossover multiverse.
 
-The game should feel like premium anime gacha, with epic presentation and room for absurd/social humor.
+The game should feel like a premium character-collection CCG, with prestigious artifact presentation and room for absurd social humor. The master brand is personal and collectible, not celestial, astrological, or casino-like.
 
 ## Design Laws
 

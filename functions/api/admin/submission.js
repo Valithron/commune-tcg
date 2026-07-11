@@ -6,11 +6,13 @@
 
 import { errorResponse, jsonResponse } from '../../_shared/json.js';
 import { getSubmissionById } from '../../_shared/submission-store.js';
+import { getAdminSessionUser } from '../../_shared/auth.js';
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) {
     return errorResponse('D1 binding DB is not available.', 503);
   }
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   const url = new URL(request.url);
   const id = url.searchParams.get('id') || '';
@@ -35,7 +37,7 @@ export async function onRequestGet({ env, request }) {
       warnings: [
         'This endpoint is read-only in Phase 9.3.',
         'Review actions and Library insertion remain deferred.',
-        'Real admin authorization is not implemented yet.',
+        'Read authorized by the active admin session.',
       ],
     });
   } catch (error) {

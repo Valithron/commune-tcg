@@ -101,8 +101,8 @@ export async function renderHome() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Gacha Prototype</span>
-      <h2 class="hero-title">Build the Vault. Pull the Commune.</h2>
+      <span class="section-kicker">Imago Core</span>
+      <h2 class="hero-title">Every card. Every story. One Core.</h2>
       <p class="hero-copy">Signed in as ${escapeHtml(displayName)}. Pulls, resources, submissions, and Vault reads now use the active player session where wired.</p>
       <div class="action-row">
         <a class="button button-primary" href="#/pull/confirm?count=5">Start Pulling</a>

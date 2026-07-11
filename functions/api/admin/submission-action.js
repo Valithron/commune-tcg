@@ -1,5 +1,6 @@
 import { errorResponse, jsonResponse } from '../../_shared/json.js';
 import { reviewSubmission } from '../../_shared/submission-review.js';
+import { getAdminSessionUser } from '../../_shared/auth.js';
 
 async function readPayload(request) {
   const contentType = request.headers.get('content-type') || '';
@@ -32,6 +33,7 @@ function parseTypeOdds(value) {
 
 export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     const payload = await readPayload(request);
@@ -64,7 +66,7 @@ export async function onRequestPost({ env, request }) {
       creatorDisplayName: result.creatorDisplayName || '',
       submission: result.submission,
       warnings: [
-        'Temporary reviewer placeholder is used until real admin authorization exists.',
+        'Review action authorized by the active admin session.',
         'Approved type odds now govern pull-time owned-card type rolls and stat allocation.',
       ],
     });

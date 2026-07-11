@@ -71,7 +71,7 @@ export function renderPullConfirmationBottomSheet({ selectedCount, resources, sh
           <button class="pull-sheet-handle" type="button" data-pull-drag-handle aria-label="Swipe down or tap to close pull confirmation"></button>
           <span class="section-kicker">Confirm Pull</span>
           <h2 id="pull-confirm-title">Choose your pull</h2>
-          <p>Choose your resonance level to extract cards from the Commune Library.</p>
+          <p>Choose your resonance level to reveal artifacts from the Core Library.</p>
         </div>
 
         <div class="pull-sheet-options" aria-label="Pull options">

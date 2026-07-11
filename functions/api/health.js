@@ -10,7 +10,7 @@ export async function onRequestGet({ env }) {
   return jsonResponse({
     ok: true,
     phase: 5,
-    service: 'commune-tcg-gacha-api',
+    service: 'imago-core-api',
     bindings: {
       DB: Boolean(env.DB),
       CARD_IMAGES: Boolean(env.CARD_IMAGES),

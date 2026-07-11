@@ -7,6 +7,7 @@
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 import { getRarityOddsPercentages, pullOptions } from '../_shared/pull-config.js';
 import { readPullPool } from '../_shared/pull-pool-store.js';
+import { getAdminSessionUser } from '../_shared/auth.js';
 
 function clampPullCount(value) {
   const parsed = Number(value);
@@ -84,6 +85,7 @@ export async function onRequestGet({ env, request }) {
   if (!env.DB) {
     return errorResponse('D1 binding DB is not available.', 503);
   }
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     const url = new URL(request.url);

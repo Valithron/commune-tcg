@@ -113,7 +113,7 @@ export function renderSubmitCard() {
           <input name="ability_text" type="hidden" value="" />
           <input name="crop_json" type="hidden" value='{"x":50,"y":50,"zoom":1}' />
           <div class="empty-note submit-review-note">Final ATK, DEF, SPD, final rarity, and pull-pool eligibility are controlled by admin approval.</div>
-          <button class="button button-primary submit-card-button" type="submit">Submit to Commune <span aria-hidden="true">&gt;</span></button>
+          <button class="button button-primary submit-card-button" type="submit">Submit to the Core <span aria-hidden="true">&gt;</span></button>
           <div class="empty-note submit-status" data-submit-card-status hidden></div>
         </section>
       </form>
@@ -192,7 +192,7 @@ export function initSubmitCardForm(root) {
       const response = await fetch(getApiRoutes().submissions, { method: 'POST', body: new FormData(form) });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error((Array.isArray(payload?.errors) ? payload.errors.join(' ') : payload?.error) || `Submission failed with ${response.status}`);
-      showSubmitStatus(status, 'Submitted to Commune: ' + payload.submission.cardName);
+      showSubmitStatus(status, 'Submitted to Imago Core: ' + payload.submission.cardName);
       form.reset();
       form.querySelector('[name="rarity_suggestion"]').value = 'rare';
       form.querySelectorAll('[name="type_suggestions"]').forEach((checkbox) => { checkbox.checked = checkbox.value === 'neutral'; });

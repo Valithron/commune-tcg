@@ -44,7 +44,7 @@ export async function renderPull({ query = {} } = {}) {
 
     <section class="pull-device" aria-label="Prototype pull device">
       <button class="pull-orb-image-button" type="button" data-pull-open="${selectedCount}" aria-label="Open pull confirmation">
-        <img class="pull-orb-image" src="/assets/commune-pull-orb.svg" alt="Commune Pull" />
+        <img class="pull-orb-image" src="/assets/commune-pull-orb.svg" alt="Imago Core pull device" />
       </button>
     </section>
 

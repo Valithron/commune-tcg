@@ -55,7 +55,7 @@ function renderRevealCard(card, index, { mini = false } = {}) {
     >
       <div class="pull-reveal-card-inner">
         <div class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
-          <img src="/assets/commune-card-back.png" alt="Commune card back" />
+          <img src="/assets/commune-card-back.png" alt="Imago Core card back" />
         </div>
         <div class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
           ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: mini ? 'thumbnail' : 'standard' })}

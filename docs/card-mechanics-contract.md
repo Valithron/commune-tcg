@@ -1,6 +1,6 @@
 # Card Mechanics Contract
 
-This document defines the current trait ownership model for the Gacha branch.
+This document defines the current Imago Core trait ownership model.
 
 ## Rule
 

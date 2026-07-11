@@ -5,15 +5,17 @@
    ============================================================================ */
 
 import { errorResponse, jsonResponse } from '../_shared/json.js';
+import { getAdminSessionUser } from '../_shared/auth.js';
 
 function quoteIdentifier(name) {
   return `"${String(name).replaceAll('"', '""')}"`;
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }) {
   if (!env.DB) {
     return errorResponse('D1 binding DB is not available.', 503);
   }
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   try {
     const tablesResult = await env.DB.prepare(

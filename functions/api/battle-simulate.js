@@ -1,14 +1,14 @@
 /* Authenticated no-write execution of the same canonical lane engine. */
 
-import { getSessionUser } from '../_shared/auth.js';
+import { getAdminSessionUser } from '../_shared/auth.js';
 import { createAuthoritativeBattleResult } from '../_shared/battle-adapter.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
   try {
-    const user = await getSessionUser(request, env);
-    if (!user) return errorResponse('Sign in to simulate a battle.', 401);
+    const user = await getAdminSessionUser(request, env);
+    if (!user) return errorResponse('Admin authorization required.', 403);
     const url = new URL(request.url);
     const encounterId = url.searchParams.get('encounterId') || 'crossroads-patrol';
     const orderedCardIds = String(url.searchParams.get('squadCardIds') || '').split(',').filter(Boolean);

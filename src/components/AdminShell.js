@@ -19,8 +19,8 @@ export function renderAdminShell({ activeRoute, content }) {
   return `
     <div class="admin-shell">
       <header class="admin-topbar">
-        <a class="admin-brand" href="#/admin" aria-label="Gacha Admin Home">
-          <span class="brand-kicker">Gacha Admin</span>
+        <a class="admin-brand" href="#/admin" aria-label="Imago Core Admin Home">
+          <span class="brand-kicker">Imago Core Admin</span>
           <h1 class="brand-title">Diagnostics</h1>
         </a>
         <span class="status-pill">Isolated</span>

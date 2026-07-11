@@ -86,37 +86,37 @@
 
 [data-type-suggestions] .filter-pill input[value='flame'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='flame'] + span {
-  --type-chip-color: #E85D4F;
+  --type-chip-color: var(--type-flame);
 }
 
 [data-type-suggestions] .filter-pill input[value='tide'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='tide'] + span {
-  --type-chip-color: #2F80ED;
+  --type-chip-color: var(--type-tide);
 }
 
 [data-type-suggestions] .filter-pill input[value='bloom'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='bloom'] + span {
-  --type-chip-color: #45B36B;
+  --type-chip-color: var(--type-bloom);
 }
 
 [data-type-suggestions] .filter-pill input[value='volt'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='volt'] + span {
-  --type-chip-color: #F2C94C;
+  --type-chip-color: var(--type-volt);
 }
 
 [data-type-suggestions] .filter-pill input[value='shadow'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='shadow'] + span {
-  --type-chip-color: #5B3A8E;
+  --type-chip-color: var(--type-shadow);
 }
 
 [data-type-suggestions] .filter-pill input[value='radiant'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='radiant'] + span {
-  --type-chip-color: #F6D77A;
+  --type-chip-color: var(--type-radiant);
 }
 
 [data-type-suggestions] .filter-pill input[value='neutral'] + span,
 [data-review-approved-type-pool] .filter-pill input[value='neutral'] + span {
-  --type-chip-color: #A99A86;
+  --type-chip-color: var(--type-neutral);
 }
 
 [data-type-suggestions] .filter-pill input:checked + span,

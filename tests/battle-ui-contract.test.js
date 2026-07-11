@@ -52,3 +52,9 @@ test('mobile overlays fully leave hit testing and async handlers retain their bu
   assert.doesNotMatch(squad, /await saveBattleSquad[^}]+event\.currentTarget/s);
   assert.match(results, /const button = event\.currentTarget/);
 });
+
+test('Worker exposes the documented battle reward contract endpoint', async () => {
+  const worker = await readFile(new URL('../worker.js', import.meta.url), 'utf8');
+  assert.match(worker, /battleRewardContract/);
+  assert.match(worker, /'\/api\/battle-reward-contract': battleRewardContract/);
+});

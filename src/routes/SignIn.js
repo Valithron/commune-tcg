@@ -38,7 +38,7 @@ export async function renderSignIn({ selectedSlotId = '', error = '' } = {}) {
   return `
     <main class="auth-screen">
       <section class="auth-panel">
-        <span class="section-kicker">Commune TCG</span>
+        <span class="section-kicker">Imago Core</span>
         <h1 class="auth-title">Choose your vault.</h1>
         <p class="auth-copy">Pick one of the seven player slots, set a 10-character username, and use a 4-digit PIN to enter.</p>
 

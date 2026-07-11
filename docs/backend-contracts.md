@@ -1,6 +1,6 @@
 # Backend Contracts Draft
 
-This document tracks the live backend contracts for the Gacha branch, including the authoritative battle-attempt lifecycle.
+This document tracks the live Imago Core backend contracts, including the authoritative battle-attempt lifecycle.
 
 ## Existing Cloudflare bindings
 

@@ -1,6 +1,6 @@
 const playerSlots = [
   ['sterling', 'Sterling', '#c4c5db'],
-  ['cydney', 'Cydney', '#f3c93f'],
+  ['cydney', 'Cydney', '#789461'],
   ['ryan', 'Ryan', '#a98cff'],
   ['gabi', 'Gabi', '#8ccdff'],
   ['cooper', 'Cooper', '#ff8f70'],
@@ -188,6 +188,20 @@ export async function getSessionUser(request, env) {
   }
 
   return publicUserFromRow(row);
+}
+
+export function isAdminUser(user, env = {}) {
+  if (!user?.id) return false;
+  const configuredIds = String(env.ADMIN_USER_IDS || 'sterling')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return configuredIds.includes(String(user.id).toLowerCase());
+}
+
+export async function getAdminSessionUser(request, env) {
+  const user = await getSessionUser(request, env);
+  return isAdminUser(user, env) ? user : null;
 }
 
 export async function listAuthUsers(env) {
