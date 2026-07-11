@@ -38,3 +38,17 @@ test('obsolete aggregate battle resolver and duplicate mock encounter registry a
   assert.doesNotMatch(joined, /margin >= 0|Effective Squad Power|mockEncounters/);
 });
 
+test('mobile overlays fully leave hit testing and async handlers retain their button references', async () => {
+  const [arenaCss, flowCss, squad, results] = await Promise.all([
+    read('src/styles/battle-arena.css'),
+    read('src/styles/battle-flow.css'),
+    read('src/routes/SquadBuilder.js'),
+    read('src/routes/BattleResults.js'),
+  ]);
+  assert.match(arenaCss, /\.battle-arena \[hidden\] \{ display:none!important; \}/);
+  assert.match(flowCss, /\.battle-results-page \[hidden\] \{ display:none!important; \}/);
+  assert.match(flowCss, /\.reward-queue\.is-complete \{ opacity:0; pointer-events:none; \}/);
+  assert.match(squad, /const button = event\.currentTarget/);
+  assert.doesNotMatch(squad, /await saveBattleSquad[^}]+event\.currentTarget/s);
+  assert.match(results, /const button = event\.currentTarget/);
+});

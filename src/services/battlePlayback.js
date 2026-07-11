@@ -9,6 +9,7 @@ export function createBattlePlayback({ root, events, startIndex = 0, onCheckpoin
   let stopped = false;
   let activeTimer = null;
   let activeResolve = null;
+  let playPromise = null;
   const timings = reducedMotion ? { opening: 500, attack: 420, critical: 80, doubleStrike: 180, knockout: 220, end: 900 } : DEFAULT_TIMING;
 
   function delay(milliseconds) {
@@ -75,7 +76,7 @@ export function createBattlePlayback({ root, events, startIndex = 0, onCheckpoin
     return 20;
   }
 
-  async function play() {
+  async function runPlayback() {
     root.classList.add('battle-playback-running');
     while (index < events.length && !stopped) {
       await waitWhilePaused();
@@ -88,6 +89,12 @@ export function createBattlePlayback({ root, events, startIndex = 0, onCheckpoin
     }
     root.classList.remove('battle-playback-running');
     if (!stopped && index >= events.length) onComplete();
+  }
+
+  function play() {
+    if (playPromise) return playPromise;
+    playPromise = runPlayback().finally(() => { playPromise = null; });
+    return playPromise;
   }
 
   return {

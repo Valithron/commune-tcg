@@ -1,5 +1,7 @@
 /* Dedicated full-screen battle shell and stored-event presentation. */
 
+.battle-arena [hidden] { display:none!important; }
+
 .battle-arena { position:fixed; inset:0; z-index:900; overflow:hidden; color:#f7f4e9; background:#070a0e; isolation:isolate; }
 .battle-arena-backdrop { position:absolute; inset:0; z-index:-3; background:radial-gradient(circle at 50% 50%,rgba(120,148,97,.20),transparent 42%),linear-gradient(180deg,#182028,#080b10 52%,#121820); }
 .battle-arena-crossroads .battle-arena-backdrop { background:radial-gradient(circle at 50% 48%,rgba(196,197,187,.15),transparent 24%),linear-gradient(155deg,rgba(120,148,97,.25),transparent 36%),linear-gradient(#1b252a,#080b10 55%,#171c1a); }

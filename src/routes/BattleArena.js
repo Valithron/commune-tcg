@@ -64,6 +64,7 @@ export function initBattleArena(root) {
   let reducedMotion = localStorage.getItem(reducedKey) === 'true';
   let sound = localStorage.getItem(soundKey) !== 'false';
   let finishing = false;
+  let playbackStarted = false;
   arena.classList.toggle('battle-reduced-motion', reducedMotion);
   const checkpoint = returningToAttempt ? Number(sessionStorage.getItem(checkpointKey) || 0) : 0;
   const playback = createBattlePlayback({ root: arena, events, startIndex: checkpoint, reducedMotion, speed, onCheckpoint(index) { sessionStorage.setItem(checkpointKey, String(index)); }, onComplete() { completeAndOpenResults(false); } });
@@ -83,11 +84,18 @@ export function initBattleArena(root) {
   }
 
   function startPlayback() {
+    if (playbackStarted || finishing) return;
+    playbackStarted = true;
     arena.querySelector('[data-recovery-panel]').hidden = true;
     const opening = arena.querySelector('[data-opening-label]');
     opening.classList.add('is-visible');
     window.setTimeout(() => { opening.textContent = 'BATTLE START'; window.setTimeout(() => opening.classList.remove('is-visible'), reducedMotion ? 250 : 700); }, reducedMotion ? 200 : 900);
-    playback.play().catch(() => { arena.querySelector('[data-playback-error]').hidden = false; completeAndOpenResults(false); });
+    playback.play().catch((error) => {
+      const interruption = arena.querySelector('[data-playback-error]');
+      interruption.hidden = false;
+      interruption.querySelector('span').textContent = `${error.message || 'The animation stopped.'} The stored result is safe.`;
+      completeAndOpenResults(false);
+    });
   }
 
   if (!returningToAttempt) startPlayback();
@@ -121,4 +129,3 @@ export function initBattleArena(root) {
     inspectionHost.querySelector('[data-inspection-panel]')?.addEventListener('click', (event) => event.stopPropagation());
   }));
 }
-

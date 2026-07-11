@@ -1,5 +1,7 @@
 /* Cohesive encounter, formation, and persisted-results presentation. */
 
+.battle-results-page [hidden] { display:none!important; }
+
 .encounter-preview-list { display:grid; gap:24px; margin-top:24px; }
 .encounter-preview-card { padding:22px; border:1px solid rgba(255,255,255,.12); border-radius:24px; background:linear-gradient(145deg,rgba(22,29,36,.96),rgba(10,14,20,.96)); box-shadow:0 24px 60px rgba(0,0,0,.28); }
 .encounter-preview-card>header,.formation-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
@@ -61,7 +63,7 @@
 .battle-result-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .battle-result-actions p { flex-basis:100%; margin:0; color:var(--color-text-muted); }
 .reward-queue { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:24px; background:rgba(4,7,10,.82); backdrop-filter:blur(12px); transition:.25s; }
-.reward-queue.is-complete { opacity:0; }
+.reward-queue.is-complete { opacity:0; pointer-events:none; }
 .reward-queue>div { width:min(520px,100%); padding:36px; text-align:center; border:1px solid rgba(248,240,196,.24); border-radius:26px; background:radial-gradient(circle at 50% 10%,rgba(120,148,97,.25),transparent 48%),#111820; box-shadow:0 30px 80px #000; cursor:pointer; }
 .reward-stage h2 { font-size:clamp(1.7rem,6vw,3rem); }
 .reward-stage.is-entering { animation:reward-stage-in .4s both; }
@@ -86,4 +88,3 @@
 }
 
 @media (prefers-reduced-motion:reduce) { .reward-stage.is-entering { animation:none; } }
-

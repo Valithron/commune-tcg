@@ -102,18 +102,20 @@ export function initSquadBuilder(root) {
 
   const status = page.querySelector('[data-formation-status]');
   page.querySelector('[data-save-formation]')?.addEventListener('click', async (event) => {
-    event.currentTarget.disabled = true; status.textContent = 'Saving left, center, and right…';
-    try { await saveBattleSquad({ squadCardIds: ids }); status.textContent = 'Formation saved.'; event.currentTarget.textContent = 'Saved'; }
-    catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; }
+    const button = event.currentTarget;
+    button.disabled = true; status.textContent = 'Saving left, center, and right…';
+    try { await saveBattleSquad({ squadCardIds: ids }); status.textContent = 'Formation saved.'; button.textContent = 'Saved'; }
+    catch (error) { status.textContent = error.message; button.disabled = false; }
   });
   page.querySelector('[data-begin-battle]')?.addEventListener('click', async (event) => {
-    event.currentTarget.disabled = true; event.currentTarget.textContent = 'Locking Formation…'; status.textContent = 'Creating the authoritative battle…';
+    const button = event.currentTarget;
+    button.disabled = true; button.textContent = 'Locking Formation…'; status.textContent = 'Creating the authoritative battle…';
     try {
       await saveBattleSquad({ squadCardIds: ids });
       const payload = await createBattleAttempt({ encounterId, orderedCardIds: ids });
       sessionStorage.removeItem(`commune-battle-entered:${payload.attempt.attemptId}`);
       window.location.hash = `#/battle/arena?attemptId=${encodeURIComponent(payload.attempt.attemptId)}`;
-    } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; event.currentTarget.textContent = 'Begin Battle · 1 Energy'; }
+    } catch (error) { status.textContent = error.message; button.disabled = false; button.textContent = 'Begin Battle · 1 Energy'; }
   });
 
   if (ids.length === 3) fetchFormationForecast({ encounterId, orderedCardIds: ids }).then((payload) => payload.forecasts.forEach((forecast) => { const target = page.querySelector(`[data-forecast-lane="${forecast.lane}"]`); if (target) { target.textContent = forecast.label; target.className = `forecast-${forecast.label.toLowerCase()}`; target.setAttribute('aria-label', `${forecast.label} isolated lane forecast`); } })).catch(() => { page.querySelectorAll('[data-forecast-lane]').forEach((target) => { target.textContent = 'Forecast unavailable'; }); });

@@ -77,12 +77,13 @@ export function initBattleResults(root) {
   page.querySelector('[data-reward-skip]').addEventListener('click', finish);
   show();
   page.querySelector('[data-battle-again]').addEventListener('click', async (event) => {
-    event.currentTarget.disabled = true; event.currentTarget.textContent = 'Preparing…';
+    const button = event.currentTarget;
+    button.disabled = true; button.textContent = 'Preparing…';
     const status = page.querySelector('[data-result-status]');
     try {
       const payload = await createBattleAttempt({ encounterId: activeResultAttempt.encounterId, orderedCardIds: activeResultAttempt.orderedCardIds });
       sessionStorage.removeItem(`commune-battle-entered:${payload.attempt.attemptId}`);
       window.location.hash = `#/battle/arena?attemptId=${encodeURIComponent(payload.attempt.attemptId)}`;
-    } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; event.currentTarget.textContent = 'Battle Again'; }
+    } catch (error) { status.textContent = error.message; button.disabled = false; button.textContent = 'Battle Again'; }
   });
 }
