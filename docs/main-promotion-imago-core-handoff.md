@@ -1,4 +1,4 @@
-# Imago Core Main Branch Promotion and Product Renaming Handoff
+# Imago Core Main Branch Promotion, Product Renaming, and Release Hardening Handoff
 
 ## Status
 
@@ -7,88 +7,90 @@
 ## Repository
 
 - Repository: `Valithron/commune-tcg`
-- Current authoritative development branch: `Gacha`
+- Authoritative development branch: `Gacha`
 - Target canonical branch: `main`
 - Legacy preservation: already handled by a separate legacy branch
-
-## Purpose of this handoff
-
-The `Gacha` branch is no longer an experimental side branch. It now contains the active, substantially rebuilt version of the game and should become the canonical product codebase.
-
-This task has two connected objectives:
-
-1. Replace the current contents and history position of `main` with the intended state of `Gacha`.
-2. Complete the product-level naming transition from **Commune TCG**, **TCG Commune**, and related temporary names to **Imago Core**.
-
-This is not a conventional feature merge in which both branches contain valuable parallel work that must be reconciled. The owner has confirmed that there is essentially nothing on the current `main` branch that needs to be retained. The old version of the game has already been preserved on a separate legacy branch.
-
-Therefore:
-
-> **Treat `Gacha` as the source of truth and `main` as the branch being replaced.**
-
-Do not spend time preserving obsolete implementation choices from `main`. Do not reintroduce old layouts, old systems, old data assumptions, or old branding merely because they exist on `main`.
+- Canonical product name: **Imago Core**
+- Preferred category: **digital collectible card game** or **CCG**
 
 ---
 
-# 1. Governing decisions
+# 1. Mission
 
-The following decisions are already approved and should not be reopened unless execution reveals a genuine technical blocker.
+The `Gacha` branch is no longer an experiment. It contains the active, substantially rebuilt game and is the source of truth for the modern product.
 
-## 1.1 Branch authority
+This task has three connected objectives:
 
-- `Gacha` is authoritative.
-- `main` should become equivalent to the approved final state of `Gacha`.
-- Existing `main` code does not need to be merged into `Gacha` for product preservation.
-- The separate legacy branch is the preservation point for the old application.
-- After promotion, all normal development should branch from the new `main`.
+1. Make the approved `Gacha` state the canonical contents of `main`.
+2. Complete the active product naming transition to **Imago Core**.
+3. Establish the promoted branch as a cleaner, documented, production-quality release baseline.
 
-## 1.2 Product name
+This is not a conventional merge between two branches containing equally valuable product work. The owner has confirmed that essentially nothing in the current `main` application needs to be retained. The old version is preserved elsewhere.
 
-The canonical product name is:
+> **Treat `Gacha` as authoritative and current `main` as replaceable legacy state.**
+
+Do not reintroduce obsolete application code, layouts, assumptions, or branding merely because they exist on `main`.
+
+The release-hardening work in this handoff is intentionally broader than a simple branch pointer change. Use the Work run efficiently by completing safe, high-confidence repository cleanup and documentation while preserving current behavior.
+
+---
+
+# 2. Governing decisions
+
+These decisions are approved and should not be reopened unless a genuine technical blocker appears.
+
+## 2.1 Branch authority
+
+- `Gacha` is the source of truth.
+- Final `main` must match the approved release state derived from `Gacha`.
+- Existing `main` product code does not need reconciliation.
+- The verified legacy branch or tag is the preservation point for the old application.
+- Future work should branch from the new `main`.
+- Keep `Gacha` temporarily after promotion for verification. Do not delete it during the initial promotion unless explicitly instructed.
+
+## 2.2 Canonical product identity
+
+The product is:
 
 > **Imago Core**
 
-The approved compact abbreviation is:
+Approved compact abbreviation:
 
 > **IC**
 
-The following names are obsolete as active product branding:
+Obsolete active product names include:
 
 - Commune TCG
 - TCG Commune
 - Commune Cards
-- Gacha app
-- Gacha game, when used as the product name
-- Any other placeholder name that refers to the application as a whole
+- Gacha App
+- Gacha Game, when used as the product name
+- Other placeholder names referring to the application as a whole
 
-The word “gacha” may remain where it accurately describes a mechanic, implementation concept, historical branch name, or genre concept. It should not remain as the public product name.
+The word `gacha` may remain when it accurately describes a mechanic, genre concept, technical implementation, or historical branch. It must not remain as the current product name.
 
-## 1.3 Product category language
+## 2.3 Product category
 
-Imago Core is best described as a **digital collectible card game**, or **CCG**, rather than a player-to-player trading card game.
+Prefer:
 
-Preferred public descriptions:
-
-- Collectible card game
 - Digital collectible card game
-- Character collection card game
+- Collectible card game
+- Character-collection CCG
 - Premium character-collection CCG
 
-Avoid presenting the product primarily as a TCG unless a context specifically requires historical terminology.
+Do not describe the product primarily as a TCG unless historical or technical context requires it.
 
-## 1.4 Branding concept
+## 2.4 Brand concept
 
-The canonical brand concept is:
+Canonical concept:
 
 > **Human identity forged into collectible artifacts.**
 
-The product should not be reframed as a celestial, astrological, or generic space-fantasy game.
-
-Relevant established brand principles include:
+Permanent brand principles:
 
 - The person is the treasure.
 - The card is the artifact.
-- The Core preserves identity across every variant.
+- The Core preserves identity across variants.
 - Character color identifies the person.
 - Type color identifies affinity.
 - Rarity color identifies collectible value.
@@ -96,210 +98,171 @@ Relevant established brand principles include:
 - Blue identifies the system.
 - Art dominates while mechanics remain clear.
 
-This task is not a visual redesign. Preserve the current approved visual system unless a stale name or obsolete brand artifact must be changed.
+Do not reposition the master brand as celestial, astrological, or generic space fantasy.
+
+## 2.5 Release posture
+
+Treat the resulting branch as the first clean canonical baseline of the Imago Core era.
+
+> **Leave the repository cleaner, clearer, and easier to continue than it was before the promotion.**
+
+This does not authorize a wholesale rewrite. It authorizes safe cleanup, deduplication, documentation, formatting, lint correction, and removal of verified obsolete material.
 
 ---
 
-# 2. Scope summary
+# 3. Required execution order
 
-Work should perform the following broad sequence:
+Perform the work in this order:
 
-1. Inspect and inventory the current `Gacha` branch.
-2. Establish a clean safety point before branch replacement.
-3. Complete the Imago Core naming migration throughout active product surfaces and documentation.
-4. Validate the application from a clean checkout.
-5. Replace or reset `main` so that it points to the approved `Gacha` state.
-6. Push the new `main` safely.
-7. Revalidate the new canonical branch.
-8. Update branch-facing documentation and repository metadata where possible.
-9. Report exactly what changed, what was intentionally left unchanged, and any residual legacy naming.
+1. Orient to the repository and identify exact branch heads.
+2. Verify legacy preservation and create a safety reference only if needed.
+3. Inventory the `Gacha` branch and map the active application.
+4. Compare `main` and `Gacha` for repository-level infrastructure only.
+5. Complete the Imago Core naming migration.
+6. Perform the controlled release-hardening and cleanup pass defined below.
+7. Generate or update canonical repository documentation.
+8. Validate the candidate release on `Gacha` from a clean checkout.
+9. Promote the approved state to `main`.
+10. Revalidate the new `main` from a clean checkout.
+11. Verify deployment, caches, metadata, and branch configuration.
+12. Deliver the required final report.
 
-Do not begin major architecture refactoring as part of this task.
-
-The repository is currently in an inventory and mapping phase. The large `app.js` and scattered patch/fix files should be documented where relevant, but this branch promotion must not expand into a risky full rewrite.
-
----
-
-# 3. Non-goals
-
-The following are explicitly outside the primary scope unless required to make the promoted branch build and run correctly:
-
-- Rewriting the entire application architecture
-- Splitting the approximately 19,000-line `app.js` into a new module system
-- Redesigning the database schema
-- Renaming every internal variable solely for aesthetic consistency
-- Changing persisted production data without a verified migration plan
-- Rebuilding the battle system
-- Rebalancing card stats or progression systems
-- Redesigning the home, pull, vault, library, admin, or battle layouts
-- Replacing approved card frames
-- Introducing new features
-- Removing functional compatibility layers merely because they look old
-- Rewriting Git history unnecessarily
-
-A small amount of cleanup is appropriate when it is directly connected to stale naming, broken imports, duplicate branding constants, dead references, or release safety.
+Do not promote first and clean up afterward unless branch protections or workflow constraints make that unavoidable. The preferred result is for `main` to receive an already validated release candidate.
 
 ---
 
-# 4. Safety and branch strategy
+# 4. Explicit non-goals
 
-## 4.1 Confirm the legacy preservation branch
+Do not turn this task into any of the following:
 
-Before replacing `main`, confirm that the repository contains the intended legacy branch or another immutable reference to the old application.
+- A complete architecture rewrite
+- A full modularization of the approximately 19,000-line `app.js`
+- A framework migration
+- A database redesign
+- A destructive data migration
+- A `pow` to `atk` storage-field migration
+- A battle-system redesign
+- Card-stat or progression rebalancing
+- New gameplay features
+- A home, pull, vault, library, admin, or battle redesign
+- Replacement of approved card frames
+- A rewrite of all internal historical identifiers
+- Unnecessary Git-history rewriting
+- Speculative removal of compatibility logic
 
-Do not assume a branch name. Identify and record the actual branch or tag used for legacy preservation.
+The large `app.js` should be analyzed and documented, but splitting it is a separate future project.
 
-If the legacy branch exists and points to the intended old version, proceed.
+---
 
-If no legacy reference can be verified, create a safety tag or backup branch from the current `main` before replacement. This is a repository safety measure only, not an indication that current `main` code should be merged back into the product.
+# 5. Branch replacement strategy
 
-Suggested temporary safety names if needed:
+## 5.1 Verify preservation
+
+Before changing `main`:
+
+- Identify the actual legacy branch or tag containing the old application.
+- Record its name and commit SHA.
+- Confirm it is remotely available.
+
+If no adequate legacy reference exists, create one from the current `main` before replacement. This is a safety measure only and does not mean old `main` code belongs in the new product.
+
+Possible safety references:
 
 - `legacy/pre-imago-main`
 - `archive/main-before-imago-core`
-- tag: `pre-imago-core-main`
+- `pre-imago-core-main` tag
 
-Do not create redundant backups if an adequate legacy branch already exists.
+Do not create redundant backups if a verified legacy reference already exists.
 
-## 4.2 Preferred promotion model
-
-The desired final state is:
+## 5.2 Required final branch state
 
 ```text
-main == approved Gacha commit
+main == approved Imago Core release candidate derived from Gacha
 ```
 
-A normal merge commit is acceptable only if it produces that exact effective code state without reintroducing obsolete `main` content.
+A normal merge commit is acceptable only if the resulting tree exactly preserves the approved `Gacha` release state and does not reintroduce obsolete `main` code.
 
-A hard reset or branch reference replacement may be cleaner because `main` is not being treated as an independent source of valuable changes.
+A reset or reference replacement is acceptable and may be preferable.
 
-The implementation method should be chosen based on repository protections and available permissions:
-
-### Option A: Reset `main` to `Gacha`
-
-Use when force updates are permitted and branch protection can be handled safely.
-
-Conceptually:
+Conceptual direct method:
 
 ```bash
 git fetch origin
 git checkout main
-git reset --hard origin/Gacha
+git reset --hard <approved-gacha-release-commit>
 git push --force-with-lease origin main
 ```
 
-Use `--force-with-lease`, not an unguarded `--force`.
+Use `--force-with-lease`, never an unguarded force push.
 
-### Option B: Replace through a pull request
+If branch protection requires a PR, create a promotion PR whose resulting tree matches the approved release candidate. Resolve conflicts in favor of the modern application, not obsolete `main` behavior.
 
-Use when branch protection requires PR review or direct force updates are blocked.
+## 5.3 Post-promotion branch handling
 
-The PR should make the resulting tree match `Gacha`. Do not resolve conflicts by restoring obsolete `main` behavior.
-
-### Option C: Temporarily adjust branch protection
-
-Use only when repository ownership and permissions allow it, and restore protection afterward.
-
-## 4.3 Do not delete `Gacha` immediately
-
-After promotion:
-
-- Keep `Gacha` temporarily as a verification reference.
-- Confirm the new `main` builds, launches, and deploys correctly.
-- Confirm no deployment target still points specifically at `Gacha`.
-- Only then consider deleting or archiving `Gacha`.
-
-Deletion of `Gacha` is not required for this task unless explicitly requested after verification.
+- Confirm GitHub's default branch is `main`.
+- Restore or establish intentional branch protection after any temporary changes.
+- Keep `Gacha` until the new `main` is built, launched, and deployed successfully.
+- Recommend whether `Gacha` should later be archived or deleted.
 
 ---
 
-# 5. Pre-promotion repository audit
+# 6. Repository inventory and mapping
 
-Before changing names or branch pointers, inspect the current `Gacha` branch and produce a compact execution inventory.
-
-## 5.1 Required inventory areas
-
-Inspect at minimum:
+Before editing, inventory at minimum:
 
 - Root files
 - Application entry points
 - `app.js`
-- Build scripts
-- Package manifests and lockfiles
-- Environment templates
-- Deployment configuration
-- Static HTML templates
-- CSS and theme files
+- Patch and fix files
 - JavaScript and TypeScript files
-- Server or API code
-- Database or migration files
-- Seed data
+- CSS and theme files
+- Static HTML
+- Package manifests and lockfiles
+- Build scripts
+- Tests, fixtures, and snapshots
+- Server and API code
+- Database, schema, seed, and migration files
+- Environment templates
+- Deployment and hosting configuration
+- GitHub Actions workflows
+- Public manifests and PWA configuration
+- Service worker and cache code
+- Assets, icons, frames, images, sounds, and fonts
 - Documentation under `docs/`
 - README files
-- GitHub Actions workflows
-- Hosting configuration
-- Public manifests
-- Browser metadata
-- PWA metadata, if present
-- Image alt text
-- Open Graph and social metadata
-- Admin interface labels
-- Emails or notifications generated by the app
-- Tests
-- Fixtures and snapshots
+- Admin tools
+- Generated notifications or emails
 
-## 5.2 Identify generated and vendor files
+Identify generated files and vendor output. Edit sources and regenerate output through the established build process rather than editing generated bundles manually.
 
-Do not manually edit generated bundles, minified artifacts, dependency directories, or build output unless the repository intentionally commits those files.
+## 6.1 Compare `main` only for operational infrastructure
 
-Prefer changing the source and regenerating output through the project’s established build process.
+Check whether `main` contains useful repository-level infrastructure absent from `Gacha`, such as:
 
-## 5.3 Record branch drift
-
-Compare `main` and `Gacha` enough to confirm that replacing `main` will not discard a required infrastructure file, secret-independent deployment configuration, or repository-level automation that exists only on `main`.
-
-This comparison is for operational safety, not product code reconciliation.
-
-If a useful repository-level file exists only on `main`, evaluate it independently. Examples include:
-
-- A working production deployment workflow
+- Deployment workflows
 - Security policy
 - Dependabot configuration
 - License
-- Repository ownership file
-- Required CI configuration
+- CODEOWNERS
+- Required CI files
+- Hosting configuration
 
-Preserve such files only when they remain valid and do not conflict with the current application.
+Preserve such files only if they remain valid and do not conflict with the modern application.
 
 Do not preserve obsolete application code merely because it differs.
 
 ---
 
-# 6. Canonical naming migration
+# 7. Imago Core naming migration
 
-Perform a repository-wide naming audit on the active `Gacha` codebase before promotion.
-
-## 6.1 Replace active product-facing names
-
-Replace active references to old product names with **Imago Core** wherever the text identifies the current application.
-
-Search case-insensitively for at least:
+Perform a case-insensitive repository-wide audit for:
 
 ```text
 Commune TCG
-COMMUNE TCG
-commune tcg
 TCG Commune
-TCG COMMUNE
-tcg commune
 Commune Cards
 Gacha App
 Gacha Game
-```
-
-Also search for concatenated, slugged, abbreviated, and identifier forms such as:
-
-```text
 commune-tcg
 commune_tcg
 communeTCG
@@ -309,171 +272,363 @@ TCG
 Gacha
 ```
 
-Do not blindly replace every occurrence of `TCG`, `Gacha`, or `Commune`. Evaluate context.
+Evaluate context. Do not blindly replace generic uses of `Commune`, `TCG`, or `Gacha`.
 
-## 6.2 Required public-facing surfaces
+## 7.1 Required active surfaces
 
-Update the name on all applicable active surfaces:
+Update applicable active surfaces:
 
-- Browser page title
+- Browser title
 - Main logo text
 - Header branding
 - Login and account screens
-- Home screen
-- Loading screen
-- Empty states
-- Error states
+- Loading and splash screens
+- Home
 - Pull flow
 - Vault
 - Library
-- Battle interface
-- Results screens
-- Admin pages
-- Submission tools
+- Card details
+- Squad selection
+- Battle entry, playback, pause, and results
+- Reward presentation
+- Admin and submission tools
 - Modals
 - Toasts
+- Empty states
+- Error states
 - Confirmation messages
-- Share text
-- Social metadata
+- Share copy
+- Open Graph and social metadata
 - PWA manifest
 - Installable app name and short name
-- Favicon or icon metadata where text is embedded
-- README title and introduction
-- Current design documents
-- Current handoff documents
-- Current setup instructions
-- Production descriptions
-- Package description fields
-- Public-facing API response text
-- Seeded announcements or system messages
+- Package descriptions
+- Current README
+- Active design documents
+- Setup and deployment documentation
+- Current handoffs
+- Public API response text
+- Seeded announcements
 
-## 6.3 Repository name and URL
+## 7.2 Repository slug
 
-The repository currently remains `commune-tcg` unless the owner separately approves a repository rename.
-
-Do not rename the GitHub repository as part of this task unless explicitly authorized.
-
-Because the repository name may remain historical, links and import paths containing `commune-tcg` may remain where required for correctness.
+The repository may remain `commune-tcg` unless the owner separately approves a repository rename.
 
 Document the distinction:
 
-- Product name: **Imago Core**
-- Repository slug: may remain `commune-tcg`
+- Product: **Imago Core**
+- Repository slug: historical and may remain `commune-tcg`
 
-## 6.4 Package and application identifiers
+## 7.3 Compatibility-sensitive identifiers
 
-Inspect identifiers such as:
+Inspect, but do not casually rename:
 
-- `package.json` name
-- App IDs
-- PWA IDs
-- Cache namespaces
-- Local storage keys
-- Database names
+- Local-storage keys
+- Database names and columns
 - Cookie names
-- OAuth callback identifiers
+- OAuth identifiers
 - Hosting project IDs
-- Environment variable prefixes
+- Environment-variable prefixes
 - Analytics properties
-- Service worker cache names
+- App IDs
+- Cache namespaces
+- Stable API fields
 
-Use this rule:
+Rule:
 
-> Rename user-visible and low-risk internal identifiers now. Preserve compatibility-sensitive identifiers unless there is a verified migration path.
+> Rename user-visible and low-risk identifiers now. Preserve compatibility-sensitive identifiers unless they can be migrated and verified safely in the same execution.
 
-For example, changing a display name is expected. Changing a local storage key may silently log users out or discard settings. Changing a database name may disconnect production data. Changing a cache name may be safe but should be intentional.
+Internal `pow` may remain the stored offensive-stat field while the player-facing label is `ATK`.
 
-Do not perform destructive identifier migrations casually.
+Do not perform a destructive `pow` to `atk` migration.
 
-## 6.5 Internal code terminology
+## 7.4 Historical documentation
 
-Internal symbols may retain historical names when renaming them would create disproportionate risk and provide no player-facing benefit.
+For historical handoffs and records, either preserve terminology with a historical note or archive them clearly. Do not rewrite history so aggressively that old documents become misleading.
 
-Examples that may remain temporarily:
+Recommended note:
 
-- `pow` as the stored offensive stat, where the UI displays `ATK`
-- Historical database column names
-- Stable API field names
-- Existing storage keys
-- Branch name references in archived documentation
+> Historical note: Commune TCG was renamed Imago Core. This document preserves terminology used when it was written.
 
-When an internal historical name remains:
-
-- Ensure the player-facing label is correct.
-- Add a concise comment only where future confusion is likely.
-- Record it in the final residual legacy-name report.
-
-Do not undertake a destructive `pow` to `atk` data migration as part of this handoff.
+Active documentation must identify `main` as canonical after promotion.
 
 ---
 
-# 7. Documentation migration
+# 8. Controlled release-hardening and cleanup pass
 
-Documentation must distinguish between active canon and historical material.
+This phase is required, not optional. Perform it carefully and preserve behavior.
 
-## 7.1 Active documentation
+## 8.1 Remove verified dead code
 
-Update active documents to refer to the product as Imago Core.
+Remove, when confirmed unused:
 
-Likely active documents include:
+- Obsolete code paths
+- Superseded implementations
+- Commented-out legacy implementations
+- Unused helper functions
+- Unused variables and imports
+- Unreachable branches
+- Temporary debugging code
+- Temporary console logging
+- Test banners accidentally left enabled
+- Feature flags whose alternate path no longer exists and whose enabled behavior is now permanent
+- Superseded patch files
+- Dead branding constants
+- Obsolete logo or favicon imports
+- Broken references to removed files
 
-- `README.md`
-- `docs/game-design.md`
-- `docs/battle-design.md`
-- Current work handoffs
-- Setup documentation
-- Deployment documentation
-- Contributor instructions
-- Admin documentation
-- Branding documentation
+Prefer deletion over leaving dead code “just in case,” but verify call sites before removal.
 
-Use judgment based on whether the document is still intended to guide current development.
+Do not remove code solely because it looks old.
 
-## 7.2 Historical handoffs and records
+## 8.2 Consolidate duplicated code
 
-Do not rewrite historical documents so aggressively that they become misleading records of what happened at the time.
+Identify and safely consolidate:
 
-For historical documents, choose one of these approaches:
+- Duplicate helper functions
+- Duplicate constants
+- Repeated formatting utilities
+- Repeated card-stat calculations
+- Repeated DOM or UI setup patterns
+- Repeated CSS declarations
+- Duplicate event-listener registration
+- Repeated branding strings
+- Duplicate route-state logic
 
-1. Leave the historical wording intact and add a header note:
+Consolidate only where behavior is demonstrably equivalent. Do not convert this into broad architecture redesign.
 
-   > Historical note: Commune TCG was renamed Imago Core. This document preserves terminology used when it was written.
+## 8.3 Lint and static cleanup
 
-2. Update only the title and add a terminology note.
+Run existing lint or static-analysis commands. Fix safe issues such as:
 
-3. Move clearly obsolete material into an archive folder if that matches current documentation organization.
+- Unused imports
+- Unused variables
+- Duplicate declarations
+- Unreachable code
+- Accidental fallthrough
+- Obvious shadowing errors
+- Invalid syntax
+- Broken references
+- Simple inconsistent formatting
 
-Do not allow obsolete handoff documents to appear canonical when they conflict with current design.
+If no lint system exists, do not impose a highly opinionated or disruptive lint migration. A minimal configuration may be added only when it fits the current project and does not create large unrelated churn.
 
-## 7.3 Canonical terminology note
+Document remaining lint warnings rather than hiding or disabling them indiscriminately.
 
-Add a concise terminology section to an appropriate central document, preferably the README or game design document:
+## 8.4 Normalize formatting
 
-```text
-Imago Core is the current product name. Older documents and internal identifiers may refer to Commune TCG, TCG Commune, or the Gacha branch. Those names are historical unless explicitly noted otherwise.
-```
+Apply the repository’s established style consistently to files touched by this migration.
 
-## 7.4 Branch references
+Normalize where safe:
 
-Update active instructions that tell developers or Work to use `Gacha` as the primary branch.
+- Indentation
+- Quote usage
+- Semicolon convention
+- Import ordering
+- Trailing whitespace
+- End-of-file newlines
+- Markdown heading structure
+- Consistent terminology
 
-After promotion, active instructions should say:
+Avoid a repository-wide formatting commit that obscures meaningful changes unless automated formatting is already canonical and low risk.
 
-- Canonical branch: `main`
-- New work branches from: `main`
-- `Gacha` is historical or transitional
+## 8.5 Remove obsolete branding artifacts
 
-Do not alter archived records where the old branch reference is necessary to understand past work.
+Remove or archive verified obsolete material such as:
+
+- Old product logos
+- Outdated splash art
+- Dead branded icons
+- Obsolete screenshots presented as current
+- Old placeholder copy
+- Superseded brand documents that conflict with canon
+- Dead metadata
+- Old descriptions
+- Obsolete celestial master-brand language
+
+Do not delete historical records that still provide useful development context. Mark or archive them appropriately.
+
+## 8.6 Asset audit and orphan cleanup
+
+Inventory active assets and identify orphaned files.
+
+Delete only assets verified as unused through code search, manifest inspection, runtime mapping, or build analysis.
+
+Review:
+
+- PNG, JPEG, WebP, SVG, and icon files
+- Card frames
+- Rarity assets
+- Type assets
+- Character markers
+- Backgrounds
+- Fonts
+- Audio and sound effects
+- PWA icons
+- Favicons
+- Loading assets
+
+Exercise caution with dynamically constructed asset paths.
+
+## 8.7 Comment and TODO discipline
+
+Remove stale, misleading, or redundant comments.
+
+Add concise comments only where they clarify:
+
+- Intentional compatibility behavior
+- Historical internal identifiers
+- Non-obvious data contracts
+- Known constraints that could cause future regressions
+
+Create TODOs only for concrete, actionable deferred work. Avoid vague TODO clutter.
+
+## 8.8 Cleanup boundaries
+
+Do not casually remove:
+
+- Compatibility wrappers
+- Patch files whose loading is not mapped
+- Dynamic CSS selectors
+- Database fallbacks
+- Error-recovery code
+- Service-worker compatibility logic
+- Storage-key compatibility
+- Feature flags with active alternate behavior
+- Duplicate-looking functions without call-site analysis
+
+The repository grew organically. Apparent duplication may still be active.
 
 ---
 
-# 8. Brand implementation requirements
+# 9. Required documentation deliverables
 
-This task should preserve and correctly label the established Imago Core identity.
+Use this release to establish a documented baseline.
 
-## 8.1 Canonical palette
+## 9.1 `README.md`
 
-Do not unintentionally change these established systems while renaming the product.
+Update or rewrite the README so it accurately presents Imago Core.
+
+Include, where applicable:
+
+- Imago Core title and concise description
+- Digital CCG positioning
+- Feature overview
+- Setup instructions
+- Run and build commands
+- Environment requirements
+- Current canonical branch
+- Links to current design documents
+- Architecture-document link
+- Historical terminology note
+- Screenshots only if current and already available
+
+Do not let the README continue presenting the project as an experimental gacha branch.
+
+## 9.2 `CHANGELOG.md`
+
+Create or update a changelog containing a clear Imago Core release entry.
+
+Include major systems now represented in the modern branch, such as applicable:
+
+- Imago Core rebrand
+- Card-frame system
+- Pull-flow improvements
+- Vault improvements
+- Library improvements
+- Home redesign
+- Battle system
+- Battle rewards and progression
+- Admin improvements
+- ATK and Power terminology migration
+- Bug fixes and stability work
+
+Do not invent implementation claims. Derive the changelog from the actual repository and commit history where available.
+
+## 9.3 `docs/architecture.md`
+
+Create a practical architecture map of the current application, not an idealized future architecture.
+
+Document:
+
+- Entry points
+- Major files and responsibilities
+- `app.js` responsibility map
+- Route or screen structure
+- State management
+- Data flow
+- Authentication
+- Pull system
+- Vault
+- Library
+- Card rendering
+- Squad selection
+- Battle system
+- Rewards and progression
+- Admin tools
+- Persistence and storage
+- API and database boundaries
+- CSS and theme organization
+- Asset loading
+- Patch/fix loading order
+- Build and deployment path
+
+Clearly distinguish current reality from future recommendations.
+
+## 9.4 `docs/technical-debt.md`
+
+Create or update a prioritized technical-debt inventory.
+
+Include:
+
+- Oversized files and functions
+- `app.js` modularization candidates
+- Scattered patch/fix files
+- Duplicate logic
+- Global-state risks
+- Repeated event listeners
+- Fragile route transitions
+- Unclear CSS ownership
+- Dynamic asset-path risks
+- Missing tests
+- Compatibility-sensitive identifiers
+- Dead-code uncertainty
+- Suggested module boundaries
+- Recommended refactoring sequence
+- Risk and estimated impact categories
+
+Do not perform the full refactor during this job.
+
+## 9.5 `docs/assets.md`
+
+Create an asset inventory documenting:
+
+- File or directory
+- Asset category
+- Active usage
+- Referencing system or screen
+- Dynamic-path notes
+- Rarity assets
+- Type assets
+- Character assets
+- Card frames
+- Fonts
+- Sounds
+- PWA and browser icons
+- Suspected unused assets that were retained because usage could not be proven
+
+## 9.6 Terminology documentation
+
+Add a central note to the README or game design document:
+
+> Imago Core is the current product name. Older documents and internal identifiers may refer to Commune TCG, TCG Commune, or the Gacha branch. Those names are historical unless explicitly noted otherwise.
+
+---
+
+# 10. Brand implementation guardrails
+
+Preserve the approved visual system while renaming.
+
+## 10.1 Core palette
 
 ### Primary and surfaces
 
@@ -514,59 +669,46 @@ Do not unintentionally change these established systems while renaming the produ
 - Radiant: `#F6D77A`
 - Neutral: `#A99A86`
 
-## 8.2 Typography
+## 10.2 Typography
 
-Preserve current approved use of:
+Preserve established use of:
 
 - Libre Caslon Text
 - Sora
 - Hanken Grotesk
 - JetBrains Mono
 
-Do not replace the typography system during the rename.
+## 10.3 Celestial legacy
 
-## 8.3 Celestial legacy cleanup
+Remove active master-brand copy framing Imago Core as celestial, astral, cosmic, zodiacal, constellation-based, observatory-based, or planetary.
 
-Search for active product copy that frames the entire game as:
-
-- Celestial
-- Astral
-- Cosmic
-- Zodiac
-- Constellation-based
-- Observatory-based
-- Planetary
-
-Individual cards may use these concepts. The master brand should not.
-
-Do not remove visual radial geometry or controlled light merely because it could resemble celestial imagery. Remove only explicit obsolete master-brand framing.
+Individual cards may use those themes. Controlled radial light and geometry may remain. This is not a visual purge.
 
 ---
 
-# 9. Functional regression requirements
+# 11. Validation requirements
 
-The branch promotion must not be considered complete solely because Git operations succeed.
+Git success is not enough. Validate the product.
 
-Validate the application as a product.
+## 11.1 Clean-checkout validation
 
-## 9.1 Clean environment validation
+From a clean checkout of the candidate release:
 
-From a clean checkout of the candidate new `main`:
-
-1. Install dependencies using the repository’s canonical package manager.
+1. Install dependencies using the canonical package manager.
 2. Run the normal build command.
 3. Run linting if configured.
 4. Run automated tests if configured.
-5. Start the app locally.
-6. Confirm there are no missing files, branch-relative imports, or uncommitted dependencies.
+5. Start the application locally.
+6. Confirm no required file exists only as an ignored local dependency.
+7. Confirm no import or asset URL depends on the `Gacha` branch name.
 
-Do not rely on local ignored files unless they are documented environment requirements.
+Repeat essential validation after promotion from a clean checkout of `main`.
 
-## 9.2 Critical route smoke test
+## 11.2 Critical smoke tests
 
-Test all primary routes and navigation paths that currently exist, including at minimum:
+Test all actual primary flows, including applicable:
 
-- Authentication or user entry
+- Authentication and user entry
 - Home
 - Pull
 - Single pull
@@ -576,476 +718,323 @@ Test all primary routes and navigation paths that currently exist, including at 
 - Ticket purchase
 - Vault
 - Library
+- Search and filters
 - Card detail modal
-- Squad or deck selection
+- Squad selection
 - Battle entry
 - Battle playback
-- Pause behavior
-- Exit behavior
+- Pause
+- Card inspection during pause
+- Exit
+- Skip to results
 - Battle results
-- Reward presentation
+- Reward queue
+- Card XP and level-up presentation
 - Admin page
 - Card lab
 - Submission approval
 - Card editing
+- Creator editing
+- Type-probability controls
 
-Adjust this list to the actual route structure. Do not invent routes.
+Do not invent routes. Adapt the test list to the actual implementation.
 
-## 9.3 Known high-risk behaviors
+## 11.3 Known regression targets
 
-Pay particular attention to areas that have recently required fixes:
+Pay particular attention to:
 
 - Pull-page buttons remain clickable.
-- Pull again after a five-card pull does not freeze.
+- Five-pull “Pull again” does not freeze.
 - Daily ticket cannot be claimed infinitely.
-- Daily reset uses the intended Mountain Time behavior.
-- Buying tickets deducts currency from the correct user bank.
-- Vault displays multiple duplicates correctly.
-- Duplicate count does not collide with card level.
-- Vault and library filtering work.
-- Home page strongest-card display works.
-- Daily pull availability controls the rainbow border correctly.
-- Battle playback does not incorrectly report interruption.
+- Daily reset follows intended Mountain Time behavior.
+- Ticket purchase deducts from the correct user bank.
+- Vault displays duplicates correctly.
+- Duplicate count does not conflict with card level.
+- Vault and library filters work.
+- Home strongest-card selection works.
+- Daily-pull availability controls the rainbow border correctly.
+- Battle playback does not falsely report interruption.
 - End-of-battle buttons navigate correctly.
-- Pause screen does not prevent intended card inspection.
-- Battle occupies the intended full-screen experience.
-- Skip-to-results and reward queue behavior remain functional.
-- Admin creator fields remain visible and editable.
-- Card type probability controls remain present where implemented.
+- Battle remains full-screen as designed.
+- Pause does not block intended card inspection.
+- Skip-to-results and reward sequencing work.
+- Admin creator controls remain present.
+- Type-probability controls remain functional where implemented.
 
-These are regression targets, not invitations to redesign the systems.
+These are regression tests, not redesign requests.
 
-## 9.4 Browser console and server logs
+## 11.4 Error inspection
 
-Inspect:
+Inspect and triage:
 
 - Browser console errors
 - Unhandled promise rejections
 - Failed network requests
 - Missing assets
+- Duplicate event handlers
 - Server startup errors
 - Database connection errors
-- Service worker errors
-- Cache version issues
+- Service-worker errors
+- Cache-version conflicts
+- Build warnings
+- Lint warnings
 
-Warnings should be triaged. Do not claim success while important errors remain unexplained.
+Do not claim success while significant errors remain unexplained.
 
 ---
 
-# 10. Build, deployment, and environment review
+# 12. Deployment and environment review
 
-## 10.1 Branch-connected deployments
+## 12.1 Deployment branch
 
-Identify any hosting or CI service configured to deploy specifically from `Gacha`.
+Identify any hosting or CI service deploying specifically from `Gacha`.
 
-Potential examples:
+Update production deployment to `main` where appropriate, sequencing the change so the working application remains deployable.
 
-- Vercel
-- Netlify
-- Render
-- Railway
-- GitHub Pages
-- Cloudflare Pages
-- Fly.io
-- Custom CI/CD
+Potential systems include Vercel, Netlify, Render, Railway, GitHub Pages, Cloudflare Pages, Fly.io, or custom CI.
 
-After promotion, update production deployment to use `main` where appropriate.
-
-Do not break a working deployment merely to normalize the branch name. Sequence the change so that the application remains deployable.
-
-## 10.2 Environment variables
+## 12.2 Environment variables
 
 Do not commit secrets.
 
-Review environment documentation for obsolete names such as `COMMUNE_TCG_*` or `GACHA_*`.
+Inspect historical names such as `COMMUNE_TCG_*` or `GACHA_*`.
 
-Renaming environment variables may require updates in hosting configuration. Only rename them when the corresponding external configuration can be updated in the same execution.
+Rename only when external hosting configuration can be updated and verified in the same execution. Otherwise preserve the working identifier and document it.
 
-Otherwise:
+## 12.3 Service worker and caches
 
-- Preserve the working variable.
-- Document it as a historical internal identifier.
-- Consider a future compatibility migration.
-
-## 10.3 Cache and service worker behavior
-
-If the product uses a service worker or persistent browser cache, ensure users do not remain trapped on obsolete branded assets or incompatible bundles.
+Ensure users are not trapped on obsolete branded assets or incompatible bundles.
 
 Consider:
 
-- Bumping cache versions
-- Invalidating old asset manifests
-- Ensuring new icons and titles load
-- Confirming old cached JavaScript does not conflict with new `main`
+- Cache-version bump
+- Asset-manifest invalidation
+- PWA metadata refresh
+- Old service-worker cleanup
+- Verification that old cached JavaScript does not conflict
 
-## 10.4 Production data safety
+## 12.4 Production data
 
-Do not reset, reseed, or migrate production data merely because the canonical branch changes.
+Do not reset, reseed, or alter production data merely because the canonical branch changes.
 
-Any schema or seed operation must be reviewed independently.
+Any schema or seed operation requires independent justification and verification.
 
 ---
 
-# 11. Repository metadata and presentation
+# 13. Repository presentation
 
-Where permissions allow, update repository-facing presentation to reflect the product transition.
+Where permissions allow:
 
-## 11.1 README
+- Confirm default branch is `main`.
+- Update repository description to Imago Core language.
+- Add accurate topics such as `collectible-card-game`, `ccg`, `card-game`, `gacha`, and `game-development` where appropriate.
+- Restore intentional branch protection.
+- Do not rename the repository without separate owner approval.
 
-The README should clearly state:
-
-- Product name: Imago Core
-- Product category: digital collectible card game / CCG
-- Current canonical branch: `main`
-- Basic setup and run instructions
-- Relevant current design documents
-- Historical terminology note
-
-Avoid leading with “Commune TCG” except in a historical note.
-
-## 11.2 Repository description
-
-If repository metadata editing is available and approved, update the description to something like:
+Suggested description:
 
 > Imago Core, a premium character-collection digital CCG centered on recognizable people, personal mythology, progression, and battle.
-
-Do not rename the repository itself without separate approval.
-
-## 11.3 Topics
-
-Reasonable topics may include:
-
-- collectible-card-game
-- ccg
-- card-game
-- gacha
-- javascript, if accurate
-- game-development
-
-Use only topics that accurately describe the repository.
-
-## 11.4 Default branch
-
-Confirm that GitHub’s default branch is `main` after promotion.
-
-## 11.5 Branch protection
-
-Restore or establish appropriate protection for `main` after any required force update.
-
-At minimum, consider:
-
-- Prevent accidental force pushes after migration
-- Require status checks if useful checks exist
-- Require PRs for future major work
-
-Do not add protections that block the owner’s current workflow without documenting them.
-
----
-
-# 12. Cleanup boundaries
-
-A limited cleanup pass is appropriate before promoting `Gacha`, but it must remain controlled.
-
-## 12.1 Safe cleanup targets
-
-Safe candidates include:
-
-- Dead branding constants
-- Duplicate old title strings
-- Obsolete logo imports
-- Unused old favicons
-- Stale comments claiming the product is Commune TCG
-- Temporary debug logging
-- Test-only banners accidentally left enabled
-- Obviously unused renamed assets
-- Branch-specific instructions that are no longer true
-- Broken links to old docs
-- Duplicate documentation superseded by current canon
-
-## 12.2 Cleanup requiring caution
-
-Do not casually remove:
-
-- Patch files whose runtime loading has not been mapped
-- Compatibility wrappers
-- Old CSS selectors still referenced dynamically
-- Database fallback behavior
-- Duplicate-looking functions without call-site analysis
-- Legacy storage keys
-- Feature flags
-- Error recovery code
-- Service worker compatibility logic
-
-The repository’s organic growth means apparently redundant code may still be active.
-
-## 12.3 Technical debt report
-
-Rather than refactoring aggressively, create or update a technical debt inventory that records:
-
-- Oversized `app.js`
-- Scattered patch/fix files
-- Duplicate systems
-- Unclear ownership of styles
-- Global state risks
-- Repeated event listeners
-- Fragile route transitions
-- Areas lacking tests
-- Internal legacy terminology
-
-This promotion should establish a stable baseline for later refactoring.
-
----
-
-# 13. Recommended execution phases
-
-## Phase 1: Orient and protect
-
-- Fetch all branches and tags.
-- Confirm current `Gacha` head.
-- Confirm current `main` head.
-- Identify the legacy preservation branch or tag.
-- Inspect branch protection and deployment dependencies.
-- Compare branch-level repository infrastructure.
-- Record the exact starting commit SHAs.
-
-### Exit condition
-
-The old version is safely recoverable, and the exact source and target commits are known.
-
-## Phase 2: Naming inventory
-
-- Run repository-wide searches for obsolete names.
-- Classify each match as:
-  - Active public branding
-  - Active internal identifier
-  - Historical documentation
-  - Repository URL or slug
-  - Third-party configuration
-  - False positive
-- Produce a concrete edit plan.
-
-### Exit condition
-
-Every meaningful old-name occurrence has a planned disposition.
-
-## Phase 3: Implement Imago Core naming
-
-- Update public UI text.
-- Update metadata and manifests.
-- Update active documentation.
-- Add historical notes where appropriate.
-- Update low-risk internal identifiers.
-- Preserve compatibility-sensitive identifiers where necessary.
-- Remove obsolete master-brand celestial language.
-
-### Exit condition
-
-The active product consistently presents itself as Imago Core.
-
-## Phase 4: Candidate validation on `Gacha`
-
-- Clean install.
-- Build.
-- Lint.
-- Test.
-- Launch.
-- Smoke-test critical flows.
-- Check console and logs.
-- Fix migration-caused regressions.
-
-### Exit condition
-
-`Gacha` is release-ready and self-contained.
-
-## Phase 5: Promote to `main`
-
-- Create a final promotion checkpoint.
-- Replace or reset `main` to the approved `Gacha` commit.
-- Push using the safest method permitted by repository protection.
-- Confirm remote `main` points to the intended commit.
-- Confirm GitHub default branch remains or becomes `main`.
-
-### Exit condition
-
-Remote `main` contains the approved Imago Core codebase.
-
-## Phase 6: Post-promotion verification
-
-- Fresh-clone or fresh-checkout `main`.
-- Repeat build and smoke tests.
-- Verify deployment source.
-- Verify production or preview deployment.
-- Confirm no active documentation instructs developers to begin from `Gacha`.
-- Confirm no critical asset paths were tied to branch URLs.
-
-### Exit condition
-
-The new `main` is operational and canonical.
-
-## Phase 7: Closeout
-
-- Report final commit SHAs.
-- Report promotion method.
-- Report tests performed.
-- Report deployment status.
-- List intentional residual legacy identifiers.
-- List technical debt deferred.
-- Recommend whether and when to delete `Gacha`.
 
 ---
 
 # 14. Acceptance criteria
 
-The task is complete only when all applicable criteria below are satisfied.
-
 ## Branch state
 
-- [ ] The old application is recoverable from the verified legacy branch or tag.
-- [ ] `main` contains the approved state originating from `Gacha`.
+- [ ] Legacy application is recoverable from a verified branch or tag.
+- [ ] Exact starting `main` and `Gacha` SHAs are recorded.
+- [ ] `main` contains the approved Imago Core release state.
 - [ ] Obsolete `main` application code was not reintroduced.
 - [ ] Remote `main` points to the intended commit.
 - [ ] GitHub default branch is `main`.
-- [ ] Branch protection is in an intentional final state.
+- [ ] Branch protection is intentional.
 
 ## Product naming
 
-- [ ] The application’s primary displayed name is Imago Core.
-- [ ] Browser title uses Imago Core.
-- [ ] Header or logo text uses Imago Core.
-- [ ] Current loading and error states use Imago Core where the product is named.
-- [ ] Public metadata uses Imago Core.
-- [ ] PWA or install metadata uses Imago Core where applicable.
-- [ ] Current README and active docs use Imago Core.
-- [ ] Active product copy does not present Commune TCG or TCG Commune as the current name.
-- [ ] Historical references are clearly marked or intentionally preserved.
+- [ ] Primary displayed product name is Imago Core.
+- [ ] Browser title, header, loading states, metadata, and active documentation use Imago Core.
+- [ ] Current product copy does not present Commune TCG or TCG Commune as current.
+- [ ] Historical references are marked or intentionally preserved.
+- [ ] Product descriptions prefer CCG or collectible card game.
+- [ ] `Gacha` remains only where mechanically, technically, or historically appropriate.
 
-## Terminology
+## Terminology and compatibility
 
-- [ ] Current product descriptions prefer CCG or collectible card game.
-- [ ] `ATK`, `DEF`, `SPD`, and `Power` terminology remains consistent with current design.
-- [ ] Internal `pow` storage is not destructively migrated without a separate plan.
-- [ ] “Gacha” remains only where mechanically or historically appropriate.
+- [ ] `ATK`, `DEF`, `SPD`, and `Power` remain consistent.
+- [ ] Internal `pow` storage was not destructively migrated.
+- [ ] Compatibility-sensitive identifiers were preserved or safely migrated.
+- [ ] Residual historical identifiers are documented.
+
+## Release cleanup
+
+- [ ] Verified dead code and debug code were removed.
+- [ ] Safe duplicate logic was consolidated.
+- [ ] Unused imports and variables were addressed.
+- [ ] Formatting is consistent in touched files.
+- [ ] Obsolete active branding assets were removed or archived.
+- [ ] Orphan assets were deleted only when non-use was verified.
+- [ ] Important compatibility code was not removed speculatively.
+
+## Documentation
+
+- [ ] README accurately presents Imago Core.
+- [ ] CHANGELOG contains the Imago Core release entry.
+- [ ] `docs/architecture.md` maps the current application.
+- [ ] `docs/technical-debt.md` prioritizes future cleanup.
+- [ ] `docs/assets.md` inventories active and uncertain assets.
+- [ ] Active branch instructions point to `main`.
 
 ## Brand integrity
 
-- [ ] Existing approved palette remains intact.
-- [ ] Rarity, type, and character color systems remain distinct.
-- [ ] The master brand is not framed as celestial or astrological.
-- [ ] Current card presentation remains unchanged except for required naming cleanup.
+- [ ] Approved palette and typography remain intact.
+- [ ] Rarity, type, and character colors remain distinct.
+- [ ] Master brand is not presented as celestial or astrological.
+- [ ] Card presentation was not redesigned during migration.
 
-## Build and functionality
+## Build and behavior
 
 - [ ] Dependencies install from a clean checkout.
 - [ ] Production build succeeds.
-- [ ] Lint passes or all remaining issues are documented.
-- [ ] Automated tests pass or missing coverage is documented.
-- [ ] App launches from the new `main`.
-- [ ] Critical routes load.
-- [ ] Pull flows work.
-- [ ] Vault and library work.
-- [ ] Battle entry, playback, pause, and results work.
-- [ ] Admin tools load and retain current capabilities.
-- [ ] No critical console or server errors remain unexplained.
+- [ ] Lint passes or residual issues are documented.
+- [ ] Tests pass or missing coverage is documented.
+- [ ] Application launches from new `main`.
+- [ ] Critical routes and flows work.
+- [ ] Pull, vault, library, battle, and admin regression targets pass.
+- [ ] No critical browser, server, asset, or service-worker errors remain unexplained.
 
 ## Deployment
 
-- [ ] Deployment source uses `main` or an intentionally documented source.
+- [ ] Deployment uses `main` or an intentionally documented source.
 - [ ] Environment configuration remains functional.
 - [ ] No secrets were committed.
-- [ ] Cache or service-worker behavior was reviewed.
-- [ ] Production data was not reset or damaged.
-
-## Documentation and closeout
-
-- [ ] Active branch instructions now point to `main`.
-- [ ] A residual legacy-name report is provided.
-- [ ] Deferred technical debt is recorded.
-- [ ] Work reports the exact commits and promotion method.
+- [ ] Cache and service-worker behavior was reviewed.
+- [ ] Production data was not damaged.
 
 ---
 
 # 15. Required final report from Work
 
-At completion, provide a structured report with these sections.
+Provide a structured final report.
 
 ## 15.1 Branch promotion
 
-- Previous `main` commit
-- Source `Gacha` commit
-- Final `main` commit
-- Promotion method used
-- Legacy branch or tag verified
+- Previous `main` SHA
+- Source `Gacha` SHA
+- Approved release-candidate SHA
+- Final `main` SHA
+- Promotion method
+- Verified legacy branch or tag
 - Whether force-with-lease was used
-- Whether branch protection changed
+- Branch-protection changes
 
-## 15.2 Naming changes
+## 15.2 Naming migration
 
-Summarize updates to:
+Summarize changes to:
 
 - UI
 - Metadata
-- Documentation
 - Manifests
 - Package information
 - Assets
+- Documentation
 - Deployment configuration
 
-## 15.3 Residual historical identifiers
+## 15.3 Cleanup performed
 
-List every meaningful remaining occurrence of:
+Report:
+
+- Dead files removed
+- Dead code removed
+- Duplicate logic consolidated
+- Debug code removed
+- Lint issues fixed
+- Formatting changes
+- Assets deleted or archived
+- Comments and TODOs changed
+
+For significant deletions, state how non-use was verified.
+
+## 15.4 Documentation delivered
+
+Report the state of:
+
+- `README.md`
+- `CHANGELOG.md`
+- `docs/architecture.md`
+- `docs/technical-debt.md`
+- `docs/assets.md`
+- Canonical terminology note
+
+## 15.5 Residual historical identifiers
+
+List meaningful remaining occurrences of:
 
 - Commune TCG
 - TCG Commune
 - `commune-tcg`
 - Gacha
-- Old package or storage names
+- Historical package names
+- Storage keys
+- Environment variables
+- Database fields
 
-For each, state why it remains.
+State why each remains.
 
-## 15.4 Validation performed
+## 15.6 Validation
 
 Report:
 
-- Install command
+- Install command and result
 - Build command and result
 - Lint command and result
 - Test command and result
 - Manual routes tested
 - Browser or device used
-- Console or log findings
+- Console findings
+- Server-log findings
+- Known regressions checked
 
-## 15.5 Deployment state
+## 15.7 Deployment
 
-- Deployment provider
+Report:
+
+- Provider
 - Deployment branch
-- Preview or production URL status
-- Environment changes made
-- Cache or service worker action taken
+- Preview or production status
+- Environment changes
+- Cache or service-worker action
 
-## 15.6 Deferred work
+## 15.8 Deferred work
 
-List technical debt or follow-up tasks that were deliberately not included.
+List technical debt deliberately not addressed, especially:
 
-## 15.7 Final recommendation
+- `app.js` modularization
+- High-risk patch consolidation
+- Database or storage migrations
+- Missing automated tests
+- Architectural recommendations
+
+## 15.9 Final recommendation
 
 State whether:
 
 - `Gacha` should remain temporarily
-- `Gacha` is safe to delete
+- `Gacha` is safe to archive or delete
 - A release tag should be created
 - A new development branch convention should be adopted
+- The application is ready for the next refactoring phase
 
 ---
 
-# 16. Recommended post-promotion branch convention
+# 16. Post-promotion branch convention
 
-After this migration, use:
+Use:
 
 - `main` as the stable canonical branch
 - Short-lived feature branches from `main`
-- Pull requests back into `main` for substantial work
+- Pull requests into `main` for substantial changes
 
-Possible branch naming patterns:
+Recommended patterns:
 
 ```text
 feature/<name>
@@ -1055,67 +1044,53 @@ docs/<name>
 refactor/<name>
 ```
 
-Do not recreate a long-lived catch-all branch that becomes the true product while `main` becomes stale again.
-
-If a long-lived integration branch is later desired, define its purpose and deployment relationship explicitly.
+Do not allow another long-lived catch-all branch to become the real product while `main` goes stale.
 
 ---
 
-# 17. Release naming recommendation
+# 17. Release tag recommendation
 
-After successful promotion and verification, consider creating a release tag.
+After successful promotion and verification, recommend an appropriate tag based on actual maturity.
 
-Possible tags:
+Possible examples:
 
-- `imago-core-v1.0.0`
-- `v1.0.0-imago-core`
 - `imago-core-beta`
+- `imago-core-2026-07`
+- `v1.0.0-imago-core`, only if the product is genuinely ready for that designation
 
-Choose a tag based on the actual product maturity. Do not call it a stable `v1.0.0` merely for ceremony if major systems are still in active beta.
-
-A practical choice may be:
-
-```text
-imago-core-beta
-```
-
-or a dated release:
-
-```text
-imago-core-2026-07
-```
-
-Tag creation is optional unless separately approved.
+Do not create ceremonial semantic-version claims unsupported by product maturity.
 
 ---
 
 # 18. Final directive
 
-This migration should leave no uncertainty about the repository’s center of gravity.
-
-Before the task:
+Before:
 
 ```text
 Gacha = actual modern product
 main = obsolete historical product
 ```
 
-After the task:
+After:
 
 ```text
 main = canonical Imago Core product
 legacy branch = preserved old product
-Gacha = temporary migration reference, then optional removal
+Gacha = temporary verification reference, then optional archival or deletion
 ```
 
-The central implementation rule is:
+Central implementation rule:
 
 > **Promote the modern product. Do not blend it back into the obsolete one.**
 
-The central naming rule is:
+Central naming rule:
 
 > **The game is Imago Core.**
 
-The central scope rule is:
+Central release rule:
 
-> **Stabilize, rename, validate, and promote. Do not turn this into the full architecture refactor.**
+> **Use this promotion to establish a clean, documented, production-quality baseline.**
+
+Central scope rule:
+
+> **Stabilize, rename, clean, document, validate, and promote. Do not turn this into the full architecture refactor.**
