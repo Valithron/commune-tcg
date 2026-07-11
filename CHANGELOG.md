@@ -31,6 +31,10 @@ All notable release-level changes are recorded here. Historical phase-by-phase i
 
 - Restricted card, card-mechanics, submission-list, submission-detail, and submission-review admin APIs to authenticated administrator sessions
 
+### Deployment verification
+
+- Added a documentation-only commit directly to `main` after Cloudflare production was switched from `Gacha` to `main`, providing a clean deployment trigger and confirming the canonical release path.
+
 ### Deferred
 
 - Full role/audit authorization model
