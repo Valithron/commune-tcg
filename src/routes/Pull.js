@@ -42,9 +42,14 @@ export async function renderPull({ query = {} } = {}) {
       </div>
     </section>
 
-    <section class="pull-device" aria-label="Prototype pull device">
-      <button class="pull-orb-image-button" type="button" data-pull-open="${selectedCount}" aria-label="Open pull confirmation">
-        <img class="pull-orb-image" src="/assets/commune-pull-orb.svg" alt="Imago Core pull device" />
+    <section class="pull-device pull-banner-device" aria-label="Standard summon banner">
+      <button class="pull-banner-button" type="button" data-pull-open="${selectedCount}" aria-label="Open Standard Summon confirmation">
+        <img class="pull-banner-image" src="/assets/standard-banner-ic.png" alt="Seven Imago Core characters being summoned through the Core device" />
+        <span class="pull-banner-copy" aria-hidden="true">
+          <span class="pull-banner-kicker">Standard Pool</span>
+          <span class="pull-banner-title">Standard Summon</span>
+          <span class="pull-banner-subtitle">Use tickets to reveal Core variants.</span>
+        </span>
       </button>
     </section>
 
