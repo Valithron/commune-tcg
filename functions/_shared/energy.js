@@ -1,5 +1,5 @@
 export const ENERGY_MAX = 10;
-export const ENERGY_REGEN_INTERVAL_MS = 15 * 60 * 1000;
+export const ENERGY_REGEN_INTERVAL_MS = 7 * 60 * 1000;
 
 async function columnExists(env, tableName, columnName) {
   const result = await env.DB.prepare(`PRAGMA table_info(${tableName})`).all();

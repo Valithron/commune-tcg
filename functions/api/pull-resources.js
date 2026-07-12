@@ -37,16 +37,12 @@ function isDuplicateColumnError(error) {
 }
 
 async function ensureDailyTicketColumn(env) {
-  if (await columnExists(env, 'user_resources', 'daily_ticket_claimed_on')) {
-    return;
-  }
+  if (await columnExists(env, 'user_resources', 'daily_ticket_claimed_on')) return;
 
   try {
     await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN daily_ticket_claimed_on TEXT').run();
   } catch (error) {
-    if (!isDuplicateColumnError(error)) {
-      throw error;
-    }
+    if (!isDuplicateColumnError(error)) throw error;
   }
 }
 
@@ -113,9 +109,7 @@ function shapeResources(row, user, mountainDate, serverNow) {
 }
 
 export async function onRequestGet({ env, request }) {
-  if (!env.DB) {
-    return errorResponse('D1 binding DB is not available.', 503);
-  }
+  if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
 
   try {
     const user = await getSessionUser(request, env);

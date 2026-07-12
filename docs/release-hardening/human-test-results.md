@@ -1,14 +1,14 @@
 # Phase 1 Human Test Results
 
-> **Status: Blocked before core-loop testing.** The preview is live, but D1 and R2 bindings are missing. Human completion is not claimed.
+> **Status: Preparation pending.** The preview is live with isolated D1 and R2 bindings. Minimal schema and disposable fixtures must be applied before core-loop testing. Human completion is not claimed.
 
 ## Sterling
 
-Pending isolated preview bindings. The static preview is available at `https://phase-release-hardening.commune-tcg.pages.dev`, but login and stateful flows return controlled missing-binding responses.
+Pending isolated preview schema and disposable test fixtures. The static preview is available at `https://phase-release-hardening.commune-tcg.pages.dev`.
 
 ## Cydney
 
-Pending isolated preview bindings. Do not ask Cydney to test an environment that cannot authenticate or complete the core loop.
+Pending isolated preview schema and disposable test fixtures. Do not ask Cydney to test until login and the core loop pass Sterling's technical verification.
 
 ## Ashley
 

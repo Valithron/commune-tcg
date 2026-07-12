@@ -101,14 +101,14 @@ Battle creation reconciles Energy before validating the encounter cost, then deb
 
 Energy regeneration uses one shared server-side reconciler:
 
-- 1 Energy per completed 30-minute interval
-- maximum 10 Energy and 5 hours from empty to full
+- 1 Energy per completed 7-minute interval
+- maximum 10 Energy and 70 minutes from empty to full
 - the persisted `energy_updated_at` advances only by consumed complete intervals below the cap, preserving any partial interval
 - reaching the cap resets the timestamp to the reconciliation time so elapsed time does not accumulate above the cap
 - a debit from full Energy starts a fresh interval; a debit below the cap preserves existing partial progress
 - missing, malformed, or future timestamps retain the valid Energy value and are backfilled to the current server time without granting Energy
 - conditional updates and rereads prevent repeated or concurrent reconciliation from duplicating Energy
-- no currency or gameplay modifier changes the 30-minute interval
+- no currency or gameplay modifier changes the 7-minute interval
 
 ### battle_attempts
 

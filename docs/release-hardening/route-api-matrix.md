@@ -98,9 +98,9 @@ Preview: `https://phase-release-hardening.commune-tcg.pages.dev`
 | Surface | Result | Interpretation |
 | --- | --- | --- |
 | Static application and manifest | 200 | Branch preview and built assets are available |
-| `/api/health` | 200, `DB: false`, `CARD_IMAGES: false` | Preview bindings are missing |
-| `/api/auth/me`, `/api/cards`, `/api/pull-resources` | 503 | D1-dependent paths fail closed with the expected response |
+| `/api/health` | 200, `DB: true`, `CARD_IMAGES: true` | Isolated preview bindings are present; exact resource IDs remain to be recorded |
+| `/api/auth/me`, `/api/cards`, `/api/pull-resources` | Pending after minimal schema/seed | Stateful checks must use disposable isolated data only |
 | `/api/battle-reward-contract` | 200 | Binding-independent read-only contract is available |
-| `/api/card-image` | 503 | R2-dependent path fails closed with the expected response |
+| `/api/card-image` | Pending disposable preview object | R2 binding is present and isolated |
 
 No POST, DELETE, economy, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted.

@@ -24,6 +24,11 @@ The required automated gate is run at baseline, after meaningful test additions,
 | 2026-07-11 | Telemetry implementation working tree based on `b4c1a44` | `git diff --check` | Git working tree | Pass | Under 1 s | None | No whitespace errors |
 | 2026-07-11 | Telemetry implementation working tree based on `b4c1a44` | `npx wrangler deploy --dry-run` | Linux, Wrangler 4.110.0, default config home | Fail | 10 s | Environment failure | Wrangler could not create `/root/.config`; repository content was not implicated |
 | 2026-07-11 | Telemetry implementation working tree based on `b4c1a44` | `XDG_CONFIG_HOME=/tmp/commune-tcg-config npx wrangler deploy --dry-run` | Linux, Wrangler 4.110.0 | Pass | 27.5 s | None | Worker bundle, assets, scheduled handler, and `wrangler.toml` parsed successfully without deployment or warnings |
+| 2026-07-11 | Phase 1 working tree merged with production hotfix `655c7c4` | `npm test` | Linux, Node 24.14.0 | Pass | 0.43 s | None | 62 tests passed, 0 failed; approved 7-minute Energy interval and live countdown contract included |
+| 2026-07-11 | Phase 1 working tree merged with production hotfix `655c7c4` | `npm run build` | Linux, Node 24.14.0 | Pass | 0.16 s | None | Vite transformed 93 modules and emitted production assets |
+| 2026-07-11 | Phase 1 working tree merged with production hotfix `655c7c4` | `git diff --check` | Git merge working tree | Pass | Under 1 s | None | No conflict markers or whitespace errors |
+| 2026-07-11 | Phase 1 working tree reconciled with remote Energy UI/isolation coverage through `f736ae9` | `npm test` | Linux, Node 24.14.0 | Pass | 0.43 s | None | 64 tests passed, 0 failed; final approved 7-minute value, live modal, server-preferred boundary refresh, and per-user isolation included |
+| 2026-07-11 | Phase 1 working tree reconciled with remote Energy UI/isolation coverage through `f736ae9` | `npm run build` | Linux, Node 24.14.0 | Pass | 0.15 s | None | Vite transformed 93 modules and emitted production assets |
 
 ## Baseline interpretation
 

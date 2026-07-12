@@ -547,11 +547,11 @@ Sources:
 
 Used to limit battle attempts and pace daily play.
 
-The Phase 1 first-test contract is server-authoritative elapsed-time regeneration:
+The current Phase 1 contract is server-authoritative elapsed-time regeneration. Sterling explicitly shortened the initial 30-minute test value to 7 minutes in the production hotfix on 2026-07-11:
 
 - Maximum Energy: 10
-- Regeneration: 1 Energy for each completed 30-minute interval
-- Empty-to-full time: 5 hours
+- Regeneration: 1 Energy for each completed 7-minute interval
+- Empty-to-full time: 70 minutes
 - Partial elapsed intervals are preserved when Energy is spent below the cap
 - Regeneration stops at the cap
 - Resource reads and battle-attempt validation reconcile persisted Energy first

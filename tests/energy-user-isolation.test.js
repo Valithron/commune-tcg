@@ -50,7 +50,7 @@ test('Energy reconciliation is isolated to the authenticated user row', async ()
 
   await reconcileEnergy(env, {
     userId: 'sterling',
-    now: '2026-07-10T18:15:00.000Z',
+    now: '2026-07-10T18:07:00.000Z',
   });
 
   const sterling = env.database.prepare(`
@@ -65,13 +65,13 @@ test('Energy reconciliation is isolated to the authenticated user row', async ()
   `).get('cydney');
 
   assert.equal(sterling.energy, 1);
-  assert.equal(sterling.energyUpdatedAt, '2026-07-10T18:15:00.000Z');
+  assert.equal(sterling.energyUpdatedAt, '2026-07-10T18:07:00.000Z');
   assert.equal(cydneyBefore.energy, 0);
   assert.equal(cydneyBefore.energyUpdatedAt, startedAt);
 
   await reconcileEnergy(env, {
     userId: 'cydney',
-    now: '2026-07-10T18:30:00.000Z',
+    now: '2026-07-10T18:14:00.000Z',
   });
 
   const sterlingAfter = env.database.prepare('SELECT energy FROM user_resources WHERE user_id = ?').get('sterling');
@@ -83,5 +83,5 @@ test('Energy reconciliation is isolated to the authenticated user row', async ()
 
   assert.equal(sterlingAfter.energy, 1);
   assert.equal(cydneyAfter.energy, 2);
-  assert.equal(cydneyAfter.energyUpdatedAt, '2026-07-10T18:30:00.000Z');
+  assert.equal(cydneyAfter.energyUpdatedAt, '2026-07-10T18:14:00.000Z');
 });

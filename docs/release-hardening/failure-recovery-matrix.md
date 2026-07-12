@@ -21,7 +21,7 @@
 | FR-17 | Malformed reveal/session storage | No new charge | Existing server state retained | Store clears malformed payload; Vault/history recover truth | Safe | Source pass |
 | FR-18 | Stale account cache after logout/switch | Must show no prior private state | Session is server authority | Auth/Vault caches require browser verification | Re-login | Preview pending |
 | FR-19 | API 500/timeout/slow response | Depends on transaction ID | Server truth authoritative | Loading/error state must release controls | Pull and battle IDs make retry safe | Preview pending |
-| FR-20 | Preview binding uncertainty | No mutation attempted | Preview confirmed with missing D1/R2 bindings | Static app loads; dependent endpoints return controlled 503 responses | Provision isolated bindings before core-loop testing | Read-only preview verification pass; mutation paths remain blocked |
+| FR-20 | Preview binding uncertainty | No mutation attempted before isolation | Preview now reports isolated D1/R2 bindings present | Static app loads; stateful verification awaits schema/fixtures | Record resource IDs, then use disposable isolated data only | Isolation confirmed by Sterling and health; schema/seed pending |
 | FR-21 | Telemetry request fails, times out, or is rate-limited | No economy effect | Gameplay transaction remains authoritative | Fire-and-forget client absorbs telemetry failure | Later gameplay actions proceed without telemetry retry blocking | Automated client contract pass; preview failure injection pending |
 
 ## Error categories

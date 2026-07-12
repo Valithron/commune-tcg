@@ -610,7 +610,7 @@ Interactions:
 
 When the player presses `Begin Battle`:
 
-1. Validate the signed-in player, encounter, formation, ownership, and eligibility, then reconcile persisted Energy at 1 point per completed 30-minute interval up to 10 before validating the cost.
+1. Validate the signed-in player, encounter, formation, ownership, and eligibility, then reconcile persisted Energy at 1 point per completed 7-minute interval up to 10 before validating the cost.
 2. Lock the formation.
 3. Spend 1 Energy only after the server can successfully create the battle attempt.
 4. Generate or select the authoritative seed.

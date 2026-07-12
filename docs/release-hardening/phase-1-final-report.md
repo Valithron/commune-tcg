@@ -8,12 +8,12 @@
 | --- | --- |
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
-| Current implementation commit | `89efa685e19d1c4938796e5a880b82c2e3e3a54a` |
-| Approximate completion | 85% |
+| Current implementation commit | Branch HEAD after integrating production hotfix `655c7c4` |
+| Approximate completion | 86% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
 | Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
-| Automated result | Full telemetry-inclusive working-tree gate passed: 61 tests, production build, Worker dry run, 1,000-battle simulation, and whitespace validation |
-| Human testing | Blocked because preview D1/R2 bindings are missing |
+| Automated result | Reconciled Phase 1 gate passed: 64 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
+| Human testing | Pending isolated preview schema and disposable seed data |
 | Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; preview evidence pending |
 
 ## Executive summary
@@ -23,7 +23,7 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 ## Findings by area
 
 - **Reliability:** Baseline gate passed. Pull requests now have durable idempotency claims; Energy reconciliation is repeatable.
-- **Playability:** The permanent Energy lockout is corrected in source and tests. Device/browser preview remains required.
+- **Playability:** The permanent Energy lockout is corrected in source and tests. The current explicitly approved production value is 1 Energy every 7 minutes, capped at 10, with a live top-bar countdown. Device/browser preview remains required.
 - **Clarity and visual cohesion:** Known route, Card Lab, Cydney color, type-color, and Energy documentation contradictions were corrected without redesign.
 - **Economy:** Daily claim, Gold exchange, pull concurrency, battle settlement, and Energy cases have isolated SQLite evidence.
 - **Security and ownership:** Vault and battle-history caller overrides, public Vault inventory, legacy submission-list exposure, non-session submission identity, and fixed reviewer identity were corrected.
@@ -35,7 +35,7 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 | Problem | Implementation | Risk | Test coverage | Preview result |
 | --- | --- | --- | --- | --- |
-| Energy never regenerated | Shared elapsed-time reconciler on reads and pre-battle debit | Low, additive behavior within approved contract | Direct interval/cap/backfill/concurrency/debit tests | Pending |
+| Energy never regenerated | Shared elapsed-time reconciler on reads and pre-battle debit plus live top-bar countdown; current approved interval 7 minutes | Low, additive behavior within approved contract and subsequent hotfix approval | Direct interval/cap/backfill/concurrency/debit and UI contract tests | Pending redeployed preview |
 | Pull retry/concurrency could duplicate grants | Additive `pull_requests` claim and client request reuse | Medium, transaction path changed | Repeat and competing-request tests | Pending |
 | Vault/history owner query override | Session-only owner queries | Low | Behavioral cross-owner tests | Pending |
 | Public ownership/submission diagnostics | Administrator policy | Low | Admin policy tests | Pending |
@@ -45,17 +45,17 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Decisions required before completion
 
-1. Approve isolated preview D1/R2 provisioning, or choose another explicit preview data model. Isolated resources are recommended.
+1. Record the isolated preview D1 name/identifier and R2 bucket name, then apply the minimal schema and disposable fixtures only to those resources.
 2. After stateful preview readiness, complete Sterling and Cydney human tests.
 3. At the end, explicitly approve or reject merge. No merge will occur automatically.
 
 ## Remaining blockers and risks
 
-- Preview D1/R2 bindings are confirmed missing, so login and stateful core-loop testing cannot proceed.
+- Preview bindings are present and isolated, but their resource identifiers, schema, and disposable seed state are not yet recorded.
 - Browser slow/offline/interruption and common iPhone widths remain unverified.
 - Telemetry live D1 and failure-isolation evidence remains pending preview binding verification.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Provision isolated preview D1/R2 resources, apply only the additive Phase 1 schema to the isolated database, verify the bindings, then run preview and human testing. Do not attach production resources without a separate explicit decision. Do not merge and do not begin Phase 2.
+Publish the production-hotfix merge to the draft PR, verify the redeployed isolated preview, record resource identifiers, apply the minimal preview schema and disposable fixtures, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.

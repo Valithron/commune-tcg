@@ -5,7 +5,7 @@ import { getApiRoutes } from '../services/apiClient.js';
 import { formatNumber } from './format.js';
 
 const ENERGY_MAX_FALLBACK = 10;
-const ENERGY_REGEN_INTERVAL_MS_FALLBACK = 15 * 60 * 1000;
+const ENERGY_REGEN_INTERVAL_MS_FALLBACK = 7 * 60 * 1000;
 const ENERGY_REFRESH_RETRY_MS = 15 * 1000;
 
 let topBarController = null;
@@ -374,7 +374,7 @@ export async function renderTopBar() {
           <small>/ <span data-energy-modal-max>${formatNumber(resources.energyMax)}</span></small>
         </div>
         <p class="energy-modal-countdown" data-energy-countdown>Syncing recharge timer…</p>
-        <p class="energy-modal-detail" data-energy-detail>1 Energy every 15 minutes. Maximum 10.</p>
+        <p class="energy-modal-detail" data-energy-detail>1 Energy every 7 minutes. Maximum 10.</p>
         <a class="button button-secondary energy-modal-action" href="#/battle" data-energy-modal-close>Open Battle</a>
       </section>
     </div>

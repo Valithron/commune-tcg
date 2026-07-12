@@ -20,6 +20,8 @@
 
 Sterling confirmed the active production deployment directly from Cloudflare on 2026-07-11. Production is sourced from `Valithron/commune-tcg` branch `main` at full commit `2193be5550f34daa67051c35e3c0a8311a15ef82`. Cloudflare displays the matching short SHA `2193be5`. Production and the verified Phase 1 baseline therefore match exactly.
 
+Later on 2026-07-11, emergency Energy countdown and 7-minute recharge hotfixes advanced `main` to `655c7c4c1b5783a6f9f2bc0c2563c5eb834baef4`. Phase 1 integrates that approved production source before further preview testing. The exact post-hotfix Cloudflare deployment ID and active SHA remain to be refreshed from the dashboard.
+
 | Deployment fact | Verified value |
 | --- | --- |
 | Cloudflare project | `commune-tcg-gacha` |
@@ -31,14 +33,14 @@ Sterling confirmed the active production deployment directly from Cloudflare on 
 | Production D1 binding | `DB` -> `com-tcg-db` |
 | Production R2 binding | `CARD_IMAGES` -> `com-tcg-images` |
 | Production result | Successful and active |
-| Preview deployment behavior | Pending branch preview inspection |
+| Preview deployment behavior | Isolated `DB` and `CARD_IMAGES` bindings present; resource names/IDs pending record |
 
 ## Deployment ledger
 
 | Environment | Project | Branch | Commit | URL | D1 binding | R2 binding | Result | Rollback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Production | `commune-tcg-gacha` | `main` | `2193be5550f34daa67051c35e3c0a8311a15ef82` | `https://d3d3aafd.commune-tcg.pages.dev` plus production aliases | `DB` -> `com-tcg-db` | `CARD_IMAGES` -> `com-tcg-images` | Successful and active | Restore this deployment ID or redeploy the exact SHA after verifying bindings |
-| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `9713efe8c825815fd242468e28ab37a58fb5f1c1` | `https://phase-release-hardening.commune-tcg.pages.dev` | Missing | Missing | Static application and binding-independent reads available | No data mutation is possible without bindings; restore branch deployment after correction |
+| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `d257ba113b61412dbd9d7e4799be905042dc37eb` before production-hotfix merge | `https://phase-release-hardening.commune-tcg.pages.dev` | Present and isolated; name/ID pending | Present and isolated; bucket name pending | Health reports both bindings true; schema/seed pending | Remove disposable data or restore the prior isolated preview deployment |
 
 ## Runtime and binding inventory
 
@@ -47,29 +49,28 @@ Sterling confirmed the active production deployment directly from Cloudflare on 
 | Binding or configuration | Type | Known purpose | Source status |
 | --- | --- | --- | --- |
 | `ASSETS` | Worker assets | Serve `dist/` and the SPA fallback | Declared in `wrangler.toml` |
-| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Confirmed in production as `com-tcg-db`; preview unknown |
-| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Confirmed in production as `com-tcg-images`; preview unknown |
+| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Production `com-tcg-db`; isolated preview binding present, name/ID pending |
+| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Production `com-tcg-images`; isolated preview binding present, bucket name pending |
 | `ADMIN_USER_IDS` | Environment variable | Comma-separated administrator slot allowlist | Optional; values not recorded; defaults to `sterling` |
 
-Confirmed production resources are D1 `com-tcg-db` and R2 `com-tcg-images`. Their attachment to the Phase 1 preview remains unverified and must be established before mutation testing.
+Confirmed production resources remain D1 `com-tcg-db` and R2 `com-tcg-images`. Sterling confirmed the preview bindings target separate resources, and the preview health endpoint now reports both bindings present. Exact preview resource names and the D1 identifier must still be recorded before schema or seed writes.
 
 No secret values were read or recorded.
 
 ## Preview and data safety
 
-The Phase 1 branch preview is live at `https://phase-release-hardening.commune-tcg.pages.dev`. A read-only `/api/health` request reports `DB: false` and `CARD_IMAGES: false`, while production reports both as `true`. The preview therefore has missing bindings, not separate resources and not production resources.
+The Phase 1 branch preview is live at `https://phase-release-hardening.commune-tcg.pages.dev`. After Sterling configured isolated preview resources, a read-only `/api/health` request reports `DB: true` and `CARD_IMAGES: true`. Sterling confirmed these bindings are separate from production. Schema and seed writes remain blocked until the exact preview resource identifiers are recorded.
 
 The preview JavaScript asset hash `index-DxgXpvjz.js` matches a fresh build from the published Phase 1 tree. This verifies that the branch source is deployed without requiring an application mutation.
 
 Safe read-only checks confirmed:
 
 - Static application and manifest: 200.
-- `/api/health`: 200 with both bindings false.
+- `/api/health`: 200 with both bindings true after isolated-resource configuration.
 - `/api/battle-reward-contract`: 200 and explicitly read-only.
-- D1-dependent GETs such as `/api/auth/me`, `/api/cards`, and `/api/pull-resources`: 503 with the expected missing-DB response.
-- R2 image GET: 503 with the expected missing-R2 response.
+- Stateful D1/R2 verification: pending schema and disposable seed data.
 
-No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted. Authenticated core-loop and human testing remain blocked until a safe preview binding model is approved and configured.
+No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
 
 ## Rollback options
 
@@ -108,5 +109,8 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding baseline confirmations
 
-- Whether isolated preview D1/R2 resources will be provisioned for core-loop and human testing.
+- Preview D1 database name and identifier.
+- Preview R2 bucket name.
+- Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
+- Current post-hotfix production deployment ID and active SHA.
 - Cloudflare dashboard rollback availability and permissions.
