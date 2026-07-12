@@ -9,11 +9,11 @@
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
 | Current implementation commit | Branch HEAD; deployed application tree verified at `8ca094bbcb062e25bd606f37bba521c9fccac205` |
-| Approximate completion | 88% |
+| Approximate completion | 89% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
 | Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
 | Automated result | Reconciled Phase 1 gate passed: 66 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
-| Human testing | Public desktop setup screen verified; authenticated core loop pending dashboard execution of the reviewed preview package |
+| Human testing | Public desktop setup screen verified; preview schema and fixtures passed; authenticated core-loop harness in progress |
 | Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; live event evidence pending |
 
 ## Executive summary
@@ -45,17 +45,17 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Decisions required before completion
 
-1. Execute the reviewed schema, fixtures, and verification queries through the Cloudflare dashboard only against D1 `com-tcg-db-preview` UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38`.
+1. Complete the authenticated preview harness after the targeted partial-run reset against D1 `com-tcg-db-preview` UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38`.
 2. After stateful preview readiness, complete Sterling and Cydney human tests.
 3. At the end, explicitly approve or reject merge. No merge will occur automatically.
 
 ## Remaining blockers and risks
 
-- Preview bindings and exact resource identifiers are recorded. The auth bootstrap succeeded, and the reviewed gameplay schema and disposable fixture package awaits dashboard execution.
+- Preview bindings and exact resource identifiers are recorded. Schema and fixtures passed the dashboard gate with exact expected totals. A harness-only status assertion interrupted the first authenticated run after a successful pull, so the recorded targeted reset must run before retry.
 - Browser slow/offline/interruption and common iPhone widths remain unverified.
 - Telemetry live D1 and failure-isolation evidence remains pending the gameplay schema and disposable accounts.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Execute the reviewed preview D1 package through the Cloudflare dashboard, preserve the verification output, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.
+Run the targeted interrupted-run reset, retry the corrected authenticated harness, then continue browser and human-test preparation. Do not merge and do not begin Phase 2.

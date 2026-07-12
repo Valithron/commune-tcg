@@ -65,7 +65,7 @@ The deployed JavaScript asset `index-DX6pVCTS.js` and CSS asset `index-BGWE4WVZ.
 
 After binding isolation and exact source deployment were verified, `GET /api/auth/users` performed the application's idempotent auth-schema bootstrap against the isolated preview D1 database. It succeeded and returned the seven canonical player slots with no usernames and `pinSet: false`. This created only the auth support schema and canonical slot rows. It did not create credentials, sessions, cards, economy resources, battle data, telemetry events, or R2 objects.
 
-The reviewed dashboard execution package is in [`preview-d1/`](preview-d1/README.md). Its additive schema, minimum fixture set, verification queries, and cleanup procedure execute successfully against in-memory SQLite. Dashboard execution against the recorded preview D1 resource remains pending.
+The reviewed dashboard execution package is in [`preview-d1/`](preview-d1/README.md). Its additive schema, minimum fixture set, verification queries, and cleanup procedure execute successfully against in-memory SQLite. Sterling executed schema and fixtures against the recorded preview D1 resource on 2026-07-12. Verification returned 7 auth slots, 2 resource rows, 5 Library templates, 6 owned cards, 0 invalid card JSON rows, and 0 telemetry events. The first fixture-console submission contained no executable SQL and had no effect; rerunning the actual statements succeeded. The cleanup script was not executed.
 
 Safe read-only checks confirmed:
 
@@ -74,7 +74,7 @@ Safe read-only checks confirmed:
 - `/api/auth/users`: 200 after isolated auth-schema bootstrap; seven unclaimed canonical slots returned.
 - `/api/battle-reward-contract`: 200 and explicitly read-only.
 - Public desktop UI: pass at 1363 by 936 in Chrome; all seven slot controls and setup fields rendered with no application console errors.
-- Stateful gameplay and R2 verification: pending execution of the reviewed dashboard package.
+- Stateful gameplay and R2 verification: schema and fixture gate passed; authenticated validation is in progress.
 
 No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. The only post-isolation D1 mutation so far is the minimal idempotent auth bootstrap described above. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
 
@@ -121,7 +121,7 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding baseline confirmations
 
-- Dashboard execution result for the reviewed preview schema, fixtures, and verification queries.
+- Completion of authenticated preview validation after the targeted interrupted-run reset.
 - Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
 - Current post-hotfix production deployment ID and active SHA.
 - Cloudflare dashboard rollback availability and permissions.

@@ -33,6 +33,20 @@ Expected verification totals are:
 | Invalid Phase 1 card JSON | `0` |
 | Telemetry events before validation | `0` |
 
+## Dashboard execution journal
+
+On 2026-07-12, Sterling executed the package against `com-tcg-db-preview` UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38`:
+
+| Step | Result | Recorded detail |
+| --- | --- | --- |
+| `001_phase1_schema.sql` | Success | Additive schema accepted |
+| `002_phase1_fixtures.sql`, first console attempt | No-op interface failure | The Cloudflare console received no executable SQL; no fixture statement ran |
+| `002_phase1_fixtures.sql`, actual statements | Success | Approved fixture statements accepted |
+| `003_phase1_verify.sql` | Success | `7 / 2 / 5 / 6 / 0 / 0` matched the manifest |
+| `004_phase1_cleanup.sql` | Not executed | Fixtures remain available for validation |
+
+The first authenticated harness attempt then stopped on a harness-only HTTP-status assertion after a successful pull. It had already created two credentials, three sessions, two saved squads, one pull claim/history row, one pulled card, and one ticket debit. `005_phase1_retry_reset.sql` was added to restore exactly that partial state while preserving the approved fixture rows and schema.
+
 No R2 object is required for the minimum fixture set. Missing-image behavior can be verified without writing an object. If later R2 tests create an object, record its exact key before upload and add that key to the cleanup record before deletion.
 
 ## Schema inventory
