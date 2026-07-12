@@ -13,6 +13,7 @@ async function readPayload(request) {
 
   return {
     count: formData.get('count'),
+    requestId: formData.get('requestId'),
   };
 }
 
@@ -25,7 +26,7 @@ export async function onRequestPost({ env, request }) {
     const user = await getSessionUser(request, env);
     if (!user) return errorResponse('Sign in before pulling cards.', 401);
     const payload = await readPayload(request);
-    const result = await resolvePull(env, { count: payload.count, user });
+    const result = await resolvePull(env, { count: payload.count, requestId: payload.requestId, user });
 
     if (!result.ok) {
       return jsonResponse({
@@ -45,10 +46,11 @@ export async function onRequestPost({ env, request }) {
       source: 'D1 cards + user_resources + pull_history',
       phase: 'auth-current-user',
       simulationOnly: false,
-      writesPerformed: true,
       userId: result.userId,
       ownerDisplayName: result.ownerDisplayName,
       pullId: result.pullId,
+      idempotent: result.idempotent,
+      writesPerformed: !result.idempotent,
       count: result.count,
       ticketCost: result.ticketCost,
       ticketsBefore: result.ticketsBefore,

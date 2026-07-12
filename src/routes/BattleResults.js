@@ -4,6 +4,7 @@ import { renderCardFrame } from '../components/CardFrame.js';
 import { toRenderableBattleCard } from '../components/battle/BattleCard.js';
 import { refreshTopBarResources } from '../components/TopBar.js';
 import { createBattleAttempt, finalizeBattleAttempt, recoverBattleAttempt } from '../services/battleApi.js';
+import { trackTelemetry } from '../services/telemetry.js';
 
 let activeResultAttempt = null;
 function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
@@ -80,6 +81,7 @@ export function initBattleResults(root) {
     const button = event.currentTarget;
     button.disabled = true; button.textContent = 'Preparing…';
     const status = page.querySelector('[data-result-status]');
+    trackTelemetry('retry.attempted', { outcome: 'success', relatedId: activeResultAttempt.attemptId });
     try {
       const payload = await createBattleAttempt({ encounterId: activeResultAttempt.encounterId, orderedCardIds: activeResultAttempt.orderedCardIds });
       sessionStorage.removeItem(`commune-battle-entered:${payload.attempt.attemptId}`);

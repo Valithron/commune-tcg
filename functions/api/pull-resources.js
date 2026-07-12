@@ -1,4 +1,5 @@
 import { getSessionUser } from '../_shared/auth.js';
+import { ENERGY_MAX, ensureEnergyColumns, reconcileEnergy } from '../_shared/energy.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 import { temporaryStartingTickets } from '../_shared/pull-engine.js';
 
@@ -49,26 +50,15 @@ async function ensureDailyTicketColumn(env) {
   }
 }
 
-async function ensureEnergyColumns(env) {
-  if (!(await columnExists(env, 'user_resources', 'energy'))) {
-    try { await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN energy INTEGER NOT NULL DEFAULT 10').run(); }
-    catch (error) { if (!isDuplicateColumnError(error)) throw error; }
-  }
-  if (!(await columnExists(env, 'user_resources', 'energy_updated_at'))) {
-    try { await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN energy_updated_at TEXT').run(); }
-    catch (error) { if (!isDuplicateColumnError(error)) throw error; }
-  }
-}
-
 async function ensureResources(env, now, user) {
   await env.DB.prepare(userResourcesSql).run();
   await ensureDailyTicketColumn(env);
   await ensureEnergyColumns(env);
 
   await env.DB.prepare(`
-    INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, daily_ticket_claimed_on, created_at, updated_at)
-    VALUES (?, ?, ?, NULL, ?, ?)
-  `).bind(user.id, temporaryStartingTickets, 0, now, now).run();
+    INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, daily_ticket_claimed_on, energy, energy_updated_at, created_at, updated_at)
+    VALUES (?, ?, ?, NULL, ?, ?, ?, ?)
+  `).bind(user.id, temporaryStartingTickets, 0, ENERGY_MAX, now, now, now).run();
 }
 
 async function readResources(env, user) {
@@ -79,6 +69,7 @@ async function readResources(env, user) {
       gold,
       daily_ticket_claimed_on AS dailyTicketClaimedOn,
       energy,
+      energy_updated_at AS energyUpdatedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM user_resources
@@ -96,6 +87,7 @@ function shapeResources(row, user, mountainDate) {
     pullTickets: Number(row?.pullTickets || 0),
     gold: Number(row?.gold || 0),
     energy: Number(row?.energy ?? 10),
+    energyUpdatedAt: row?.energyUpdatedAt || '',
     dailyTicketClaimedOn: claimedOn,
     dailyTicketAvailable: claimedOn !== mountainDate,
     mountainDate,
@@ -119,6 +111,7 @@ export async function onRequestGet({ env, request }) {
     const now = new Date().toISOString();
     const mountainDate = getMountainDateKey(new Date(now));
     await ensureResources(env, now, user);
+    const energyReconciliation = await reconcileEnergy(env, { userId: user.id, now });
     const resources = shapeResources(await readResources(env, user), user, mountainDate);
 
     return jsonResponse({
@@ -130,7 +123,8 @@ export async function onRequestGet({ env, request }) {
       userId: user.id,
       ownerDisplayName: user.displayName,
       resources,
-      warnings: ['This endpoint reads the signed-in player resource row and ensures the daily ticket claim column exists.'],
+      energyReconciliation,
+      warnings: ['This endpoint reads the signed-in player resource row and reconciles elapsed Energy before returning it.'],
     });
   } catch (error) {
     return errorResponse('Failed to read pull resources.', 500, error.message);

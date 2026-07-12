@@ -41,6 +41,8 @@ npm run preview
 
 Use Node 20 or newer. Live API behavior requires the `DB` and `CARD_IMAGES` Cloudflare bindings. `ADMIN_USER_IDS` optionally configures a comma-separated admin slot allowlist and defaults to `sterling`.
 
+`RELEASE_COMMIT` and `DEPLOYMENT_ENVIRONMENT` are optional non-secret deployment variables used only to label telemetry. When absent, the server stores `unknown`; gameplay remains unaffected.
+
 There is no lint command today. Build and tests are the automated gate. Run `git diff --check` for whitespace errors.
 
 ## Route and data overview
@@ -214,6 +216,12 @@ Read `docs/brand.md` before changing presentation. Use CSS tokens rather than in
 - Suppress only genuinely best-effort cleanup.
 - Do not use temporary `console.log` in browser source.
 - Command scripts may log their result summaries.
+
+## Telemetry
+
+`src/services/telemetry.js` sends non-blocking, allowlisted operational events to `/api/telemetry`. The Worker derives the player from the session and stores only the bounded envelope defined in `functions/_shared/telemetry.js`. Administrator export and player/date deletion use `/api/admin/telemetry`. Telemetry must never be awaited as a prerequisite for gameplay success or included in pull, resource, battle, or reward transaction batches.
+
+`wrangler.toml` schedules daily telemetry aggregation and retention at 09:17 UTC. This task is independent of player requests and uses the same idempotent routine as administrator export.
 
 ## Common regressions
 

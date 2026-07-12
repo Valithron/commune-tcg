@@ -1,6 +1,7 @@
 import { shopOffers } from '../data/mockShop.js';
 import { escapeHtml, formatNumber } from '../components/format.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
+import { telemetryErrorCategory, trackTelemetry } from '../services/telemetry.js';
 
 async function loadResources() {
   try {
@@ -140,8 +141,10 @@ export function initTicketShop(root) {
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.error || `Ticket exchange failed with ${response.status}`);
+          throw Object.assign(new Error(payload?.error || `Ticket exchange failed with ${response.status}`), { status: response.status });
         }
+
+        trackTelemetry(offerId === 'daily-free-ticket' ? 'ticket.daily_claim_completed' : 'ticket.exchange_completed', { outcome: 'success', relatedId: offerId });
 
         const goldCopy = payload.goldCost ? ` Gold ${formatNumber(payload.goldBefore)} -> ${formatNumber(payload.goldAfter)}.` : '';
         if (status) {
@@ -149,6 +152,7 @@ export function initTicketShop(root) {
         }
         window.setTimeout(() => window.location.reload(), 700);
       } catch (error) {
+        trackTelemetry(offerId === 'daily-free-ticket' ? 'ticket.daily_claim_completed' : 'ticket.exchange_completed', { outcome: 'failure', errorCategory: telemetryErrorCategory(error), relatedId: offerId });
         if (status) {
           status.textContent = error.message;
         }

@@ -24,10 +24,9 @@ export async function onRequestGet({ env, request }) {
 
   const user = await getSessionUser(request, env);
   if (!user) return errorResponse('Sign in to read battle history.', 401);
-  const url = new URL(request.url);
-  const ownerUserId = url.searchParams.get('ownerUserId') || user.id;
-  const ownerDisplayName = ownerUserId === user.id ? user.displayName : ownerUserId;
-  const limit = url.searchParams.get('limit') || 20;
+  const ownerUserId = user.id;
+  const ownerDisplayName = user.displayName;
+  const limit = new URL(request.url).searchParams.get('limit') || 20;
 
   try {
     const history = await readBattleHistoryRows(env, { ownerUserId, ownerDisplayName, limit });

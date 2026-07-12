@@ -1,4 +1,5 @@
 import { fetchJson } from './apiClient.js';
+import { resetTelemetrySession, trackTelemetry } from './telemetry.js';
 
 let cachedUser = undefined;
 
@@ -32,10 +33,13 @@ export async function signIn({ slotId, pin, username = '', setup = false, confir
   });
 
   cachedUser = payload.user || null;
+  resetTelemetrySession();
+  trackTelemetry('auth.login_completed', { outcome: 'success' });
   return cachedUser;
 }
 
 export async function signOut() {
   await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
   cachedUser = null;
+  resetTelemetrySession();
 }

@@ -1,4 +1,4 @@
-import { resolveCurrentUser } from '../_shared/current-user.js';
+import { getAdminSessionUser, getSessionUser } from '../_shared/auth.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 import { normalizeCardType, normalizeCardTypePool } from '../_shared/type-config.js';
 import { insertSubmission, listSubmissions } from '../_shared/submission-store.js';
@@ -62,6 +62,7 @@ function buildFields(formData) {
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
   const url = new URL(request.url);
   try {
     const submissions = await listSubmissions(env, { status: url.searchParams.get('status') || '', limit: url.searchParams.get('limit') || 100 });
@@ -75,8 +76,8 @@ export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
   if (!env.CARD_IMAGES) return errorResponse('R2 binding CARD_IMAGES is not available.', 503);
   try {
-    const currentUser = await resolveCurrentUser(request, env);
-    if (!currentUser?.id || currentUser.source === 'temporary-active-user') return errorResponse('Sign in before submitting a card.', 401);
+    const currentUser = await getSessionUser(request, env);
+    if (!currentUser?.id) return errorResponse('Sign in before submitting a card.', 401);
     const formData = await request.formData();
     const fields = buildFields(formData);
     const imageFile = formData.get('image');

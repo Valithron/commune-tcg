@@ -5,6 +5,7 @@
    ============================================================================ */
 
 import { fetchJson, getApiRoutes } from './apiClient.js';
+import { telemetryErrorCategory, trackTelemetry } from './telemetry.js';
 
 export const battleSquadMaxSize = 3;
 export const defaultBattleOwnerUserId = '';
@@ -39,7 +40,12 @@ export async function saveBattleSquad({ ownerUserId = defaultBattleOwnerUserId, 
   if (ownerUserId) payload.ownerUserId = ownerUserId;
   const response = await fetch(routes.battleSquad, { method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/json' }, body: JSON.stringify(payload) });
   const responsePayload = await response.json().catch(() => null);
-  if (!response.ok || !responsePayload) throw new Error(responsePayload?.error || `Saved squad request failed with ${response.status}`);
+  if (!response.ok || !responsePayload?.ok) {
+    const error = Object.assign(new Error(responsePayload?.error || `Saved squad request failed with ${response.status}`), { status: response.status });
+    trackTelemetry('squad.saved', { outcome: 'failure', errorCategory: telemetryErrorCategory(error) });
+    throw error;
+  }
+  trackTelemetry('squad.saved', { outcome: 'success' });
   return responsePayload;
 }
 

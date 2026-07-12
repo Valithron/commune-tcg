@@ -204,7 +204,6 @@ function summarizeDuplicateGroups(cards) {
 }
 
 function ownerWhere() { return `owner_user_id IS NOT NULL AND TRIM(CAST(owner_user_id AS TEXT)) != ''`; }
-async function readOwnerCounts(env) { const result = await env.DB.prepare(`SELECT owner_user_id AS ownerUserId, COUNT(*) AS cardCount FROM cards WHERE ${ownerWhere()} GROUP BY owner_user_id ORDER BY cardCount DESC LIMIT 50`).all(); return result.results || []; }
 async function readOwnedRows(env, ownerUserId) {
   const result = await env.DB.prepare(`SELECT id, owner_user_id, character_id, card_json, created_at, updated_at FROM cards WHERE ${ownerWhere()} AND CAST(owner_user_id AS TEXT) = ? ORDER BY updated_at DESC, created_at DESC LIMIT 500`).bind(String(ownerUserId)).all();
   return result.results || [];
@@ -213,16 +212,15 @@ function groupCardsByOwner(cards) { return cards.reduce((groups, card) => { cons
 
 export async function onRequestGet({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
-  const url = new URL(request.url);
   const user = await getSessionUser(request, env);
   if (!user) return errorResponse('Sign in to read your Vault.', 401);
-  const ownerUserId = url.searchParams.get('ownerUserId') || user.id;
+  const ownerUserId = user.id;
   try {
-    const ownerCounts = await readOwnerCounts(env);
     const rows = await readOwnedRows(env, ownerUserId);
     const cards = groupVaultDuplicateCopies(rows.map(normalizeOwnedRow));
     const duplicateGroups = summarizeDuplicateGroups(cards);
-    const ownerUserIds = ownerCounts.map((owner) => String(owner.ownerUserId));
+    const ownerCounts = [{ ownerUserId, cardCount: cards.length }];
+    const ownerUserIds = [ownerUserId];
     const invalidCardJsonCount = rows.filter((row) => !safeParseJson(row.card_json)).length;
     return jsonResponse({
       ok: true,
@@ -231,7 +229,7 @@ export async function onRequestGet({ env, request }) {
       readOnly: true,
       table: 'cards',
       selectedOwnerUserId: ownerUserId,
-      ownerDisplayName: ownerUserId === user.id ? user.displayName : ownerUserId,
+      ownerDisplayName: user.displayName,
       ownerUserIds,
       ownerCounts,
       totalReturned: cards.length,
@@ -244,7 +242,7 @@ export async function onRequestGet({ env, request }) {
       cards,
       cardsByOwner: groupCardsByOwner(cards),
       warnings: [
-        ownerUserId === user.id ? 'Vault is scoped to the signed-in player.' : 'Vault ownerUserId override was supplied for diagnostics.',
+        'Vault is scoped to the signed-in player; caller-supplied owner identifiers are ignored.',
         ...(invalidCardJsonCount > 0 ? [`${invalidCardJsonCount} returned row(s) had invalid card_json.`] : []),
         ...(cards.some((card) => !card.progressionMapped) ? ['Some rows do not contain level/xp/copy fields; safe placeholders were applied.'] : []),
       ],

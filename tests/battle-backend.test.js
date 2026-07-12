@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 
 import { createPendingBattleAttempt, finalizeBattleAttempt, readAttempt } from '../functions/_shared/battle-attempts.js';
+import { ENERGY_MAX, ENERGY_REGEN_INTERVAL_MS, ensureEnergyColumns, reconcileEnergy } from '../functions/_shared/energy.js';
 
 function createD1() {
   const database = new DatabaseSync(':memory:');
@@ -98,4 +99,101 @@ test('insufficient Energy rejects creation without an attempt write', async () =
   assert.equal(result.code, 'insufficient-energy');
   const attempt = await readAttempt(env, { userId: 'sterling', attemptId: 'attempt_backend_004' });
   assert.equal(attempt, null);
+});
+
+test('Energy regenerates only for complete intervals and preserves partial elapsed time', async () => {
+  const env = createD1(); seedUser(env.database);
+  await ensureEnergyColumns(env);
+  env.database.prepare('UPDATE user_resources SET energy = 2, energy_updated_at = ? WHERE user_id = ?').run('2026-07-10T18:00:00.000Z', 'sterling');
+
+  const partial = await reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T18:29:59.000Z' });
+  assert.equal(partial.energy, 2);
+  assert.equal(partial.regenerated, 0);
+  assert.equal(partial.energyUpdatedAt, '2026-07-10T18:00:00.000Z');
+
+  const oneInterval = await reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T18:30:00.000Z' });
+  assert.equal(oneInterval.energy, 3);
+  assert.equal(oneInterval.regenerated, 1);
+  assert.equal(oneInterval.energyUpdatedAt, '2026-07-10T18:30:00.000Z');
+
+  const multiple = await reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T20:05:00.000Z' });
+  assert.equal(multiple.energy, 6);
+  assert.equal(multiple.regenerated, 3);
+  assert.equal(multiple.energyUpdatedAt, '2026-07-10T20:00:00.000Z');
+  assert.equal(ENERGY_REGEN_INTERVAL_MS, 30 * 60 * 1000);
+});
+
+test('Energy regeneration caps at ten and does not accumulate time above the cap', async () => {
+  const env = createD1(); seedUser(env.database);
+  await ensureEnergyColumns(env);
+  env.database.prepare('UPDATE user_resources SET energy = 9, energy_updated_at = ? WHERE user_id = ?').run('2026-07-10T18:00:00.000Z', 'sterling');
+
+  const result = await reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T20:00:00.000Z' });
+  assert.equal(result.energy, ENERGY_MAX);
+  assert.equal(result.regenerated, 1);
+  assert.equal(result.energyUpdatedAt, '2026-07-10T20:00:00.000Z');
+
+  const repeated = await reconcileEnergy(env, { userId: 'sterling', now: '2026-07-11T20:00:00.000Z' });
+  assert.equal(repeated.energy, ENERGY_MAX);
+  assert.equal(repeated.regenerated, 0);
+  assert.equal(env.database.prepare('SELECT energy FROM user_resources WHERE user_id = ?').get('sterling').energy, ENERGY_MAX);
+});
+
+test('missing, malformed, and future Energy timestamps backfill without granting Energy', async () => {
+  const env = createD1(); seedUser(env.database);
+  await ensureEnergyColumns(env);
+  const now = '2026-07-10T20:00:00.000Z';
+
+  for (const [timestamp, expectedStatus] of [
+    [null, 'backfilled-missing'],
+    ['not-a-date', 'backfilled-malformed'],
+    ['2026-07-10T21:00:00.000Z', 'backfilled-future'],
+  ]) {
+    env.database.prepare('UPDATE user_resources SET energy = 4, energy_updated_at = ? WHERE user_id = ?').run(timestamp, 'sterling');
+    const result = await reconcileEnergy(env, { userId: 'sterling', now });
+    assert.equal(result.energy, 4);
+    assert.equal(result.regenerated, 0);
+    assert.equal(result.timestampStatus, expectedStatus);
+    assert.equal(result.energyUpdatedAt, now);
+    const repeated = await reconcileEnergy(env, { userId: 'sterling', now });
+    assert.equal(repeated.energy, 4);
+    assert.equal(repeated.regenerated, 0);
+  }
+});
+
+test('repeated Energy reconciliation cannot duplicate a completed interval', async () => {
+  const env = createD1(); seedUser(env.database);
+  await ensureEnergyColumns(env);
+  env.database.prepare('UPDATE user_resources SET energy = 1, energy_updated_at = ? WHERE user_id = ?').run('2026-07-10T18:00:00.000Z', 'sterling');
+
+  await Promise.all([
+    reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T18:30:00.000Z' }),
+    reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T18:30:00.000Z' }),
+    reconcileEnergy(env, { userId: 'sterling', now: '2026-07-10T18:30:00.000Z' }),
+  ]);
+
+  const row = env.database.prepare('SELECT energy, energy_updated_at AS energyUpdatedAt FROM user_resources WHERE user_id = ?').get('sterling');
+  assert.equal(row.energy, 2);
+  assert.equal(row.energyUpdatedAt, '2026-07-10T18:30:00.000Z');
+});
+
+test('battle creation reconciles Energy before validation and preserves partial recharge progress', async () => {
+  const env = createD1(); seedUser(env.database);
+  await ensureEnergyColumns(env);
+  env.database.prepare('UPDATE user_resources SET energy = 0, energy_updated_at = ? WHERE user_id = ?').run('2026-07-10T18:00:00.000Z', 'sterling');
+
+  const result = await createPendingBattleAttempt(env, {
+    userId: 'sterling',
+    userDisplayName: 'Sterling',
+    attemptId: 'attempt_backend_regenerated',
+    encounterId: 'crossroads-patrol',
+    orderedCardIds: ['card-0', 'card-1', 'card-2'],
+    now: '2026-07-10T18:40:00.000Z',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.energyAfter, 0);
+  const row = env.database.prepare('SELECT energy, energy_updated_at AS energyUpdatedAt FROM user_resources WHERE user_id = ?').get('sterling');
+  assert.equal(row.energy, 0);
+  assert.equal(row.energyUpdatedAt, '2026-07-10T18:30:00.000Z');
 });

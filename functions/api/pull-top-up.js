@@ -45,7 +45,7 @@ const userResourcesSql = `
   )
 `;
 
-function getMountainDateKey(date = new Date()) {
+export function getMountainDateKey(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: mountainTimeZone,
     year: 'numeric',
@@ -73,6 +73,10 @@ async function columnExists(env, tableName, columnName) {
 
 function isDuplicateColumnError(error) {
   return String(error?.message || error || '').toLowerCase().includes('duplicate column');
+}
+
+function changedRows(result) {
+  return Number(result?.meta?.changes ?? result?.changes ?? 0);
 }
 
 async function ensureDailyTicketColumn(env) {
@@ -161,7 +165,7 @@ async function applyDailyOffer(env, { offer, user, before, now, mountainDate }) 
     WHERE user_id = ? AND COALESCE(daily_ticket_claimed_on, '') != ?
   `).bind(offer.ticketAmount, mountainDate, now, user.id, mountainDate).run();
 
-  if (Number(result?.meta?.changes || 0) < 1) {
+  if (changedRows(result) < 1) {
     return {
       ok: false,
       status: 409,
@@ -189,7 +193,7 @@ async function applyGoldOffer(env, { offer, user, before, now }) {
     WHERE user_id = ? AND gold >= ?
   `).bind(offer.ticketAmount, offer.goldCost, now, user.id, offer.goldCost).run();
 
-  if (Number(result?.meta?.changes || 0) < 1) {
+  if (changedRows(result) < 1) {
     return {
       ok: false,
       status: 409,

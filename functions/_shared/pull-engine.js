@@ -4,8 +4,6 @@ import { getRarityOddsPercentages, pullOptions } from './pull-config.js';
 import { readPullPool } from './pull-pool-store.js';
 import { chooseWeightedCardType, normalizeCardTypeOdds, normalizeCardTypePool } from './type-config.js';
 
-export const temporaryPullUserId = 'sterling';
-export const temporaryPullUserDisplayName = 'Sterling';
 export const temporaryStartingTickets = 12;
 
 const userResourcesSql = `
@@ -29,9 +27,22 @@ const pullHistorySql = `
   )
 `;
 
+const pullRequestSql = `
+  CREATE TABLE IF NOT EXISTS pull_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    pull_count INTEGER NOT NULL,
+    ticket_cost INTEGER NOT NULL,
+    result_json TEXT NOT NULL,
+    execution_token TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`;
+
 function clampPullCount(value) { return Number(value) === 5 ? 5 : 1; }
 function randomFloat() { const values = new Uint32Array(1); crypto.getRandomValues(values); return values[0] / 4294967295; }
 function buildId(prefix) { return prefix + '_' + Date.now() + '_' + crypto.randomUUID().slice(0, 8); }
+function normalizePullRequestId(value) { const id = cleanText(value, 120); return /^pull_[A-Za-z0-9_-]{12,120}$/.test(id) ? id : ''; }
 function safeParseJson(value) { if (!value || typeof value !== 'string') return null; try { return JSON.parse(value); } catch { return null; } }
 function cleanText(value, maxLength = 120) { return String(value || '').trim().slice(0, maxLength); }
 function toNumber(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
@@ -39,14 +50,20 @@ function imageUrlFromKey(key) { const imageKey = String(key || '').trim(); if (!
 function readImageKey(card) { return card.imageKey || card.image_key || card.image_path || card.image || card.image_url || card.art_url || card.art_key || card.object_key || card.r2_key || ''; }
 function readImageUrl(card, imageKey = readImageKey(card)) { return card.imageUrl || card.image_url || card.artUrl || card.art_url || imageUrlFromKey(imageKey); }
 function readCrop(card) { return card.crop || card.crop_json || card.cropJson || card.image_crop || card.imageCrop || {}; }
-function resolvePullUser(user = null) { return { id: String(user?.id || user?.slotId || temporaryPullUserId), displayName: String(user?.displayName || user?.username || temporaryPullUserDisplayName) }; }
+function resolvePullUser(user = null) {
+  const id = String(user?.id || user?.slotId || '').trim();
+  if (!id) throw new Error('Authenticated pull user is required.');
+  return { id, displayName: String(user?.displayName || user?.username || id) };
+}
 
 async function tableExists(env, tableName) { const row = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`).bind(tableName).first(); return Boolean(row); }
 async function ensurePullSchema(env, now, user = null) {
   const activeUser = resolvePullUser(user);
   await env.DB.prepare(userResourcesSql).run();
   await env.DB.prepare(pullHistorySql).run();
+  await env.DB.prepare(pullRequestSql).run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pull_history_user_created ON pull_history (user_id, created_at)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pull_requests_user_created ON pull_requests (user_id, created_at)').run();
   await env.DB.prepare(`INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`).bind(activeUser.id, temporaryStartingTickets, 0, now, now).run();
 }
 async function readUserResources(env, user = null) {
@@ -231,7 +248,43 @@ function buildOwnedCardPayload({ baseCard, ownedCardId, pullId, now, owner = nul
 function simulateSelections(cards, count, rarityOdds) { const results = []; for (let index = 0; index < count; index += 1) { const selectedRarity = chooseWeightedRarity(rarityOdds); const selection = chooseCardForRarity(cards, selectedRarity); if (selection.card) results.push({ index: index + 1, selectedRarity, actualRarity: selection.card.rarity, fallbackUsed: selection.fallbackUsed, baseCard: selection.card }); } return results; }
 function buildHistoryResult(result, owner = null) { const activeUser = resolvePullUser(owner); const creator = creatorFields(result.baseCard); const imageKey = readImageKey(result.baseCard); return { index: result.index, ownerUserId: activeUser.id, ownerDisplayName: activeUser.displayName, cardTitle: result.baseCard.name, actualRarity: result.actualRarity, selectedRarity: result.selectedRarity, fallbackUsed: result.fallbackUsed, characterId: result.baseCard.characterId, creatorDisplayName: creator.creatorDisplayName, creatorUserId: creator.creatorUserId, imageKey, imageUrl: readImageUrl(result.baseCard, imageKey), sourceCardId: result.baseCard.id, sourceRowId: result.baseCard.sourceRowId, ownedCardId: result.ownedCardId }; }
 
-export async function resolvePull(env, { count, user = null }) {
+async function readPullRequest(env, activeUser, pullId) {
+  return env.DB.prepare(`SELECT id, user_id AS userId, pull_count AS pullCount, ticket_cost AS ticketCost, result_json AS resultJson, execution_token AS executionToken, created_at AS createdAt FROM pull_requests WHERE id = ? AND user_id = ? LIMIT 1`).bind(pullId, activeUser.id).first();
+}
+
+async function hydrateGrantedResults(env, activeUser, historyResults) {
+  const results = [];
+  for (const historyResult of historyResults || []) {
+    const row = await env.DB.prepare('SELECT card_json AS cardJson FROM cards WHERE id = ? AND CAST(owner_user_id AS TEXT) = ? LIMIT 1').bind(historyResult.ownedCardId, activeUser.id).first();
+    const parsed = safeParseJson(row?.cardJson);
+    const ownedCard = parsed?.card || parsed?.data?.card || parsed?.data || parsed || null;
+    if (!ownedCard) continue;
+    results.push({ ...historyResult, sourceCard: null, ownedCard });
+  }
+  return results;
+}
+
+async function responseFromPullRequest(env, activeUser, requestRow, { idempotent }) {
+  const stored = safeParseJson(requestRow.resultJson) || {};
+  const historyResults = Array.isArray(stored) ? stored : stored.results || [];
+  const resources = await readUserResources(env, activeUser);
+  return {
+    ok: true,
+    status: 200,
+    idempotent,
+    pullId: requestRow.id,
+    userId: activeUser.id,
+    ownerDisplayName: activeUser.displayName,
+    count: Number(requestRow.pullCount),
+    ticketCost: Number(requestRow.ticketCost),
+    ticketsBefore: Number(stored.ticketsBefore ?? resources?.pullTickets ?? 0),
+    ticketsAfter: Number(stored.ticketsAfter ?? resources?.pullTickets ?? 0),
+    results: await hydrateGrantedResults(env, activeUser, historyResults),
+    poolSummary: stored.poolSummary || null,
+  };
+}
+
+export async function resolvePull(env, { count, user = null, requestId = '' }) {
   const activeUser = resolvePullUser(user);
   const now = new Date().toISOString();
   const pullCount = clampPullCount(count);
@@ -239,16 +292,31 @@ export async function resolvePull(env, { count, user = null }) {
   const ticketCost = option.ticketCost;
   const rarityOdds = getRarityOddsPercentages();
   await ensurePullSchema(env, now, activeUser);
+  const pullId = normalizePullRequestId(requestId) || buildId('pull');
+  const existingRequest = await readPullRequest(env, activeUser, pullId);
+  if (existingRequest) return responseFromPullRequest(env, activeUser, existingRequest, { idempotent: true });
   const resources = await readUserResources(env, activeUser);
   if (!resources || Number(resources.pullTickets) < ticketCost) return { ok: false, status: 409, error: 'Not enough pull tickets.', resources, ticketCost };
   const pool = await readPullPool(env);
   if (!pool.cards.length) return { ok: false, status: 409, error: 'No pull-eligible cards are available.', poolReadiness: pool.readiness };
-  const pullId = buildId('pull');
   const selections = simulateSelections(pool.cards, pullCount, rarityOdds);
   const grantedResults = selections.map((selection) => { const ownedCardId = buildId('owned'); const ownedCard = buildOwnedCardPayload({ baseCard: selection.baseCard, ownedCardId, pullId, now, owner: activeUser }); return { ...selection, ownedCardId, ownedCard }; });
   const historyResults = grantedResults.map((result) => buildHistoryResult(result, activeUser));
-  const statements = [env.DB.prepare(`UPDATE user_resources SET pull_tickets = pull_tickets - ?, updated_at = ? WHERE user_id = ? AND pull_tickets >= ?`).bind(ticketCost, now, activeUser.id, ticketCost), ...grantedResults.map((result) => env.DB.prepare(`INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(result.ownedCardId, activeUser.id, result.baseCard.characterId, JSON.stringify(result.ownedCard), now, now)), env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(pullId, activeUser.id, pullCount, ticketCost, JSON.stringify(historyResults), now)];
+  const poolSummary = { eligibleCount: pool.eligibleCount, approvedSubmissionCount: pool.approvedSubmissionCount, byRarity: pool.byRarity, readiness: pool.readiness };
+  const executionToken = crypto.randomUUID();
+  const storedResult = JSON.stringify({ results: historyResults, poolSummary, ticketsBefore: Number(resources.pullTickets), ticketsAfter: Number(resources.pullTickets) - ticketCost });
+  const claimGuard = `EXISTS (SELECT 1 FROM pull_requests WHERE id = ? AND user_id = ? AND execution_token = ?)`;
+  const statements = [
+    env.DB.prepare(`INSERT OR IGNORE INTO pull_requests (id, user_id, pull_count, ticket_cost, result_json, execution_token, created_at) SELECT ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM user_resources WHERE user_id = ? AND pull_tickets >= ?)`).bind(pullId, activeUser.id, pullCount, ticketCost, storedResult, executionToken, now, activeUser.id, ticketCost),
+    env.DB.prepare(`UPDATE user_resources SET pull_tickets = pull_tickets - ?, updated_at = ? WHERE user_id = ? AND pull_tickets >= ? AND ${claimGuard}`).bind(ticketCost, now, activeUser.id, ticketCost, pullId, activeUser.id, executionToken),
+    ...grantedResults.map((result) => env.DB.prepare(`INSERT INTO cards (id, owner_user_id, character_id, card_json, created_at, updated_at) SELECT ?, ?, ?, ?, ?, ? WHERE ${claimGuard}`).bind(result.ownedCardId, activeUser.id, result.baseCard.characterId, JSON.stringify(result.ownedCard), now, now, pullId, activeUser.id, executionToken)),
+    env.DB.prepare(`INSERT INTO pull_history (id, user_id, pull_count, ticket_cost, result_json, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE ${claimGuard}`).bind(pullId, activeUser.id, pullCount, ticketCost, JSON.stringify(historyResults), now, pullId, activeUser.id, executionToken),
+  ];
   await env.DB.batch(statements);
-  const updatedResources = await readUserResources(env, activeUser);
-  return { ok: true, status: 200, pullId, userId: activeUser.id, ownerDisplayName: activeUser.displayName, count: pullCount, ticketCost, ticketsBefore: Number(resources.pullTickets), ticketsAfter: Number(updatedResources.pullTickets), results: grantedResults.map((result) => ({ index: result.index, ownerUserId: activeUser.id, ownerDisplayName: activeUser.displayName, cardTitle: result.baseCard.name, selectedRarity: result.selectedRarity, actualRarity: result.actualRarity, fallbackUsed: result.fallbackUsed, sourceCard: result.baseCard, ownedCard: result.ownedCard, ownedCardId: result.ownedCardId })), poolSummary: { eligibleCount: pool.eligibleCount, approvedSubmissionCount: pool.approvedSubmissionCount, byRarity: pool.byRarity, readiness: pool.readiness } };
+  const committedRequest = await readPullRequest(env, activeUser, pullId);
+  if (!committedRequest) {
+    const currentResources = await readUserResources(env, activeUser);
+    return { ok: false, status: 409, error: 'Not enough pull tickets.', resources: currentResources, ticketCost };
+  }
+  return responseFromPullRequest(env, activeUser, committedRequest, { idempotent: committedRequest.executionToken !== executionToken });
 }

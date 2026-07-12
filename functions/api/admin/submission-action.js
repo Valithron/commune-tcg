@@ -33,7 +33,8 @@ function parseTypeOdds(value) {
 
 export async function onRequestPost({ env, request }) {
   if (!env.DB) return errorResponse('D1 binding DB is not available.', 503);
-  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
+  const reviewer = await getAdminSessionUser(request, env);
+  if (!reviewer) return errorResponse('Admin authorization required.', 403);
 
   try {
     const payload = await readPayload(request);
@@ -47,6 +48,7 @@ export async function onRequestPost({ env, request }) {
       approvedCardType: payload.approvedCardType,
       approvedCardTypes: payload.approvedCardTypes,
       approvedTypeOdds: parseTypeOdds(payload.approvedTypeOdds),
+      reviewerId: reviewer.id,
     });
 
     if (!result.ok) {
@@ -64,6 +66,7 @@ export async function onRequestPost({ env, request }) {
       approvedTypeOdds: result.approvedTypeOdds || [],
       approvalProfile: result.approvalProfile || null,
       creatorDisplayName: result.creatorDisplayName || '',
+      reviewerId: result.reviewerId,
       submission: result.submission,
       warnings: [
         'Review action authorized by the active admin session.',

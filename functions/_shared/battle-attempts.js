@@ -5,9 +5,10 @@ import { BATTLE_RULES_VERSION, MVP_VERSION } from '../../shared/battle/battle-co
 import { getEncounterById } from '../../shared/battle/encounter-registry.js';
 import { normalizeBattleMaxLevel, previewLevelFromXp } from './battle-reward-contract.js';
 import { createAuthoritativeBattleResult } from './battle-adapter.js';
+import { ENERGY_MAX, ensureEnergyColumns, reconcileEnergy } from './energy.js';
 
 export const BATTLE_ATTEMPT_SCHEMA_VERSION = 'battle-attempts-1.0.0';
-export const DEFAULT_ENERGY = 10;
+export const DEFAULT_ENERGY = ENERGY_MAX;
 
 const attemptTableSql = `
   CREATE TABLE IF NOT EXISTS battle_attempts (
@@ -68,8 +69,7 @@ export async function ensureBattleAttemptSchemas(env, { ownerUserId = '', now = 
   if (!(await columnExists(env, 'battle_history', 'attempt_id'))) await env.DB.prepare('ALTER TABLE battle_history ADD COLUMN attempt_id TEXT').run();
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_battle_history_user_attempt ON battle_history (user_id, attempt_id) WHERE attempt_id IS NOT NULL AND TRIM(attempt_id) != ''`).run();
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_resources (user_id TEXT PRIMARY KEY, pull_tickets INTEGER NOT NULL DEFAULT 0, gold INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`).run();
-  if (!(await columnExists(env, 'user_resources', 'energy'))) await env.DB.prepare(`ALTER TABLE user_resources ADD COLUMN energy INTEGER NOT NULL DEFAULT ${DEFAULT_ENERGY}`).run();
-  if (!(await columnExists(env, 'user_resources', 'energy_updated_at'))) await env.DB.prepare('ALTER TABLE user_resources ADD COLUMN energy_updated_at TEXT').run();
+  await ensureEnergyColumns(env);
   if (ownerUserId) await env.DB.prepare(`INSERT OR IGNORE INTO user_resources (user_id, pull_tickets, gold, energy, energy_updated_at, created_at, updated_at) VALUES (?, 0, 0, ?, ?, ?, ?)`).bind(ownerUserId, DEFAULT_ENERGY, now, now, now).run();
 }
 
@@ -96,6 +96,7 @@ export async function createPendingBattleAttempt(env, { userId, userDisplayName,
   if (pending) return { ok: false, status: 409, code: 'pending-battle-exists', error: 'Finish or surrender the current battle before beginning another.', pendingAttemptId: pending.attemptId };
   const encounter = getEncounterById(encounterId);
   if (!encounter) return { ok: false, status: 404, code: 'encounter-not-found', error: 'Encounter not found.' };
+  await reconcileEnergy(env, { userId, now });
   const resources = await env.DB.prepare('SELECT energy FROM user_resources WHERE user_id = ? LIMIT 1').bind(userId).first();
   if (Number(resources?.energy || 0) < encounter.energyCost) return { ok: false, status: 409, code: 'insufficient-energy', error: 'Not enough Energy.', energy: Number(resources?.energy || 0), energyCost: encounter.energyCost };
   const seed = crypto.randomUUID();
@@ -118,7 +119,7 @@ export async function createPendingBattleAttempt(env, { userId, userDisplayName,
   };
   const statements = [
     env.DB.prepare(`INSERT INTO battle_attempts (attempt_id, user_id, status, encounter_id, encounter_version, rules_version, mvp_version, seed, ordered_card_ids, result_json, energy_spent, surrender, created_at) SELECT ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, 0, ? WHERE EXISTS (SELECT 1 FROM user_resources WHERE user_id = ? AND energy >= ?)`).bind(attemptId, userId, encounter.id, encounter.version, BATTLE_RULES_VERSION, MVP_VERSION, seed, JSON.stringify(authoritative.orderedCardIds), JSON.stringify(storedResult), encounter.energyCost, now, userId, encounter.energyCost),
-    env.DB.prepare(`UPDATE user_resources SET energy = energy - ?, energy_updated_at = ?, updated_at = ? WHERE user_id = ? AND energy >= ? AND EXISTS (SELECT 1 FROM battle_attempts WHERE attempt_id = ? AND user_id = ? AND status = 'pending')`).bind(encounter.energyCost, now, now, userId, encounter.energyCost, attemptId, userId),
+    env.DB.prepare(`UPDATE user_resources SET energy = energy - ?, energy_updated_at = CASE WHEN energy >= ? THEN ? ELSE energy_updated_at END, updated_at = ? WHERE user_id = ? AND energy >= ? AND EXISTS (SELECT 1 FROM battle_attempts WHERE attempt_id = ? AND user_id = ? AND status = 'pending')`).bind(encounter.energyCost, ENERGY_MAX, now, now, userId, encounter.energyCost, attemptId, userId),
   ];
   try { await env.DB.batch(statements); } catch (error) {
     const raced = await readAttempt(env, { userId, attemptId });
