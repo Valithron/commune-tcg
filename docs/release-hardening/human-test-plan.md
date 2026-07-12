@@ -15,7 +15,7 @@ Record tester, date, browser, device, viewport, branch, commit, preview URL, acc
 5. Confirm Vault ownership, duplicate display, history, and balances.
 6. Create/reorder/save a squad and inspect forecasts.
 7. Interrupt battle playback, refresh, resume/skip, and verify settlement once.
-8. Spend Energy, inspect partial recharge before 30 minutes, and verify recharge after a completed interval.
+8. Spend Energy, inspect partial recharge before 15 minutes, and verify recharge at and after one completed 15-minute interval.
 9. Exercise back/forward, direct links, missing images, and unusual navigation.
 10. Inspect administrator surfaces without running destructive repair actions.
 
