@@ -35,27 +35,28 @@ function calculateNextEnergyAt({ energy, energyMax, energyUpdatedAt, energyRegen
   return new Date(updatedAtMs + energyRegenIntervalMs).toISOString();
 }
 
-function normalizeResources(payload, overrides = {}, { live = false, syncFailed = false } = {}) {
+function normalizeResources(payload, overrides = {}, { live = false, syncFailed = false, preferServer = false } = {}) {
   const source = payload?.resources || payload || {};
-  const energy = normalizeResourceValue(overrides.energy ?? source.energy, ENERGY_MAX_FALLBACK);
-  const energyMax = normalizeResourceValue(source.energyMax ?? overrides.energyMax, ENERGY_MAX_FALLBACK);
+  const chooseValue = (serverValue, overrideValue) => preferServer ? serverValue ?? overrideValue : overrideValue ?? serverValue;
+  const energy = normalizeResourceValue(chooseValue(source.energy, overrides.energy), ENERGY_MAX_FALLBACK);
+  const energyMax = normalizeResourceValue(chooseValue(source.energyMax, overrides.energyMax), ENERGY_MAX_FALLBACK);
   const energyRegenIntervalMs = normalizeResourceValue(
-    source.energyRegenIntervalMs ?? overrides.energyRegenIntervalMs,
+    chooseValue(source.energyRegenIntervalMs, overrides.energyRegenIntervalMs),
     ENERGY_REGEN_INTERVAL_MS_FALLBACK,
   );
-  const energyUpdatedAt = normalizeTimestamp(source.energyUpdatedAt ?? overrides.energyUpdatedAt);
-  const serverNow = normalizeTimestamp(source.serverNow ?? payload?.serverNow ?? overrides.serverNow);
+  const energyUpdatedAt = normalizeTimestamp(chooseValue(source.energyUpdatedAt, overrides.energyUpdatedAt));
+  const serverNow = normalizeTimestamp(chooseValue(source.serverNow ?? payload?.serverNow, overrides.serverNow));
   const nextEnergyAt = calculateNextEnergyAt({
     energy,
     energyMax,
     energyUpdatedAt,
     energyRegenIntervalMs,
-    nextEnergyAt: source.nextEnergyAt ?? overrides.nextEnergyAt,
+    nextEnergyAt: chooseValue(source.nextEnergyAt, overrides.nextEnergyAt),
   });
 
   return {
-    pullTickets: normalizeResourceValue(overrides.pullTickets ?? source.pullTickets, mockUser.pullTickets),
-    gold: normalizeResourceValue(overrides.gold ?? source.gold, mockUser.gold),
+    pullTickets: normalizeResourceValue(chooseValue(source.pullTickets, overrides.pullTickets), mockUser.pullTickets),
+    gold: normalizeResourceValue(chooseValue(source.gold, overrides.gold), mockUser.gold),
     energy,
     energyMax,
     energyRegenIntervalMs,
@@ -68,7 +69,7 @@ function normalizeResources(payload, overrides = {}, { live = false, syncFailed 
   };
 }
 
-async function loadTopBarResources(overrides = {}) {
+async function loadTopBarResources(overrides = {}, { preferServer = false } = {}) {
   try {
     const routes = getApiRoutes();
     const response = await fetch(routes.pullResources + '?_=' + Date.now(), {
@@ -84,7 +85,7 @@ async function loadTopBarResources(overrides = {}) {
       throw new Error(payload?.error || `Resource request failed with ${response.status}`);
     }
 
-    return normalizeResources(payload, overrides, { live: true });
+    return normalizeResources(payload, overrides, { live: true, preferServer });
   } catch {
     return normalizeResources({}, overrides, {
       live: false,
@@ -226,10 +227,10 @@ function applyResources(root, resources, { rerenderPills = true } = {}) {
   return resources;
 }
 
-export async function refreshTopBarResources(root = document, overrides = {}) {
+export async function refreshTopBarResources(root = document, overrides = {}, options = {}) {
   const target = root.querySelector('[data-topbar-resources]');
   if (!target) return null;
-  const resources = await loadTopBarResources(overrides);
+  const resources = await loadTopBarResources(overrides, options);
   return applyResources(root, resources);
 }
 
@@ -237,7 +238,7 @@ async function requestEnergyRefresh({ force = false } = {}) {
   if (!activeRoot || refreshPromise) return refreshPromise;
   if (!force && Date.now() < nextRefreshAttemptAt) return null;
 
-  refreshPromise = refreshTopBarResources(activeRoot, activeResources || {})
+  refreshPromise = refreshTopBarResources(activeRoot, activeResources || {}, { preferServer: true })
     .then((resources) => {
       nextRefreshAttemptAt = resources?.syncFailed ? Date.now() + ENERGY_REFRESH_RETRY_MS : 0;
       return resources;
