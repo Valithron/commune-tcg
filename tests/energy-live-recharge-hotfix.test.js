@@ -13,7 +13,7 @@ test('Energy hotfix is server-backed and refreshes the top bar at the recharge b
   ]);
 
   assert.match(energy, /ENERGY_MAX = 10/);
-  assert.match(energy, /ENERGY_REGEN_INTERVAL_MS = 15 \* 60 \* 1000/);
+  assert.match(energy, /ENERGY_REGEN_INTERVAL_MS = 7 \* 60 \* 1000/);
   assert.match(energy, /WHERE user_id = \?/);
   assert.match(endpoint, /reconcileEnergy\(env, \{ userId: user\.id, now \}\)/);
   assert.match(endpoint, /nextEnergyAt/);
@@ -21,6 +21,7 @@ test('Energy hotfix is server-backed and refreshes the top bar at the recharge b
   assert.match(topBar, /data-energy-pill/);
   assert.match(topBar, /role="dialog"/);
   assert.match(topBar, /Next Energy in/);
+  assert.match(topBar, /energyRegenIntervalMs \/ 60000/);
   assert.match(topBar, /requestRefresh\(\)/);
   assert.match(topBar, /preferServer: true/);
   assert.match(topBar, /visibilitychange/);
