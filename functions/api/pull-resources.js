@@ -1,5 +1,5 @@
 import { getSessionUser } from '../_shared/auth.js';
-import { ENERGY_MAX, ensureEnergyColumns, reconcileEnergy } from '../_shared/energy.js';
+import { ENERGY_MAX, ENERGY_REGEN_INTERVAL_MS, ensureEnergyColumns, reconcileEnergy } from '../_shared/energy.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 import { temporaryStartingTickets } from '../_shared/pull-engine.js';
 
@@ -78,16 +78,29 @@ async function readResources(env, user) {
   `).bind(user.id).first();
 }
 
-function shapeResources(row, user, mountainDate) {
+function getNextEnergyAt(energy, energyUpdatedAt) {
+  if (energy >= ENERGY_MAX || !energyUpdatedAt) return '';
+  const updatedAtMs = new Date(energyUpdatedAt).getTime();
+  if (!Number.isFinite(updatedAtMs)) return '';
+  return new Date(updatedAtMs + ENERGY_REGEN_INTERVAL_MS).toISOString();
+}
+
+function shapeResources(row, user, mountainDate, serverNow) {
   const claimedOn = row?.dailyTicketClaimedOn || '';
+  const energy = Number(row?.energy ?? ENERGY_MAX);
+  const energyUpdatedAt = row?.energyUpdatedAt || '';
 
   return {
     userId: row?.userId || user.id,
     ownerDisplayName: user.displayName,
     pullTickets: Number(row?.pullTickets || 0),
     gold: Number(row?.gold || 0),
-    energy: Number(row?.energy ?? 10),
-    energyUpdatedAt: row?.energyUpdatedAt || '',
+    energy,
+    energyMax: ENERGY_MAX,
+    energyRegenIntervalMs: ENERGY_REGEN_INTERVAL_MS,
+    energyUpdatedAt,
+    nextEnergyAt: getNextEnergyAt(energy, energyUpdatedAt),
+    serverNow,
     dailyTicketClaimedOn: claimedOn,
     dailyTicketAvailable: claimedOn !== mountainDate,
     mountainDate,
@@ -112,7 +125,7 @@ export async function onRequestGet({ env, request }) {
     const mountainDate = getMountainDateKey(new Date(now));
     await ensureResources(env, now, user);
     const energyReconciliation = await reconcileEnergy(env, { userId: user.id, now });
-    const resources = shapeResources(await readResources(env, user), user, mountainDate);
+    const resources = shapeResources(await readResources(env, user), user, mountainDate, now);
 
     return jsonResponse({
       ok: true,
@@ -120,6 +133,7 @@ export async function onRequestGet({ env, request }) {
       phase: 'auth-current-user-ticket-shop',
       readOnly: false,
       schemaEnsured: true,
+      serverNow: now,
       userId: user.id,
       ownerDisplayName: user.displayName,
       resources,
