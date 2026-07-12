@@ -33,14 +33,14 @@ Later on 2026-07-11, emergency Energy countdown and 7-minute recharge hotfixes a
 | Production D1 binding | `DB` -> `com-tcg-db` |
 | Production R2 binding | `CARD_IMAGES` -> `com-tcg-images` |
 | Production result | Successful and active |
-| Preview deployment behavior | Isolated `DB` and `CARD_IMAGES` bindings present; resource names/IDs pending record |
+| Preview deployment behavior | Isolated `DB` and `CARD_IMAGES` bindings present; exact resources recorded below |
 
 ## Deployment ledger
 
 | Environment | Project | Branch | Commit | URL | D1 binding | R2 binding | Result | Rollback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Production | `commune-tcg-gacha` | `main` | `2193be5550f34daa67051c35e3c0a8311a15ef82` | `https://d3d3aafd.commune-tcg.pages.dev` plus production aliases | `DB` -> `com-tcg-db` | `CARD_IMAGES` -> `com-tcg-images` | Successful and active | Restore this deployment ID or redeploy the exact SHA after verifying bindings |
-| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `8ca094bbcb062e25bd606f37bba521c9fccac205` | `https://phase-release-hardening.commune-tcg.pages.dev` | Present and isolated; name/ID pending | Present and isolated; bucket name pending | Health reports both bindings true; auth schema bootstrap complete | Remove disposable data or restore the prior isolated preview deployment |
+| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `8ca094bbcb062e25bd606f37bba521c9fccac205` application tree | `https://phase-release-hardening.commune-tcg.pages.dev` | `DB` -> `com-tcg-db-preview` (`4fb86e2a-59f9-4f3c-aa34-af4b64973f38`) | `CARD_IMAGES` -> `com-tcg-images-preview` | Health reports both bindings true; auth schema bootstrap complete; reviewed gameplay package pending dashboard execution | Run the targeted cleanup script or restore the prior isolated preview deployment |
 
 ## Runtime and binding inventory
 
@@ -49,11 +49,11 @@ Later on 2026-07-11, emergency Energy countdown and 7-minute recharge hotfixes a
 | Binding or configuration | Type | Known purpose | Source status |
 | --- | --- | --- | --- |
 | `ASSETS` | Worker assets | Serve `dist/` and the SPA fallback | Declared in `wrangler.toml` |
-| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Production `com-tcg-db`; isolated preview binding present, name/ID pending |
-| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Production `com-tcg-images`; isolated preview binding present, bucket name pending |
+| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Production `com-tcg-db`; preview `com-tcg-db-preview`, UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38` |
+| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Production `com-tcg-images`; preview `com-tcg-images-preview` |
 | `ADMIN_USER_IDS` | Environment variable | Comma-separated administrator slot allowlist | Optional; values not recorded; defaults to `sterling` |
 
-Confirmed production resources remain D1 `com-tcg-db` and R2 `com-tcg-images`. Sterling confirmed the preview bindings target separate resources, and the preview health endpoint now reports both bindings present. Exact preview resource names and the D1 identifier must still be recorded before direct migration or fixture writes.
+Confirmed production resources remain D1 `com-tcg-db` and R2 `com-tcg-images`. Sterling confirmed preview D1 `com-tcg-db-preview` with UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38` and preview R2 `com-tcg-images-preview` are separate resources. The preview health endpoint reports both bindings present.
 
 No secret values were read or recorded.
 
@@ -63,7 +63,9 @@ The Phase 1 branch preview is live at `https://phase-release-hardening.commune-t
 
 The deployed JavaScript asset `index-DX6pVCTS.js` and CSS asset `index-BGWE4WVZ.css` match a fresh build from commit `8ca094bbcb062e25bd606f37bba521c9fccac205`. This verifies that the exact reconciled branch source is deployed without relying on an application mutation.
 
-After binding isolation and exact source deployment were verified, `GET /api/auth/users` performed the application's idempotent auth-schema bootstrap against the isolated preview D1 database. It succeeded and returned the seven canonical player slots with no usernames and `pinSet: false`. This created only the auth support schema and canonical slot rows. It did not create credentials, sessions, cards, economy resources, battle data, telemetry events, or R2 objects. Direct additive migrations and disposable gameplay fixtures remain blocked until the exact preview D1 name/identifier and R2 bucket name are recorded.
+After binding isolation and exact source deployment were verified, `GET /api/auth/users` performed the application's idempotent auth-schema bootstrap against the isolated preview D1 database. It succeeded and returned the seven canonical player slots with no usernames and `pinSet: false`. This created only the auth support schema and canonical slot rows. It did not create credentials, sessions, cards, economy resources, battle data, telemetry events, or R2 objects.
+
+The reviewed dashboard execution package is in [`preview-d1/`](preview-d1/README.md). Its additive schema, minimum fixture set, verification queries, and cleanup procedure execute successfully against in-memory SQLite. Dashboard execution against the recorded preview D1 resource remains pending.
 
 Safe read-only checks confirmed:
 
@@ -72,15 +74,15 @@ Safe read-only checks confirmed:
 - `/api/auth/users`: 200 after isolated auth-schema bootstrap; seven unclaimed canonical slots returned.
 - `/api/battle-reward-contract`: 200 and explicitly read-only.
 - Public desktop UI: pass at 1363 by 936 in Chrome; all seven slot controls and setup fields rendered with no application console errors.
-- Stateful gameplay and R2 verification: pending direct additive migrations and disposable seed data.
+- Stateful gameplay and R2 verification: pending execution of the reviewed dashboard package.
 
 No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. The only post-isolation D1 mutation so far is the minimal idempotent auth bootstrap described above. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
 
 ### Disposable-data cleanup procedure
 
-All Phase 1 fixtures will use a recorded `phase1-` identifier or another explicitly recorded test owner ID so cleanup can target only disposable rows. After testing, use the isolated preview D1 identifier to delete those owners' sessions, resources, owned cards, pull requests/history, squads, battle attempts/history, submissions, telemetry events, and telemetry audit rows in dependency order. Delete only R2 objects whose keys were recorded during Phase 1 seeding or submission tests. Re-run `/api/auth/users`, `/api/health`, and table-specific count queries to prove that disposable data is gone while bindings and additive schema remain intact.
+All Phase 1 fixtures use a recorded `phase1-` identifier or one of the two explicitly recorded test owners. The exact dashboard cleanup is [`preview-d1/004_phase1_cleanup.sql`](preview-d1/004_phase1_cleanup.sql). It deletes those owners' sessions, resources, owned cards, pull requests/history, squads, battle attempts/history, telemetry events, and telemetry audit rows in dependency order. No R2 object is required by the minimum fixture set. Any later R2 test object must have its exact key recorded before upload and deletion.
 
-Do not drop shared tables, delete the seven canonical unclaimed slot rows, delete the preview database or bucket, or run cleanup against production. The currently completed auth bootstrap needs no cleanup because it created only the application's canonical unclaimed slots and idempotent support schema. Exact cleanup SQL and R2 keys will be appended after the preview resource identifiers and fixture IDs are known.
+Do not drop shared tables, delete the seven canonical slot rows, delete the preview database or bucket, or run cleanup against production. Re-run `/api/auth/users`, `/api/health`, and the cleanup verification query to prove that disposable data is gone while bindings and additive schema remain intact.
 
 ## Rollback options
 
@@ -119,8 +121,7 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding baseline confirmations
 
-- Preview D1 database name and identifier.
-- Preview R2 bucket name.
+- Dashboard execution result for the reviewed preview schema, fixtures, and verification queries.
 - Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
 - Current post-hotfix production deployment ID and active SHA.
 - Cloudflare dashboard rollback availability and permissions.

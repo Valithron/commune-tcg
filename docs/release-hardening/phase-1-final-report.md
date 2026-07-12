@@ -8,12 +8,12 @@
 | --- | --- |
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
-| Current implementation commit | `8ca094bbcb062e25bd606f37bba521c9fccac205` |
-| Approximate completion | 86% |
+| Current implementation commit | Branch HEAD; deployed application tree verified at `8ca094bbcb062e25bd606f37bba521c9fccac205` |
+| Approximate completion | 88% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
 | Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
-| Automated result | Reconciled Phase 1 gate passed: 64 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
-| Human testing | Public desktop setup screen verified; authenticated core loop pending isolated preview gameplay schema and disposable seed data |
+| Automated result | Reconciled Phase 1 gate passed: 66 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
+| Human testing | Public desktop setup screen verified; authenticated core loop pending dashboard execution of the reviewed preview package |
 | Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; live event evidence pending |
 
 ## Executive summary
@@ -45,17 +45,17 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Decisions required before completion
 
-1. Record the isolated preview D1 name/identifier and R2 bucket name, then apply the minimal schema and disposable fixtures only to those resources.
+1. Execute the reviewed schema, fixtures, and verification queries through the Cloudflare dashboard only against D1 `com-tcg-db-preview` UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38`.
 2. After stateful preview readiness, complete Sterling and Cydney human tests.
 3. At the end, explicitly approve or reject merge. No merge will occur automatically.
 
 ## Remaining blockers and risks
 
-- Preview bindings are present and isolated. The auth bootstrap succeeded, but resource identifiers, gameplay schema, and disposable seed state are not yet fully recorded.
+- Preview bindings and exact resource identifiers are recorded. The auth bootstrap succeeded, and the reviewed gameplay schema and disposable fixture package awaits dashboard execution.
 - Browser slow/offline/interruption and common iPhone widths remain unverified.
 - Telemetry live D1 and failure-isolation evidence remains pending the gameplay schema and disposable accounts.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Record the preview resource identifiers, apply only the remaining additive preview schema and minimum disposable fixtures, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.
+Execute the reviewed preview D1 package through the Cloudflare dashboard, preserve the verification output, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.

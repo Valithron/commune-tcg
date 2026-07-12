@@ -29,12 +29,15 @@ The required automated gate is run at baseline, after meaningful test additions,
 | 2026-07-11 | Phase 1 working tree merged with production hotfix `655c7c4` | `git diff --check` | Git merge working tree | Pass | Under 1 s | None | No conflict markers or whitespace errors |
 | 2026-07-11 | Phase 1 working tree reconciled with remote Energy UI/isolation coverage through `f736ae9` | `npm test` | Linux, Node 24.14.0 | Pass | 0.43 s | None | 64 tests passed, 0 failed; final approved 7-minute value, live modal, server-preferred boundary refresh, and per-user isolation included |
 | 2026-07-11 | Phase 1 working tree reconciled with remote Energy UI/isolation coverage through `f736ae9` | `npm run build` | Linux, Node 24.14.0 | Pass | 0.15 s | None | Vite transformed 93 modules and emitted production assets |
+| 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `node --test tests/preview-d1-artifacts.test.js` | Linux, Node 24.14.0, in-memory SQLite | Pass | 0.07 s | None | Additive schema, 13 fixture rows, JSON validity, cleanup, slot preservation, and schema preservation passed |
+| 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `npm test` | Linux, Node 24.14.0 | Pass | 0.37 s | None | 66 tests passed, 0 failed |
+| 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `git diff --check` | Git working tree | Pass | Under 1 s | None | No whitespace errors |
 
 ## Baseline interpretation
 
 The baseline suite is green, but its 40 tests are concentrated in battle rules, battle lifecycle, selected UI contracts, administrator gate presence, and branding contracts. A green baseline does not yet prove login/session lifecycle, player isolation across all domains, pull/economy concurrency, Mountain Time ticket boundaries, Energy regeneration, route recovery states, or live D1/R2 binding behavior.
 
-The post-change suite adds Energy interval/cap/backfill/concurrency/pre-debit coverage, Vault and battle-history owner isolation, Mountain Time daily boundaries, daily-claim concurrency, authenticated Gold isolation, pull idempotency/concurrency, and the approved telemetry privacy, authorization, retention, deduplication, rate-limit, and non-blocking client contracts.
+The post-change suite adds Energy interval/cap/backfill/concurrency/pre-debit coverage, Vault and battle-history owner isolation, Mountain Time daily boundaries, daily-claim concurrency, authenticated Gold isolation, pull idempotency/concurrency, the approved telemetry privacy, authorization, retention, deduplication, rate-limit, and non-blocking client contracts, plus executable preview schema, fixture, verification, and cleanup artifacts.
 
 ## Coverage-by-domain status
 
