@@ -17,6 +17,7 @@ test('Energy pill opens a live server-backed recharge modal', async () => {
   assert.match(topBar, /requestEnergyRefresh/);
   assert.match(topBar, /visibilitychange/);
   assert.match(topBar, /refreshTopBarResources\(activeRoot/);
+  assert.match(topBar, /preferServer:\s*true/);
 
   assert.match(resources, /ENERGY_REGEN_INTERVAL_MS/);
   assert.match(resources, /nextEnergyAt/);
