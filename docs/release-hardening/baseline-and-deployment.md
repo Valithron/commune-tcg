@@ -74,9 +74,11 @@ Safe read-only checks confirmed:
 - `/api/auth/users`: 200 after isolated auth-schema bootstrap; seven unclaimed canonical slots returned.
 - `/api/battle-reward-contract`: 200 and explicitly read-only.
 - Public desktop UI: pass at 1363 by 936 in Chrome; all seven slot controls and setup fields rendered with no application console errors.
-- Stateful gameplay and R2 verification: schema and fixture gate passed; authenticated validation is in progress.
+- Public desktop UI after authenticated validation: pass; `P1Sterling` and `P1Cydney` render as ready, the other five canonical slots remain in setup state, and no application console error was observed.
+- Stateful gameplay: the corrected authenticated harness completed its success-only cleanup path after the reviewed retry reset. It covered account isolation, Energy reconciliation, pull idempotency, Vault/history isolation, squad persistence, battle recovery and settlement, rewards/XP, telemetry authorization/deletion/deduplication, and logout invalidation.
+- R2 verification: the binding is present and isolated. The minimum Phase 1 fixtures and authenticated validation required no R2 object write.
 
-No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. The only post-isolation D1 mutation so far is the minimal idempotent auth bootstrap described above. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
+No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. After isolation, Sterling executed the reviewed additive schema and fixtures, then the reviewed targeted reset after a harness-only assertion stopped the first run. The corrected harness completed against preview only. No production resource and no R2 object was mutated.
 
 ### Disposable-data cleanup procedure
 
@@ -119,9 +121,10 @@ The first `npm ci` attempt failed because the execution environment could not cr
 
 Detailed command records are maintained in [automated-validation.md](automated-validation.md).
 
-## Outstanding baseline confirmations
+## Outstanding release confirmations
 
-- Completion of authenticated preview validation after the targeted interrupted-run reset.
+- Read-only post-validation D1 inventory from `006_phase1_post_validation_verify.sql`, including exact generated IDs and final row states.
+- Sterling and Cydney human core-loop sessions, including a true mobile-browser pass.
 - Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
 - Current post-hotfix production deployment ID and active SHA.
 - Cloudflare dashboard rollback availability and permissions.

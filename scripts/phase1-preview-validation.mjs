@@ -341,5 +341,6 @@ report.checks.logoutInvalidation = true;
 
 report.finishedAt = new Date().toISOString();
 report.ok = true;
+writeFileSync('/tmp/commune-phase1-preview-validation-report.json', JSON.stringify(report, null, 2), { mode: 0o600 });
 unlinkSync(recoverySecretPath);
 console.log(JSON.stringify(report, null, 2));

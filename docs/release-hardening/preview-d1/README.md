@@ -47,6 +47,8 @@ On 2026-07-12, Sterling executed the package against `com-tcg-db-preview` UUID `
 
 The first authenticated harness attempt then stopped on a harness-only HTTP-status assertion after a successful pull. It had already created two credentials, three sessions, two saved squads, one pull claim/history row, one pulled card, and one ticket debit. `005_phase1_retry_reset.sql` was added to restore exactly that partial state while preserving the approved fixture rows and schema.
 
+Sterling executed `005_phase1_retry_reset.sql` and returned the exact expected `0 / 0 / 2 / 5 / 6 / 0 / 0 / 0` reset totals. The corrected authenticated harness then reached its success-only cleanup path, proving all assertions completed. Because the command runner did not return the harness's final redacted JSON, `006_phase1_post_validation_verify.sql` provides a read-only inventory of every dynamic ID and final row state without selecting PIN hashes or session tokens.
+
 No R2 object is required for the minimum fixture set. Missing-image behavior can be verified without writing an object. If later R2 tests create an object, record its exact key before upload and add that key to the cleanup record before deletion.
 
 ## Schema inventory

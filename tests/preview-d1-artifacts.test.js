@@ -24,6 +24,7 @@ test('preview D1 schema and minimum fixtures execute from an empty database', ()
 
   database.exec(sql('002_phase1_fixtures.sql'));
   database.exec(sql('003_phase1_verify.sql'));
+  database.exec(sql('006_phase1_post_validation_verify.sql'));
 
   assert.equal(database.prepare('SELECT COUNT(*) AS count FROM user_resources').get().count, 2);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM cards WHERE owner_user_id = ''").get().count, 5);

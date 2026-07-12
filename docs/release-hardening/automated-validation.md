@@ -32,6 +32,9 @@ The required automated gate is run at baseline, after meaningful test additions,
 | 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `node --test tests/preview-d1-artifacts.test.js` | Linux, Node 24.14.0, in-memory SQLite | Pass | 0.07 s | None | Additive schema, 13 fixture rows, JSON validity, cleanup, slot preservation, and schema preservation passed |
 | 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `npm test` | Linux, Node 24.14.0 | Pass | 0.37 s | None | 66 tests passed, 0 failed |
 | 2026-07-12 | Preview dashboard package working tree based on `dd617ec` | `git diff --check` | Git working tree | Pass | Under 1 s | None | No whitespace errors |
+| 2026-07-12 | Authenticated preview evidence working tree based on `9683959` | `npm test` | Linux, Node 24.14.0 | Pass | 0.41 s | None | 67 tests passed, 0 failed; retry-reset preservation and post-validation inventory syntax are executable coverage |
+| 2026-07-12 | Authenticated preview evidence working tree based on `9683959` | `npm run build` | Linux, Node 24.14.0 | Pass | 0.14 s | None | Vite transformed 93 modules and emitted the same named production assets as the verified preview application tree |
+| 2026-07-12 | Authenticated preview evidence working tree based on `9683959` | `git diff --check` | Git working tree | Pass | Under 1 s | None | No whitespace errors |
 
 ## Baseline interpretation
 
@@ -43,17 +46,17 @@ The post-change suite adds Energy interval/cap/backfill/concurrency/pre-debit co
 
 | Domain | Baseline evidence | Current confidence | Highest-value gap |
 | --- | --- | --- | --- |
-| Authentication | Shared administrator policy plus authenticated endpoint fixtures | Medium-low | Session expiry, logout invalidation, and browser account switching |
-| Ownership | Cross-owner Vault/history and Gold isolation plus owner-scoped battle/pull queries | Medium | Squad isolation and deployed multi-browser verification |
-| Administrator authorization | Static handler-policy assertions expanded to all privileged diagnostics | Medium | Behavioral unauthorized calls against deployed Worker |
-| Pulls | SQLite single/five-pull request claim, repeated ID, history, owned-card count, and competing request tests | Medium-high | Browser/network interruption and live D1 evidence |
+| Authentication | Shared administrator policy, authenticated endpoint fixtures, two-account deployed login, second-session recovery, and logout invalidation | High for represented cases | Human account switching and expiry over real time |
+| Ownership | Cross-owner Vault/history, Gold, squad-card, battle-recovery, telemetry, and pull-history checks against isolated preview | High for represented cases | Human multi-browser verification |
+| Administrator authorization | Static policy assertions plus deployed non-admin denial and administrator telemetry export/deletion | High for represented cases | Human administrator diagnostics review |
+| Pulls | SQLite request claims plus deployed successful pull, same-ID retry, one-ticket debit, one-card grant, and history/Vault isolation | High for represented cases | Human interruption timing and five-pull UX |
 | Ticket shop | Mountain boundary, daily concurrency, Gold isolation, and insufficient balance tests | Medium-high | Live D1 boundary and browser recovery evidence |
-| Vault | UI/source contracts only | Low | Duplicate grouping and cross-account isolation |
-| Squad | Battle UI/backend coverage | Medium | Cross-account card IDs and save isolation |
+| Vault | Source contracts plus deployed owner isolation and pull-result persistence | High for represented cases | Human duplicate-grouping review |
+| Squad | Backend coverage plus deployed cross-owner rejection and persistence across a second session | High for represented cases | Human formation UX |
 | Battle creation | SQLite-backed backend tests | High for represented cases | Recharge reconciliation before validation/debit |
 | Battle finalization | SQLite-backed exactly-once tests | High for represented cases | Concurrent failure injection and recovery from settling state |
-| Battle playback | Pure/UI contract tests | Medium | Browser refresh/navigation on real preview |
-| Rewards and XP | SQLite-backed finalization tests | Medium to high | Multi-level overflow and cross-account negative tests |
-| Energy debit/regeneration | SQLite-backed interval, partial, cap, backfill, concurrency, and pre-debit tests | High for represented cases | Live D1 and multiple-tab preview evidence |
+| Battle playback | Pure/UI contracts plus deployed create, duplicate create, second-session recovery, cross-owner denial, finalize, duplicate finalize, and surrender recovery | High for represented cases | Human visual playback and browser refresh timing |
+| Rewards and XP | SQLite-backed exactly-once tests plus deployed settlement and history isolation | High for represented cases | Multi-level overflow and human results-screen review |
+| Energy debit/regeneration | SQLite-backed interval, partial, cap, backfill, concurrency, and pre-debit tests plus deployed 420,000 ms reconciliation and owner isolation | High for represented cases | Human live countdown observation |
 | Branding | Static contract tests | Medium | Browser/device rendering |
-| Telemetry | SQLite-backed ingestion, identity derivation, input allowlist, deduplication, rate limiting, aggregate retention, deletion, administrator authorization/audit, and client non-blocking contracts | Medium-high | Deployed D1 export/deletion and failure-isolation evidence |
+| Telemetry | SQLite contracts plus deployed accept, deduplicate, query stripping, non-admin denial, admin export, player deletion, audit, and invalid-event gameplay isolation | High for represented cases | Post-run D1 row inventory and human consent/copy review |
