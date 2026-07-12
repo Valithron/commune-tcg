@@ -49,6 +49,23 @@ The first authenticated harness attempt then stopped on a harness-only HTTP-stat
 
 Sterling executed `005_phase1_retry_reset.sql` and returned the exact expected `0 / 0 / 2 / 5 / 6 / 0 / 0 / 0` reset totals. The corrected authenticated harness then reached its success-only cleanup path, proving all assertions completed. Because the command runner did not return the harness's final redacted JSON, `006_phase1_post_validation_verify.sql` provides a read-only inventory of every dynamic ID and final row state without selecting PIN hashes or session tokens.
 
+Sterling executed the read-only statements in `006_phase1_post_validation_verify.sql` individually through the Cloudflare mobile console on 2026-07-12. The final inventory was:
+
+| Area | Recorded preview state |
+| --- | --- |
+| Authentication | `P1Sterling` and `P1Cydney` claimed with PINs set; Sterling has 2 active sessions and Cydney has 1 |
+| Resources | Sterling: 12 tickets, 0 Gold, 9 Energy, daily ticket claimed `2026-07-12`; Cydney: 12 tickets, 0 Gold, 9 Energy, daily ticket unclaimed |
+| Library | 5 unowned templates remain |
+| Owned cards | 3 Sterling fixtures and 3 Cydney fixtures, each at 5 XP, plus pulled Sterling common `owned_1783870862375_0a727e9d` |
+| Pull | Request and history ID `pull_phase1_0c89811897c64dddbafa857d949f9db2`, owned by Sterling |
+| Squads | One saved owner-correct three-card fixture squad for each test account |
+| Sterling battle | `crossroads-patrol`, finalized defeat, 1 Energy spent, no surrender, 0 Gold, XP applied to 3 cards |
+| Cydney battle | `crossroads-patrol`, surrendered defeat, 1 Energy spent, surrender recorded, 0 Gold, XP applied to 3 cards |
+| Telemetry | One remaining Sterling `route.viewed` event for `/vault`, desktop Chromium, success, related to `owned_1783870862375_0a727e9d` |
+| Telemetry administration | One Sterling export audit row and one Sterling delete audit row targeting Cydney telemetry |
+
+The final totals were exactly `2 / 3 / 2 / 5 / 7 / 1 / 1 / 2 / 2 / 2 / 1 / 2` for claimed slots, active sessions, resource rows, Library templates, owned cards, pull requests, pull history, squads, battle attempts, battle history, remaining telemetry events, and telemetry administrator audit rows. `004_phase1_cleanup.sql` was not executed.
+
 No R2 object is required for the minimum fixture set. Missing-image behavior can be verified without writing an object. If later R2 tests create an object, record its exact key before upload and add that key to the cleanup record before deletion.
 
 ## Schema inventory
@@ -94,5 +111,7 @@ Credentials are created through the normal preview setup flow so authentication 
 ## Cleanup
 
 After Phase 1 testing, run `004_phase1_cleanup.sql` only against the isolated preview D1 database. It removes the two accounts' sessions and disposable gameplay data, removes all cards generated or owned during the test, removes the five fixture Library templates, and resets only the expected Phase 1 usernames. It leaves the additive schema and seven canonical slot rows intact.
+
+The recorded dynamic rows include pulled card `owned_1783870862375_0a727e9d` and pull request/history `pull_phase1_0c89811897c64dddbafa857d949f9db2`. Cleanup remains owner- and Phase 1-prefix-scoped, so it removes these rows along with both test accounts' squads, battles, telemetry, audit rows, resources, and sessions. Re-run the cleanup verification queries before considering the disposable preview state removed.
 
 Any R2 object created later must be deleted by its individually recorded key from `com-tcg-images-preview`. Never delete the bucket and never run these scripts against production.

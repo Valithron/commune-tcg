@@ -9,12 +9,12 @@
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
 | Current implementation commit | Branch HEAD; deployed application tree verified at `8ca094bbcb062e25bd606f37bba521c9fccac205` |
-| Approximate completion | 95% |
+| Approximate completion | 96% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
 | Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
 | Automated result | Reconciled Phase 1 gate passed: 67 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
 | Human testing | Public desktop setup and claimed-account login states verified; authenticated technical core loop passed; Sterling, Cydney, and true mobile passes pending |
-| Telemetry | Design approved; minimal implementation and deployed authenticated behavior passed; exact post-run row inventory pending |
+| Telemetry | Design approved; minimal implementation, deployed authenticated behavior, and exact post-run row inventory passed |
 
 ## Executive summary
 
@@ -45,17 +45,16 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Decisions required before completion
 
-1. Run the read-only `006_phase1_post_validation_verify.sql` against D1 `com-tcg-db-preview` UUID `4fb86e2a-59f9-4f3c-aa34-af4b64973f38` and return its output so exact dynamic rows can be recorded.
-2. Complete Sterling and Cydney human tests, including a true mobile-browser pass.
-3. At the end, explicitly approve or reject merge. No merge will occur automatically.
+1. Complete Sterling and Cydney human tests, including a true mobile-browser pass.
+2. At the end, explicitly approve or reject merge. No merge will occur automatically.
 
 ## Remaining blockers and risks
 
-- Preview bindings and exact resource identifiers are recorded. Schema, fixtures, the reviewed reset, and the corrected authenticated harness passed. Exact generated IDs and final row states remain pending the read-only post-validation query because the runner did not return the final redacted JSON.
+- Preview bindings, resource identifiers, schema, fixtures, reviewed reset, authenticated harness, and post-validation row inventory passed and are recorded.
 - Human browser slow/offline/interruption and common iPhone widths remain unverified.
-- Telemetry deployed behavior passed; exact remaining event and administrator-audit IDs remain pending the read-only inventory.
+- Telemetry deployed behavior and final row counts passed. Human comprehension and trust observations remain pending.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Run the read-only post-validation inventory, record its results, then execute the Sterling and Cydney human core-loop gate with a true mobile-browser pass. Do not merge and do not begin Phase 2.
+Execute the Sterling and Cydney human core-loop gate with a true mobile-browser pass, record observations separately, then prepare the final merge recommendation. Do not merge and do not begin Phase 2.

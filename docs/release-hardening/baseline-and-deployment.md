@@ -67,6 +67,8 @@ After binding isolation and exact source deployment were verified, `GET /api/aut
 
 The reviewed dashboard execution package is in [`preview-d1/`](preview-d1/README.md). Its additive schema, minimum fixture set, verification queries, and cleanup procedure execute successfully against in-memory SQLite. Sterling executed schema and fixtures against the recorded preview D1 resource on 2026-07-12. Verification returned 7 auth slots, 2 resource rows, 5 Library templates, 6 owned cards, 0 invalid card JSON rows, and 0 telemetry events. The first fixture-console submission contained no executable SQL and had no effect; rerunning the actual statements succeeded. The cleanup script was not executed.
 
+After the corrected authenticated harness completed, Sterling executed the read-only post-validation inventory. It confirmed 2 claimed test slots, 3 active sessions, 2 resource rows, 5 Library templates, 7 owned cards, 1 pull request/history pair, 2 saved squads, 2 battle attempts/history rows, 1 remaining telemetry event, and 2 telemetry administrator-audit rows. The dynamic pulled card is `owned_1783870862375_0a727e9d`; the pull request/history ID is `pull_phase1_0c89811897c64dddbafa857d949f9db2`. No cleanup or R2 object write occurred.
+
 Safe read-only checks confirmed:
 
 - Static application and manifest: 200.
@@ -123,7 +125,6 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding release confirmations
 
-- Read-only post-validation D1 inventory from `006_phase1_post_validation_verify.sql`, including exact generated IDs and final row states.
 - Sterling and Cydney human core-loop sessions, including a true mobile-browser pass.
 - Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
 - Current post-hotfix production deployment ID and active SHA.
