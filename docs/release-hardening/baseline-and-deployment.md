@@ -76,6 +76,12 @@ Safe read-only checks confirmed:
 
 No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. The only post-isolation D1 mutation so far is the minimal idempotent auth bootstrap described above. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
 
+### Disposable-data cleanup procedure
+
+All Phase 1 fixtures will use a recorded `phase1-` identifier or another explicitly recorded test owner ID so cleanup can target only disposable rows. After testing, use the isolated preview D1 identifier to delete those owners' sessions, resources, owned cards, pull requests/history, squads, battle attempts/history, submissions, telemetry events, and telemetry audit rows in dependency order. Delete only R2 objects whose keys were recorded during Phase 1 seeding or submission tests. Re-run `/api/auth/users`, `/api/health`, and table-specific count queries to prove that disposable data is gone while bindings and additive schema remain intact.
+
+Do not drop shared tables, delete the seven canonical unclaimed slot rows, delete the preview database or bucket, or run cleanup against production. The currently completed auth bootstrap needs no cleanup because it created only the application's canonical unclaimed slots and idempotent support schema. Exact cleanup SQL and R2 keys will be appended after the preview resource identifiers and fixture IDs are known.
+
 ## Rollback options
 
 No Phase 1 code has been merged or deployed at baseline. The immediate source rollback is therefore to leave `main` unchanged.
