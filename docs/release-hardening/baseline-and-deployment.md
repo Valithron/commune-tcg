@@ -18,19 +18,27 @@
 
 ## Production deployment evidence
 
-The repository records that Cloudflare production was switched from `Gacha` to `main` and that commit `e9066bbf3e12bfc162606e82f538f8ebbcf72822` was created as a clean deployment trigger. This is the latest production-deployment evidence available in source control.
-
-The exact commit currently running in production is **not discoverable from the checked-in repository**. The current `main` commit is four commits ahead of `e9066bb`. This does not prove deployment lag because the intervening commits may have deployed automatically. Cloudflare dashboard or live deployment metadata must be checked before preview sign-off and final release recommendation.
+Sterling confirmed the active production deployment directly from Cloudflare on 2026-07-11. Production is sourced from `Valithron/commune-tcg` branch `main` at full commit `2193be5550f34daa67051c35e3c0a8311a15ef82`. Cloudflare displays the matching short SHA `2193be5`. Production and the verified Phase 1 baseline therefore match exactly.
 
 | Deployment fact | Verified value |
 | --- | --- |
-| Cloudflare Worker project | `commune-tcg-gacha` |
-| Configured source branch | Repository evidence says `main` |
-| Last source-controlled deployment trigger | `e9066bbf3e12bfc162606e82f538f8ebbcf72822` |
-| Exact live production SHA | Unknown from repository evidence |
-| Production URL/domain | Unknown from repository evidence |
-| Custom-domain attachment | Unknown from repository evidence |
-| Preview deployment behavior | Unknown from repository evidence |
+| Cloudflare project | `commune-tcg-gacha` |
+| Production repository and branch | `Valithron/commune-tcg`, `main` |
+| Exact live production SHA | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
+| Production deployment ID | `d3d3aafd-13e2-4942-a0e4-98fd36478bb2` |
+| Deployment URL | `https://d3d3aafd.commune-tcg.pages.dev` |
+| Production domains and aliases | `https://tcg.skpfam.com`, `https://www.tcg.skpfam.com`, `https://commune-tcg.pages.dev` |
+| Production D1 binding | `DB` -> `com-tcg-db` |
+| Production R2 binding | `CARD_IMAGES` -> `com-tcg-images` |
+| Production result | Successful and active |
+| Preview deployment behavior | Pending branch preview inspection |
+
+## Deployment ledger
+
+| Environment | Project | Branch | Commit | URL | D1 binding | R2 binding | Result | Rollback |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Production | `commune-tcg-gacha` | `main` | `2193be5550f34daa67051c35e3c0a8311a15ef82` | `https://d3d3aafd.commune-tcg.pages.dev` plus production aliases | `DB` -> `com-tcg-db` | `CARD_IMAGES` -> `com-tcg-images` | Successful and active | Restore this deployment ID or redeploy the exact SHA after verifying bindings |
+| Preview | `commune-tcg-gacha` | `phase/release-hardening` | Pending Cloudflare preview | Pending | Unknown | Unknown | Pending | No mutation authorized until bindings are known |
 
 ## Runtime and binding inventory
 
@@ -39,11 +47,11 @@ The exact commit currently running in production is **not discoverable from the 
 | Binding or configuration | Type | Known purpose | Source status |
 | --- | --- | --- | --- |
 | `ASSETS` | Worker assets | Serve `dist/` and the SPA fallback | Declared in `wrangler.toml` |
-| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Name documented; resource ID/dashboard binding unavailable |
-| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Name documented; resource ID/dashboard binding unavailable |
+| `DB` | Cloudflare D1 | Application, account, collection, economy, and battle state | Confirmed in production as `com-tcg-db`; preview unknown |
+| `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Confirmed in production as `com-tcg-images`; preview unknown |
 | `ADMIN_USER_IDS` | Environment variable | Comma-separated administrator slot allowlist | Optional; values not recorded; defaults to `sterling` |
 
-Documented live resource names are D1 `com-tcg-db` and R2 `com-tcg-images`. Their binding attachment must be verified against the target deployment before mutation testing.
+Confirmed production resources are D1 `com-tcg-db` and R2 `com-tcg-images`. Their attachment to the Phase 1 preview remains unverified and must be established before mutation testing.
 
 No secret values were read or recorded.
 
@@ -93,9 +101,7 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding baseline confirmations
 
-- Exact production commit.
-- Production and preview URLs.
-- Custom-domain attachment.
-- Preview branch deployment trigger.
+- Preview URL and deployed commit.
+- Preview branch deployment result.
 - Whether preview shares production D1/R2 bindings.
 - Cloudflare dashboard rollback availability and permissions.
