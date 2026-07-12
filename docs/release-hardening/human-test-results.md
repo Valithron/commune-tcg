@@ -1,14 +1,14 @@
 # Phase 1 Human Test Results
 
-> **Status: Not started.** No preview URL or verified preview binding model is available yet. Human completion is not claimed.
+> **Status: Blocked before core-loop testing.** The preview is live, but D1 and R2 bindings are missing. Human completion is not claimed.
 
 ## Sterling
 
-Pending.
+Pending isolated preview bindings. The static preview is available at `https://phase-release-hardening.commune-tcg.pages.dev`, but login and stateful flows return controlled missing-binding responses.
 
 ## Cydney
 
-Pending.
+Pending isolated preview bindings. Do not ask Cydney to test an environment that cannot authenticate or complete the core loop.
 
 ## Ashley
 

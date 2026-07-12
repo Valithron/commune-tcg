@@ -9,11 +9,11 @@
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
 | Current implementation commit | `89efa685e19d1c4938796e5a880b82c2e3e3a54a` |
-| Approximate completion | 80% |
+| Approximate completion | 85% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
-| Preview URL | Pending Cloudflare branch deployment |
+| Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
 | Automated result | Full telemetry-inclusive working-tree gate passed: 61 tests, production build, Worker dry run, 1,000-battle simulation, and whitespace validation |
-| Human testing | Not started |
+| Human testing | Blocked because preview D1/R2 bindings are missing |
 | Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; preview evidence pending |
 
 ## Executive summary
@@ -45,18 +45,17 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Decisions required before completion
 
-1. Verify whether the Cloudflare branch preview uses separate, production, or missing D1/R2 bindings.
-2. After safe preview readiness, complete Sterling and Cydney human tests.
+1. Approve isolated preview D1/R2 provisioning, or choose another explicit preview data model. Isolated resources are recommended.
+2. After stateful preview readiness, complete Sterling and Cydney human tests.
 3. At the end, explicitly approve or reject merge. No merge will occur automatically.
 
 ## Remaining blockers and risks
 
-- Preview may share production D1/R2; mutation testing is blocked until known.
-- Cloudflare preview deployment and binding verification remain.
+- Preview D1/R2 bindings are confirmed missing, so login and stateful core-loop testing cannot proceed.
 - Browser slow/offline/interruption and common iPhone widths remain unverified.
 - Telemetry live D1 and failure-isolation evidence remains pending preview binding verification.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Wait for Cloudflare to create the branch preview, verify its deployed SHA and bindings without mutation, then run the safe preview and human test plans appropriate to that binding model. Do not merge and do not begin Phase 2.
+Provision isolated preview D1/R2 resources, apply only the additive Phase 1 schema to the isolated database, verify the bindings, then run preview and human testing. Do not attach production resources without a separate explicit decision. Do not merge and do not begin Phase 2.

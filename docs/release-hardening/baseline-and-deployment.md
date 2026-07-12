@@ -38,7 +38,7 @@ Sterling confirmed the active production deployment directly from Cloudflare on 
 | Environment | Project | Branch | Commit | URL | D1 binding | R2 binding | Result | Rollback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Production | `commune-tcg-gacha` | `main` | `2193be5550f34daa67051c35e3c0a8311a15ef82` | `https://d3d3aafd.commune-tcg.pages.dev` plus production aliases | `DB` -> `com-tcg-db` | `CARD_IMAGES` -> `com-tcg-images` | Successful and active | Restore this deployment ID or redeploy the exact SHA after verifying bindings |
-| Preview | `commune-tcg-gacha` | `phase/release-hardening` | Pending Cloudflare preview | Pending | Unknown | Unknown | Pending | No mutation authorized until bindings are known |
+| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `9713efe8c825815fd242468e28ab37a58fb5f1c1` | `https://phase-release-hardening.commune-tcg.pages.dev` | Missing | Missing | Static application and binding-independent reads available | No data mutation is possible without bindings; restore branch deployment after correction |
 
 ## Runtime and binding inventory
 
@@ -57,12 +57,19 @@ No secret values were read or recorded.
 
 ## Preview and data safety
 
-The repository does not establish whether preview deployments use production bindings, separate preview resources, or no D1/R2 bindings. Until this is verified:
+The Phase 1 branch preview is live at `https://phase-release-hardening.commune-tcg.pages.dev`. A read-only `/api/health` request reports `DB: false` and `CARD_IMAGES: false`, while production reports both as `true`. The preview therefore has missing bindings, not separate resources and not production resources.
 
-- Do not run destructive or bulk mutation tests against a preview.
-- Treat any preview with live bindings as production data access.
-- Use local SQLite-backed adapter tests for transaction and concurrency cases.
-- Record all intentional real-account resource adjustments before they occur.
+The preview JavaScript asset hash `index-DxgXpvjz.js` matches a fresh build from the published Phase 1 tree. This verifies that the branch source is deployed without requiring an application mutation.
+
+Safe read-only checks confirmed:
+
+- Static application and manifest: 200.
+- `/api/health`: 200 with both bindings false.
+- `/api/battle-reward-contract`: 200 and explicitly read-only.
+- D1-dependent GETs such as `/api/auth/me`, `/api/cards`, and `/api/pull-resources`: 503 with the expected missing-DB response.
+- R2 image GET: 503 with the expected missing-R2 response.
+
+No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted. Authenticated core-loop and human testing remain blocked until a safe preview binding model is approved and configured.
 
 ## Rollback options
 
@@ -101,7 +108,5 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding baseline confirmations
 
-- Preview URL and deployed commit.
-- Preview branch deployment result.
-- Whether preview shares production D1/R2 bindings.
+- Whether isolated preview D1/R2 resources will be provisioned for core-loop and human testing.
 - Cloudflare dashboard rollback availability and permissions.
