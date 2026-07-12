@@ -20,6 +20,8 @@ In Cloudflare D1, open `com-tcg-db-preview`, verify UUID `4fb86e2a-59f9-4f3c-aa3
 2. Run `002_phase1_fixtures.sql` once.
 3. Run `003_phase1_verify.sql` and preserve the result.
 
+If an authenticated validation run stops after creating partial disposable data, run `005_phase1_retry_reset.sql` to restore the approved fixture baseline without deleting the fixture rows or schema. Do not use it as ordinary cleanup after a completed validation run.
+
 Expected verification totals are:
 
 | Check | Expected |
