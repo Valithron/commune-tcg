@@ -13,7 +13,7 @@ The authentication gate precedes every hash route. Signed-out direct links rende
 
 | ID | Surface | Method | Account | Device | Expected state | Actual state | Result | Evidence | Defect link |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| UI-01 | Sign In / auth gate | Hash entry | Signed out | Source/Linux | Slot setup or login; redirect retained | Router awaits `/api/auth/me` and renders Sign In on 401 | Source pass; preview pending | `src/main.js`, `src/routes/SignIn.js` | None |
+| UI-01 | Sign In / auth gate | Hash entry | Signed out | Chrome/Linux, 1363x936 | Slot setup or login; redirect retained | Seven canonical setup slots, username, PIN confirmation, and Create Vault rendered cleanly | Desktop preview pass | Public browser inspection at commit `8ca094b`; no application console errors | None |
 | UI-02 | `#/home` | Hash route | Player | Source/Linux | Dashboard and next actions | Player shell route registered | Source pass; preview pending | `src/main.js`, `src/routes/Home.js` | None |
 | UI-03 | `#/pull` | Hash route | Player | Source/Linux | Resources, pull choices, history entry | Registered; resource-backed render | Source pass; preview pending | `Pull.js`, pull UI | None |
 | UI-04 | `#/pull/confirm` | Hash route | Player | Source/Linux | Confirmation with guarded pending state | Compatibility route registered | Source pass; preview pending | `PullConfirm.js`, confirmation sheet | RH-006 |
@@ -99,8 +99,9 @@ Preview: `https://phase-release-hardening.commune-tcg.pages.dev`
 | --- | --- | --- |
 | Static application and manifest | 200 | Branch preview and built assets are available |
 | `/api/health` | 200, `DB: true`, `CARD_IMAGES: true` | Isolated preview bindings are present; exact resource IDs remain to be recorded |
-| `/api/auth/me`, `/api/cards`, `/api/pull-resources` | Pending after minimal schema/seed | Stateful checks must use disposable isolated data only |
+| `/api/auth/users` | 200, seven canonical slots, all unclaimed | Idempotent auth schema bootstrap succeeded after isolation was verified |
+| `/api/auth/me`, `/api/cards`, `/api/pull-resources` | Pending after remaining additive schema/seed | Stateful checks must use disposable isolated data only |
 | `/api/battle-reward-contract` | 200 | Binding-independent read-only contract is available |
 | `/api/card-image` | Pending disposable preview object | R2 binding is present and isolated |
 
-No POST, DELETE, economy, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted.
+No POST, DELETE, economy, Energy, battle, reward, XP, telemetry, or R2 mutation was attempted. The only D1 mutation was the post-isolation idempotent auth-schema bootstrap invoked by `GET /api/auth/users`; it created no credentials or gameplay resources.

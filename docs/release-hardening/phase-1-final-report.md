@@ -1,6 +1,6 @@
 # Phase 1 Release-Hardening Report
 
-> **Current recommendation: NO-GO while Phase 1 is in progress.** Preview binding verification, preview testing, and Cydney's human release-confidence session remain incomplete. This status is procedural and does not indicate a known production outage.
+> **Current recommendation: NO-GO while Phase 1 is in progress.** Stateful preview testing and Cydney's human release-confidence session remain incomplete. This status is procedural and does not indicate a known production outage.
 
 ## Current status
 
@@ -8,13 +8,13 @@
 | --- | --- |
 | Branch | `phase/release-hardening` |
 | Baseline | `2193be5550f34daa67051c35e3c0a8311a15ef82` |
-| Current implementation commit | Branch HEAD after integrating production hotfix `655c7c4` |
+| Current implementation commit | `8ca094bbcb062e25bd606f37bba521c9fccac205` |
 | Approximate completion | 86% |
 | Draft PR | [#5 Phase 1 release hardening](https://github.com/Valithron/commune-tcg/pull/5) |
 | Preview URL | `https://phase-release-hardening.commune-tcg.pages.dev` |
 | Automated result | Reconciled Phase 1 gate passed: 64 tests, 93-module production build, prior Worker dry run, 1,000-battle simulation, and whitespace validation |
-| Human testing | Pending isolated preview schema and disposable seed data |
-| Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; preview evidence pending |
+| Human testing | Public desktop setup screen verified; authenticated core loop pending isolated preview gameplay schema and disposable seed data |
+| Telemetry | Design approved and minimal Phase 1 implementation complete on the branch; live event evidence pending |
 
 ## Executive summary
 
@@ -35,7 +35,7 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 | Problem | Implementation | Risk | Test coverage | Preview result |
 | --- | --- | --- | --- | --- |
-| Energy never regenerated | Shared elapsed-time reconciler on reads and pre-battle debit plus live top-bar countdown; current approved interval 7 minutes | Low, additive behavior within approved contract and subsequent hotfix approval | Direct interval/cap/backfill/concurrency/debit and UI contract tests | Pending redeployed preview |
+| Energy never regenerated | Shared elapsed-time reconciler on reads and pre-battle debit plus live top-bar countdown; current approved interval 7 minutes | Low, additive behavior within approved contract and subsequent hotfix approval | Direct interval/cap/backfill/concurrency/debit and UI contract tests | Exact source deployed; authenticated preview pending |
 | Pull retry/concurrency could duplicate grants | Additive `pull_requests` claim and client request reuse | Medium, transaction path changed | Repeat and competing-request tests | Pending |
 | Vault/history owner query override | Session-only owner queries | Low | Behavioral cross-owner tests | Pending |
 | Public ownership/submission diagnostics | Administrator policy | Low | Admin policy tests | Pending |
@@ -51,11 +51,11 @@ Phase 1 established a reproducible baseline, mapped the active route/API surface
 
 ## Remaining blockers and risks
 
-- Preview bindings are present and isolated, but their resource identifiers, schema, and disposable seed state are not yet recorded.
+- Preview bindings are present and isolated. The auth bootstrap succeeded, but resource identifiers, gameplay schema, and disposable seed state are not yet fully recorded.
 - Browser slow/offline/interruption and common iPhone widths remain unverified.
-- Telemetry live D1 and failure-isolation evidence remains pending preview binding verification.
+- Telemetry live D1 and failure-isolation evidence remains pending the gameplay schema and disposable accounts.
 - Human evidence is pending.
 
 ## Recommended next action
 
-Publish the production-hotfix merge to the draft PR, verify the redeployed isolated preview, record resource identifiers, apply the minimal preview schema and disposable fixtures, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.
+Record the preview resource identifiers, apply only the remaining additive preview schema and minimum disposable fixtures, then run stateful preview and human-test preparation. Do not merge and do not begin Phase 2.

@@ -40,7 +40,7 @@ Later on 2026-07-11, emergency Energy countdown and 7-minute recharge hotfixes a
 | Environment | Project | Branch | Commit | URL | D1 binding | R2 binding | Result | Rollback |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Production | `commune-tcg-gacha` | `main` | `2193be5550f34daa67051c35e3c0a8311a15ef82` | `https://d3d3aafd.commune-tcg.pages.dev` plus production aliases | `DB` -> `com-tcg-db` | `CARD_IMAGES` -> `com-tcg-images` | Successful and active | Restore this deployment ID or redeploy the exact SHA after verifying bindings |
-| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `d257ba113b61412dbd9d7e4799be905042dc37eb` before production-hotfix merge | `https://phase-release-hardening.commune-tcg.pages.dev` | Present and isolated; name/ID pending | Present and isolated; bucket name pending | Health reports both bindings true; schema/seed pending | Remove disposable data or restore the prior isolated preview deployment |
+| Preview | `commune-tcg-gacha` | `phase/release-hardening` | `8ca094bbcb062e25bd606f37bba521c9fccac205` | `https://phase-release-hardening.commune-tcg.pages.dev` | Present and isolated; name/ID pending | Present and isolated; bucket name pending | Health reports both bindings true; auth schema bootstrap complete | Remove disposable data or restore the prior isolated preview deployment |
 
 ## Runtime and binding inventory
 
@@ -53,24 +53,28 @@ Later on 2026-07-11, emergency Energy countdown and 7-minute recharge hotfixes a
 | `CARD_IMAGES` | Cloudflare R2 | Card and submission art | Production `com-tcg-images`; isolated preview binding present, bucket name pending |
 | `ADMIN_USER_IDS` | Environment variable | Comma-separated administrator slot allowlist | Optional; values not recorded; defaults to `sterling` |
 
-Confirmed production resources remain D1 `com-tcg-db` and R2 `com-tcg-images`. Sterling confirmed the preview bindings target separate resources, and the preview health endpoint now reports both bindings present. Exact preview resource names and the D1 identifier must still be recorded before schema or seed writes.
+Confirmed production resources remain D1 `com-tcg-db` and R2 `com-tcg-images`. Sterling confirmed the preview bindings target separate resources, and the preview health endpoint now reports both bindings present. Exact preview resource names and the D1 identifier must still be recorded before direct migration or fixture writes.
 
 No secret values were read or recorded.
 
 ## Preview and data safety
 
-The Phase 1 branch preview is live at `https://phase-release-hardening.commune-tcg.pages.dev`. After Sterling configured isolated preview resources, a read-only `/api/health` request reports `DB: true` and `CARD_IMAGES: true`. Sterling confirmed these bindings are separate from production. Schema and seed writes remain blocked until the exact preview resource identifiers are recorded.
+The Phase 1 branch preview is live at `https://phase-release-hardening.commune-tcg.pages.dev`. After Sterling configured isolated preview resources, a read-only `/api/health` request reports `DB: true` and `CARD_IMAGES: true`. Sterling confirmed these bindings are separate from production.
 
-The preview JavaScript asset hash `index-DxgXpvjz.js` matches a fresh build from the published Phase 1 tree. This verifies that the branch source is deployed without requiring an application mutation.
+The deployed JavaScript asset `index-DX6pVCTS.js` and CSS asset `index-BGWE4WVZ.css` match a fresh build from commit `8ca094bbcb062e25bd606f37bba521c9fccac205`. This verifies that the exact reconciled branch source is deployed without relying on an application mutation.
+
+After binding isolation and exact source deployment were verified, `GET /api/auth/users` performed the application's idempotent auth-schema bootstrap against the isolated preview D1 database. It succeeded and returned the seven canonical player slots with no usernames and `pinSet: false`. This created only the auth support schema and canonical slot rows. It did not create credentials, sessions, cards, economy resources, battle data, telemetry events, or R2 objects. Direct additive migrations and disposable gameplay fixtures remain blocked until the exact preview D1 name/identifier and R2 bucket name are recorded.
 
 Safe read-only checks confirmed:
 
 - Static application and manifest: 200.
 - `/api/health`: 200 with both bindings true after isolated-resource configuration.
+- `/api/auth/users`: 200 after isolated auth-schema bootstrap; seven unclaimed canonical slots returned.
 - `/api/battle-reward-contract`: 200 and explicitly read-only.
-- Stateful D1/R2 verification: pending schema and disposable seed data.
+- Public desktop UI: pass at 1363 by 936 in Chrome; all seven slot controls and setup fields rendered with no application console errors.
+- Stateful gameplay and R2 verification: pending direct additive migrations and disposable seed data.
 
-No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
+No pull, Energy, battle, reward, XP, telemetry, D1, or R2 mutation was attempted before isolation was confirmed. The only post-isolation D1 mutation so far is the minimal idempotent auth bootstrap described above. Authenticated core-loop and human testing remain pending minimal isolated schema and seed setup.
 
 ## Rollback options
 
