@@ -20,6 +20,8 @@ In Cloudflare D1, open `com-tcg-db-preview`, verify UUID `4fb86e2a-59f9-4f3c-aa3
 2. Run `002_phase1_fixtures.sql` once.
 3. Run `003_phase1_verify.sql` and preserve the result.
 
+After authenticated and human validation, run the statements in `006_phase1_post_validation_verify.sql` and `007_phase1_human_telemetry_verify.sql` individually as read-only evidence queries. Run `007` before cleanup so the human-session events and matching transaction rows remain available.
+
 If an authenticated validation run stops after creating partial disposable data, run `005_phase1_retry_reset.sql` to restore the approved fixture baseline without deleting the fixture rows or schema. Do not use it as ordinary cleanup after a completed validation run.
 
 Expected verification totals are:
@@ -65,6 +67,10 @@ Sterling executed the read-only statements in `006_phase1_post_validation_verify
 | Telemetry administration | One Sterling export audit row and one Sterling delete audit row targeting Cydney telemetry |
 
 The final totals were exactly `2 / 3 / 2 / 5 / 7 / 1 / 1 / 2 / 2 / 2 / 1 / 2` for claimed slots, active sessions, resource rows, Library templates, owned cards, pull requests, pull history, squads, battle attempts, battle history, remaining telemetry events, and telemetry administrator audit rows. `004_phase1_cleanup.sql` was not executed.
+
+Sterling then reported a practical alpha human pass in desktop Chrome, iPhone Safari, and iPhone Chrome, plus an uncoached Cydney exploratory attempt. Both testers completed a pull; Energy returned after the 7-minute interval; battle interruption recovered correctly; and no duplicate transaction, reward, settlement, or account mixing was observed. The formal controlled-usability script was not completed and is not claimed.
+
+`007_phase1_human_telemetry_verify.sql` filters after the last recorded authenticated-harness audit timestamp and is entirely read-only. It inventories human routes and sessions, pull and Vault follow-through, battle and reward events, errors and interruptions, duplicate completion signals, matching pull and battle persistence, and final owner-scoped totals. Its result sets remain pending. Do not execute `004_phase1_cleanup.sql` until those result sets are preserved.
 
 No R2 object is required for the minimum fixture set. Missing-image behavior can be verified without writing an object. If later R2 tests create an object, record its exact key before upload and add that key to the cleanup record before deletion.
 
@@ -112,6 +118,6 @@ Credentials are created through the normal preview setup flow so authentication 
 
 After Phase 1 testing, run `004_phase1_cleanup.sql` only against the isolated preview D1 database. It removes the two accounts' sessions and disposable gameplay data, removes all cards generated or owned during the test, removes the five fixture Library templates, and resets only the expected Phase 1 usernames. It leaves the additive schema and seven canonical slot rows intact.
 
-The recorded dynamic rows include pulled card `owned_1783870862375_0a727e9d` and pull request/history `pull_phase1_0c89811897c64dddbafa857d949f9db2`. Cleanup remains owner- and Phase 1-prefix-scoped, so it removes these rows along with both test accounts' squads, battles, telemetry, audit rows, resources, and sessions. Re-run the cleanup verification queries before considering the disposable preview state removed.
+The recorded pre-human dynamic rows include pulled card `owned_1783870862375_0a727e9d` and pull request/history `pull_phase1_0c89811897c64dddbafa857d949f9db2`. The human sessions created additional owner-scoped pulls and battles whose IDs will be inventoried by `007_phase1_human_telemetry_verify.sql`. Cleanup remains owner- and Phase 1-prefix-scoped, so it removes all such rows along with both test accounts' squads, battles, telemetry, audit rows, resources, and sessions. Re-run the cleanup verification queries before considering the disposable preview state removed.
 
 Any R2 object created later must be deleted by its individually recorded key from `com-tcg-images-preview`. Never delete the bucket and never run these scripts against production.

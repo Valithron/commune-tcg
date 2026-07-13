@@ -69,6 +69,8 @@ The reviewed dashboard execution package is in [`preview-d1/`](preview-d1/README
 
 After the corrected authenticated harness completed, Sterling executed the read-only post-validation inventory. It confirmed 2 claimed test slots, 3 active sessions, 2 resource rows, 5 Library templates, 7 owned cards, 1 pull request/history pair, 2 saved squads, 2 battle attempts/history rows, 1 remaining telemetry event, and 2 telemetry administrator-audit rows. The dynamic pulled card is `owned_1783870862375_0a727e9d`; the pull request/history ID is `pull_phase1_0c89811897c64dddbafa857d949f9db2`. No cleanup or R2 object write occurred.
 
+Sterling later reported the practical alpha human gate across desktop Chrome, iPhone Safari, and iPhone Chrome. Energy returned after 7 minutes, battle interruption recovered correctly, both testers completed a pull, and no duplicate transaction or account mixing was observed. The formal controlled-usability script was not completed and is not claimed. The final read-only human-session telemetry and persistence inventory is prepared as `preview-d1/007_phase1_human_telemetry_verify.sql` and must run before cleanup.
+
 Safe read-only checks confirmed:
 
 - Static application and manifest: 200.
@@ -125,7 +127,8 @@ Detailed command records are maintained in [automated-validation.md](automated-v
 
 ## Outstanding release confirmations
 
-- Sterling and Cydney human core-loop sessions, including a true mobile-browser pass.
+- Human-session telemetry and matching transaction results from `007_phase1_human_telemetry_verify.sql`.
 - Post-hotfix preview deployment SHA after the Phase 1 branch incorporates latest `main`.
 - Current post-hotfix production deployment ID and active SHA.
 - Cloudflare dashboard rollback availability and permissions.
+- Sterling's explicit final merge decision after the Phase 1 recommendation is finalized.
