@@ -1,6 +1,6 @@
 # Phase 2A Implementation Record
 
-Status: Implementation complete; preview browser validation pending draft pull request deployment
+Status: Implementation complete; preview deployed; authenticated browser validation pending
 Branch: `phase-2a-daily-loop-collection-clarity`
 Baseline: `5f2219afbffa2c7f6fbc4a8bb933f16914ae421d`
 
@@ -58,6 +58,19 @@ No API transaction, schema, migration, pull odds, Ticket price, Gold rule, XP cu
 | `git diff --check` | Passed |
 
 Focused coverage verifies smart-action priority, pre-action resource blocking, unchanged Ticket Shop prices, Library/Vault terminology, centered inspection contracts, account-menu placement, and telemetry allowlisting.
+
+## Preview deployment evidence
+
+| Check | Result |
+| --- | --- |
+| Preview URL | `https://phase-2a-daily-loop-collecti.commune-tcg.pages.dev` |
+| Health | `ok: true` |
+| D1 binding | `DB: true` |
+| R2 binding | `CARD_IMAGES: true` |
+| JavaScript bundle | `index-CZtKooaE.js` |
+| CSS bundle | `index-CCqdKeS1.css` |
+
+The served bundle hashes match the local Phase 2A production build. Preview reads remain isolated through the existing preview bindings, and no cleanup or data reset was performed.
 
 ## Remaining PR validation
 
