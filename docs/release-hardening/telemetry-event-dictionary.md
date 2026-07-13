@@ -1,6 +1,6 @@
-# Phase 1 Telemetry Event Dictionary
+# Telemetry Event Dictionary
 
-> **Status: Approved by Sterling and implemented in Phase 1 on 2026-07-11.** Preview sample verification remains pending.
+> **Status: Phase 1 foundation approved by Sterling and implemented on 2026-07-11. Phase 2A adds three bounded interaction events without changing the envelope or privacy model.**
 
 ## Naming and envelope
 
@@ -32,12 +32,15 @@ Required envelope:
 | `session.started` | Authenticated app session begins | Establish session funnel | returning flag |
 | `auth.login_completed` | Login succeeds or fails | Find authentication friction | outcome, errorCategory |
 | `route.viewed` | Stable route render completes | Reconstruct navigation | route, durationMs |
+| `home.next_action_selected` | Player selects the Home smart action | Verify daily-loop guidance | relatedId with bounded action key |
 | `ticket.daily_claim_completed` | Claim response resolves | Verify return loop and failures | outcome, relatedId |
 | `ticket.exchange_completed` | Gold exchange resolves | Identify economy friction | outcome, offer ID |
 | `pull.started` | Confirmed request begins | Funnel entry | pull count, relatedId |
+| `pull.option_selected` | Player opens a one-card or five-card confirmation | Measure option clarity before transaction start | relatedId with bounded count key |
 | `pull.completed` | Server result is available | Verify completion and duration | pull count, outcome, relatedId |
 | `pull.interrupted` | Pending request survives navigation/network failure | Quantify recovery need | stage, relatedId |
 | `vault.viewed_after_pull` | Vault viewed with recent pull context | Measure collection follow-through | relatedId |
+| `card.inspected` | Centered Vault or Library inspection opens | Measure collection exploration | relatedId with card identifier |
 | `squad.saved` | Formation save succeeds/fails | Identify squad friction | outcome, encounter ID |
 | `battle.created` | Pending attempt created | Battle funnel entry | encounter ID, relatedId |
 | `battle.playback_started` | Arena starts stored log | Separate creation from viewing | relatedId |
@@ -77,4 +80,4 @@ The smallest useful presentation is an administrator-only CSV/JSON export with d
 - Admin accountability: export and deletion actions are recorded in `telemetry_admin_audit`
 - Retention execution: daily scheduled Worker maintenance, with administrator export also running maintenance defensively
 
-Implemented instrumentation covers session start, successful login, route view, daily claim, ticket exchange, pull start/completion/interruption, Vault after pull, squad save, battle creation/playback/interruption/surrender/completion, reward finalization, displayed route errors, and retries.
+Implemented instrumentation covers session start, successful login, route view, Home smart-action selection, daily claim, ticket exchange, pull-option selection, pull start/completion/interruption, Vault after pull, card inspection, squad save, battle creation/playback/interruption/surrender/completion, reward finalization, displayed route errors, and retries.

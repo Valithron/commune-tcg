@@ -144,6 +144,8 @@ When changing pulls or economy:
 4. Test daily claim immediately before and after Mountain Time midnight.
 5. Verify reveal storage, pull again, Vault invalidation, and top-bar refresh.
 
+Phase 2A player guidance reads the existing resource contract without changing it. Home recommends actions in this order: claim the available daily Ticket, make a pull when at least one Ticket exists, open the Ticket Shop when at least 1,000 Gold exists, start Battle when Energy exists, then review the Vault. Pull and Ticket Shop disable actions that the latest authenticated resource read proves cannot succeed. The server remains authoritative and still validates every transaction.
+
 ## Vault and Library
 
 Library contains global templates. Vault contains owned instances. Duplicate grouping must use stable template identity before name/image fingerprints. Filters in Library and Vault intentionally share initialization through `initLibraryControls`.
@@ -153,6 +155,8 @@ Prefer these names in new code:
 - `libraryTemplates` for global definitions
 - `ownedCards` for concrete player instances
 - `vaultCards` only for UI-facing collection language
+
+Player-facing language follows the same distinction: Library means all available designs, while Vault means the signed-in player's owned card copies. Both detail routes use the shared centered inspection dialog while preserving their existing hash URLs and ownership reads.
 
 ## Battle
 

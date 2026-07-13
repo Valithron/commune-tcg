@@ -48,8 +48,8 @@ function renderOptionalMechanicsRows(card) {
 function renderDetailRows(card, context) {
   const ownershipText = readOwnershipText(card, context);
   const contextText = context === 'vault'
-    ? 'Vault view tracks player-specific progress such as level, copies, and future upgrade state.'
-    : 'Library view describes the global card template and whether the current user owns pulled copies.';
+    ? 'Your Vault keeps this owned copy, including its level, XP, and duplicate count.'
+    : 'The Library shows every available card design and whether you own a copy.';
   const creator = readCreator(card) || 'Unknown';
 
   return `

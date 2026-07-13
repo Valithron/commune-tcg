@@ -1,24 +1,14 @@
 /* ============================================================================
    Home Route
-   Phase auth-current-user responsibility: mark the signed-in player clearly,
-   keep the player dashboard focused on game routes, and feature the strongest
-   card from the signed-in player's Vault.
+   Phase 2A responsibility: present the signed-in player's live daily state and
+   recommend one clear next action without changing economy rules.
    ============================================================================ */
 
-import { mockUser } from '../data/mockUser.js';
-import { getCachedAuthUser } from '../services/authClient.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { loadVaultCards } from '../data/vaultData.js';
 import { renderCardFrame } from '../components/CardFrame.js';
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+import { formatNumber } from '../components/format.js';
+import { trackTelemetry } from '../services/telemetry.js';
 
 function getAggregateStats(card) {
   const stats = card?.stats || {};
@@ -30,131 +20,118 @@ function getStrongestVaultCard(cards = []) {
     .sort((a, b) => {
       const aggregateDifference = getAggregateStats(b) - getAggregateStats(a);
       if (aggregateDifference !== 0) return aggregateDifference;
-
       const levelDifference = Number(b?.level || 0) - Number(a?.level || 0);
       if (levelDifference !== 0) return levelDifference;
-
       return String(a?.name || '').localeCompare(String(b?.name || ''));
     })[0] || null;
 }
 
-async function loadHomePullResources() {
+async function loadHomeResources() {
   try {
     const routes = getApiRoutes();
-    const payload = await fetchJson(routes.pullResources, { cache: 'no-store' });
-    return payload.resources || null;
+    const payload = await fetchJson(`${routes.pullResources}?_=${Date.now()}`, { cache: 'no-store' });
+    const resources = payload.resources || {};
+    return {
+      pullTickets: Number(resources.pullTickets || 0),
+      gold: Number(resources.gold || 0),
+      energy: Number(resources.energy || 0),
+      energyMax: Number(resources.energyMax || 10),
+      dailyTicketAvailable: resources.dailyTicketAvailable !== false,
+      live: true,
+    };
   } catch {
-    return null;
+    return { pullTickets: 0, gold: 0, energy: 0, energyMax: 10, dailyTicketAvailable: false, live: false };
   }
 }
 
-function renderHomeActions({ dailyPullAvailable }) {
-  const dailyClass = dailyPullAvailable ? ' home-daily-pull-available' : '';
-  const dailyText = dailyPullAvailable ? 'Ready to claim now.' : 'Already claimed today.';
-
-  return `
-    <div class="home-feature-actions">
-      <a class="home-feature-button${dailyClass}" href="#/pull">
-        <strong>Daily Pull</strong>
-        <span>${dailyText}</span>
-      </a>
-      <a class="home-feature-button" href="#/battle">
-        <strong>Battle</strong>
-        <span>Pick a squad and test the current battle loop.</span>
-      </a>
-    </div>
-  `;
+function getSmartAction(resources) {
+  if (!resources.live) {
+    return { id: 'retry-resources', href: '#/home?refresh=1', label: 'Refresh Daily State', detail: 'Reconnect to see the best next action.' };
+  }
+  if (resources.dailyTicketAvailable) {
+    return { id: 'claim-daily-ticket', href: '#/shop?focus=daily', label: 'Claim Today\'s Ticket', detail: 'Your free daily Ticket is ready.' };
+  }
+  if (resources.pullTickets >= 1) {
+    return { id: 'make-pull', href: '#/pull?count=1&confirm=1', label: 'Make a Pull', detail: `${formatNumber(resources.pullTickets)} Ticket${resources.pullTickets === 1 ? '' : 's'} ready to spend.` };
+  }
+  if (resources.gold >= 1000) {
+    return { id: 'exchange-gold', href: '#/shop', label: 'Exchange Gold for Tickets', detail: `${formatNumber(resources.gold)} Gold is available in the Ticket Shop.` };
+  }
+  if (resources.energy >= 1) {
+    return { id: 'start-battle', href: '#/battle', label: 'Start a Battle', detail: `${formatNumber(resources.energy)} of ${formatNumber(resources.energyMax)} Energy available.` };
+  }
+  return { id: 'open-vault', href: '#/vault', label: 'Visit Your Vault', detail: 'Review your owned cards while resources recover.' };
 }
 
-function renderVaultHighlight(strongestCard, displayName, actionState) {
+function renderVaultHighlight(strongestCard) {
   if (!strongestCard) {
     return `
       <div class="home-feature-empty">
-        <strong>No Vault cards yet</strong>
-        <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
+        <strong>Your Vault is empty</strong>
+        <span>Claim a Ticket and make a pull to begin your collection.</span>
+        <a class="button button-secondary" href="#/pull">Open Pull</a>
       </div>
-      ${renderHomeActions(actionState)}
     `;
   }
 
   return `
     <div class="home-feature-card">
-      ${renderCardFrame(strongestCard, {
-        href: `#/vault/card/${strongestCard.id}`,
-        context: 'vault',
-      })}
+      ${renderCardFrame(strongestCard, { href: `#/vault/card/${strongestCard.id}`, context: 'vault' })}
     </div>
-    ${renderHomeActions(actionState)}
   `;
 }
 
 export async function renderHome() {
-  const user = getCachedAuthUser();
-  const displayName = user?.displayName || user?.username || 'Player';
-  const [vault, pullResources] = await Promise.all([
+  const [vault, resources] = await Promise.all([
     loadVaultCards({ force: true }),
-    loadHomePullResources(),
+    loadHomeResources(),
   ]);
   const strongestCard = getStrongestVaultCard(vault?.cards || []);
-  const strongestTotal = strongestCard ? getAggregateStats(strongestCard) : 0;
-  const dailyPullAvailable = pullResources?.dailyTicketAvailable ?? mockUser.dailyPullReady;
+  const action = getSmartAction(resources);
 
   return `
-    <section class="hero-panel">
-      <span class="section-kicker">Imago Core</span>
-      <h2 class="hero-title">Every card. Every story. One Core.</h2>
-      <p class="hero-copy">Signed in as ${escapeHtml(displayName)}. Pulls, resources, submissions, and Vault reads now use the active player session where wired.</p>
-      <div class="action-row">
-        <a class="button button-primary" href="#/pull/confirm?count=5">Start Pulling</a>
-        <a class="button button-secondary" href="#/battle">Battle</a>
-        <a class="button button-secondary" href="#/submit">Submit Card</a>
+    <section class="hero-panel home-daily-hero">
+      <span class="section-kicker">Today in Imago Core</span>
+      <h2 class="hero-title">Your next step is ready.</h2>
+      <p class="hero-copy">Claim, pull, collect, and battle from one clear daily starting point.</p>
+      <a class="button button-primary home-smart-action" href="${action.href}" data-home-smart-action="${action.id}">
+        <strong>${action.label}</strong>
+        <span>${action.detail}</span>
+      </a>
+      <div class="home-resource-summary" aria-label="Current resources">
+        <span><strong>🎟 ${formatNumber(resources.pullTickets)}</strong> Tickets</span>
+        <span><strong>◎ ${formatNumber(resources.gold)}</strong> Gold</span>
+        <span><strong>⚡ ${formatNumber(resources.energy)}/${formatNumber(resources.energyMax)}</strong> Energy</span>
+        <span><strong>${resources.dailyTicketAvailable ? 'Ready' : 'Claimed'}</strong> Daily Ticket</span>
       </div>
+      ${resources.live ? '' : '<p class="home-resource-warning">Live resources could not be refreshed. No resource was changed.</p>'}
     </section>
 
     <section>
       <div class="section-heading">
         <div>
-          <span class="section-kicker">Account</span>
-          <h2 class="section-title">Signed-in Player</h2>
-        </div>
-        <span class="status-pill">${escapeHtml(displayName)}</span>
-      </div>
-      <div class="home-account-card">
-        <strong>${escapeHtml(displayName)}'s active session</strong>
-        <span>Player slot: ${escapeHtml(user?.id || 'unknown')}. This marker appears from the auth session, not a temporary Sterling fallback.</span>
-        <div class="action-row">
-          <a class="button button-secondary" href="#/vault">Open ${escapeHtml(displayName)}'s Vault</a>
-          <a class="button button-secondary" href="/api/auth/logout">Log out</a>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Account</span>
-          <h2 class="section-title">Today</h2>
-        </div>
-        <span class="status-pill">Lv ${mockUser.level}</span>
-      </div>
-      <div class="stat-grid">
-        <div class="stat-panel"><span class="stat-label">Vault</span><span class="stat-value">${vault?.cards?.length || 0}</span></div>
-        <div class="stat-panel"><span class="stat-label">Library</span><span class="stat-value">${mockUser.librarySeen}</span></div>
-        <div class="stat-panel"><span class="stat-label">Streak</span><span class="stat-value">${mockUser.streakDays}</span></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Vault Highlight</span>
+          <span class="section-kicker">Your Collection</span>
           <h2 class="section-title">Strongest Owned Card</h2>
         </div>
-        <span class="status-pill">Power ${strongestTotal}</span>
+        <a class="status-pill" href="#/vault">${vault?.cards?.length || 0} owned</a>
       </div>
-      <div class="home-feature-split">
-        ${renderVaultHighlight(strongestCard, displayName, { dailyPullAvailable })}
+      <div class="home-collection-layout">
+        ${renderVaultHighlight(strongestCard)}
+        <div class="home-collection-actions">
+          <a class="home-feature-button" href="#/vault"><strong>Vault</strong><span>Your owned card copies.</span></a>
+          <a class="home-feature-button" href="#/library"><strong>Library</strong><span>Every available card design.</span></a>
+          <a class="home-feature-button" href="#/battle"><strong>Battle</strong><span>Take your saved Squad into an encounter.</span></a>
+        </div>
       </div>
     </section>
   `;
+}
+
+export function initHome(root) {
+  root.querySelector('[data-home-smart-action]')?.addEventListener('click', (event) => {
+    trackTelemetry('home.next_action_selected', {
+      outcome: 'success',
+      relatedId: event.currentTarget.getAttribute('data-home-smart-action') || '',
+    });
+  });
 }

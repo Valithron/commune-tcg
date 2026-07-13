@@ -34,6 +34,7 @@ import './styles/battle-arena.css';
 import './styles/phase4.css';
 import './styles/submit-crop-lab.css';
 import './styles/submit-card-preview.css';
+import './styles/daily-loop.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
@@ -41,7 +42,7 @@ import { fitCardTitles } from './components/cardTitleFit.js';
 import { loadAuthUser } from './services/authClient.js';
 import { telemetryErrorCategory, trackRouteView, trackSessionStarted, trackTelemetry } from './services/telemetry.js';
 import { initSignIn, renderSignIn } from './routes/SignIn.js';
-import { renderHome } from './routes/Home.js';
+import { initHome, renderHome } from './routes/Home.js';
 import { initPull, renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
 import { initPullReveal, renderPullReveal } from './routes/PullReveal.js';
@@ -51,6 +52,7 @@ import { renderVault } from './routes/Vault.js';
 import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
 import { initLibraryControls, renderLibrary } from './routes/Library.js';
 import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
+import { initCardInspection } from './components/CardInspectionModal.js';
 import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
@@ -201,9 +203,11 @@ async function renderRoute() {
     appRoot.innerHTML = await renderShell(route, content);
     fitCardTitles(appRoot);
 
-    if (route.render === renderPull || route.render === renderPullConfirm) initPull(appRoot);
+    if (route.render === renderHome) initHome(appRoot);
+    else if (route.render === renderPull || route.render === renderPullConfirm) initPull(appRoot);
     else if (route.render === renderPullReveal) initPullReveal(appRoot);
     else if (route.render === renderLibrary || route.render === renderVault) initLibraryControls(appRoot);
+    else if (route.render === renderLibraryCardDetail || route.render === renderVaultCardDetail) initCardInspection(appRoot);
     else if (route.render === renderTicketShop) initTicketShop(appRoot);
     else if (route.render === renderSubmitCard) initSubmitCardForm(appRoot);
     else if (route.render === renderAdminBattleTest) initAdminBattleTest(appRoot);

@@ -6,17 +6,17 @@
 
 | Route | File | Purpose |
 |---|---|---|
-| `#/home` | `src/routes/Home.js` | Player dashboard, daily/battle actions, and strongest owned card |
+| `#/home` | `src/routes/Home.js` | Live daily state, one recommended next action, and strongest owned card |
 | `#/pull` | `src/routes/Pull.js` | Pull chamber, options, history, and confirmation entry |
 | `#/pull/confirm` | `src/routes/PullConfirm.js` | Compatibility confirmation route |
 | `#/pull/reveal` | `src/routes/PullReveal.js` | Single or multi resolved-card reveal |
 | `#/pull/results` | `src/routes/PullResults.js` | Post-reveal results state |
 | `#/pull/history` | `src/routes/PullHistory.js` | Player pull history |
 | `#/vault` | `src/routes/Vault.js` | Owned-card collection, search, filters, sorting, and duplicates |
-| `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Owned-card detail |
+| `#/vault/card/:cardId` | `src/routes/VaultCardDetail.js` | Centered inspection of an authenticated player's owned card copy |
 | `#/library` | `src/routes/Library.js` | Global template catalog, search, filters, and sorting |
-| `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Library template detail |
-| `#/shop` | `src/routes/TicketShop.js` | Daily ticket and Gold exchanges |
+| `#/library/card/:cardId` | `src/routes/LibraryCardDetail.js` | Centered inspection of an available Library design |
+| `#/shop` | `src/routes/TicketShop.js` | Daily Ticket claim and existing Gold exchanges with pre-action availability state |
 | `#/battle` | `src/routes/BattleHub.js` | Battle entry and readiness |
 | `#/battle/encounters` | `src/routes/EncounterSelect.js` | Encounter formation, rules, cost, and rewards |
 | `#/battle/squad` | `src/routes/SquadBuilder.js` | Ordered squad selection and lane forecasts |

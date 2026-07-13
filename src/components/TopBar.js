@@ -2,7 +2,7 @@ import '../styles/energy-modal.css';
 import { mockUser } from '../data/mockUser.js';
 import { getCachedAuthUser } from '../services/authClient.js';
 import { getApiRoutes } from '../services/apiClient.js';
-import { formatNumber } from './format.js';
+import { escapeHtml, formatNumber } from './format.js';
 
 const ENERGY_MAX_FALLBACK = 10;
 const ENERGY_REGEN_INTERVAL_MS_FALLBACK = 7 * 60 * 1000;
@@ -119,13 +119,23 @@ function renderResourcePills(resources) {
 function renderUserPill() {
   const user = getCachedAuthUser();
   if (!user) return '';
+  const displayName = escapeHtml(user.displayName || user.username || user.id);
+  const initial = escapeHtml(String(user.displayName || user.username || user.id || 'P').charAt(0).toUpperCase());
 
   return `
-    <div class="signed-user-pill" title="Signed-in player">
-      <span>Signed in</span>
-      <strong>${user.displayName || user.username || user.id}</strong>
-      <a href="/api/auth/logout">Log out</a>
-    </div>
+    <details class="account-menu" data-account-menu>
+      <summary class="account-menu-trigger" aria-label="Open account menu">
+        <span class="account-menu-avatar" aria-hidden="true">${initial}</span>
+        <strong>${displayName}</strong>
+        <span class="account-menu-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="account-menu-panel">
+        <span class="section-kicker">Signed-in player</span>
+        <strong>${displayName}</strong>
+        <a href="#/vault">Open your Vault</a>
+        <a href="/api/auth/logout">Log out</a>
+      </div>
+    </details>
   `;
 }
 
@@ -310,7 +320,11 @@ export function initTopBar(root = document) {
     const closeControl = event.target.closest?.('[data-energy-modal-close]');
     if (closeControl || event.target === modal) {
       closeEnergyModal(root, { restoreFocus: !closeControl?.matches('a') });
+      return;
     }
+
+    const accountMenu = root.querySelector('[data-account-menu]');
+    if (accountMenu?.open && !event.target.closest?.('[data-account-menu]')) accountMenu.open = false;
   }, { signal: controller.signal });
 
   document.addEventListener('keydown', (event) => {

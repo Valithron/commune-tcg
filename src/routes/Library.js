@@ -311,12 +311,12 @@ export async function renderLibrary() {
 
   return `
     <section class="hero-panel">
-      <span class="section-kicker">Global Pool</span>
+      <span class="section-kicker">Every Available Design</span>
       <h2 class="hero-title">The Library</h2>
-      <p class="hero-copy">The Library shows the global card pool for the player experience. Admin frame checks and diagnostics now live in the isolated admin area.</p>
+      <p class="hero-copy">Browse every available card design. Cards shown here are possibilities, not owned copies. Your pulled cards live in the Vault.</p>
       <div class="action-row">
-        <a class="button button-secondary" href="#/submit">Submit Card</a>
         <a class="button button-secondary" href="#/pull">Start Pulling</a>
+        <a class="button button-secondary" href="#/vault">Open Your Vault</a>
       </div>
     </section>
 
@@ -325,8 +325,8 @@ export async function renderLibrary() {
     <section>
       <div class="section-heading">
         <div>
-          <span class="section-kicker">Preview</span>
-          <h2 class="section-title">All Known Cards</h2>
+          <span class="section-kicker">Card Designs</span>
+          <h2 class="section-title">Available in Pulls</h2>
         </div>
         <span class="status-pill" data-library-count>${library.cards.length} cards</span>
       </div>

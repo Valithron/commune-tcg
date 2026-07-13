@@ -6,6 +6,7 @@
 
 import { renderCardDetailPanel } from '../components/CardDetailPanel.js';
 import { findVaultCardById } from '../data/vaultData.js';
+import { renderCardInspectionModal } from '../components/CardInspectionModal.js';
 
 function formatVaultOwnerName(vault) {
   return String(vault.ownerDisplayName || vault.selectedOwnerUserId || 'User')
@@ -31,13 +32,11 @@ export async function renderVaultCardDetail({ params }) {
     `;
   }
 
-  return `
-    <section class="hero-panel">
-      <span class="section-kicker">Owned Card</span>
-      <h2 class="hero-title">Vault Detail</h2>
-      <p class="hero-copy">This card is resolved from ${ownerName}'s signed-in Vault.</p>
-      <div class="action-row"><a class="button button-secondary" href="#/vault">Back to Vault</a></div>
-    </section>
-    ${renderCardDetailPanel(card, { context: 'vault' })}
-  `;
+  return renderCardInspectionModal({
+    cardId: card.id,
+    context: 'vault',
+    title: card.name || card.title || 'Owned Card',
+    description: `This owned copy belongs to ${ownerName}'s Vault. Its level and XP stay with this copy.`,
+    content: renderCardDetailPanel(card, { context: 'vault' }),
+  });
 }
