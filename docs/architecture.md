@@ -43,6 +43,7 @@ Vite builds the browser bundle into `dist/`. Wrangler deploys `worker.js` and bi
 | Rewards | D1 authoritative settlement | finalize endpoint writes once; results and top bar read |
 | Admin card state | D1/R2 and module-local editor cache | administrator-only API and routes |
 | Persistent preferences | browser local/session storage | battle motion/sound/checkpoints and card-frame tuner |
+| Operational telemetry | D1 telemetry tables | non-blocking browser events; administrator-only export/deletion |
 
 Compatibility storage keys beginning `commune-` remain intentionally unchanged so existing browsers do not lose in-progress state or settings.
 
@@ -155,6 +156,8 @@ Internal `pow` is the stored offensive stat. UI labels it ATK. Do not perform a 
 ## Error handling and logging
 
 API helpers return JSON with `cache-control: no-store`. User-facing routes catch transport errors and either show an actionable state or use documented mock fallbacks. Empty catches remain only for best-effort cleanup such as logout cookie deletion. The offline simulation script intentionally logs its output path and summary.
+
+Telemetry is a separate failure domain. The browser does not await collection before completing gameplay, and telemetry writes do not share economy or settlement batches. Raw events retain authenticated player slot ID for 30 days; daily aggregates omit player identity and retain for 180 days.
 
 ## Deployment
 

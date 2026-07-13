@@ -37,6 +37,9 @@ test('privileged API handlers enforce the shared admin session policy', async ()
     'functions/api/pull-pool.js',
     'functions/api/pull-simulate.js',
     'functions/api/battle-simulate.js',
+    'functions/api/vault-inventory.js',
+    'functions/api/submissions.js',
+    'functions/api/admin/telemetry.js',
   ];
   const contents = await Promise.all(protectedHandlers.map((path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')));
   assert.ok(contents.every((content) => content.includes('getAdminSessionUser')));

@@ -2,6 +2,9 @@ name = "commune-tcg-gacha"
 main = "worker.js"
 compatibility_date = "2026-07-08"
 
+[triggers]
+crons = ["17 9 * * *"]
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"

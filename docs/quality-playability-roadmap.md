@@ -1,5 +1,7 @@
 # Imago Core Quality, Playability, and Interest Roadmap
 
+> **Phase 1 status:** In progress on `phase/release-hardening` from baseline `2193be5550f34daa67051c35e3c0a8311a15ef82`. Evidence is maintained under [`docs/release-hardening/`](release-hardening/), beginning with the [baseline and deployment record](release-hardening/baseline-and-deployment.md), [automated validation ledger](release-hardening/automated-validation.md), and [defect and friction ledger](release-hardening/defect-friction-ledger.md). Phase 2 has not begun.
+
 ## Canonical execution handoff
 
 ### Repository

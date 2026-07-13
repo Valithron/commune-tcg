@@ -59,7 +59,7 @@ Legacy browser redirects:
 | `GET` | `/api/auth/me` | Read active session and admin policy flag |
 | `POST` | `/api/auth/setup-pin` | Set username/PIN and establish session |
 | `POST` | `/api/auth/login` | Verify PIN and establish session |
-| `POST` | `/api/auth/logout` | Destroy session and clear cookie |
+| `GET/POST` | `/api/auth/logout` | Destroy session and clear cookie |
 
 ## Player and collection APIs
 
@@ -69,7 +69,6 @@ Legacy browser redirects:
 | `GET` | `/api/cards` | Normalized Library templates |
 | `GET` | `/api/card-image` | One R2 image by validated key |
 | `GET` | `/api/vault` | Current player's owned cards and duplicates |
-| `GET` | `/api/vault-inventory` | Vault schema and normalization diagnostics |
 | `GET` | `/api/pull-resources` | Tickets, Gold, daily state, and Energy |
 | `POST` | `/api/pull-top-up` | Daily claim or Gold-to-ticket transaction |
 | `GET` | `/api/pull-pool` | Pull pool diagnostics |
@@ -77,6 +76,7 @@ Legacy browser redirects:
 | `POST` | `/api/pulls` | Resolve pull and write ownership/history |
 | `GET` | `/api/pull-history` | Current player's pull history |
 | `POST` | `/api/submissions` | Create player card submission |
+| `POST` | `/api/telemetry` | Record one validated, authenticated, non-blocking telemetry event |
 
 ## Battle APIs
 
@@ -85,7 +85,7 @@ Legacy browser redirects:
 | `GET` | `/api/battle-inventory` | Battle-eligible owned cards |
 | `GET` | `/api/battle-encounters` | Versioned encounter registry |
 | `GET/POST` | `/api/battle-squad` | Read or save ordered squad |
-| `GET` | `/api/battle-forecast` | Isolated lane forecast |
+| `POST` | `/api/battle-forecast` | Isolated lane forecast |
 | `GET` | `/api/battle-simulate` | No-write seeded simulation |
 | `GET` | `/api/battle-attempt` | Recover a pending or specific attempt |
 | `POST` | `/api/battles` | Create authoritative attempt and debit Energy |
@@ -108,8 +108,11 @@ Legacy browser redirects:
 | `GET` | `/api/images-summary` | R2 key summary |
 | `GET` | `/api/submission-inventory` | Submission schema inventory |
 | `GET` | `/api/submission-review-audit` | Submission-review diagnostics |
+| `GET` | `/api/vault-inventory` | Protected Vault schema and ownership diagnostics |
+| `GET` | `/api/submissions` | Protected legacy submission-list endpoint |
+| `GET/DELETE` | `/api/admin/telemetry` | Protected telemetry export, retention maintenance, and player/date deletion |
 
-All schema, R2 inventory, submission audit, pull-pool, pull-simulation, and battle-simulation endpoints require the same administrator session policy even when their historical URL is not under `/api/admin/*`. `/api/health` remains intentionally public and reveals only service identity and binding booleans.
+All schema, R2 inventory, Vault inventory, submission audit, pull-pool, pull-simulation, and battle-simulation endpoints require the same administrator session policy even when their historical URL is not under `/api/admin/*`. `/api/health` remains intentionally public and reveals only service identity and binding booleans.
 
 ## Routing behavior
 

@@ -3,6 +3,7 @@
 import { renderBattleCard, renderBattleInspection } from '../components/battle/BattleCard.js';
 import { finalizeBattleAttempt, recoverBattleAttempt } from '../services/battleApi.js';
 import { createBattlePlayback } from '../services/battlePlayback.js';
+import { telemetryErrorCategory, trackTelemetry } from '../services/telemetry.js';
 
 let activeAttempt = null;
 let returningToAttempt = false;
@@ -75,9 +76,11 @@ export function initBattleArena(root) {
     playback.stop();
     try {
       await finalizeBattleAttempt({ attemptId, surrender });
+      if (!surrender) trackTelemetry('battle.completed', { outcome: result.combat.outcome === 'victory' ? 'victory' : 'defeat', relatedId: attemptId });
       sessionStorage.removeItem(checkpointKey);
       window.location.hash = `#/battle/results?attemptId=${encodeURIComponent(attemptId)}`;
     } catch (error) {
+      trackTelemetry('battle.interrupted', { outcome: 'interrupted', errorCategory: telemetryErrorCategory(error), relatedId: attemptId });
       finishing = false;
       const interruption = arena.querySelector('[data-playback-error]'); interruption.hidden = false; interruption.querySelector('span').textContent = error.message;
     }
@@ -86,11 +89,13 @@ export function initBattleArena(root) {
   function startPlayback() {
     if (playbackStarted || finishing) return;
     playbackStarted = true;
+    trackTelemetry('battle.playback_started', { outcome: 'success', relatedId: attemptId });
     arena.querySelector('[data-recovery-panel]').hidden = true;
     const opening = arena.querySelector('[data-opening-label]');
     opening.classList.add('is-visible');
     window.setTimeout(() => { opening.textContent = 'BATTLE START'; window.setTimeout(() => opening.classList.remove('is-visible'), reducedMotion ? 250 : 700); }, reducedMotion ? 200 : 900);
     playback.play().catch((error) => {
+      trackTelemetry('battle.interrupted', { outcome: 'interrupted', errorCategory: telemetryErrorCategory(error), relatedId: attemptId });
       const interruption = arena.querySelector('[data-playback-error]');
       interruption.hidden = false;
       interruption.querySelector('span').textContent = `${error.message || 'The animation stopped.'} The stored result is safe.`;

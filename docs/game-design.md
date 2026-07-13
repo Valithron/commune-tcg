@@ -547,7 +547,17 @@ Sources:
 
 Used to limit battle attempts and pace daily play.
 
-Players should still have optional activities while waiting for energy or should be able to earn/replenish energy through rewards.
+The current Phase 1 contract is server-authoritative elapsed-time regeneration. Sterling explicitly shortened the initial 30-minute test value to 7 minutes in the production hotfix on 2026-07-11:
+
+- Maximum Energy: 10
+- Regeneration: 1 Energy for each completed 7-minute interval
+- Empty-to-full time: 70 minutes
+- Partial elapsed intervals are preserved when Energy is spent below the cap
+- Regeneration stops at the cap
+- Resource reads and battle-attempt validation reconcile persisted Energy first
+- Existing rows with missing, malformed, or future timestamps retain their valid Energy and backfill the timestamp to the current server time without a grant
+
+No Gold, pull ticket, reward, mission, card trait, account level, purchase, advertisement, passive system, item, boost, or other gameplay action shortens the interval or grants a refill in this contract. Optional activities and any future refill sources remain later economy decisions.
 
 ## Passive and Minigame Systems
 

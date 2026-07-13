@@ -610,13 +610,15 @@ Interactions:
 
 When the player presses `Begin Battle`:
 
-1. Validate the signed-in player, encounter, formation, ownership, eligibility, and Energy.
+1. Validate the signed-in player, encounter, formation, ownership, and eligibility, then reconcile persisted Energy at 1 point per completed 7-minute interval up to 10 before validating the cost.
 2. Lock the formation.
 3. Spend 1 Energy only after the server can successfully create the battle attempt.
 4. Generate or select the authoritative seed.
 5. Resolve and store the complete battle as a pending attempt.
 6. Enter the full-screen battlefield.
 7. Animate the stored event log.
+
+Energy reconciliation is lazy and server-authoritative. It preserves partial intervals below the cap, stops accumulation at 10, and does not use a scheduled background job. No currency, reward, card trait, or gameplay modifier shortens the interval in the first-test contract.
 
 If validation or attempt creation fails, the player remains on formation and Energy is not spent.
 

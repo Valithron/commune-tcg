@@ -39,6 +39,7 @@ import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
 import { loadAuthUser } from './services/authClient.js';
+import { telemetryErrorCategory, trackRouteView, trackSessionStarted, trackTelemetry } from './services/telemetry.js';
 import { initSignIn, renderSignIn } from './routes/SignIn.js';
 import { renderHome } from './routes/Home.js';
 import { initPull, renderPull } from './routes/Pull.js';
@@ -184,6 +185,7 @@ async function renderRoute() {
   try {
     const authUser = await loadAuthUser();
     if (!authUser) return renderAuthGate({ redirectTo: path });
+    trackSessionStarted();
     if (currentToken !== renderToken) return;
     if (route.shell === 'admin' && !authUser.isAdmin) {
       appRoot.innerHTML = await renderAppShell({
@@ -215,8 +217,10 @@ async function renderRoute() {
     else if (route.render === renderCardLab) initCardFrameTuner(appRoot);
 
     scrollRouteToTop();
+    trackRouteView(path);
   } catch (error) {
     appRoot.innerHTML = await renderShell(route, renderError(error, route.shell));
+    trackTelemetry('error.displayed', { route: path, outcome: 'failure', errorCategory: telemetryErrorCategory(error) });
   }
 }
 

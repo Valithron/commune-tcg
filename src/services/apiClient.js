@@ -26,6 +26,8 @@ const apiRoutes = {
   battleHistory: '/api/battle-history',
   battleRewardContract: '/api/battle-reward-contract',
   submissions: '/api/submissions',
+  telemetry: '/api/telemetry',
+  adminTelemetry: '/api/admin/telemetry',
   adminCards: '/api/admin/cards',
   adminCardMechanics: '/api/admin/card-mechanics',
   adminSubmissions: '/api/admin/submissions',

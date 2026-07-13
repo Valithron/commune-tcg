@@ -5,49 +5,58 @@ import { getApiRoutes } from '../services/apiClient.js';
 import { formatNumber } from './format.js';
 
 const ENERGY_MAX_FALLBACK = 10;
-const ENERGY_REGEN_INTERVAL_MS_FALLBACK = 15 * 60 * 1000;
+const ENERGY_REGEN_INTERVAL_MS_FALLBACK = 7 * 60 * 1000;
 const ENERGY_REFRESH_RETRY_MS = 15 * 1000;
 
-let controller = null;
-let ticker = null;
+let topBarController = null;
+let energyTicker = null;
 let activeRoot = null;
 let activeResources = null;
+let activeTrigger = null;
 let refreshPromise = null;
-let retryAfter = 0;
-let controllerElement = null;
+let nextRefreshAttemptAt = 0;
+let activeControllerElement = null;
 
-function numberOr(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
+function normalizeResourceValue(value, fallback) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
 }
 
-function timestampOrEmpty(value) {
+function normalizeTimestamp(value) {
   const timestamp = String(value || '').trim();
   return Number.isFinite(new Date(timestamp).getTime()) ? timestamp : '';
 }
 
-function normalizeResources(payload = {}, fallback = {}, preferServer = false) {
-  const source = payload.resources || payload;
-  const pick = (serverValue, fallbackValue) => preferServer
-    ? serverValue ?? fallbackValue
-    : fallbackValue ?? serverValue;
-  const energy = numberOr(pick(source.energy, fallback.energy), ENERGY_MAX_FALLBACK);
-  const energyMax = numberOr(pick(source.energyMax, fallback.energyMax), ENERGY_MAX_FALLBACK);
-  const energyRegenIntervalMs = numberOr(
-    pick(source.energyRegenIntervalMs, fallback.energyRegenIntervalMs),
+function calculateNextEnergyAt({ energy, energyMax, energyUpdatedAt, energyRegenIntervalMs, nextEnergyAt }) {
+  const explicit = normalizeTimestamp(nextEnergyAt);
+  if (explicit || energy >= energyMax) return explicit;
+  const updatedAtMs = new Date(energyUpdatedAt).getTime();
+  if (!Number.isFinite(updatedAtMs)) return '';
+  return new Date(updatedAtMs + energyRegenIntervalMs).toISOString();
+}
+
+function normalizeResources(payload, overrides = {}, { live = false, syncFailed = false, preferServer = false } = {}) {
+  const source = payload?.resources || payload || {};
+  const chooseValue = (serverValue, overrideValue) => preferServer ? serverValue ?? overrideValue : overrideValue ?? serverValue;
+  const energy = normalizeResourceValue(chooseValue(source.energy, overrides.energy), ENERGY_MAX_FALLBACK);
+  const energyMax = normalizeResourceValue(chooseValue(source.energyMax, overrides.energyMax), ENERGY_MAX_FALLBACK);
+  const energyRegenIntervalMs = normalizeResourceValue(
+    chooseValue(source.energyRegenIntervalMs, overrides.energyRegenIntervalMs),
     ENERGY_REGEN_INTERVAL_MS_FALLBACK,
   );
-  const energyUpdatedAt = timestampOrEmpty(pick(source.energyUpdatedAt, fallback.energyUpdatedAt));
-  const serverNow = timestampOrEmpty(pick(source.serverNow ?? payload.serverNow, fallback.serverNow));
-  let nextEnergyAt = timestampOrEmpty(pick(source.nextEnergyAt, fallback.nextEnergyAt));
-
-  if (!nextEnergyAt && energy < energyMax && energyUpdatedAt) {
-    nextEnergyAt = new Date(new Date(energyUpdatedAt).getTime() + energyRegenIntervalMs).toISOString();
-  }
+  const energyUpdatedAt = normalizeTimestamp(chooseValue(source.energyUpdatedAt, overrides.energyUpdatedAt));
+  const serverNow = normalizeTimestamp(chooseValue(source.serverNow ?? payload?.serverNow, overrides.serverNow));
+  const nextEnergyAt = calculateNextEnergyAt({
+    energy,
+    energyMax,
+    energyUpdatedAt,
+    energyRegenIntervalMs,
+    nextEnergyAt: chooseValue(source.nextEnergyAt, overrides.nextEnergyAt),
+  });
 
   return {
-    pullTickets: numberOr(pick(source.pullTickets, fallback.pullTickets), mockUser.pullTickets),
-    gold: numberOr(pick(source.gold, fallback.gold), mockUser.gold),
+    pullTickets: normalizeResourceValue(chooseValue(source.pullTickets, overrides.pullTickets), mockUser.pullTickets),
+    gold: normalizeResourceValue(chooseValue(source.gold, overrides.gold), mockUser.gold),
     energy,
     energyMax,
     energyRegenIntervalMs,
@@ -55,26 +64,37 @@ function normalizeResources(payload = {}, fallback = {}, preferServer = false) {
     nextEnergyAt,
     serverNow,
     serverOffsetMs: serverNow ? new Date(serverNow).getTime() - Date.now() : 0,
-    live: Boolean(payload.resources || payload.ok),
-    syncFailed: false,
+    live,
+    syncFailed,
   };
 }
 
-async function loadResources(fallback = {}, { preferServer = false } = {}) {
+async function loadTopBarResources(overrides = {}, { preferServer = false } = {}) {
   try {
-    const response = await fetch(`${getApiRoutes().pullResources}?_=${Date.now()}`, {
+    const routes = getApiRoutes();
+    const response = await fetch(routes.pullResources + '?_=' + Date.now(), {
       cache: 'no-store',
-      headers: { accept: 'application/json', 'cache-control': 'no-cache' },
+      headers: {
+        accept: 'application/json',
+        'cache-control': 'no-cache',
+      },
     });
     const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload) throw new Error(payload?.error || `Resource request failed with ${response.status}`);
-    return normalizeResources(payload, fallback, preferServer);
+
+    if (!response.ok || !payload) {
+      throw new Error(payload?.error || `Resource request failed with ${response.status}`);
+    }
+
+    return normalizeResources(payload, overrides, { live: true, preferServer });
   } catch {
-    return { ...normalizeResources({}, fallback), live: false, syncFailed: true };
+    return normalizeResources({}, overrides, {
+      live: false,
+      syncFailed: Boolean(overrides && Object.keys(overrides).length),
+    });
   }
 }
 
-function resourceAttributes(resources) {
+function renderResourceDataAttributes(resources) {
   return [
     `data-pull-tickets="${resources.pullTickets}"`,
     `data-gold="${resources.gold}"`,
@@ -99,6 +119,7 @@ function renderResourcePills(resources) {
 function renderUserPill() {
   const user = getCachedAuthUser();
   if (!user) return '';
+
   return `
     <div class="signed-user-pill" title="Signed-in player">
       <span>Signed in</span>
@@ -108,7 +129,7 @@ function renderUserPill() {
   `;
 }
 
-function writeDataset(target, resources) {
+function setResourceDataset(target, resources) {
   target.dataset.pullTickets = String(resources.pullTickets);
   target.dataset.gold = String(resources.gold);
   target.dataset.energyCurrent = String(resources.energy);
@@ -120,7 +141,7 @@ function writeDataset(target, resources) {
   target.dataset.resourcesLive = String(resources.live);
 }
 
-function readDataset(target) {
+function readResourcesFromDataset(target) {
   return normalizeResources({
     pullTickets: target.dataset.pullTickets,
     gold: target.dataset.gold,
@@ -130,31 +151,37 @@ function readDataset(target) {
     energyUpdatedAt: target.dataset.energyUpdatedAt,
     nextEnergyAt: target.dataset.energyNextAt,
     serverNow: target.dataset.serverNow,
+  }, {}, {
+    live: target.dataset.resourcesLive === 'true',
   });
 }
 
 function formatCountdown(milliseconds) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')}`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function updateEnergyView() {
-  if (!activeRoot || !activeResources) return;
-  const modal = activeRoot.querySelector('[data-energy-modal]');
-  const trigger = activeRoot.querySelector('[data-energy-pill]');
-  const topValue = activeRoot.querySelector('[data-energy-value]');
-  const modalValue = activeRoot.querySelector('[data-energy-modal-value]');
-  const modalMax = activeRoot.querySelector('[data-energy-modal-max]');
-  const countdown = activeRoot.querySelector('[data-energy-countdown]');
-  const detail = activeRoot.querySelector('[data-energy-detail]');
+function syncEnergyView(root = activeRoot) {
+  if (!root || !activeResources) return;
+  const modal = root.querySelector('[data-energy-modal]');
+  const energyValue = root.querySelector('[data-energy-value]');
+  const modalValue = root.querySelector('[data-energy-modal-value]');
+  const modalMax = root.querySelector('[data-energy-modal-max]');
+  const countdown = root.querySelector('[data-energy-countdown]');
+  const detail = root.querySelector('[data-energy-detail]');
+  const trigger = root.querySelector('[data-energy-pill]');
 
-  if (topValue) topValue.textContent = formatNumber(activeResources.energy);
+  if (energyValue) energyValue.textContent = formatNumber(activeResources.energy);
   if (modalValue) modalValue.textContent = formatNumber(activeResources.energy);
   if (modalMax) modalMax.textContent = formatNumber(activeResources.energyMax);
   if (trigger) trigger.setAttribute('aria-expanded', String(Boolean(modal && !modal.hidden)));
+
   if (!countdown || !detail) return;
 
-  detail.textContent = `1 Energy every ${Math.round(activeResources.energyRegenIntervalMs / 60000)} minutes. Maximum ${activeResources.energyMax}.`;
+  const intervalMinutes = Math.round(activeResources.energyRegenIntervalMs / 60000);
+  detail.textContent = `1 Energy every ${intervalMinutes} minutes. Maximum ${activeResources.energyMax}.`;
 
   if (activeResources.energy >= activeResources.energyMax) {
     countdown.textContent = 'Energy is full.';
@@ -162,138 +189,165 @@ function updateEnergyView() {
     return;
   }
 
-  const nextAt = new Date(activeResources.nextEnergyAt).getTime();
-  if (!Number.isFinite(nextAt)) {
+  const nextEnergyAtMs = new Date(activeResources.nextEnergyAt).getTime();
+  if (!Number.isFinite(nextEnergyAtMs)) {
     countdown.textContent = activeResources.syncFailed ? 'Recharge timer unavailable.' : 'Syncing recharge timer…';
     countdown.dataset.state = activeResources.syncFailed ? 'error' : 'syncing';
     return;
   }
 
-  const remaining = nextAt - (Date.now() + activeResources.serverOffsetMs);
-  if (remaining <= 0) {
-    countdown.textContent = 'Restoring Energy…';
-    countdown.dataset.state = 'syncing';
-    requestRefresh();
+  const serverNowMs = Date.now() + activeResources.serverOffsetMs;
+  const remainingMs = nextEnergyAtMs - serverNowMs;
+
+  if (remainingMs <= 0) {
+    countdown.textContent = activeResources.syncFailed ? 'Waiting for server…' : 'Restoring Energy…';
+    countdown.dataset.state = activeResources.syncFailed ? 'error' : 'syncing';
+    requestEnergyRefresh();
     return;
   }
 
-  countdown.textContent = `Next Energy in ${formatCountdown(remaining)}`;
+  countdown.textContent = `Next Energy in ${formatCountdown(remainingMs)}`;
   countdown.dataset.state = 'counting';
 }
 
-function applyResources(root, resources) {
+function applyResources(root, resources, { rerenderPills = true } = {}) {
   const target = root?.querySelector('[data-topbar-resources]');
   if (!target) return null;
-  target.innerHTML = renderResourcePills(resources);
-  target.title = resources.live ? 'Live signed-in player resources' : 'Player resources awaiting server sync';
-  writeDataset(target, resources);
-  if (activeRoot?.contains(target)) {
+
+  if (rerenderPills) target.innerHTML = renderResourcePills(resources);
+  const resourceTitle = resources.live ? 'Live signed-in player resources' : 'Player resources awaiting server sync';
+  target.setAttribute('title', resourceTitle);
+  setResourceDataset(target, resources);
+
+  if (activeRoot && activeRoot.contains(target)) {
     activeResources = resources;
-    updateEnergyView();
+    syncEnergyView(activeRoot);
   }
+
   return resources;
 }
 
-export async function refreshTopBarResources(root = document, fallback = {}, options = {}) {
+export async function refreshTopBarResources(root = document, overrides = {}, options = {}) {
   const target = root.querySelector('[data-topbar-resources]');
   if (!target) return null;
-  return applyResources(root, await loadResources(fallback, options));
+  const resources = await loadTopBarResources(overrides, options);
+  return applyResources(root, resources);
 }
 
-async function requestRefresh({ force = false } = {}) {
+async function requestEnergyRefresh({ force = false } = {}) {
   if (!activeRoot || refreshPromise) return refreshPromise;
-  if (!force && Date.now() < retryAfter) return null;
+  if (!force && Date.now() < nextRefreshAttemptAt) return null;
 
   refreshPromise = refreshTopBarResources(activeRoot, activeResources || {}, { preferServer: true })
     .then((resources) => {
-      retryAfter = resources?.syncFailed ? Date.now() + ENERGY_REFRESH_RETRY_MS : 0;
+      nextRefreshAttemptAt = resources?.syncFailed ? Date.now() + ENERGY_REFRESH_RETRY_MS : 0;
       return resources;
     })
-    .finally(() => { refreshPromise = null; });
+    .finally(() => {
+      refreshPromise = null;
+    });
+
   return refreshPromise;
 }
 
-function openModal() {
-  const modal = activeRoot?.querySelector('[data-energy-modal]');
+function openEnergyModal(root, trigger) {
+  const modal = root.querySelector('[data-energy-modal]');
   if (!modal) return;
+  activeTrigger = trigger;
   modal.hidden = false;
   document.body.classList.add('energy-modal-open');
+  trigger.setAttribute('aria-expanded', 'true');
   modal.querySelector('[data-energy-dialog]')?.focus();
-  updateEnergyView();
-  requestRefresh({ force: true });
+  syncEnergyView(root);
+  requestEnergyRefresh({ force: true });
 }
 
-function closeModal({ restoreFocus = true } = {}) {
-  const modal = activeRoot?.querySelector('[data-energy-modal]');
+function closeEnergyModal(root, { restoreFocus = true } = {}) {
+  const modal = root.querySelector('[data-energy-modal]');
   if (!modal || modal.hidden) return;
   modal.hidden = true;
   document.body.classList.remove('energy-modal-open');
-  activeRoot.querySelector('[data-energy-pill]')?.setAttribute('aria-expanded', 'false');
-  if (restoreFocus) activeRoot.querySelector('[data-energy-pill]')?.focus();
+  root.querySelector('[data-energy-pill]')?.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) {
+    const trigger = root.querySelector('[data-energy-pill]') || activeTrigger;
+    trigger?.focus();
+  }
+  activeTrigger = null;
 }
 
-function cleanup() {
-  controller?.abort();
-  controller = null;
-  if (ticker) clearInterval(ticker);
-  ticker = null;
+function cleanupTopBar() {
+  topBarController?.abort();
+  topBarController = null;
+  if (energyTicker) window.clearInterval(energyTicker);
+  energyTicker = null;
   document.body.classList.remove('energy-modal-open');
   activeRoot = null;
   activeResources = null;
+  activeTrigger = null;
   refreshPromise = null;
-  retryAfter = 0;
+  nextRefreshAttemptAt = 0;
 }
 
 export function initTopBar(root = document) {
-  cleanup();
-  const target = root.querySelector('[data-topbar-resources]');
+  cleanupTopBar();
+
+  const resourceTarget = root.querySelector('[data-topbar-resources]');
   const modal = root.querySelector('[data-energy-modal]');
-  if (!target || !modal) return;
+  if (!resourceTarget || !modal) return;
 
   activeRoot = root;
-  activeResources = readDataset(target);
-  controller = new AbortController();
+  activeResources = readResourcesFromDataset(resourceTarget);
+  const controller = new AbortController();
+  topBarController = controller;
 
   root.addEventListener('click', (event) => {
-    if (event.target.closest?.('[data-energy-pill]')) return openModal();
+    const energyTrigger = event.target.closest?.('[data-energy-pill]');
+    if (energyTrigger) {
+      openEnergyModal(root, energyTrigger);
+      return;
+    }
+
     const closeControl = event.target.closest?.('[data-energy-modal-close]');
-    if (closeControl || event.target === modal) closeModal({ restoreFocus: !closeControl?.matches('a') });
+    if (closeControl || event.target === modal) {
+      closeEnergyModal(root, { restoreFocus: !closeControl?.matches('a') });
+    }
   }, { signal: controller.signal });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeModal();
+    if (event.key === 'Escape' && !modal.hidden) closeEnergyModal(root);
   }, { signal: controller.signal });
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') requestRefresh({ force: true });
+    if (document.visibilityState === 'visible') requestEnergyRefresh({ force: true });
   }, { signal: controller.signal });
 
-  ticker = setInterval(updateEnergyView, 250);
-  updateEnergyView();
+  energyTicker = window.setInterval(syncEnergyView, 250);
+  syncEnergyView(root);
 }
 
 const HTMLElementBase = globalThis.HTMLElement || class {};
+
 class EnergyTopBarController extends HTMLElementBase {
   connectedCallback() {
-    controllerElement = this;
+    activeControllerElement = this;
     queueMicrotask(() => {
-      if (this.isConnected && controllerElement === this) initTopBar(document);
+      if (this.isConnected && activeControllerElement === this) initTopBar(document);
     });
   }
 
   disconnectedCallback() {
-    if (controllerElement !== this) return;
-    controllerElement = null;
-    cleanup();
+    if (activeControllerElement !== this) return;
+    activeControllerElement = null;
+    cleanupTopBar();
   }
 }
 
-if (globalThis.customElements && !customElements.get('energy-topbar-controller')) {
-  customElements.define('energy-topbar-controller', EnergyTopBarController);
+if (globalThis.customElements && !globalThis.customElements.get('energy-topbar-controller')) {
+  globalThis.customElements.define('energy-topbar-controller', EnergyTopBarController);
 }
 
 export async function renderTopBar() {
-  const resources = await loadResources();
+  const resources = await loadTopBarResources();
   const resourceTitle = resources.live ? 'Live signed-in player resources' : 'Fallback player resources';
 
   return `
@@ -304,7 +358,7 @@ export async function renderTopBar() {
       </a>
       <div class="topbar-right">
         ${renderUserPill()}
-        <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources ${resourceAttributes(resources)}>
+        <div class="resource-row" aria-label="Player resources" title="${resourceTitle}" data-topbar-resources ${renderResourceDataAttributes(resources)}>
           ${renderResourcePills(resources)}
         </div>
       </div>
@@ -320,7 +374,7 @@ export async function renderTopBar() {
           <small>/ <span data-energy-modal-max>${formatNumber(resources.energyMax)}</span></small>
         </div>
         <p class="energy-modal-countdown" data-energy-countdown>Syncing recharge timer…</p>
-        <p class="energy-modal-detail" data-energy-detail>1 Energy every 15 minutes. Maximum 10.</p>
+        <p class="energy-modal-detail" data-energy-detail>1 Energy every 7 minutes. Maximum 10.</p>
         <a class="button button-secondary energy-modal-action" href="#/battle" data-energy-modal-close>Open Battle</a>
       </section>
     </div>

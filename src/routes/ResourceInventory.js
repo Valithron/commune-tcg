@@ -30,7 +30,8 @@ export function renderResourceInventory() {
         <a href="${routes.pullHistory}" target="_blank" rel="noreferrer"><span>Pull History</span><strong>${routes.pullHistory}</strong></a>
         <a href="${routes.pullSimulate}?count=5" target="_blank" rel="noreferrer"><span>Pull Simulate</span><strong>${routes.pullSimulate}</strong></a>
         <a href="${routes.pullPool}" target="_blank" rel="noreferrer"><span>Pull Pool</span><strong>${routes.pullPool}</strong></a>
-        <a href="${routes.vault}?ownerUserId=sterling" target="_blank" rel="noreferrer"><span>Sterling Vault API</span><strong>${routes.vault}</strong></a>
+        <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Signed-in Vault API</span><strong>${routes.vault}</strong></a>
+        <a href="${routes.adminTelemetry}?limit=200" target="_blank" rel="noreferrer"><span>Telemetry Export</span><strong>${routes.adminTelemetry}</strong></a>
         <a href="${routes.submissionReviewAudit}" target="_blank" rel="noreferrer"><span>Submission Review Audit</span><strong>${routes.submissionReviewAudit}</strong></a>
         <a href="${routes.submissions}" target="_blank" rel="noreferrer"><span>Submissions API</span><strong>${routes.submissions}</strong></a>
         <a href="${routes.vault}" target="_blank" rel="noreferrer"><span>Vault Cards API</span><strong>${routes.vault}</strong></a>

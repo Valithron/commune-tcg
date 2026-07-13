@@ -4,6 +4,7 @@
    Vault read model. Performs no writes and does not assume auth or gameplay.
    ============================================================================ */
 
+import { getAdminSessionUser } from '../_shared/auth.js';
 import { errorResponse, jsonResponse } from '../_shared/json.js';
 
 const ownershipTableCandidates = [
@@ -224,10 +225,11 @@ function buildReadiness(cardsInspection, candidateInspections) {
   };
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }) {
   if (!env.DB) {
     return errorResponse('D1 binding DB is not available.', 503);
   }
+  if (!await getAdminSessionUser(request, env)) return errorResponse('Admin authorization required.', 403);
 
   const cardsInspection = await inspectCardsTable(env);
   const candidateOwnershipTables = [];

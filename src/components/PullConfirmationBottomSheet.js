@@ -9,6 +9,7 @@ import { clearVaultCache } from '../data/vaultData.js';
 import { clampPullCount } from './format.js';
 import { getApiRoutes } from '../services/apiClient.js';
 import { savePullRevealPayload } from '../services/pullRevealStore.js';
+import { markRecentPull, telemetryErrorCategory, trackTelemetry } from '../services/telemetry.js';
 
 function getPullOption(count) {
   return pullOptions[clampPullCount(count)] || pullOptions[5];
@@ -146,23 +147,61 @@ function setConfirmWorking({ confirmButton, confirmLabel, status, isWorking, err
   }
 }
 
+const pendingPullRequestKey = 'commune-pull-request-v1';
+
+function pendingPullRequest(selectedCount) {
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(pendingPullRequestKey) || 'null');
+    if (stored?.requestId && Number(stored.count) === selectedCount) return { requestId: stored.requestId, reused: true };
+  } catch {
+    window.sessionStorage.removeItem(pendingPullRequestKey);
+  }
+  const requestId = `pull_${Date.now()}_${crypto.randomUUID().replaceAll('-', '')}`;
+  window.sessionStorage.setItem(pendingPullRequestKey, JSON.stringify({ requestId, count: selectedCount }));
+  return { requestId, reused: false };
+}
+
+function clearPendingPullRequest(requestId) {
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(pendingPullRequestKey) || 'null');
+    if (stored?.requestId === requestId) window.sessionStorage.removeItem(pendingPullRequestKey);
+  } catch {
+    window.sessionStorage.removeItem(pendingPullRequestKey);
+  }
+}
+
 async function executeConfirmedPull(selectedCount) {
   const routes = getApiRoutes();
-  const response = await fetch(routes.pulls, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ count: selectedCount }),
-  });
-  const payload = await response.json().catch(() => null);
+  const { requestId, reused } = pendingPullRequest(selectedCount);
+  const startedAt = performance.now();
+  if (reused) trackTelemetry('retry.attempted', { outcome: 'success', relatedId: requestId });
+  trackTelemetry('pull.started', { outcome: 'success', relatedId: requestId });
+  let response;
+  let payload;
+  try {
+    response = await fetch(routes.pulls, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ count: selectedCount, requestId }),
+    });
+    payload = await response.json().catch(() => null);
 
-  if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error || `Pull failed with ${response.status}`);
+    if (!response.ok || !payload?.ok) {
+      throw Object.assign(new Error(payload?.error || `Pull failed with ${response.status}`), { status: response.status });
+    }
+  } catch (error) {
+    trackTelemetry('pull.interrupted', { outcome: 'interrupted', durationMs: performance.now() - startedAt, errorCategory: telemetryErrorCategory(error), relatedId: requestId });
+    throw error;
   }
 
   const cards = (payload.results || []).map((result) => result.ownedCard).filter(Boolean);
   if (cards.length !== selectedCount) {
+    trackTelemetry('pull.interrupted', { outcome: 'interrupted', durationMs: performance.now() - startedAt, errorCategory: 'server', relatedId: payload.pullId || requestId });
     throw new Error('The pull resolved, but not all cards were returned for reveal.');
   }
+
+  trackTelemetry('pull.completed', { outcome: 'success', durationMs: performance.now() - startedAt, relatedId: payload.pullId || requestId });
+  markRecentPull(payload.pullId || requestId);
 
   clearVaultCache();
   savePullRevealPayload({
@@ -175,6 +214,8 @@ async function executeConfirmedPull(selectedCount) {
     poolSummary: payload.poolSummary,
     fallbackCount: (payload.results || []).filter((result) => result.fallbackUsed).length,
   });
+
+  clearPendingPullRequest(requestId);
 
   window.location.hash = `/pull/reveal?count=${selectedCount}`;
 }

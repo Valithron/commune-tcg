@@ -309,6 +309,8 @@ Telemetry is approved in principle, but design approval is required before imple
 
 ## 6.2.1 Pre-authorized Energy regeneration correction
 
+> **Approved value amendment, 2026-07-11:** The 30-minute value below records the initial first-test authorization. After implementation evidence and live testing, Sterling explicitly approved and deployed a 7-minute interval with the same cap, ownership, timestamp, concurrency, and no-modifier rules. The 7-minute production value governs current Phase 1 validation and must not be regressed by this branch.
+
 Energy currently begins at 10 and is spent by battle attempts, but the current resource path does not apply elapsed-time regeneration. A player who spends the available Energy can therefore become unable to continue battling indefinitely. Treat this as a known **P1 playability defect** and address it early in Phase 1 after the baseline and ownership-sensitive resource path are understood.
 
 The approved first-test Energy contract is:

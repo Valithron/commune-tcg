@@ -45,11 +45,11 @@ Rarity uses one initial only:
 C U R L M
 ```
 
-Character abbreviation colors use the original app assignments:
+Character abbreviation colors use the canonical Imago Core identity assignments:
 
 | Character | Abbreviation | Color |
 |---|---:|---|
-| Cydney | CY | `#f3c93f` |
+| Cydney | CY | `#789461` |
 | Sterling | ST | `#c4c5db` |
 | Ryan | RY | `#a98cff` |
 | Gabi | GA | `#8ccdff` |
@@ -57,7 +57,7 @@ Character abbreviation colors use the original app assignments:
 | Kenly | KE | `#73e1c2` |
 | Ashley | AS | `#ff9ccf` |
 
-Type currently uses the card rarity color until type-specific colors are designed.
+Type uses the dedicated canonical type colors in `docs/brand.md` and `src/styles/tokens.css`. Type color identifies affinity and remains independent from rarity and character identity colors.
 
 Ability uses a placeholder icon until the ability system is defined.
 
@@ -103,10 +103,10 @@ Current contexts:
 Route:
 
 ```text
-#/card-lab
+#/admin/card-lab
 ```
 
-The Card Lab loads live Library cards and selects five cards by title length:
+The administrator-only Card Lab loads live Library cards and selects five cards by title length:
 
 - shortest
 - 25th percentile

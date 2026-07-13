@@ -26,16 +26,19 @@ import * as battles from './functions/api/battles.js';
 import * as battleHistory from './functions/api/battle-history.js';
 import * as battleRewardContract from './functions/api/battle-reward-contract.js';
 import * as submissions from './functions/api/submissions.js';
+import * as telemetry from './functions/api/telemetry.js';
 import * as adminCards from './functions/api/admin/cards.js';
 import * as adminCardMechanics from './functions/api/admin/card-mechanics.js';
 import * as adminSubmissions from './functions/api/admin/submissions.js';
 import * as adminSubmission from './functions/api/admin/submission.js';
 import * as adminSubmissionAction from './functions/api/admin/submission-action.js';
+import * as adminTelemetry from './functions/api/admin/telemetry.js';
 import * as authUsers from './functions/api/auth/users.js';
 import * as authMe from './functions/api/auth/me.js';
 import * as authSetupPin from './functions/api/auth/setup-pin.js';
 import * as authLogin from './functions/api/auth/login.js';
 import * as authLogout from './functions/api/auth/logout.js';
+import { runTelemetryRetention } from './functions/_shared/telemetry.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -84,11 +87,13 @@ const routeModules = {
   '/api/battle-history': battleHistory,
   '/api/battle-reward-contract': battleRewardContract,
   '/api/submissions': submissions,
+  '/api/telemetry': telemetry,
   '/api/admin/cards': adminCards,
   '/api/admin/card-mechanics': adminCardMechanics,
   '/api/admin/submissions': adminSubmissions,
   '/api/admin/submission': adminSubmission,
   '/api/admin/submission-action': adminSubmissionAction,
+  '/api/admin/telemetry': adminTelemetry,
   '/api/auth/users': authUsers,
   '/api/auth/me': authMe,
   '/api/auth/setup-pin': authSetupPin,
@@ -137,5 +142,9 @@ export default {
     }
 
     return serveAssets(request, env);
+  },
+  async scheduled(_controller, env, ctx) {
+    if (!env.DB) return;
+    ctx.waitUntil(runTelemetryRetention(env).catch(() => { console.warn('Telemetry retention failed.'); }));
   },
 };

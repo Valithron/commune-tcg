@@ -22,7 +22,8 @@ test('Energy hotfix is server-backed and refreshes the top bar at the recharge b
   assert.match(topBar, /role="dialog"/);
   assert.match(topBar, /Next Energy in/);
   assert.match(topBar, /energyRegenIntervalMs \/ 60000/);
-  assert.match(topBar, /requestRefresh\(\)/);
+  assert.match(topBar, /requestEnergyRefresh\(\)/);
+  assert.match(topBar, /ENERGY_REGEN_INTERVAL_MS_FALLBACK = 7 \* 60 \* 1000/);
   assert.match(topBar, /preferServer: true/);
   assert.match(topBar, /visibilitychange/);
   assert.match(styles, /\.energy-modal-backdrop/);
