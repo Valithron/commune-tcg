@@ -70,7 +70,9 @@ The final totals were exactly `2 / 3 / 2 / 5 / 7 / 1 / 1 / 2 / 2 / 2 / 1 / 2` fo
 
 Sterling then reported a practical alpha human pass in desktop Chrome, iPhone Safari, and iPhone Chrome, plus an uncoached Cydney exploratory attempt. Both testers completed a pull; Energy returned after the 7-minute interval; battle interruption recovered correctly; and no duplicate transaction, reward, settlement, or account mixing was observed. The formal controlled-usability script was not completed and is not claimed.
 
-`007_phase1_human_telemetry_verify.sql` filters after the last recorded authenticated-harness audit timestamp and is entirely read-only. It inventories human routes and sessions, pull and Vault follow-through, battle and reward events, errors and interruptions, duplicate completion signals, matching pull and battle persistence, and final owner-scoped totals. Its result sets remain pending. Do not execute `004_phase1_cleanup.sql` until those result sets are preserved.
+Sterling executed the read-only `007_phase1_human_telemetry_verify.sql` statements individually and preserved the result sets. The human period contains 228 events, 6 analytics sessions, 0 displayed errors, 0 recorded pull/battle interruption events, 2 expected insufficient-resource failures, 6 matching pull request/history pairs, and 17 matching battle attempt/history pairs. Every battle had exactly one owner-correct history row, and the completion-anomaly query returned zero rows.
+
+Query 7 recorded three successful phone Vault follow-through rows: Sterling in Safari for `pull_1783885641585_f9d3974153ce4d67becfdd487b0599ab`, and Cydney in browser category `other` for `pull_1783889088331_62173cbf24d742d3bc4d84e2dc4aaedc` and `pull_1783889157504_af104408b0894a4dab0a769907f3837c`. The two failure outcomes were expected insufficient-resource responses for Sterling's daily ticket claim and ticket exchange. No cleanup was executed.
 
 No R2 object is required for the minimum fixture set. Missing-image behavior can be verified without writing an object. If later R2 tests create an object, record its exact key before upload and add that key to the cleanup record before deletion.
 

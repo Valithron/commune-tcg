@@ -1,6 +1,6 @@
 # Phase 1 Human Test Results
 
-> **Status: Practical alpha human gate passed; final telemetry reconciliation pending.** Sterling completed an exploratory desktop and real-iPhone pass, and Cydney completed an uncoached exploratory attempt. The formal controlled-usability script was not completed and is not claimed.
+> **Status: Practical alpha human gate and telemetry reconciliation passed.** Sterling completed an exploratory desktop and real-iPhone pass, and Cydney completed an uncoached exploratory attempt. The formal controlled-usability script was not completed and is not claimed.
 
 ## Public browser preparation
 
@@ -56,8 +56,14 @@ Pending and non-blocking when unavailable.
 
 The Phase 1 design and minimal implementation were approved by Sterling on 2026-07-11. Deployed preview checks passed for event capture, deduplication, query stripping, non-admin denial, administrator export, player deletion, audit recording, and invalid-event isolation from gameplay. The post-validation inventory confirmed one remaining Sterling `route.viewed` event for `/vault`, related to pulled card `owned_1783870862375_0a727e9d`, plus one Sterling export audit row and one Sterling delete audit row targeting Cydney telemetry.
 
-`007_phase1_human_telemetry_verify.sql` is the final read-only reconciliation for events after the authenticated harness cutoff. It inventories routes, device/browser sessions, pull completion, Vault follow-through, battle creation/interruption/completion/surrender, reward finalization, errors, retries, duplicate completion signals, and matching D1 transaction rows. Human telemetry conclusions remain pending until Sterling returns its result sets.
+Sterling executed `007_phase1_human_telemetry_verify.sql` against isolated preview D1 `com-tcg-db-preview`. The recorded human period contains 228 events across 6 analytics sessions, 0 displayed errors, 0 recorded pull/battle interruption events, and 2 expected insufficient-resource failures: Sterling's daily ticket claim and ticket exchange.
+
+All 6 persisted pull requests match 6 pull-history rows. All 17 persisted battle attempts match 17 battle-history rows with exactly one owner-correct history row per attempt. The completion-anomaly query returned zero rows.
+
+Three successful phone Vault follow-through events were recorded: Sterling in Safari after `pull_1783885641585_f9d3974153ce4d67becfdd487b0599ab`, and Cydney in the browser category `other` after `pull_1783889088331_62173cbf24d742d3bc4d84e2dc4aaedc` and `pull_1783889157504_af104408b0894a4dab0a769907f3837c`. These occurred at `2026-07-12T19:47:30.154Z`, `2026-07-12T20:44:58.329Z`, and `2026-07-12T20:46:39.415Z`, respectively.
+
+The lack of an emitted interruption event is not treated as a failed recovery assertion. Refresh or navigation can stop the client before that optional event is sent, while the human report confirms resume behavior and the authoritative attempt/history rows reconcile exactly.
 
 ## Human gate recommendation
 
-Sterling's human judgment is **GO for Phase 1 release hardening, assuming the final telemetry reconciliation reveals no hidden technical defect**. The evidence record adopts a **conditional GO** until `007_phase1_human_telemetry_verify.sql` is reviewed. No merge is authorized by this result.
+Sterling's human judgment is **GO for Phase 1 release hardening**. The telemetry reconciliation reveals no hidden technical defect, so the final evidence record also adopts **GO**. No merge is authorized by this result; Sterling's explicit merge approval remains required.

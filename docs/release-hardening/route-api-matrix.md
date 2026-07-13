@@ -79,8 +79,8 @@ For all UI rows, populated, empty, loading, error, direct-link, refresh, back/fo
 | API-32 | `/api/admin/submission-action` | POST | Administrator session | D1 cards/submissions | Admin review | Policy and reviewer identity pass; behavior preview pending |
 | API-33 | `/api/admin/cards` | GET/POST/DELETE | Administrator session | D1/R2 | Admin editor | Automated policy pass; mutations not run live |
 | API-34 | `/api/admin/card-mechanics` | GET/POST | Administrator session | D1 card mechanics | Admin mechanics | Automated policy pass; destructive actions not run live |
-| API-35 | `/api/telemetry` | POST | Player session | D1 telemetry events/aggregates | Non-blocking telemetry client | Automated validation, deduplication, rate-limit, and identity-derivation pass; preview pending |
-| API-36 | `/api/admin/telemetry` | GET/DELETE | Administrator session | D1 telemetry events/aggregates/audit | Administrator diagnostics | Automated authorization, export, retention, deletion, and audit pass; live mutation pending binding verification |
+| API-35 | `/api/telemetry` | POST | Player session | D1 telemetry events/aggregates | Non-blocking telemetry client | Automated, authenticated preview, and 228-event human-session reconciliation pass |
+| API-36 | `/api/admin/telemetry` | GET/DELETE | Administrator session | D1 telemetry events/aggregates/audit | Administrator diagnostics | Automated and authenticated preview authorization, export, deletion, retention, and audit pass |
 
 ## Public assets
 
