@@ -281,7 +281,11 @@ export async function renderVault() {
     <section class="hero-panel">
       <span class="section-kicker">Owned Cards</span>
       <h2 class="hero-title">${ownerName}'s Vault</h2>
-      <p class="hero-copy">This Vault is scoped to the currently signed-in player. Duplicate copies are grouped together by card template while preserving each owned copy.</p>
+      <p class="hero-copy">Every card here is an owned copy in your collection. Duplicate designs stay separate so each copy can keep its own level and XP.</p>
+      <div class="action-row">
+        <a class="button button-secondary" href="#/pull">Make a Pull</a>
+        <a class="button button-secondary" href="#/library">Browse the Library</a>
+      </div>
     </section>
 
     ${renderVaultControls(vault.cards)}

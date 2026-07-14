@@ -1,24 +1,15 @@
 /* ============================================================================
    Home Route
-   Phase auth-current-user responsibility: mark the signed-in player clearly,
-   keep the player dashboard focused on game routes, and feature the strongest
-   card from the signed-in player's Vault.
+   Phase 2A responsibility: stage the authenticated daily loop inside the Core
+   Commons without changing any resource, economy, or ownership contract.
    ============================================================================ */
 
-import { mockUser } from '../data/mockUser.js';
-import { getCachedAuthUser } from '../services/authClient.js';
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { loadVaultCards } from '../data/vaultData.js';
-import { renderCardFrame } from '../components/CardFrame.js';
+import { escapeHtml } from '../components/format.js';
+import { trackTelemetry } from '../services/telemetry.js';
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+const supportedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
 
 function getAggregateStats(card) {
   const stats = card?.stats || {};
@@ -30,131 +21,166 @@ function getStrongestVaultCard(cards = []) {
     .sort((a, b) => {
       const aggregateDifference = getAggregateStats(b) - getAggregateStats(a);
       if (aggregateDifference !== 0) return aggregateDifference;
-
       const levelDifference = Number(b?.level || 0) - Number(a?.level || 0);
       if (levelDifference !== 0) return levelDifference;
-
       return String(a?.name || '').localeCompare(String(b?.name || ''));
     })[0] || null;
 }
 
-async function loadHomePullResources() {
+async function loadHomeResources() {
   try {
     const routes = getApiRoutes();
-    const payload = await fetchJson(routes.pullResources, { cache: 'no-store' });
-    return payload.resources || null;
+    const payload = await fetchJson(`${routes.pullResources}?_=${Date.now()}`, { cache: 'no-store' });
+    const resources = payload.resources || {};
+    return {
+      dailyTicketAvailable: resources.dailyTicketAvailable !== false,
+      live: true,
+    };
   } catch {
-    return null;
+    return { dailyTicketAvailable: false, live: false };
   }
 }
 
-function renderHomeActions({ dailyPullAvailable }) {
-  const dailyClass = dailyPullAvailable ? ' home-daily-pull-available' : '';
-  const dailyText = dailyPullAvailable ? 'Ready to claim now.' : 'Already claimed today.';
+function getDailyAction(resources) {
+  if (!resources.live) {
+    return {
+      id: 'retry-resources',
+      href: '#/shop',
+      label: 'Store',
+      ariaLabel: 'Open Ticket Store',
+      state: 'unavailable',
+    };
+  }
 
-  return `
-    <div class="home-feature-actions">
-      <a class="home-feature-button${dailyClass}" href="#/pull">
-        <strong>Daily Pull</strong>
-        <span>${dailyText}</span>
-      </a>
-      <a class="home-feature-button" href="#/battle">
-        <strong>Battle</strong>
-        <span>Pick a squad and test the current battle loop.</span>
-      </a>
-    </div>
-  `;
+  if (resources.dailyTicketAvailable) {
+    return {
+      id: 'claim-daily-ticket',
+      href: '#/shop?focus=daily',
+      label: 'Daily Ticket',
+      ariaLabel: 'Claim Daily Ticket',
+      state: 'claimable',
+    };
+  }
+
+  return {
+    id: 'ticket-store',
+    href: '#/shop',
+    label: 'Store',
+    ariaLabel: 'Open Ticket Store',
+    state: 'claimed',
+  };
 }
 
-function renderVaultHighlight(strongestCard, displayName, actionState) {
-  if (!strongestCard) {
+function normalizeRarity(value) {
+  const rarity = String(value || 'common').toLowerCase();
+  return supportedRarities.has(rarity) ? rarity : 'common';
+}
+
+function resolveImageUrl(card) {
+  const value = String(
+    card?.imageUrl || card?.image_url || card?.artUrl || card?.art_url || card?.imageKey || card?.image_key
+      || card?.image_path || card?.image || card?.art_key || card?.object_key || card?.r2_key || '',
+  ).trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
+  return `/api/card-image?key=${encodeURIComponent(value)}`;
+}
+
+function normalizeCrop(card) {
+  try {
+    const rawCrop = card?.crop || card?.crop_json || card?.cropJson || card?.image_crop || card?.imageCrop || {};
+    const parsedCrop = typeof rawCrop === 'string' ? JSON.parse(rawCrop || '{}') : rawCrop;
+    const crop = parsedCrop?.crop || parsedCrop?.imageCrop || parsedCrop || {};
+    const clamp = (value, fallback, min, max) => {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? Math.min(Math.max(numericValue, min), max) : fallback;
+    };
+    return {
+      x: clamp(crop.x ?? crop.left, 50, 0, 100),
+      y: clamp(crop.y ?? crop.top, 50, 0, 100),
+      zoom: clamp(crop.zoom ?? crop.z ?? crop.scale, 1, 1, 3),
+    };
+  } catch {
+    return { x: 50, y: 50, zoom: 1 };
+  }
+}
+
+function renderFeaturedPortal(card) {
+  if (!card) {
     return `
-      <div class="home-feature-empty">
-        <strong>No Vault cards yet</strong>
-        <span>Pull some cards first, then ${escapeHtml(displayName)}'s strongest owned card will appear here.</span>
-      </div>
-      ${renderHomeActions(actionState)}
+      <a class="home-commons-portal home-commons-portal--empty" href="#/pull" aria-label="Open Pull to begin your collection">
+        <span aria-hidden="true">◇</span>
+      </a>
     `;
   }
 
+  const imageUrl = resolveImageUrl(card);
+  const crop = normalizeCrop(card);
+  const art = imageUrl
+    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;">`
+    : `<span class="home-commons-portal-symbol" aria-hidden="true">${escapeHtml(card.symbol || '◆')}</span>`;
+
   return `
-    <div class="home-feature-card">
-      ${renderCardFrame(strongestCard, {
-        href: `#/vault/card/${strongestCard.id}`,
-        context: 'vault',
-      })}
-    </div>
-    ${renderHomeActions(actionState)}
+    <a class="home-commons-portal" data-rarity="${normalizeRarity(card.rarity)}" href="#/vault/card/${encodeURIComponent(card.id)}" aria-label="Inspect ${escapeHtml(card.name || 'featured card')}">
+      ${art}
+    </a>
+  `;
+}
+
+function renderFeaturedNameplate(card) {
+  const href = card ? `#/vault/card/${encodeURIComponent(card.id)}` : '#/pull';
+  const title = card?.name || 'Awaken the Core';
+  const label = card ? `View ${title}` : 'Open Pull to awaken the Core';
+  return `
+    <a class="home-commons-nameplate${card ? '' : ' home-commons-nameplate--empty'}" href="${href}" aria-label="${escapeHtml(label)}">
+      <strong>${escapeHtml(title)}</strong>
+    </a>
   `;
 }
 
 export async function renderHome() {
-  const user = getCachedAuthUser();
-  const displayName = user?.displayName || user?.username || 'Player';
-  const [vault, pullResources] = await Promise.all([
+  const [vault, resources] = await Promise.all([
     loadVaultCards({ force: true }),
-    loadHomePullResources(),
+    loadHomeResources(),
   ]);
-  const strongestCard = getStrongestVaultCard(vault?.cards || []);
-  const strongestTotal = strongestCard ? getAggregateStats(strongestCard) : 0;
-  const dailyPullAvailable = pullResources?.dailyTicketAvailable ?? mockUser.dailyPullReady;
+  const featuredCard = getStrongestVaultCard(vault?.cards || []);
+  const dailyAction = getDailyAction(resources);
 
   return `
-    <section class="hero-panel">
-      <span class="section-kicker">Imago Core</span>
-      <h2 class="hero-title">Every card. Every story. One Core.</h2>
-      <p class="hero-copy">Signed in as ${escapeHtml(displayName)}. Pulls, resources, submissions, and Vault reads now use the active player session where wired.</p>
-      <div class="action-row">
-        <a class="button button-primary" href="#/pull/confirm?count=5">Start Pulling</a>
-        <a class="button button-secondary" href="#/battle">Battle</a>
-        <a class="button button-secondary" href="#/submit">Submit Card</a>
-      </div>
-    </section>
+    <section class="home-commons-stage" aria-label="Imago Core, The Core Commons">
+      ${renderFeaturedNameplate(featuredCard)}
+      ${renderFeaturedPortal(featuredCard)}
 
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Account</span>
-          <h2 class="section-title">Signed-in Player</h2>
-        </div>
-        <span class="status-pill">${escapeHtml(displayName)}</span>
-      </div>
-      <div class="home-account-card">
-        <strong>${escapeHtml(displayName)}'s active session</strong>
-        <span>Player slot: ${escapeHtml(user?.id || 'unknown')}. This marker appears from the auth session, not a temporary Sterling fallback.</span>
-        <div class="action-row">
-          <a class="button button-secondary" href="#/vault">Open ${escapeHtml(displayName)}'s Vault</a>
-          <a class="button button-secondary" href="/api/auth/logout">Log out</a>
-        </div>
-      </div>
-    </section>
+      <a class="home-commons-core-summon" href="#/pull" aria-label="Open Pull from the Core machine">
+        <span>Summon</span>
+      </a>
 
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Account</span>
-          <h2 class="section-title">Today</h2>
-        </div>
-        <span class="status-pill">Lv ${mockUser.level}</span>
-      </div>
-      <div class="stat-grid">
-        <div class="stat-panel"><span class="stat-label">Vault</span><span class="stat-value">${vault?.cards?.length || 0}</span></div>
-        <div class="stat-panel"><span class="stat-label">Library</span><span class="stat-value">${mockUser.librarySeen}</span></div>
-        <div class="stat-panel"><span class="stat-label">Streak</span><span class="stat-value">${mockUser.streakDays}</span></div>
-      </div>
-    </section>
+      <a class="home-commons-hotspot home-commons-daily" data-state="${dailyAction.state}" href="${dailyAction.href}" aria-label="${escapeHtml(dailyAction.ariaLabel)}" data-home-smart-action="${dailyAction.id}">
+        <strong>${dailyAction.label}</strong>
+      </a>
 
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Vault Highlight</span>
-          <h2 class="section-title">Strongest Owned Card</h2>
-        </div>
-        <span class="status-pill">Power ${strongestTotal}</span>
-      </div>
-      <div class="home-feature-split">
-        ${renderVaultHighlight(strongestCard, displayName, { dailyPullAvailable })}
-      </div>
+      <a class="home-commons-hotspot home-commons-support home-commons-library" href="#/library">
+        <span aria-hidden="true">◇</span>
+        <strong>Library</strong>
+      </a>
+      <a class="home-commons-hotspot home-commons-support home-commons-vault" href="#/vault">
+        <span aria-hidden="true">▱</span>
+        <strong>Vault</strong>
+      </a>
+
+      <a class="home-commons-battle-gate" href="#/battle">
+        <span aria-hidden="true">⚔</span>
+        <strong>Enter Battle</strong>
+      </a>
     </section>
   `;
+}
+
+export function initHome(root) {
+  root.querySelector('[data-home-smart-action]')?.addEventListener('click', (event) => {
+    trackTelemetry('home.next_action_selected', {
+      outcome: 'success',
+      relatedId: event.currentTarget.getAttribute('data-home-smart-action') || '',
+    });
+  });
 }

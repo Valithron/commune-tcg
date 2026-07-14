@@ -15,8 +15,9 @@ function getPullOption(count) {
   return pullOptions[clampPullCount(count)] || pullOptions[5];
 }
 
-function renderSheetOption(option, selectedCount) {
+function renderSheetOption(option, selectedCount, balance) {
   const isSelected = option.count === selectedCount;
+  const canAfford = balance >= option.ticketCost;
   const label = option.count === 1 ? 'Standard' : 'Multi';
   const pullLabel = option.count === 1 ? '1 Pull' : `${option.count} Pulls`;
 
@@ -27,6 +28,7 @@ function renderSheetOption(option, selectedCount) {
       data-pull-option="${option.count}"
       data-ticket-cost="${option.ticketCost}"
       aria-pressed="${isSelected ? 'true' : 'false'}"
+      ${canAfford ? '' : 'disabled'}
     >
       ${option.count === 5 ? '<span class="pull-sheet-value-tag">Value</span>' : ''}
       <span class="pull-sheet-option-label">${label}</span>
@@ -76,8 +78,8 @@ export function renderPullConfirmationBottomSheet({ selectedCount, resources, sh
         </div>
 
         <div class="pull-sheet-options" aria-label="Pull options">
-          ${renderSheetOption(pullOptions[1], safeSelectedCount)}
-          ${renderSheetOption(pullOptions[5], safeSelectedCount)}
+          ${renderSheetOption(pullOptions[1], safeSelectedCount, balance)}
+          ${renderSheetOption(pullOptions[5], safeSelectedCount, balance)}
         </div>
 
         <button class="pull-sheet-odds-link" type="button" data-pull-odds aria-expanded="false">

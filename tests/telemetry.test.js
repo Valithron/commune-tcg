@@ -88,6 +88,23 @@ test('telemetry rejects unsupported events and unsigned collection', async () =>
   assert.equal(env.database.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'telemetry_events'").get().count, 0);
 });
 
+test('Phase 2A telemetry uses the existing bounded authenticated envelope', async () => {
+  const env = createD1();
+  for (const [index, eventName] of ['home.next_action_selected', 'pull.option_selected', 'card.inspected'].entries()) {
+    const event = normalizeTelemetryEvent({
+      eventId: `evt_phase2a_event_000${index}`,
+      eventName,
+      sessionId: 'as_phase2a_session_0001',
+      route: '/home',
+      outcome: 'success',
+      relatedId: `phase2a-${index}`,
+    }, { playerId: 'sterling', env, now: '2026-07-13T12:00:00.000Z' });
+    assert.equal(event.error, undefined);
+    assert.equal(event.playerId, 'sterling');
+    assert.equal(event.eventName, eventName);
+  }
+});
+
 test('telemetry export and deletion require an administrator and record admin access', async () => {
   const { env, sterlingCookie, cydneyCookie } = await fixture();
   await collectTelemetry({ env, request: eventRequest(sterlingCookie) });

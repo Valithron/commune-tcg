@@ -36,18 +36,18 @@ async function loadResources() {
 }
 
 function getOfferButtonCopy(offer) {
-  return offer.daily ? 'Claim Ticket' : 'Buy Tickets';
+  return offer.daily ? 'Claim Today\'s Ticket' : 'Exchange Gold';
 }
 
 function getOfferStatus(offer, resources) {
   if (!resources.resourceReadOk) {
-    return 'Server will validate current bank state';
+    return 'Balance unavailable. Refresh before exchanging.';
   }
 
   if (offer.daily) {
     return resources.dailyTicketAvailable
       ? 'Available now'
-      : `Already claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}. Server will reject another claim until midnight Mountain Time.`;
+      : `Claimed for ${resources.dailyTicketClaimedOn || resources.mountainDate || 'today'}. Available again after midnight Mountain Time.`;
   }
 
   if (offer.costGold > resources.gold) {
@@ -58,45 +58,46 @@ function getOfferStatus(offer, resources) {
 }
 
 function renderOfferCard(offer, resources) {
-  const shouldWarn = resources.resourceReadOk && ((offer.daily && !resources.dailyTicketAvailable) || offer.costGold > resources.gold);
+  const unavailable = !resources.resourceReadOk || (offer.daily && !resources.dailyTicketAvailable) || offer.costGold > resources.gold;
 
   return `
-    <article class="shop-card">
+    <article class="shop-card${offer.daily ? ' shop-card--daily' : ''}" data-shop-offer-card="${escapeHtml(offer.id)}">
       <span class="section-kicker">${escapeHtml(offer.price)}</span>
       <h3>${escapeHtml(offer.title)}</h3>
       <strong>${escapeHtml(offer.amount)}</strong>
       <p>${escapeHtml(offer.description)}</p>
       <div class="empty-note">${escapeHtml(getOfferStatus(offer, resources))}</div>
       <button
-        class="button ${shouldWarn ? 'button-secondary' : 'button-primary'}"
+        class="button ${unavailable ? 'button-secondary' : 'button-primary'}"
         type="button"
         data-shop-offer-id="${escapeHtml(offer.id)}"
-      >${escapeHtml(getOfferButtonCopy(offer))}</button>
+        ${unavailable ? 'disabled' : ''}
+      >${escapeHtml(unavailable && offer.daily ? 'Claimed Today' : getOfferButtonCopy(offer))}</button>
     </article>
   `;
 }
 
-export async function renderTicketShop() {
+export async function renderTicketShop({ query = {} } = {}) {
   const resources = await loadResources();
+  const focusDaily = query.focus === 'daily';
 
   return `
     <section class="hero-panel">
       <span class="section-kicker">Ticket Shop</span>
       <h2 class="hero-title">Fuel the next pull.</h2>
-      <p class="hero-copy">Tickets and gold are scoped to ${escapeHtml(resources.ownerDisplayName)}'s signed-in account. The daily claim resets at midnight Mountain Time.</p>
+      <p class="hero-copy">Claim one free Ticket each Mountain Time day, or exchange Gold at the listed rate. Current balance: <strong>🎟 ${formatNumber(resources.tickets)}</strong> and <strong>◎ ${formatNumber(resources.gold)}</strong>.</p>
       <div class="action-row">
         <a class="button button-secondary" href="#/pull">Back to Pull</a>
         <a class="button button-secondary" href="#/pull/history">Pull History</a>
       </div>
     </section>
 
-    <section class="glass-panel confirm-panel" data-ticket-shop-panel>
+    <section class="glass-panel confirm-panel ticket-shop-balance" data-ticket-shop-panel>
       <div class="detail-list">
-        <div class="detail-row"><span>${escapeHtml(resources.source)} Tickets</span><strong>🎟 ${formatNumber(resources.tickets)}</strong></div>
+        <div class="detail-row"><span>Tickets</span><strong>🎟 ${formatNumber(resources.tickets)}</strong></div>
         <div class="detail-row"><span>Gold Bank</span><strong>◎ ${formatNumber(resources.gold)}</strong></div>
         <div class="detail-row"><span>Daily Claim</span><strong>${resources.resourceReadOk ? (resources.dailyTicketAvailable ? 'Available' : 'Claimed') : 'Unknown'}</strong></div>
-        <div class="detail-row"><span>Account</span><strong>${escapeHtml(resources.ownerDisplayName)}</strong></div>
-        <div class="detail-row"><span>Status</span><strong data-shop-status>${resources.resourceReadOk ? 'Ready' : 'Resource read failed. Try an exchange and the server will validate it.'}</strong></div>
+        <div class="detail-row"><span>Status</span><strong data-shop-status>${resources.resourceReadOk ? 'Ready' : 'Balance unavailable. Refresh to continue.'}</strong></div>
       </div>
     </section>
 
@@ -107,7 +108,7 @@ export async function renderTicketShop() {
           <h2 class="section-title">Ticket Exchange</h2>
         </div>
       </div>
-      <div class="shop-grid">
+      <div class="shop-grid${focusDaily ? ' is-daily-focused' : ''}">
         ${shopOffers.map((offer) => renderOfferCard(offer, resources)).join('')}
       </div>
     </section>

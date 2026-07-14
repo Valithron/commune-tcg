@@ -444,7 +444,9 @@ It should remain clear, touch-safe, and consistent across screens.
 
 ### 5.16 Background asset direction
 
-Long-term, Home should use one custom illustrated Core Commons asset.
+The governing illustrated Core Commons asset is `public/assets/home-background.png`, served by the app at `/assets/home-background.png`.
+
+Home is implemented as a responsive 9:16 background stage with percentage-positioned HTML/CSS overlays. The source image remains unmodified and supplies the room, portal, Core machine, side sockets, threshold, and safe areas; interactive content is aligned to those structures rather than rebuilding or covering them with panels.
 
 The asset should be designed specifically around the locked composition:
 
@@ -460,7 +462,7 @@ The asset should be designed specifically around the locked composition:
 - Blue system details
 - Sparse lounge warmth
 
-Until that asset exists, interim UI should approximate the direction with layered surfaces, gradients, Core geometry, texture, and existing card art. However, the interim version must still follow the scene-landmark model rather than reverting to stacked panels.
+The production overlay map keeps the locked portal, daily socket, Battle gate, and top rail coordinates. The compact machine nameplate begins at `y: 48.5%` with a `10.5%` minimum height instead of the initial `y: 44.5%`, `h: 14.5%` suggestion so the illustrated Core machine remains visible. Vault and Library use two restrained support sockets; the remaining illustrated sockets stay dormant without advertising unimplemented systems.
 
 ---
 
@@ -836,12 +838,9 @@ Critical instruction for future implementation:
 
 > Do not implement Home as stacked panels. Implement it as a scene with labeled interactive landmarks.
 
-Implementation should distinguish between:
+The illustrated Core Commons asset now exists at `public/assets/home-background.png`. The implemented Home must use that governing stage rather than falling back to a panel layout or a generic layered room approximation.
 
-1. **Ideal long-term Home:** custom illustrated Core Commons asset.
-2. **Interim Home:** layered approximation using existing assets, gradients, Core geometry, hotspot labels, and featured card art.
-
-The interim version must still preserve:
+The asset-led version must preserve:
 
 - central Core machine
 - featured vertical art portal

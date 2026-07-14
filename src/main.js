@@ -34,6 +34,9 @@ import './styles/battle-arena.css';
 import './styles/phase4.css';
 import './styles/submit-crop-lab.css';
 import './styles/submit-card-preview.css';
+import './styles/daily-loop.css';
+import './styles/home-commons.css';
+import './styles/home-layout-calibrator.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
@@ -41,7 +44,7 @@ import { fitCardTitles } from './components/cardTitleFit.js';
 import { loadAuthUser } from './services/authClient.js';
 import { telemetryErrorCategory, trackRouteView, trackSessionStarted, trackTelemetry } from './services/telemetry.js';
 import { initSignIn, renderSignIn } from './routes/SignIn.js';
-import { renderHome } from './routes/Home.js';
+import { initHome, renderHome } from './routes/Home.js';
 import { initPull, renderPull } from './routes/Pull.js';
 import { renderPullConfirm } from './routes/PullConfirm.js';
 import { initPullReveal, renderPullReveal } from './routes/PullReveal.js';
@@ -51,6 +54,7 @@ import { renderVault } from './routes/Vault.js';
 import { renderVaultCardDetail } from './routes/VaultCardDetail.js';
 import { initLibraryControls, renderLibrary } from './routes/Library.js';
 import { renderLibraryCardDetail } from './routes/LibraryCardDetail.js';
+import { initCardInspection } from './components/CardInspectionModal.js';
 import { initTicketShop, renderTicketShop } from './routes/TicketShop.js';
 import { renderBattleHub } from './routes/BattleHub.js';
 import { renderEncounterSelect } from './routes/EncounterSelect.js';
@@ -69,6 +73,7 @@ import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
 import { renderCardLab } from './routes/CardLab.js';
 import { initCardFrameTuner } from './routes/cardFrameTuner.js';
+import { initAdminHomeLayoutCalibrator, renderAdminHomeLayoutCalibrator } from './routes/AdminHomeLayoutCalibrator.js';
 
 const appRoot = document.querySelector('#app');
 let renderToken = 0;
@@ -102,6 +107,7 @@ const routeDefinitions = [
   { pattern: '/admin/backend', navRoute: '/admin/backend', shell: 'admin', render: renderBackendStatus },
   { pattern: '/admin/inventory', navRoute: '/admin/inventory', shell: 'admin', render: renderResourceInventory },
   { pattern: '/admin/card-lab', navRoute: '/admin/card-lab', shell: 'admin', render: renderCardLab },
+  { pattern: '/admin/home-layout', navRoute: '/admin/home-layout', shell: 'admin', render: renderAdminHomeLayoutCalibrator },
 ];
 
 const legacyAdminRedirects = {
@@ -201,9 +207,11 @@ async function renderRoute() {
     appRoot.innerHTML = await renderShell(route, content);
     fitCardTitles(appRoot);
 
-    if (route.render === renderPull || route.render === renderPullConfirm) initPull(appRoot);
+    if (route.render === renderHome) initHome(appRoot);
+    else if (route.render === renderPull || route.render === renderPullConfirm) initPull(appRoot);
     else if (route.render === renderPullReveal) initPullReveal(appRoot);
     else if (route.render === renderLibrary || route.render === renderVault) initLibraryControls(appRoot);
+    else if (route.render === renderLibraryCardDetail || route.render === renderVaultCardDetail) initCardInspection(appRoot);
     else if (route.render === renderTicketShop) initTicketShop(appRoot);
     else if (route.render === renderSubmitCard) initSubmitCardForm(appRoot);
     else if (route.render === renderAdminBattleTest) initAdminBattleTest(appRoot);
@@ -215,6 +223,7 @@ async function renderRoute() {
     else if (route.render === renderBattleResults) initBattleResults(appRoot);
     else if (route.render === renderBattleArena) initBattleArena(appRoot);
     else if (route.render === renderCardLab) initCardFrameTuner(appRoot);
+    else if (route.render === renderAdminHomeLayoutCalibrator) initAdminHomeLayoutCalibrator(appRoot);
 
     scrollRouteToTop();
     trackRouteView(path);

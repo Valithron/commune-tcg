@@ -13,6 +13,7 @@ const adminNavItems = [
   { href: '#/admin/backend', route: '/admin/backend', label: 'Backend' },
   { href: '#/admin/inventory', route: '/admin/inventory', label: 'Inventory' },
   { href: '#/admin/card-lab', route: '/admin/card-lab', label: 'Card Lab' },
+  { href: '#/admin/home-layout', route: '/admin/home-layout', label: 'Home Layout' },
 ];
 
 export function renderAdminShell({ activeRoute, content }) {
