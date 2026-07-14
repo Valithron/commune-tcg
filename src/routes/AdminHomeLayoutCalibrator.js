@@ -9,6 +9,7 @@ import { escapeHtml } from '../components/format.js';
 
 const storageKey = 'imago-home-layout-calibrator-v1';
 const percentPrecision = 1;
+const backgroundAsset = '/assets/home-background.png';
 
 const homeLayoutElements = [
   {
@@ -156,6 +157,7 @@ export function renderAdminHomeLayoutCalibrator() {
         <button class="button button-primary" type="button" data-copy-layout-css>Copy CSS values</button>
         <button class="button button-secondary" type="button" data-copy-layout-json>Copy JSON</button>
         <button class="button button-secondary" type="button" data-reset-layout>Reset defaults</button>
+        <a class="button button-secondary" href="${backgroundAsset}" target="_blank" rel="noreferrer">Open Background</a>
         <a class="button button-secondary" href="#/home">Open Home</a>
       </div>
     </section>
@@ -170,8 +172,13 @@ export function renderAdminHomeLayoutCalibrator() {
       </div>
       <p class="body-copy">Values are stored locally in this browser so you can refresh without losing a tuning pass. Drag boxes by their body. Resize from the corner anchors. Output is rounded to 0.1% so finger precision does not create noisy CSS.</p>
       <div class="home-layout-calibrator-frame">
-        <div class="home-layout-calibrator-stage" data-layout-stage>
-          <img src="/assets/home-background.png" alt="Core Commons Home background calibration stage" draggable="false" />
+        <div
+          class="home-layout-calibrator-stage"
+          data-layout-stage
+          style="background-image:url('${backgroundAsset}')"
+          role="img"
+          aria-label="Core Commons Home background calibration stage"
+        >
           <div class="home-layout-calibrator-grid" aria-hidden="true"></div>
           ${elements.map(renderBox).join('')}
         </div>
