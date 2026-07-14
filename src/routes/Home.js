@@ -6,11 +6,10 @@
 
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { loadVaultCards } from '../data/vaultData.js';
-import { escapeHtml, titleCase } from '../components/format.js';
+import { escapeHtml } from '../components/format.js';
 import { trackTelemetry } from '../services/telemetry.js';
 
 const supportedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
-const supportedTypes = new Set(['flame', 'tide', 'bloom', 'volt', 'shadow', 'radiant', 'neutral']);
 
 function getAggregateStats(card) {
   const stats = card?.stats || {};
@@ -74,19 +73,6 @@ function normalizeRarity(value) {
   return supportedRarities.has(rarity) ? rarity : 'common';
 }
 
-function normalizeType(value) {
-  const type = String(value || 'neutral').toLowerCase();
-  return supportedTypes.has(type) ? type : 'neutral';
-}
-
-function resolveCharacter(card) {
-  return String(card?.character || card?.character_id || card?.characterId || card?.cid || 'Unknown');
-}
-
-function resolveType(card) {
-  return normalizeType(card?.selectedType || card?.selected_type || card?.type || card?.cardType || card?.card_type);
-}
-
 function resolveImageUrl(card) {
   const value = String(
     card?.imageUrl || card?.image_url || card?.artUrl || card?.art_url || card?.imageKey || card?.image_key
@@ -139,25 +125,12 @@ function renderFeaturedPortal(card) {
 }
 
 function renderFeaturedNameplate(card) {
-  if (!card) {
-    return `
-      <a class="home-commons-nameplate home-commons-nameplate--empty" href="#/pull">
-        <strong>Awaken the Core</strong>
-        <span>Make a pull to display your first identity.</span>
-      </a>
-    `;
-  }
-
-  const rarity = normalizeRarity(card.rarity);
-  const type = resolveType(card);
+  const href = card ? `#/vault/card/${encodeURIComponent(card.id)}` : '#/pull';
+  const title = card?.name || 'Awaken the Core';
+  const label = card ? `View ${title}` : 'Open Pull to awaken the Core';
   return `
-    <a class="home-commons-nameplate" href="#/vault/card/${encodeURIComponent(card.id)}" aria-label="View ${escapeHtml(card.name || 'featured card')}">
-      <strong>${escapeHtml(card.name || 'Unnamed Card')}</strong>
-      <span class="home-commons-identity">${escapeHtml(resolveCharacter(card))}</span>
-      <span class="home-commons-card-markers">
-        <span data-rarity="${rarity}">${titleCase(rarity)}</span>
-        <span data-card-type="${type}">${titleCase(type)}</span>
-      </span>
+    <a class="home-commons-nameplate${card ? '' : ' home-commons-nameplate--empty'}" href="${href}" aria-label="${escapeHtml(label)}">
+      <strong>${escapeHtml(title)}</strong>
     </a>
   `;
 }
@@ -172,21 +145,25 @@ export async function renderHome() {
 
   return `
     <section class="home-commons-stage" aria-label="Imago Core, The Core Commons">
-      ${renderFeaturedPortal(featuredCard)}
       ${renderFeaturedNameplate(featuredCard)}
+      ${renderFeaturedPortal(featuredCard)}
+
+      <a class="home-commons-core-summon" href="#/pull" aria-label="Open Pull from the Core machine">
+        <span>Summon</span>
+      </a>
 
       <a class="home-commons-hotspot home-commons-daily" data-state="${dailyAction.state}" href="${dailyAction.href}" data-home-smart-action="${dailyAction.id}">
         <span class="home-commons-hotspot-icon" aria-hidden="true">✦</span>
         <strong>${dailyAction.label}</strong>
       </a>
 
-      <a class="home-commons-hotspot home-commons-support home-commons-vault" href="#/vault">
-        <span aria-hidden="true">▱</span>
-        <strong>Vault</strong>
-      </a>
       <a class="home-commons-hotspot home-commons-support home-commons-library" href="#/library">
         <span aria-hidden="true">◇</span>
         <strong>Library</strong>
+      </a>
+      <a class="home-commons-hotspot home-commons-support home-commons-vault" href="#/vault">
+        <span aria-hidden="true">▱</span>
+        <strong>Vault</strong>
       </a>
 
       <a class="home-commons-battle-gate" href="#/battle">
