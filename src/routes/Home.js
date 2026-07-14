@@ -117,7 +117,7 @@ function renderFeaturedPortal(card) {
   const imageUrl = resolveImageUrl(card);
   const crop = normalizeCrop(card);
   const art = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%；">`.replace('；', ';')
+    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;">`
     : `<span class="home-commons-portal-symbol" aria-hidden="true">${escapeHtml(card.symbol || '◆')}</span>`;
 
   return `
