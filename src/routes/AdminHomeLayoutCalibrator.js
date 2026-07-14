@@ -7,12 +7,9 @@
 
 import { escapeHtml } from '../components/format.js';
 
-const storageKey = 'imago-home-layout-calibrator-v2';
+const storageKey = 'imago-home-layout-calibrator-v3';
 const percentPrecision = 1;
 const backgroundAsset = '/assets/home-background.png';
-
-const alignedSocket = { x: 78, w: 16.9, h: 10.6 };
-const mirroredSocketX = 5.1;
 
 const homeLayoutElements = [
   {
@@ -31,11 +28,11 @@ const homeLayoutElements = [
     label: 'Card title nameplate',
     selector: '.home-commons-nameplate',
     className: 'calibrator-box--nameplate',
-    x: 31.5,
+    x: 31.6,
     y: 9.4,
     w: 36.8,
     h: 3,
-    note: 'Card title plate above the portal.',
+    note: 'Card title plate above the portal. X is mathematically centered.',
   },
   {
     id: 'portal',
@@ -53,10 +50,10 @@ const homeLayoutElements = [
     label: 'Core summon button',
     selector: '.home-commons-core-summon',
     className: 'calibrator-box--core',
-    x: 35,
-    y: 40.5,
-    w: 30,
-    h: 17,
+    x: 41.6,
+    y: 46.4,
+    w: 17,
+    h: 9.2,
     note: 'Move this circle over the Core machine. Links to Pull.',
   },
   {
@@ -64,10 +61,10 @@ const homeLayoutElements = [
     label: 'Daily Ticket socket',
     selector: '.home-commons-daily',
     className: 'calibrator-box--daily',
-    x: alignedSocket.x,
-    y: 19,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    x: 79.5,
+    y: 19.4,
+    w: 13.5,
+    h: 9.3,
     note: 'Claim Daily Ticket / Use Tickets smart action.',
   },
   {
@@ -75,10 +72,10 @@ const homeLayoutElements = [
     label: 'Library support socket',
     selector: '.home-commons-library',
     className: 'calibrator-box--support',
-    x: alignedSocket.x,
-    y: 36.9,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    x: 79.9,
+    y: 36.8,
+    w: 13.7,
+    h: 8.6,
     note: 'Available card-design catalog link.',
   },
   {
@@ -86,10 +83,10 @@ const homeLayoutElements = [
     label: 'Vault support socket',
     selector: '.home-commons-vault',
     className: 'calibrator-box--support',
-    x: alignedSocket.x,
-    y: 52.7,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    x: 78,
+    y: 52,
+    w: 17,
+    h: 8.2,
     note: 'Owned-card collection link.',
   },
   {
@@ -97,10 +94,10 @@ const homeLayoutElements = [
     label: 'A',
     selector: '.home-commons-future-a',
     className: 'calibrator-box--future',
-    x: mirroredSocketX,
-    y: 19,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    x: 8.4,
+    y: 19.6,
+    w: 11.7,
+    h: 9.6,
     note: 'Future left-side socket A.',
   },
   {
@@ -108,10 +105,10 @@ const homeLayoutElements = [
     label: 'B',
     selector: '.home-commons-future-b',
     className: 'calibrator-box--future',
-    x: mirroredSocketX,
+    x: 8.7,
     y: 36.9,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    w: 12.2,
+    h: 8.9,
     note: 'Future left-side socket B.',
   },
   {
@@ -119,10 +116,10 @@ const homeLayoutElements = [
     label: 'C',
     selector: '.home-commons-future-c',
     className: 'calibrator-box--future',
-    x: mirroredSocketX,
+    x: 8.5,
     y: 52.7,
-    w: alignedSocket.w,
-    h: alignedSocket.h,
+    w: 13.4,
+    h: 8,
     note: 'Future left-side socket C.',
   },
   {
@@ -130,11 +127,11 @@ const homeLayoutElements = [
     label: 'Battle gate',
     selector: '.home-commons-battle-gate',
     className: 'calibrator-box--battle',
-    x: 15.6,
+    x: 15.7,
     y: 87.1,
     w: 68.6,
     h: 11.3,
-    note: 'Enter Battle lower threshold, just above the nav.',
+    note: 'Enter Battle lower threshold, just above the nav. X is mathematically centered.',
   },
 ];
 
