@@ -1,14 +1,16 @@
 /* ============================================================================
    Home Route
-   Phase 2A responsibility: present the signed-in player's live daily state and
-   recommend one clear next action without changing economy rules.
+   Phase 2A responsibility: stage the authenticated daily loop inside the Core
+   Commons without changing any resource, economy, or ownership contract.
    ============================================================================ */
 
 import { fetchJson, getApiRoutes } from '../services/apiClient.js';
 import { loadVaultCards } from '../data/vaultData.js';
-import { renderCardFrame } from '../components/CardFrame.js';
-import { formatNumber } from '../components/format.js';
+import { escapeHtml, titleCase } from '../components/format.js';
 import { trackTelemetry } from '../services/telemetry.js';
+
+const supportedRarities = new Set(['common', 'uncommon', 'rare', 'legendary', 'mythic']);
+const supportedTypes = new Set(['flame', 'tide', 'bloom', 'volt', 'shadow', 'radiant', 'neutral']);
 
 function getAggregateStats(card) {
   const stats = card?.stats || {};
@@ -32,52 +34,131 @@ async function loadHomeResources() {
     const payload = await fetchJson(`${routes.pullResources}?_=${Date.now()}`, { cache: 'no-store' });
     const resources = payload.resources || {};
     return {
-      pullTickets: Number(resources.pullTickets || 0),
-      gold: Number(resources.gold || 0),
-      energy: Number(resources.energy || 0),
-      energyMax: Number(resources.energyMax || 10),
       dailyTicketAvailable: resources.dailyTicketAvailable !== false,
       live: true,
     };
   } catch {
-    return { pullTickets: 0, gold: 0, energy: 0, energyMax: 10, dailyTicketAvailable: false, live: false };
+    return { dailyTicketAvailable: false, live: false };
   }
 }
 
-function getSmartAction(resources) {
+function getDailyAction(resources) {
   if (!resources.live) {
-    return { id: 'retry-resources', href: '#/home?refresh=1', label: 'Refresh Daily State', detail: 'Reconnect to see the best next action.' };
+    return {
+      id: 'retry-resources',
+      href: '#/home?refresh=1',
+      label: 'Refresh Daily State',
+      state: 'unavailable',
+    };
   }
+
   if (resources.dailyTicketAvailable) {
-    return { id: 'claim-daily-ticket', href: '#/shop?focus=daily', label: 'Claim Today\'s Ticket', detail: 'Your free daily Ticket is ready.' };
+    return {
+      id: 'claim-daily-ticket',
+      href: '#/shop?focus=daily',
+      label: 'Claim Daily Ticket',
+      state: 'claimable',
+    };
   }
-  if (resources.pullTickets >= 1) {
-    return { id: 'make-pull', href: '#/pull?count=1&confirm=1', label: 'Make a Pull', detail: `${formatNumber(resources.pullTickets)} Ticket${resources.pullTickets === 1 ? '' : 's'} ready to spend.` };
-  }
-  if (resources.gold >= 1000) {
-    return { id: 'exchange-gold', href: '#/shop', label: 'Exchange Gold for Tickets', detail: `${formatNumber(resources.gold)} Gold is available in the Ticket Shop.` };
-  }
-  if (resources.energy >= 1) {
-    return { id: 'start-battle', href: '#/battle', label: 'Start a Battle', detail: `${formatNumber(resources.energy)} of ${formatNumber(resources.energyMax)} Energy available.` };
-  }
-  return { id: 'open-vault', href: '#/vault', label: 'Visit Your Vault', detail: 'Review your owned cards while resources recover.' };
+
+  return {
+    id: 'use-tickets',
+    href: '#/pull',
+    label: 'Use Tickets',
+    state: 'claimed',
+  };
 }
 
-function renderVaultHighlight(strongestCard) {
-  if (!strongestCard) {
+function normalizeRarity(value) {
+  const rarity = String(value || 'common').toLowerCase();
+  return supportedRarities.has(rarity) ? rarity : 'common';
+}
+
+function normalizeType(value) {
+  const type = String(value || 'neutral').toLowerCase();
+  return supportedTypes.has(type) ? type : 'neutral';
+}
+
+function resolveCharacter(card) {
+  return String(card?.character || card?.character_id || card?.characterId || card?.cid || 'Unknown');
+}
+
+function resolveType(card) {
+  return normalizeType(card?.selectedType || card?.selected_type || card?.type || card?.cardType || card?.card_type);
+}
+
+function resolveImageUrl(card) {
+  const value = String(
+    card?.imageUrl || card?.image_url || card?.artUrl || card?.art_url || card?.imageKey || card?.image_key
+      || card?.image_path || card?.image || card?.art_key || card?.object_key || card?.r2_key || '',
+  ).trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
+  return `/api/card-image?key=${encodeURIComponent(value)}`;
+}
+
+function normalizeCrop(card) {
+  try {
+    const rawCrop = card?.crop || card?.crop_json || card?.cropJson || card?.image_crop || card?.imageCrop || {};
+    const parsedCrop = typeof rawCrop === 'string' ? JSON.parse(rawCrop || '{}') : rawCrop;
+    const crop = parsedCrop?.crop || parsedCrop?.imageCrop || parsedCrop || {};
+    const clamp = (value, fallback, min, max) => {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? Math.min(Math.max(numericValue, min), max) : fallback;
+    };
+    return {
+      x: clamp(crop.x ?? crop.left, 50, 0, 100),
+      y: clamp(crop.y ?? crop.top, 50, 0, 100),
+      zoom: clamp(crop.zoom ?? crop.z ?? crop.scale, 1, 1, 3),
+    };
+  } catch {
+    return { x: 50, y: 50, zoom: 1 };
+  }
+}
+
+function renderFeaturedPortal(card) {
+  if (!card) {
     return `
-      <div class="home-feature-empty">
-        <strong>Your Vault is empty</strong>
-        <span>Claim a Ticket and make a pull to begin your collection.</span>
-        <a class="button button-secondary" href="#/pull">Open Pull</a>
-      </div>
+      <a class="home-commons-portal home-commons-portal--empty" href="#/pull" aria-label="Open Pull to begin your collection">
+        <span aria-hidden="true">◇</span>
+      </a>
     `;
   }
 
+  const imageUrl = resolveImageUrl(card);
+  const crop = normalizeCrop(card);
+  const art = imageUrl
+    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;">`
+    : `<span class="home-commons-portal-symbol" aria-hidden="true">${escapeHtml(card.symbol || '◆')}</span>`;
+
   return `
-    <div class="home-feature-card">
-      ${renderCardFrame(strongestCard, { href: `#/vault/card/${strongestCard.id}`, context: 'vault' })}
-    </div>
+    <a class="home-commons-portal" data-rarity="${normalizeRarity(card.rarity)}" href="#/vault/card/${encodeURIComponent(card.id)}" aria-label="Inspect ${escapeHtml(card.name || 'featured card')}">
+      ${art}
+    </a>
+  `;
+}
+
+function renderFeaturedNameplate(card) {
+  if (!card) {
+    return `
+      <a class="home-commons-nameplate home-commons-nameplate--empty" href="#/pull">
+        <strong>Awaken the Core</strong>
+        <span>Make a pull to display your first identity.</span>
+      </a>
+    `;
+  }
+
+  const rarity = normalizeRarity(card.rarity);
+  const type = resolveType(card);
+  return `
+    <a class="home-commons-nameplate" href="#/vault/card/${encodeURIComponent(card.id)}" aria-label="View ${escapeHtml(card.name || 'featured card')}">
+      <strong>${escapeHtml(card.name || 'Unnamed Card')}</strong>
+      <span class="home-commons-identity">${escapeHtml(resolveCharacter(card))}</span>
+      <span class="home-commons-card-markers">
+        <span data-rarity="${rarity}">${titleCase(rarity)}</span>
+        <span data-card-type="${type}">${titleCase(type)}</span>
+      </span>
+    </a>
   `;
 }
 
@@ -86,43 +167,32 @@ export async function renderHome() {
     loadVaultCards({ force: true }),
     loadHomeResources(),
   ]);
-  const strongestCard = getStrongestVaultCard(vault?.cards || []);
-  const action = getSmartAction(resources);
+  const featuredCard = getStrongestVaultCard(vault?.cards || []);
+  const dailyAction = getDailyAction(resources);
 
   return `
-    <section class="hero-panel home-daily-hero">
-      <span class="section-kicker">Today in Imago Core</span>
-      <h2 class="hero-title">Your next step is ready.</h2>
-      <p class="hero-copy">Claim, pull, collect, and battle from one clear daily starting point.</p>
-      <a class="button button-primary home-smart-action" href="${action.href}" data-home-smart-action="${action.id}">
-        <strong>${action.label}</strong>
-        <span>${action.detail}</span>
-      </a>
-      <div class="home-resource-summary" aria-label="Current resources">
-        <span><strong>🎟 ${formatNumber(resources.pullTickets)}</strong> Tickets</span>
-        <span><strong>◎ ${formatNumber(resources.gold)}</strong> Gold</span>
-        <span><strong>⚡ ${formatNumber(resources.energy)}/${formatNumber(resources.energyMax)}</strong> Energy</span>
-        <span><strong>${resources.dailyTicketAvailable ? 'Ready' : 'Claimed'}</strong> Daily Ticket</span>
-      </div>
-      ${resources.live ? '' : '<p class="home-resource-warning">Live resources could not be refreshed. No resource was changed.</p>'}
-    </section>
+    <section class="home-commons-stage" aria-label="Imago Core, The Core Commons">
+      ${renderFeaturedPortal(featuredCard)}
+      ${renderFeaturedNameplate(featuredCard)}
 
-    <section>
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">Your Collection</span>
-          <h2 class="section-title">Strongest Owned Card</h2>
-        </div>
-        <a class="status-pill" href="#/vault">${vault?.cards?.length || 0} owned</a>
-      </div>
-      <div class="home-collection-layout">
-        ${renderVaultHighlight(strongestCard)}
-        <div class="home-collection-actions">
-          <a class="home-feature-button" href="#/vault"><strong>Vault</strong><span>Your owned card copies.</span></a>
-          <a class="home-feature-button" href="#/library"><strong>Library</strong><span>Every available card design.</span></a>
-          <a class="home-feature-button" href="#/battle"><strong>Battle</strong><span>Take your saved Squad into an encounter.</span></a>
-        </div>
-      </div>
+      <a class="home-commons-hotspot home-commons-daily" data-state="${dailyAction.state}" href="${dailyAction.href}" data-home-smart-action="${dailyAction.id}">
+        <span class="home-commons-hotspot-icon" aria-hidden="true">✦</span>
+        <strong>${dailyAction.label}</strong>
+      </a>
+
+      <a class="home-commons-hotspot home-commons-support home-commons-vault" href="#/vault">
+        <span aria-hidden="true">▱</span>
+        <strong>Vault</strong>
+      </a>
+      <a class="home-commons-hotspot home-commons-support home-commons-library" href="#/library">
+        <span aria-hidden="true">◇</span>
+        <strong>Library</strong>
+      </a>
+
+      <a class="home-commons-battle-gate" href="#/battle">
+        <span aria-hidden="true">⚔</span>
+        <strong>Enter Battle</strong>
+      </a>
     </section>
   `;
 }

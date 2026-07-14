@@ -35,6 +35,7 @@ import './styles/phase4.css';
 import './styles/submit-crop-lab.css';
 import './styles/submit-card-preview.css';
 import './styles/daily-loop.css';
+import './styles/home-commons.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';

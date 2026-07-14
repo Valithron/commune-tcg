@@ -6,20 +6,31 @@ async function source(path) {
   return readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 }
 
-test('Home recommends one live-resource action in the approved priority order', async () => {
-  const home = await source('src/routes/Home.js');
-  const priorities = [
-    'resources.dailyTicketAvailable',
-    'resources.pullTickets >= 1',
-    'resources.gold >= 1000',
-    'resources.energy >= 1',
-  ];
-  const positions = priorities.map((priority) => home.indexOf(priority));
+test('Home is an asset-led Core Commons stage with the approved landmarks', async () => {
+  const [home, shell, styles, background] = await Promise.all([
+    source('src/routes/Home.js'),
+    source('src/components/AppShell.js'),
+    source('src/styles/home-commons.css'),
+    readFile(new URL('../public/assets/home-background.png', import.meta.url)),
+  ]);
 
-  assert.ok(positions.every((position) => position >= 0));
-  assert.deepEqual(positions, [...positions].sort((a, b) => a - b));
+  assert.ok(background.byteLength > 0);
+  assert.match(home, /home-commons-stage/);
+  assert.match(home, /Claim Daily Ticket/);
+  assert.match(home, /Use Tickets/);
+  assert.match(home, /Enter Battle/);
+  assert.match(home, /#\/vault\/card\//);
   assert.match(home, /home\.next_action_selected/);
+  assert.doesNotMatch(home, /renderCardFrame/);
+  assert.doesNotMatch(home, /home-daily-hero|home-resource-summary|home-collection-layout/);
   assert.doesNotMatch(home, /mockUser\.streakDays|mockUser\.librarySeen/);
+
+  assert.match(shell, /app-shell--home/);
+  assert.match(styles, /background-image: url\('\/assets\/home-background\.png'\)/);
+  assert.match(styles, /\.home-commons-portal \{[\s\S]*left: 33\.5%;[\s\S]*top: 11\.5%;[\s\S]*width: 33%;[\s\S]*height: 29%/);
+  assert.match(styles, /\.home-commons-daily \{ left: 70%; top: 17%; width: 23\.5%; height: 17%; \}/);
+  assert.match(styles, /\.home-commons-battle-gate \{[\s\S]*left: 16%;[\s\S]*top: 73\.5%;[\s\S]*width: 68%;[\s\S]*min-height: 12%/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 
 test('Pull and Ticket Shop communicate and block known insufficient-resource actions', async () => {

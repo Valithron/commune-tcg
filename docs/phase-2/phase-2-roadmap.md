@@ -52,6 +52,8 @@ Admin and content-management cleanup is reserved for Phase 2.5. Preview evidence
 
 Branch and pull request: `phase-2a-daily-loop-collection-clarity`
 
+Home implementation lock: the Core Commons uses `public/assets/home-background.png` at `/assets/home-background.png` as a 9:16 responsive stage. Its resource rail, featured-art portal, compact Core nameplate, daily smart socket, support sockets, and Battle gate are percentage-positioned scene landmarks. This asset-led composition replaces the earlier dashboard-style Home while preserving the Phase 2A resource and routing behavior below.
+
 Deliver:
 
 - a Home smart button that leads to the next useful daily-loop action;
