@@ -28,14 +28,13 @@ test('Home is an asset-led Core Commons stage with the approved landmarks', asyn
 
   assert.match(shell, /app-shell--home/);
   assert.match(styles, /background-image: url\('\/assets\/home-background\.png'\)/);
-  assert.match(styles, /\.home-commons-nameplate \{[\s\S]*left: 31\.5%;[\s\S]*top: 9\.4%;[\s\S]*width: 36\.8%;[\s\S]*height: 3%/);
+  assert.match(styles, /\.home-commons-nameplate \{[\s\S]*left: 31\.6%;[\s\S]*top: 9\.4%;[\s\S]*width: 36\.8%;[\s\S]*height: 3%/);
   assert.match(styles, /\.home-commons-portal \{[\s\S]*left: 36\.9%;[\s\S]*top: 18\.6%;[\s\S]*width: 26\.2%;[\s\S]*height: 19\.8%/);
-  assert.match(styles, /\.home-commons-core-summon \{[\s\S]*left: 35%;[\s\S]*top: 40\.5%;[\s\S]*width: 30%;[\s\S]*height: 17%/);
-  assert.match(styles, /\.home-commons-daily,[\s\S]*\.home-commons-vault,[\s\S]*\.home-commons-library \{[\s\S]*left: 78%;[\s\S]*width: 16\.9%;[\s\S]*height: 10\.6%/);
-  assert.match(styles, /\.home-commons-daily \{ top: 19%; \}/);
-  assert.match(styles, /\.home-commons-library \{ top: 36\.9%; \}/);
-  assert.match(styles, /\.home-commons-vault \{ top: 52\.7%; \}/);
-  assert.match(styles, /\.home-commons-battle-gate \{[\s\S]*left: 15\.6%;[\s\S]*top: 87\.1%;[\s\S]*width: 68\.6%;[\s\S]*height: 11\.3%/);
+  assert.match(styles, /\.home-commons-core-summon \{[\s\S]*left: 41\.6%;[\s\S]*top: 46\.4%;[\s\S]*width: 17%;[\s\S]*height: 9\.2%/);
+  assert.match(styles, /\.home-commons-daily \{[\s\S]*left: 79\.5%;[\s\S]*top: 19\.4%;[\s\S]*width: 13\.5%;[\s\S]*height: 9\.3%/);
+  assert.match(styles, /\.home-commons-library \{[\s\S]*left: 79\.9%;[\s\S]*top: 36\.8%;[\s\S]*width: 13\.7%;[\s\S]*height: 8\.6%/);
+  assert.match(styles, /\.home-commons-vault \{[\s\S]*left: 78%;[\s\S]*top: 52%;[\s\S]*width: 17%;[\s\S]*height: 8\.2%/);
+  assert.match(styles, /\.home-commons-battle-gate \{[\s\S]*left: 15\.7%;[\s\S]*top: 87\.1%;[\s\S]*width: 68\.6%;[\s\S]*height: 11\.3%/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 
