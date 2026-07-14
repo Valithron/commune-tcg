@@ -46,7 +46,8 @@ function getDailyAction(resources) {
     return {
       id: 'retry-resources',
       href: '#/home?refresh=1',
-      label: 'Refresh Daily State',
+      label: 'Daily Ticket',
+      ariaLabel: 'Refresh Daily Ticket state',
       state: 'unavailable',
     };
   }
@@ -55,7 +56,8 @@ function getDailyAction(resources) {
     return {
       id: 'claim-daily-ticket',
       href: '#/shop?focus=daily',
-      label: 'Claim Daily Ticket',
+      label: 'Daily Ticket',
+      ariaLabel: 'Claim Daily Ticket',
       state: 'claimable',
     };
   }
@@ -63,7 +65,8 @@ function getDailyAction(resources) {
   return {
     id: 'use-tickets',
     href: '#/pull',
-    label: 'Use Tickets',
+    label: 'Daily Ticket',
+    ariaLabel: 'Use Tickets',
     state: 'claimed',
   };
 }
@@ -114,7 +117,7 @@ function renderFeaturedPortal(card) {
   const imageUrl = resolveImageUrl(card);
   const crop = normalizeCrop(card);
   const art = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%;">`
+    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="eager" style="object-position:${crop.x}% ${crop.y}%;transform:scale(${crop.zoom});transform-origin:${crop.x}% ${crop.y}%；">`.replace('；', ';')
     : `<span class="home-commons-portal-symbol" aria-hidden="true">${escapeHtml(card.symbol || '◆')}</span>`;
 
   return `
@@ -152,8 +155,7 @@ export async function renderHome() {
         <span>Summon</span>
       </a>
 
-      <a class="home-commons-hotspot home-commons-daily" data-state="${dailyAction.state}" href="${dailyAction.href}" data-home-smart-action="${dailyAction.id}">
-        <span class="home-commons-hotspot-icon" aria-hidden="true">✦</span>
+      <a class="home-commons-hotspot home-commons-daily" data-state="${dailyAction.state}" href="${dailyAction.href}" aria-label="${escapeHtml(dailyAction.ariaLabel)}" data-home-smart-action="${dailyAction.id}">
         <strong>${dailyAction.label}</strong>
       </a>
 
