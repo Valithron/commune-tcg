@@ -109,8 +109,15 @@
   background: rgba(45, 156, 219, 0.16);
 }
 
-.calibrator-box--daily {
+.calibrator-box--core {
   border-radius: 50%;
+  border-color: rgba(45, 156, 219, 0.98);
+  background: rgba(45, 156, 219, 0.14);
+  box-shadow: 0 0 1.5rem rgba(45, 156, 219, 0.38);
+}
+
+.calibrator-box--daily {
+  border-radius: var(--radius-lg);
   border-color: rgba(212, 175, 55, 0.96);
   background: rgba(212, 175, 55, 0.18);
   box-shadow: 0 0 1.4rem rgba(212, 175, 55, 0.38);
@@ -122,6 +129,7 @@
 }
 
 .calibrator-box--nameplate {
+  border-radius: var(--radius-full);
   border-color: rgba(181, 108, 255, 0.95);
   background: rgba(181, 108, 255, 0.16);
 }
@@ -130,6 +138,11 @@
   border-radius: var(--radius-full);
   border-color: rgba(174, 178, 204, 0.9);
   background: rgba(174, 178, 204, 0.12);
+}
+
+.calibrator-box--future {
+  border-color: rgba(101, 230, 204, 0.9);
+  background: rgba(101, 230, 204, 0.12);
 }
 
 .home-layout-resize-anchor {
