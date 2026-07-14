@@ -36,6 +36,7 @@ import './styles/submit-crop-lab.css';
 import './styles/submit-card-preview.css';
 import './styles/daily-loop.css';
 import './styles/home-commons.css';
+import './styles/home-layout-calibrator.css';
 
 import { renderAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
@@ -72,6 +73,7 @@ import { renderBackendStatus } from './routes/BackendStatus.js';
 import { renderResourceInventory } from './routes/ResourceInventory.js';
 import { renderCardLab } from './routes/CardLab.js';
 import { initCardFrameTuner } from './routes/cardFrameTuner.js';
+import { initAdminHomeLayoutCalibrator, renderAdminHomeLayoutCalibrator } from './routes/AdminHomeLayoutCalibrator.js';
 
 const appRoot = document.querySelector('#app');
 let renderToken = 0;
@@ -105,6 +107,7 @@ const routeDefinitions = [
   { pattern: '/admin/backend', navRoute: '/admin/backend', shell: 'admin', render: renderBackendStatus },
   { pattern: '/admin/inventory', navRoute: '/admin/inventory', shell: 'admin', render: renderResourceInventory },
   { pattern: '/admin/card-lab', navRoute: '/admin/card-lab', shell: 'admin', render: renderCardLab },
+  { pattern: '/admin/home-layout', navRoute: '/admin/home-layout', shell: 'admin', render: renderAdminHomeLayoutCalibrator },
 ];
 
 const legacyAdminRedirects = {
@@ -220,6 +223,7 @@ async function renderRoute() {
     else if (route.render === renderBattleResults) initBattleResults(appRoot);
     else if (route.render === renderBattleArena) initBattleArena(appRoot);
     else if (route.render === renderCardLab) initCardFrameTuner(appRoot);
+    else if (route.render === renderAdminHomeLayoutCalibrator) initAdminHomeLayoutCalibrator(appRoot);
 
     scrollRouteToTop();
     trackRouteView(path);
