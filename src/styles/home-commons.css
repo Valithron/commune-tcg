@@ -200,6 +200,19 @@
   top: 19.4%;
   width: 13.5%;
   height: 9.3%;
+  border-color: transparent;
+  background: linear-gradient(135deg, #8f6418 0%, #d4af37 34%, #f7e08a 48%, #b98324 68%, #f1d36d 100%);
+  background-size: 220% 220%;
+  box-shadow: 0 0 1.25rem rgba(212, 175, 55, 0.34), inset 0 0 0.7rem rgba(255, 246, 181, 0.26);
+  animation: homeTicketGoldShimmer 6s ease-in-out infinite;
+}
+
+.home-commons-daily strong {
+  color: #16100a;
+  font-size: clamp(0.52rem, 2.1vw, 0.72rem);
+  font-weight: 1000;
+  letter-spacing: 0.015em;
+  text-shadow: 0 1px 0 rgba(255, 248, 210, 0.5);
 }
 
 .home-commons-library {
@@ -216,19 +229,14 @@
   height: 8.2%;
 }
 
-.home-commons-daily[data-state='claimable'] {
-  border-color: transparent;
-  box-shadow: 0 0 1.2rem rgba(181, 108, 255, 0.24), inset 0 0 0.9rem rgba(241, 211, 109, 0.18);
-}
-
-.home-commons-daily[data-state='claimable']::before {
+.home-commons-daily::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   padding: 2px;
   border-radius: inherit;
-  background: conic-gradient(from 30deg, #b56cff, #2d9cdb, #7ee0a1, #f1d36d, #ffb4ab, #b56cff);
+  background: conic-gradient(from 30deg, #b56cff, #2d9cdb, #7ee0a1, #f1d36d, #ff7fba, #b56cff);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -246,7 +254,7 @@
   position: absolute;
   top: 8%;
   right: 8%;
-  color: #f1d36d;
+  color: #f9e58b;
   font-size: 0.7rem;
   text-shadow: 0 0 0.7rem #f1d36d;
   animation: homeTicketGlint 3.2s ease-in-out infinite;
@@ -302,7 +310,16 @@
   50% { translate: 0 -1.1%; filter: brightness(1.08); }
 }
 
-@keyframes homeTicketPrism { to { rotate: 360deg; } }
+@keyframes homeTicketGoldShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes homeTicketPrism {
+  0% { filter: hue-rotate(0deg) brightness(1.08) saturate(1.12); }
+  100% { filter: hue-rotate(360deg) brightness(1.08) saturate(1.12); }
+}
+
 @keyframes homeTicketGlint { 0%, 72%, 100% { opacity: 0.28; scale: 0.7; } 82% { opacity: 1; scale: 1.25; } }
 @keyframes homeBattleGate { 0%, 100% { box-shadow: 0 0 1.4rem rgba(45, 156, 219, 0.2), inset 0 0 1.1rem rgba(45, 156, 219, 0.14); } 50% { box-shadow: 0 0 2rem rgba(45, 156, 219, 0.34), inset 0 0 1.5rem rgba(45, 156, 219, 0.22); } }
 
@@ -314,7 +331,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home-commons-portal,
-  .home-commons-daily[data-state='claimable']::before,
+  .home-commons-daily,
+  .home-commons-daily::before,
   .home-commons-daily[data-state='claimable']::after,
   .home-commons-battle-gate { animation: none; }
 }
