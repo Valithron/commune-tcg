@@ -16,8 +16,10 @@ test('Home is an asset-led Core Commons stage with the approved landmarks', asyn
 
   assert.ok(background.byteLength > 0);
   assert.match(home, /home-commons-stage/);
+  assert.match(home, /Daily Ticket/);
   assert.match(home, /Claim Daily Ticket/);
-  assert.match(home, /Use Tickets/);
+  assert.match(home, /Store/);
+  assert.match(home, /#\/shop/);
   assert.match(home, /Enter Battle/);
   assert.match(home, /home-commons-core-summon/);
   assert.match(home, /#\/vault\/card\//);
@@ -28,12 +30,16 @@ test('Home is an asset-led Core Commons stage with the approved landmarks', asyn
 
   assert.match(shell, /app-shell--home/);
   assert.match(styles, /background-image: url\('\/assets\/home-background\.png'\)/);
-  assert.match(styles, /\.home-commons-nameplate \{[\s\S]*left: 31\.6%;[\s\S]*top: 9\.4%;[\s\S]*width: 36\.8%;[\s\S]*height: 3%/);
+  assert.match(styles, /\.home-commons-nameplate \{[\s\S]*left: 31\.6%;[\s\S]*top: 14\.4%;[\s\S]*width: 36\.8%;[\s\S]*height: 3%/);
   assert.match(styles, /\.home-commons-portal \{[\s\S]*left: 36\.9%;[\s\S]*top: 18\.6%;[\s\S]*width: 26\.2%;[\s\S]*height: 19\.8%/);
-  assert.match(styles, /\.home-commons-core-summon \{[\s\S]*left: 41\.6%;[\s\S]*top: 46\.4%;[\s\S]*width: 17%;[\s\S]*height: 9\.2%/);
+  assert.match(styles, /\.home-commons-portal \{[\s\S]*color-mix\(in srgb, var\(--home-rarity/);
+  assert.match(styles, /\.home-commons-core-summon \{[\s\S]*left: 41\.6%;[\s\S]*top: 46\.4%;[\s\S]*width: 17%;[\s\S]*aspect-ratio: 1 \/ 1/);
+  assert.match(styles, /\.home-commons-core-summon::before \{[\s\S]*animation: homeSummonRing/);
+  assert.match(styles, /\.home-commons-core-summon span \{[\s\S]*top: calc\(100% \+ 0\.16rem\)/);
   assert.match(styles, /\.home-commons-daily \{[\s\S]*left: 79\.5%;[\s\S]*top: 19\.4%;[\s\S]*width: 13\.5%;[\s\S]*height: 9\.3%/);
-  assert.match(styles, /\.home-commons-library \{[\s\S]*left: 79\.9%;[\s\S]*top: 36\.8%;[\s\S]*width: 13\.7%;[\s\S]*height: 8\.6%/);
-  assert.match(styles, /\.home-commons-vault \{[\s\S]*left: 78%;[\s\S]*top: 52%;[\s\S]*width: 17%;[\s\S]*height: 8\.2%/);
+  assert.match(styles, /\.home-commons-library \{[\s\S]*left: 79\.5%;[\s\S]*top: 36\.8%;[\s\S]*width: 13\.5%;[\s\S]*height: 8\.6%/);
+  assert.match(styles, /\.home-commons-vault \{[\s\S]*left: 79\.5%;[\s\S]*top: 52%;[\s\S]*width: 13\.5%;[\s\S]*height: 8\.2%/);
+  assert.match(styles, /\.home-commons-daily\[data-state='claimable'\]::before/);
   assert.match(styles, /\.home-commons-battle-gate \{[\s\S]*left: 15\.7%;[\s\S]*top: 87\.1%;[\s\S]*width: 68\.6%;[\s\S]*height: 11\.3%/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
