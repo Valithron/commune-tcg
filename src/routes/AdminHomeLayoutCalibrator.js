@@ -7,9 +7,12 @@
 
 import { escapeHtml } from '../components/format.js';
 
-const storageKey = 'imago-home-layout-calibrator-v1';
+const storageKey = 'imago-home-layout-calibrator-v2';
 const percentPrecision = 1;
 const backgroundAsset = '/assets/home-background.png';
+
+const alignedSocket = { x: 78, w: 16.9, h: 10.6 };
+const mirroredSocketX = 5.1;
 
 const homeLayoutElements = [
   {
@@ -24,70 +27,114 @@ const homeLayoutElements = [
     note: 'Gold, Tickets, Energy, account menu.',
   },
   {
+    id: 'nameplate',
+    label: 'Card title nameplate',
+    selector: '.home-commons-nameplate',
+    className: 'calibrator-box--nameplate',
+    x: 31.5,
+    y: 9.4,
+    w: 36.8,
+    h: 3,
+    note: 'Card title plate above the portal.',
+  },
+  {
     id: 'portal',
     label: 'Featured art portal',
     selector: '.home-commons-portal',
     className: 'calibrator-box--portal',
-    x: 33.5,
-    y: 11.5,
-    w: 33,
-    h: 29,
+    x: 36.9,
+    y: 18.6,
+    w: 26.2,
+    h: 19.8,
     note: 'Oval featured-card art mask and rarity glow.',
+  },
+  {
+    id: 'coreSummon',
+    label: 'Core summon button',
+    selector: '.home-commons-core-summon',
+    className: 'calibrator-box--core',
+    x: 35,
+    y: 40.5,
+    w: 30,
+    h: 17,
+    note: 'Move this circle over the Core machine. Links to Pull.',
   },
   {
     id: 'daily',
     label: 'Daily Ticket socket',
     selector: '.home-commons-daily',
     className: 'calibrator-box--daily',
-    x: 70,
-    y: 17,
-    w: 23.5,
-    h: 17,
+    x: alignedSocket.x,
+    y: 19,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
     note: 'Claim Daily Ticket / Use Tickets smart action.',
-  },
-  {
-    id: 'vault',
-    label: 'Vault support socket',
-    selector: '.home-commons-vault',
-    className: 'calibrator-box--support',
-    x: 7.5,
-    y: 39,
-    w: 18.5,
-    h: 10.5,
-    note: 'Owned-card collection link.',
   },
   {
     id: 'library',
     label: 'Library support socket',
     selector: '.home-commons-library',
     className: 'calibrator-box--support',
-    x: 74,
-    y: 41,
-    w: 18.5,
-    h: 10.5,
+    x: alignedSocket.x,
+    y: 36.9,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
     note: 'Available card-design catalog link.',
   },
   {
-    id: 'nameplate',
-    label: 'Core nameplate',
-    selector: '.home-commons-nameplate',
-    className: 'calibrator-box--nameplate',
-    x: 31.5,
-    y: 48.5,
-    w: 37,
-    h: 10.5,
-    note: 'Featured card title, rarity, Type, identity.',
+    id: 'vault',
+    label: 'Vault support socket',
+    selector: '.home-commons-vault',
+    className: 'calibrator-box--support',
+    x: alignedSocket.x,
+    y: 52.7,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
+    note: 'Owned-card collection link.',
+  },
+  {
+    id: 'futureA',
+    label: 'A',
+    selector: '.home-commons-future-a',
+    className: 'calibrator-box--future',
+    x: mirroredSocketX,
+    y: 19,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
+    note: 'Future left-side socket A.',
+  },
+  {
+    id: 'futureB',
+    label: 'B',
+    selector: '.home-commons-future-b',
+    className: 'calibrator-box--future',
+    x: mirroredSocketX,
+    y: 36.9,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
+    note: 'Future left-side socket B.',
+  },
+  {
+    id: 'futureC',
+    label: 'C',
+    selector: '.home-commons-future-c',
+    className: 'calibrator-box--future',
+    x: mirroredSocketX,
+    y: 52.7,
+    w: alignedSocket.w,
+    h: alignedSocket.h,
+    note: 'Future left-side socket C.',
   },
   {
     id: 'battle',
     label: 'Battle gate',
     selector: '.home-commons-battle-gate',
     className: 'calibrator-box--battle',
-    x: 16,
-    y: 73.5,
-    w: 68,
-    h: 12,
-    note: 'Enter Battle lower threshold.',
+    x: 15.6,
+    y: 87.1,
+    w: 68.6,
+    h: 11.3,
+    note: 'Enter Battle lower threshold, just above the nav.',
   },
 ];
 
@@ -270,7 +317,7 @@ function buildCssOutput(root) {
     lines.push(`  left: ${values.x}%;`);
     lines.push(`  top: ${values.y}%;`);
     lines.push(`  width: ${values.w}%;`);
-    lines.push(element.id === 'battle' || element.id === 'nameplate' ? `  min-height: ${values.h}%;` : `  height: ${values.h}%;`);
+    lines.push(`  height: ${values.h}%;`);
     lines.push('}');
     lines.push('');
   });
