@@ -50,7 +50,22 @@ test('Pull Again confirms in place and does not replay the cinematic', async () 
   assert.doesNotMatch(source, /core-summon-transition/);
 });
 
-test('Reveal uses an immersive mobile shell and rates use canonical server configuration', async () => {
+test('Reveal uses one canonical stylesheet with fixed pentagon geometry', async () => {
+  const main = await read('src/main.js');
+  const revealCss = await read('src/styles/pull-reveal-experience.css');
+
+  assert.match(main, /pull-reveal-experience\.css/);
+  assert.doesNotMatch(main, /pull-reveal-v2\.css|pull-reveal-multi\.css|pull-five-pacing\.css/);
+  assert.match(revealCss, /Five-card layout: one true pentagon/);
+  assert.match(revealCss, /\.pull-reveal-card--mini \{[\s\S]*opacity: 1;[\s\S]*animation: none;/);
+  assert.match(revealCss, /nth-child\(1\).*left: 50%; top: 21%/);
+  assert.match(revealCss, /nth-child\(2\).*left: 79%; top: 45%/);
+  assert.match(revealCss, /nth-child\(3\).*left: 68%; top: 78%/);
+  assert.match(revealCss, /nth-child\(4\).*left: 32%; top: 78%/);
+  assert.match(revealCss, /nth-child\(5\).*left: 21%; top: 45%/);
+});
+
+test('Reveal uses an immersive 30rem mobile shell and rates use canonical server configuration', async () => {
   const main = await read('src/main.js');
   const appShell = await read('src/components/AppShell.js');
   const containment = await read('src/styles/shell-containment.css');
@@ -59,7 +74,9 @@ test('Reveal uses an immersive mobile shell and rates use canonical server confi
   assert.match(main, /renderImmersiveAppShell/);
   assert.match(appShell, /app-shell--immersive/);
   assert.match(containment, /width: min\(100%, var\(--app-max-width\)\)/);
+  assert.match(containment, /max-width: 30rem/);
   assert.match(containment, /card-inspection-backdrop/);
+  assert.doesNotMatch(containment, /pull-reveal-card--mini/);
   assert.match(catalogApi, /getRarityOddsPercentages/);
   assert.match(catalogApi, /readPullPool/);
 });
