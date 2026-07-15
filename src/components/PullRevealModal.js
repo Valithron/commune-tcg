@@ -22,19 +22,19 @@ function renderParticles() {
 function renderRevealCard(card, index, mini = false) {
   const rarity = getRarity(card);
   return `
-    <button class="pull-reveal-card${mini ? ' pull-reveal-card--mini' : ''}" type="button"
+    <div class="pull-reveal-card${mini ? ' pull-reveal-card--mini' : ''}" role="button" tabindex="0"
       data-pull-reveal-card data-reveal-index="${index}" data-rarity="${escapeHtml(rarity)}"
       style="--reveal-index:${index}" aria-label="Reveal hidden card ${index + 1}">
       <span class="pull-reveal-ripple" aria-hidden="true"></span>
-      <span class="pull-reveal-card-inner">
-        <span class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
+      <div class="pull-reveal-card-inner">
+        <div class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
           <img src="/assets/commune-card-back.png" alt="Imago Core card back" />
-        </span>
-        <span class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
+        </div>
+        <div class="pull-reveal-card-face pull-reveal-card-front" data-pull-reveal-front aria-hidden="true">
           ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: mini ? 'thumbnail' : 'standard' })}
-        </span>
-      </span>
-    </button>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -204,10 +204,19 @@ export function initPullRevealModal(root) {
     window.setTimeout(() => { preview.hidden = true; }, 220);
   }
 
-  cards.forEach((card) => card.addEventListener('click', () => {
+  function activateCard(card) {
     if (card.classList.contains('is-revealed')) openPreview(card.dataset.revealIndex || 0);
     else revealOne(card);
-  }));
+  }
+
+  cards.forEach((card) => {
+    card.addEventListener('click', () => activateCard(card));
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      activateCard(card);
+    });
+  });
 
   revealAll?.addEventListener('click', async () => {
     if (revealingAll) return;
