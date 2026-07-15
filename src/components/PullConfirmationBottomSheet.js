@@ -1,7 +1,7 @@
 /* Bottom-anchored Standard Summon confirmation and dedicated rates layer. */
 
 import { pullOptions as fallbackPullOptions, rarityOdds as fallbackRarityOdds } from '../data/mockPull.js';
-import { clampPullCount } from './format.js';
+import { clampPullCount, escapeHtml } from './format.js';
 import { beginPullTransaction } from '../services/pullTransaction.js';
 
 function getPoolOption(pool, count) {
@@ -41,6 +41,7 @@ function normalizeOdds(pool) {
 function renderRatesLayer(pool) {
   const cards = Array.isArray(pool?.cards) ? pool.cards : [];
   const odds = normalizeOdds(pool);
+  const duplicateBehavior = pool?.duplicateBehavior || 'Each result grants a distinct owned card copy in the Vault.';
   return `
     <div class="pull-rates-overlay" data-pull-rates-layer hidden aria-hidden="true" tabindex="-1">
       <section class="pull-rates-panel" role="dialog" aria-modal="true" aria-labelledby="pull-rates-title">
@@ -50,13 +51,16 @@ function renderRatesLayer(pool) {
         </header>
         <p class="pull-rates-summary">Permanent pool · ${Number(pool?.eligibleCount || cards.length || 0)} eligible card designs</p>
         <div class="pull-rates-odds">
-          ${odds.map((entry) => `<div class="detail-row" data-rarity="${String(entry.rarity || '').toLowerCase()}"><span>${entry.rarity}</span><strong>${Number(entry.percentage || 0)}%</strong></div>`).join('')}
+          ${odds.map((entry) => {
+            const rarity = String(entry.rarity || 'Common');
+            return `<div class="detail-row" data-rarity="${escapeHtml(rarity.toLowerCase())}"><span>${escapeHtml(rarity)}</span><strong>${Number(entry.percentage || 0)}%</strong></div>`;
+          }).join('')}
         </div>
-        <div class="pull-rates-rule"><strong>Duplicates</strong><span>${pool?.duplicateBehavior || 'Each result grants a distinct owned card copy in the Vault.'}</span></div>
+        <div class="pull-rates-rule"><strong>Duplicates</strong><span>${escapeHtml(duplicateBehavior)}</span></div>
         <div class="pull-rates-pool">
           <h3>Current Pool</h3>
           ${cards.length
-            ? `<ul>${cards.map((card) => `<li><span>${card.name || 'Unnamed Card'}</span><small>${card.rarity || 'common'} · ${card.typeLabel || card.type || 'Neutral'}</small></li>`).join('')}</ul>`
+            ? `<ul>${cards.map((card) => `<li><span>${escapeHtml(card.name || 'Unnamed Card')}</span><small>${escapeHtml(card.rarity || 'common')} · ${escapeHtml(card.typeLabel || card.type || 'Neutral')}</small></li>`).join('')}</ul>`
             : '<p>Pool contents could not be loaded. Do not rely on this preview for odds validation.</p>'}
         </div>
       </section>
