@@ -14,6 +14,7 @@ import './styles/pull-reveal.css';
 import './styles/pull-reveal-multi.css';
 import './styles/pull-cinematic.css';
 import './styles/pull-reveal-v2.css';
+import './styles/pull-five-pacing.css';
 import './styles/library.css';
 import './styles/admin.css';
 import './styles/auth.css';
