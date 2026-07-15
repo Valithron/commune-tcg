@@ -15,3 +15,13 @@ export async function renderAppShell({ activeRoute, content }) {
     ${renderBottomNav(activeRoute)}
   `;
 }
+
+export function renderImmersiveAppShell({ content }) {
+  return `
+    <div class="app-shell app-shell--immersive">
+      <main class="screen-stack screen-stack--immersive" id="main-content">
+        ${content}
+      </main>
+    </div>
+  `;
+}
