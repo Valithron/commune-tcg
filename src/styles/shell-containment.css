@@ -1,10 +1,14 @@
-/* Keep immersive Pull routes and modal surfaces inside the mobile app chassis. */
+/* ============================================================================
+   Mobile Shell Containment
+   Owns only the 30rem immersive chassis and viewport-level overlay bounds.
+   Reveal geometry belongs to pull-reveal-experience.css.
+   ============================================================================ */
 
 .app-shell--immersive {
   position: relative;
   isolation: isolate;
-  width: 100%;
-  max-width: var(--app-max-width);
+  width: min(100%, var(--app-max-width));
+  max-width: 30rem;
   min-height: 100dvh;
   margin-inline: auto;
   padding: 0;
@@ -18,16 +22,19 @@
 .screen-stack--immersive {
   display: block;
   width: 100%;
-  max-width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   overflow: hidden;
+}
+
+.screen-stack--immersive > * {
+  width: 100%;
+  max-width: 100%;
 }
 
 .pull-cinematic,
 .pull-reveal-screen,
 .pull-reveal-missing {
-  width: 100%;
-  max-width: 100%;
   min-height: 100dvh;
 }
 
@@ -36,36 +43,7 @@
   max-width: 100%;
 }
 
-.pull-reveal-stage,
-.pull-reveal-stage--multi {
-  width: 100%;
-  max-width: 100%;
-}
-
-.pull-reveal-rings {
-  width: min(76%, 28rem);
-}
-
-.pull-reveal-card {
-  width: min(74%, 17rem);
-}
-
-.pull-reveal-core-response {
-  width: min(80%, 27rem);
-}
-
-.pull-reveal-five-layout {
-  width: 100%;
-  max-width: 29rem;
-  margin-inline: auto;
-}
-
-.pull-reveal-card--mini {
-  width: min(26%, 7rem);
-  max-width: 7rem;
-}
-
-/* Viewport-level overlays should cover the app, not the entire desktop browser. */
+/* Fixed overlays cover the mobile application chassis, not the desktop browser. */
 .pull-sheet-overlay,
 .pull-rates-overlay,
 .pull-reveal-preview,
@@ -75,32 +53,7 @@
   inset-inline: auto;
   left: 50%;
   right: auto;
-  width: 100%;
-  max-width: var(--app-max-width);
+  width: min(100%, var(--app-max-width));
+  max-width: 30rem;
   transform: translateX(-50%);
-}
-
-.pull-sheet,
-.pull-rates-panel,
-.card-inspection-modal {
-  width: 100%;
-  max-width: 100%;
-}
-
-.pull-reveal-preview-panel {
-  width: min(82%, 20rem);
-}
-
-.pull-repull-panel {
-  width: min(92%, 25rem);
-}
-
-@media (max-width: 23rem) {
-  .pull-reveal-five-layout {
-    width: 100%;
-  }
-
-  .pull-reveal-card--mini {
-    width: min(25%, 6.7rem);
-  }
 }
