@@ -145,6 +145,46 @@ function getCardLookupKeys(card) {
   ].filter((value) => value !== undefined && value !== null && value !== '').map(String);
 }
 
+function mergeAuthoritativeBattleStats(vaultCards = [], battleInventory = null) {
+  const battleCards = Array.isArray(battleInventory?.battleEligibleCards)
+    ? battleInventory.battleEligibleCards
+    : [];
+  if (!battleCards.length) return vaultCards;
+
+  const battleLookup = new Map();
+  for (const battleCard of battleCards) {
+    for (const key of getCardLookupKeys(battleCard)) battleLookup.set(key, battleCard);
+  }
+
+  return vaultCards.map((vaultCard) => {
+    const battleCard = getCardLookupKeys(vaultCard)
+      .map((key) => battleLookup.get(key))
+      .find(Boolean);
+    if (!battleCard) return vaultCard;
+
+    const effectiveStats = battleCard.effectiveStats
+      || battleCard.effective_stats
+      || battleCard.stats;
+    if (!effectiveStats) return vaultCard;
+
+    return {
+      ...vaultCard,
+      stats: {
+        pow: Number(effectiveStats.pow ?? effectiveStats.atk ?? vaultCard.stats?.pow ?? 0),
+        def: Number(effectiveStats.def ?? vaultCard.stats?.def ?? 0),
+        spd: Number(effectiveStats.spd ?? vaultCard.stats?.spd ?? 0),
+      },
+      effectiveStats,
+      effective_stats: effectiveStats,
+      battlePower: Number(battleCard.battlePower || 0),
+      battlePowerSource: battleCard.battlePowerSource || 'effective_stats',
+      level: Number(battleCard.level ?? vaultCard.level ?? 1),
+      xp: Number(battleCard.xp ?? vaultCard.xp ?? 0),
+      copies: Number(battleCard.copies ?? vaultCard.copies ?? 1),
+    };
+  });
+}
+
 export function clearVaultCache() {
   vaultCache = null;
   vaultCacheOwner = '';
@@ -162,7 +202,10 @@ export async function loadVaultCards({ force = false } = {}) {
 
   try {
     const routes = getApiRoutes();
-    const payload = await fetchJson(routes.vault, { cache: 'no-store' });
+    const [payload, battleInventory] = await Promise.all([
+      fetchJson(routes.vault, { cache: 'no-store' }),
+      fetchJson(`${routes.battleInventory}?_=${Date.now()}`, { cache: 'no-store' }).catch(() => null),
+    ]);
 
     if (!payload?.ok || !Array.isArray(payload.cards)) {
       vaultCache = mockVault(payload?.warnings?.join(' ') || 'No backend Vault cards were returned.');
@@ -170,8 +213,9 @@ export async function loadVaultCards({ force = false } = {}) {
       return vaultCache;
     }
 
+    const cardsWithAuthoritativeStats = mergeAuthoritativeBattleStats(payload.cards, battleInventory);
     vaultCache = {
-      cards: groupVaultDuplicateCopies(payload.cards),
+      cards: groupVaultDuplicateCopies(cardsWithAuthoritativeStats),
       source: 'backend',
       selectedOwnerUserId: payload.selectedOwnerUserId || owner.id,
       ownerDisplayName: payload.ownerDisplayName || owner.displayName,
