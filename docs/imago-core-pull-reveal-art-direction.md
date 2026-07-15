@@ -1,442 +1,248 @@
 # Imago Core Pull and Reveal Art Direction
 
-**Status:** Living draft 0.2  
-**Relationship:** Canonical extension of Section 6 in `docs/imago-core-ui-art-bible.md` until the Pull section is consolidated into the main UI Art Bible.
+**Status:** Supporting implementation supplement 0.3  
+**Canonical source:** Section 6 of `docs/imago-core-ui-art-bible.md`  
+**Purpose:** Preserve the detailed Pull timing and interaction notes without creating a second visual authority.
+
+If this supplement and the main UI Art Bible ever differ, the main UI Art Bible governs.
 
 ---
 
-## 1. Pull experience doctrine
+## 1. Locked experience
 
-The Pull experience should create two primary feelings:
+The Pull experience creates:
 
 1. Anticipation
 2. Discovery
 
-The Core machine opens a portal to a possible variant of one of the seven Commune members. This implies a soft multiverse without requiring explicit lore or exposition.
+The complete sequence is:
 
-The full visual progression is:
+> **Browse banner → select pool → confirm in bottom sheet → six-second Core transition video → deep-navy reveal stage → card materialization → player-triggered reveal**
 
-> Browse pool → select banner → choose pull in modal sheet → activate Core → portal transit → reveal space → forming card → player-triggered reveal
+The Pull system has three responsibilities:
 
-The Pull system has three separate responsibilities:
-
-> **The Pull page sells the fantasy of each pool.**  
-> **The modal bottom sheet handles the transaction.**  
-> **The reveal sequence delivers the discovery.**
-
-These responsibilities should remain visually and functionally distinct.
+- The Pull page sells each pool.
+- The bottom-anchored summon modal handles the transaction.
+- The reveal sequence delivers the discovery.
 
 ---
 
-## 2. Pull page purpose
+## 2. Pull page
 
-The Pull page is a premium vertical summon catalog.
+The default Pull page is a vertical catalog of full-width landscape banners.
 
-It should let the player browse active pools, understand which pool is featured, recognize limited-time availability, and select a summon opportunity without exposing transaction controls by default.
+It contains:
 
-The default Pull page does not show Pull 1 or Pull 5 controls.
+- A featured hero occupying roughly the top third
+- Secondary event or themed banners below it
+- A premium permanent Standard Summon
+- Enough visible continuation to encourage scrolling
 
-Those controls appear only after the player selects a banner and the modal bottom sheet opens.
+Pull 1 and Pull 5 controls do not appear on the default page.
 
-The page may be more structured and block-like than Home because it is a catalog. Its banners should still feel like premium game content rather than ordinary application cards.
+All banners use a consistent chassis with stable:
 
----
-
-## 3. Pull page hierarchy
-
-The governing order is:
-
-1. Featured event hero
-2. Secondary event banners
-3. Standard Summon
-4. Banner-selection modal bottom sheet
-5. Rates and pool-details modal
-
-The initial mobile viewport should show:
-
-- The featured hero occupying roughly the top third
-- One full secondary banner beneath it
-- A second full banner where space permits
-- The beginning of another banner at the lower edge, clearly signaling that the page continues
-
-The page should invite vertical scrolling without making the first screen feel unfinished.
-
----
-
-## 4. Featured event hero
-
-The featured event hero is the dominant pre-pull visual.
-
-It should use full-width landscape art and may include:
-
-- Featured character art
-- Featured card art
-- Event or pool title
-- Short pool tagline
-- Clear call to action
-- Limited-time status
-- Time remaining
-- Rate-up or event badge where applicable
-
-The hero should occupy approximately the top third of the mobile screen. It should dominate the opening view while leaving enough of the next banner visible to communicate the vertical catalog below.
-
-### 4.1 Concurrent featured events
-
-The featured hero area should support a future carousel when multiple concurrent event pools exist.
-
-Future carousel behavior should include:
-
-- Automatic rotation between featured events
-- Manual swipe or explicit pagination control
-- Rotation pausing while the user interacts
-- One featured hero visible at a time
-- Each featured event also remaining discoverable in the vertical catalog
-
-The current product may display only one featured hero without simulating additional events.
-
----
-
-## 5. Secondary banner list
-
-Secondary pools should appear as full-width landscape banners in a vertical list.
-
-Each banner should feel visually complete and clearly tappable.
-
-The list may include:
-
-- Other limited events
-- Character-focused pools
-- Themed card sets
-- Rate-up pools
-- Seasonal pools
-- Standard Summon
-
-The banners should use consistent spacing, aspect ratio, corner treatment, and interaction behavior.
-
-The artwork changes between pools. The chassis remains stable.
-
----
-
-## 6. Banner chassis
-
-Every pool banner should share a consistent structural system.
-
-The chassis should define:
-
-- Fixed or tightly controlled landscape aspect ratio
-- Stable corner radius
-- Border and shadow treatment
+- Aspect ratio
+- Corner treatment
 - Text-safe zones
-- CTA location
-- Timer location
-- Pool-status or event badge location
-- Predictable crop behavior
-- Consistent press and selected states
+- CTA position
+- Timer position
+- Crop behavior
+- Press state
 
-A shared chassis allows new banner art to be created without redesigning the page.
+The featured hero may support a carousel later when multiple concurrent events exist. A single featured hero is correct for the current product.
 
-The featured hero may use a more elaborate version of the same chassis while preserving the same underlying structure.
+Timed banners show a compact countdown without covering character art.
 
-### 6.1 Banner hierarchy
-
-Limited-event banners may use stronger animation, richer highlights, or event-specific accent treatment.
-
-Standard Summon should feel premium and permanent. It should carry the same production quality and structural confidence as event banners while using calmer urgency and no countdown.
-
-Standard Summon is foundational content, not leftover content.
+Standard Summon remains premium, permanent, and free of artificial urgency.
 
 ---
 
-## 7. Banner content rules
+## 3. Locked summon modal bottom sheet
 
-The banner itself should prioritize:
+Tapping a banner opens the existing bottom-anchored modal sheet.
 
-- Pool identity
-- Character or card art
-- CTA
-- Limited-time status where applicable
-- Time remaining where applicable
+This behavior is locked.
 
-Detailed odds, complete pool contents, and long rules should not occupy the banner face.
+The sheet:
 
-Timed banners should show time remaining in smaller but conspicuous text placed in a protected area that does not obscure character art.
+- Is hidden by default
+- Opens only after a banner is tapped
+- Slides up from the bottom
+- Remains anchored to the bottom edge
+- Preserves its existing height and layout behavior
+- Preserves backdrop dimming
+- Preserves drag-to-close
+- Preserves tap-outside and cancel dismissal
+- Uses the same structural component for every pool
+- Returns the user to the banner catalog when dismissed
 
-The banner should remain legible at mobile width and under common image crops.
+Do not move the sheet to the center of the screen or replace it with a full-screen route.
 
----
+The sheet contains:
 
-## 8. Banner selection and modal bottom sheet
-
-Tapping a banner opens a modal bottom sheet.
-
-The bottom sheet is not displayed by default and is not part of the normal page layout.
-
-The interaction flow is:
-
-```text
-Pull page
-  ↓
-Browse banners
-  ↓
-Tap a banner
-  ↓
-Modal bottom sheet opens
-  ↓
-Review pool and costs
-  ↓
-Choose Pull 1 or Pull 5
-  ↓
-Confirm Pull
-  ↓
-Six-second Core transition video
-  ↓
-Reveal space
-```
-
-The existing bottom-sheet structure and interaction should be preserved unless a later design decision explicitly changes it.
-
-### 8.1 Bottom-sheet purpose
-
-The bottom sheet handles the transaction.
-
-It may display:
-
-- Selected pool name
-- Current ticket balance
-- Current gold balance
+- Selected pool identity
+- Current Ticket balance
 - Pull 1 option
 - Pull 5 option
 - Exact costs
-- Time remaining
-- Rates button
-- Pool-details access
-- Featured cards or compact pool summary
-- Pool-specific rules where necessary
+- Rates control
+- Confirm action
+- Cancel action
 
-Pull 1 should be selected by default.
+Pull 1 is selected by default. Pull 1 and Pull 5 receive equal area.
 
-Pull 1 and Pull 5 should receive equal screen area.
-
-Cost clarity should remain strong.
-
-### 8.2 Bottom-sheet visual treatment
-
-The sheet should remain mostly functional.
-
-A featured event may receive modest custom accents, a small header treatment, or a compact strip of event art, but the sheet skeleton should remain consistent across pools.
-
-The selected banner and page behind the sheet should preserve the existing modal behavior.
+The Rates control opens a dedicated rates and pool-details layer.
 
 ---
 
-## 9. Rates and pool details
+## 4. Six-second Core transition video
 
-Exact rates should open through a dedicated Rates control from the modal bottom sheet.
+The user-created six-second video is required.
 
-The Rates modal may include:
+The video:
 
-- Rarity rates
-- Featured-card rates
-- Complete pool contents
-- Pool restrictions
-- Time limits
-- Duplicate behavior
-- Pool-specific rules
+- Begins in the illustrated Core Commons
+- Shows the Core machine spinning up
+- Opens the portal
+- Moves the camera into and through the machine
+- Ends on a nearly black deep-navy background
+- Hands off to the interactive reveal stage
 
-This information should be precise and readable without forcing dense odds data onto the main Pull page.
+Implementation must use the supplied video asset. It should not be replaced with a generic CSS zoom, loading screen, or unrelated animation.
 
-The main page sells the pool. The Rates modal documents it.
+If the final video file is not present in the repository, implementation should pause only to obtain the asset path or upload.
 
----
+During playback:
 
-## 10. Transition into the reveal space
-
-A six-second transition video bridges the player from confirming a Pull into the card reveal.
-
-The video begins in the illustrated Core Commons used on Home. The Core machine activates, the camera moves into the opened portal, and the room gives way to a nearly black navy-blue reveal background.
-
-This establishes spatial continuity between Home and Pull. The player is using the machine already present in the Commons.
-
-The transition video ends on a blank deep-navy stage ready for the interactive card sequence.
+- Pull input remains locked.
+- Page chrome does not compete with the video.
+- The video covers the active game stage cleanly.
+- The final frame matches the reveal stage closely.
+- The reveal payload is prepared without causing a visible gap after playback.
 
 ---
 
-## 11. Reveal-space composition
+## 5. Reveal stage
 
-The post-transition reveal space should be sparse and focused.
+The post-video reveal stage contains:
 
-Primary elements:
-
-- Deep Imago navy background, approximately `#070A18`
-- Low translucent blue-gray mist across the lower third
+- Deep Imago navy, approximately `#070A18`
+- Blue-gray mist across the lower third
 - Sparse drifting particles
 - Faint blue ambient bloom
-- Optional extremely subtle concentric Core-ring presence behind the card
-- One card back centered as the dominant object
+- Optional subtle Core rings
+- One centered card back for a single pull
+- Five card backs for a five-pull
 
-The space should communicate depth while preserving a clean silhouette around the card.
+The card remains the dominant object.
 
 ---
 
-## 12. Card-back materialization
+## 6. Card materialization
 
-After the transition ends, hold the empty navy stage briefly before the card appears.
+Recommended single-pull sequence:
 
-Recommended sequence:
-
-1. The navy reveal stage settles.
-2. Mist enters or thickens across the lower third.
-3. A short pause creates anticipation.
-4. Small gold particles gather toward the center.
+1. The navy stage settles.
+2. Mist enters or thickens.
+3. A short pause builds anticipation.
+4. Small gold particles gather at center.
 5. A subtle vertical distortion forms.
-6. The card back materializes into the distortion.
-7. The card reaches full opacity and gives a small settling motion.
-8. The card waits for player input.
-
-The materialization should feel like the variant has resolved into a collectible artifact.
+6. The card back materializes.
+7. The card reaches full opacity.
+8. A small settling motion completes formation.
+9. The card waits for a tap.
 
 ---
 
-## 13. Waiting state
+## 7. Waiting state
 
-The player must tap the card back to reveal it.
+The card back remains on screen until the player taps it.
 
-While waiting, the card should float with restrained motion:
+Approved idle motion:
 
-- Approximately 6–8 px of vertical travel
-- Approximately 5–6 second idle cycle
+- 6 to 8 px vertical travel
+- 5 to 6 second cycle
 - Less than 2 degrees of rotational drift
 - Subtle breathing glow
 
-The waiting state should remain calm enough that the player controls the moment of revelation.
-
-No rarity information is confirmed before the tap.
+No rarity is confirmed before the tap.
 
 ---
 
-## 14. Tap response and reveal handoff
+## 8. Tap response and reveal
 
-Tapping the card should trigger a short response before the flip:
+Tapping the card triggers:
 
-1. A blue ripple or energy pulse crosses the card back.
-2. The Core responds through light, particles, or a brief ring reaction.
-3. A high-rarity tell may occur.
-4. The card begins its flip.
-5. Rarity is confirmed only when the card fully resolves face-up.
+1. Blue ripple or energy pulse across the card back
+2. Core light, particles, or ring response
+3. Optional high-rarity tell
+4. Card flip
+5. Face-up resolution and rarity confirmation
 
-The complete single-pull sequence should feel moderately cinematic. The interactive reveal portion after the transition should remain concise, with the full result resolving quickly after the user taps.
+Legendary may use concentrated gold response.
 
----
-
-## 15. Rarity tells
-
-Rarity should remain hidden until the card resolves, but Legendary and Mythic pulls may receive a brief tell immediately before the flip.
-
-The tell should create a clear spike of excitement without displaying the rarity outright.
-
-Possible treatments:
-
-- Legendary: concentrated gold flash, stronger metallic ring response, or heavier gold particle convergence
-- Mythic: violet-white rupture, restrained prismatic fracture, altered sound beat, or a momentary abnormal Core response
-
-Mythic prismatic treatment remains secondary to violet as required by the canonical brand guide.
+Mythic may use violet-white rupture, restrained prismatic fracture, or an altered sound beat. Violet remains the anchor color.
 
 ---
 
-## 16. Five-pull formation
+## 9. Five-pull
 
-A five-pull uses one major Core activation.
+A five-pull uses one major Core activation and the same six-second video.
 
-After portal transit, five card backs form and arrange into a pentagon presentation around the center of the reveal stage.
+After transit:
 
-Rules:
+- Five card backs materialize.
+- They form a comfortably spaced pentagon.
+- Each card may be revealed in any order.
+- Reveal All remains available until every card is face-up.
+- Reveal All may flip simultaneously or use a rapid controlled cascade.
 
-- The cards should have comfortable spacing at mobile width.
-- The arrangement is a presentation layout.
-- Each card can be revealed individually.
-- A clearly visible **Reveal All** control reveals the remaining cards.
-- The player should retain agency over reveal pacing.
-- Reveal All may use a simultaneous flip or a rapid controlled cascade.
+The pentagon is a presentation layout.
 
-The existing pentagon concept is retained, with spacing and balance refined.
+After all five are revealed, show:
 
----
-
-## 17. Motion hierarchy
-
-Pull motion should follow a clear hierarchy:
-
-1. Banner motion supports browsing and event identity.
-2. Modal motion confirms selection and transaction state.
-3. Transition video provides the major camera movement.
-4. Mist and particles provide restrained atmospheric motion.
-5. Card materialization provides the focal event.
-6. Card idle motion maintains anticipation.
-7. Tap response initiates the rarity tell and flip.
-8. Face-up resolution becomes stable enough for inspection.
-
-Only one major event should command attention at a time.
+- **View in Vault**
+- **Pull Again**
 
 ---
 
-## 18. Locked decisions
+## 10. Runtime safety
 
-The following decisions are locked for the current direction:
+The cinematic layer must preserve existing Pull contracts:
 
-### Pull page
+- One idempotent pull request per confirmation
+- No duplicate Ticket spend
+- No duplicate ownership rows
+- Correct Pull History entry
+- Correct reveal payload
+- Pull-to-Vault continuity
+- Recoverable error handling
 
-- The Pull page is a vertical catalog of summon banners.
-- The default page does not display Pull 1 or Pull 5 controls.
-- The featured hero occupies roughly the top third.
-- The featured hero uses full-width landscape art.
-- Future concurrent featured events may rotate through a carousel.
-- Secondary pools appear as full-width landscape banners.
-- The page should show one to two full banners beneath the hero and part of another to encourage scrolling.
-- All banners use a consistent chassis.
-- Standard Summon remains premium and permanent.
-- Detailed rates open through a separate modal.
-- Timed banners show time remaining without obscuring art.
+The interactive reveal should begin only when the transition requirement and reveal payload are both ready.
 
-### Modal transaction flow
+If the video ends first, hold the final navy stage briefly.
 
-- Tapping a banner opens a modal bottom sheet.
-- The bottom sheet is hidden by default.
-- The current bottom-sheet interaction is retained.
-- Pull 1 is selected by default.
-- Pull 1 and Pull 5 receive equal area.
-- Costs remain prominent and clear.
-- The sheet remains mostly functional, with limited event-specific customization.
-
-### Reveal flow
-
-- Pull creates anticipation and discovery.
-- The Home Core machine transitions into Pull operation.
-- A six-second video carries the player from the Commons through the portal.
-- The reveal begins on a blank deep-navy screen.
-- Mist appears across the lower third.
-- The card back materializes and waits for a tap.
-- The card floats slowly while waiting.
-- Tap triggers a Core response before the flip.
-- Rarity is confirmed only when the card fully resolves.
-- High rarities may receive a brief pre-flip tell.
-- Single pulls are moderately cinematic.
-- Five pulls form as five card backs in a pentagon.
-- Cards may be revealed individually or through Reveal All.
+If the request fails, return the user to a clear error state without replaying or double-spending the pull.
 
 ---
 
-## 19. Open Pull decisions
+## 11. Validation focus
 
-The following questions remain open:
+Validate:
 
-1. Exact featured-banner text-safe-zone rules
-2. Exact carousel pagination treatment
-3. Exact banner CTA treatment
-4. Exact timing from card materialization through face-up resolution
-5. Exact Legendary and Mythic tell language
-6. Reveal All behavior: simultaneous flip or rapid cascade
-7. Post-reveal result layout
-8. Placement and timing of `NEW`, duplicate count, ownership, level, or shard information
-9. Pull-again control placement
-10. Audio and haptic direction
-11. Reduced-motion version of the sequence
+- Bottom-sheet position and gestures remain unchanged
+- Pull 1 is selected by default
+- Rates details open correctly
+- Six-second video plays inline on phone browsers
+- No visible flash between video and reveal stage
+- Single-pull card materialization and tap reveal
+- Five-pull spacing at compact widths
+- Individual five-pull reveal
+- Reveal All behavior
+- Pull Again
+- View in Vault
+- Ticket deduction exactly once
+- Pull History accuracy
+- Vault ownership continuity
+- Reduced-motion fallback
