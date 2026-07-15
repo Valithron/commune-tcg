@@ -3,9 +3,10 @@
 .app-shell--immersive {
   position: relative;
   isolation: isolate;
-  width: min(100%, var(--app-max-width));
+  width: 100%;
+  max-width: var(--app-max-width);
   min-height: 100dvh;
-  margin: 0 auto;
+  margin-inline: auto;
   padding: 0;
   overflow: hidden;
   background: #070a18;
@@ -17,7 +18,9 @@
 .screen-stack--immersive {
   display: block;
   width: 100%;
+  max-width: 100%;
   min-height: 100dvh;
+  overflow: hidden;
 }
 
 .pull-cinematic,
@@ -29,6 +32,7 @@
 }
 
 .pull-cinematic-video {
+  width: 100%;
   max-width: 100%;
 }
 
@@ -51,11 +55,14 @@
 }
 
 .pull-reveal-five-layout {
-  width: min(100%, 29rem);
+  width: 100%;
+  max-width: 29rem;
+  margin-inline: auto;
 }
 
 .pull-reveal-card--mini {
   width: min(26%, 7rem);
+  max-width: 7rem;
 }
 
 /* Viewport-level overlays should cover the app, not the entire desktop browser. */
@@ -68,7 +75,7 @@
   inset-inline: auto;
   left: 50%;
   right: auto;
-  width: min(100%, var(--app-max-width));
+  width: 100%;
   max-width: var(--app-max-width);
   transform: translateX(-50%);
 }
