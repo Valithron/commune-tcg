@@ -1,21 +1,32 @@
 # Imago Core UI Art Bible
 
-**Status:** Living draft 0.1  
-**Current lock:** Home screen art direction  
-**Current open area:** Pull, Battle, Results, Vault, Library, Card Inspection, Modal, Navigation, and Resource-display philosophy  
+**Status:** Living draft 0.2  
+**Current locks:** Home screen, Pull page, Pull transition, and Pull reveal art direction  
+**Current open areas:** Battle, Battle Results, Vault, Library, Card Inspection, broader modal system, and route-specific navigation polish  
 **Purpose:** Define screen-level visual direction before implementation work is handed to Codex.
 
 ---
 
 ## 1. Purpose of this document
 
-This UI Art Bible translates the canonical Imago Core brand guide into actionable screen-level art direction.
+This UI Art Bible translates the canonical Imago Core Visual Brand Guide into actionable screen-level art direction.
 
 It exists to prevent the interface from drifting into a dashboard made of stacked panels. Imago Core is a premium anime character-collection game. Its interface should feel like a designed game space where collectible character artifacts are displayed, claimed, used, and preserved.
 
-The document should guide future visual and implementation decisions without becoming implementation code. It should describe composition, hierarchy, mood, material, color behavior, motion logic, and user-facing screen philosophy.
+This document governs:
 
-This is not a Codex work order. It is an art-direction source.
+- Screen composition
+- Visual hierarchy
+- Art placement
+- Motion hierarchy
+- Color behavior
+- Material treatment
+- Interaction presentation
+- Cinematic versus functional balance
+- Mobile rhythm
+- Codex translation rules
+
+This document is not implementation code and is not a Codex work order. It is the visual authority that later work orders must preserve.
 
 ---
 
@@ -23,7 +34,7 @@ This is not a Codex work order. It is an art-direction source.
 
 This document is subordinate to the canonical **Imago Core Visual Brand Guide**.
 
-The canonical governing concept remains:
+The governing brand concept remains:
 
 > **Human identity forged into collectible artifacts.**
 
@@ -40,9 +51,7 @@ The permanent brand doctrine remains:
 > **Art dominates. Mechanics remain clear.**  
 > **Personal mythology elevates identity without replacing it.**
 
-This UI Art Bible applies those rules to actual game screens.
-
-The brand guide defines what Imago Core should feel like. This document defines how individual screens should present that feeling.
+The brand guide defines what Imago Core should feel like. This UI Art Bible defines how that feeling should appear on actual screens.
 
 ---
 
@@ -52,38 +61,53 @@ The brand guide defines what Imago Core should feel like. This document defines 
 
 The user should want to play before they finish reading the screen.
 
-The interface should create immediate desire through art, atmosphere, rarity, identity, and premium material treatment. Functional direction should be obvious, but not visually dominant in a productivity-app way.
+The interface should create desire through:
 
-Bad hierarchy:
+- Character art
+- Atmosphere
+- Rarity
+- Personal identity
+- Premium material treatment
+- Controlled motion
+- Clear reward anticipation
 
-> Task list first, game world second.
+Functional direction must remain obvious, but it should not visually overpower the game world.
 
-Correct hierarchy:
+The governing sequence is:
 
-> Game world first, interactive invitations second.
+> **Desire first, then direction.**
 
-### 3.2 Home is a place, not a dashboard
+### 3.2 Screens should have distinct jobs
 
-The Home page should feel like entering the place where the collection lives.
+Each major screen should carry one primary responsibility.
 
-It should not feel like checking a list of chores.
+- Home establishes the world and central player loop.
+- Pull sells the fantasy of each summon pool.
+- The summon modal handles the transaction.
+- The transition video activates the Core machine.
+- The reveal stage delivers anticipation and discovery.
+- Vault presents ownership.
+- Library presents knowledge and completion.
+- Battle activates the collection.
+- Results confirm consequence and reward.
 
-### 3.3 Actions should become landmarks
+Do not force all responsibilities into one screen.
 
-Important Home actions should be expressed as labeled interactive landmarks within a scene, not as unrelated stacked cards.
+### 3.3 Actions should become invitations
+
+Primary actions should feel like invitations into play rather than ordinary web controls.
 
 Examples:
 
-- Daily Ticket / Shop is a smart claim socket.
+- Daily Ticket is a claimable smart action.
 - Featured Card is an artifact displayed through the Core machine.
-- Battle is a strong lower invitation/gate/banner.
-- Future features are dormant or active room sockets.
+- Battle is a strong lower gate or banner.
+- Pull banners invite the user into a specific summon pool.
+- A card back waiting for a tap gives the player control over the reveal moment.
 
 ### 3.4 Premium does not mean crowded
 
-Imago Core should borrow the richness and confidence of premium anime gacha lobbies without copying their worst habit: visual overload.
-
-Richness should come from:
+Visual richness should come from:
 
 - Art dominance
 - Material depth
@@ -93,69 +117,86 @@ Richness should come from:
 - Character-color details
 - Core and Imprint motifs
 - Deliberate motion
+- Purposeful negative space
 
-Richness should not come from:
+Visual richness should not depend on:
 
-- Too many competing panels
-- Constant sparkles everywhere
-- Repeated gold borders on everything
-- Excessive explanatory text
-- Generic fantasy ornament
-- Casino-style flashing
-- Neon cyberpunk clutter
+- Repeated panels
+- Constant sparkles
+- Gold borders on every surface
+- Excessive explanatory copy
+- Competing animations
+- Dense icon clusters
+- Multiple equally loud calls to action
 
 ### 3.5 Cards are the scalable character representation
 
-Home does not require separate chibi avatars or animated character sprites as a foundational system.
+Cards and card art are the primary scalable carrier of character identity.
 
-The seven Commune members may eventually receive ambient character representations, but the scalable throughline is the card system itself. User-submitted cards will not share a single costume, era, or visual setting. Therefore, the UI should treat cards and card art as the primary carrier of character identity.
+The seven Commune members may eventually receive ambient sprites or other representations, but that is not a foundational requirement. User-submitted cards will not share one costume, era, or world. The card system itself must remain the consistent visual throughline.
 
 ---
 
 ## 4. Mobile-first composition rules
 
-### 4.1 The mobile screen must have one dominant read
+### 4.1 One dominant read
 
-Every major screen should answer, within one second:
+Every major mobile screen should answer within one second:
 
 1. What is this place?
 2. What matters most here?
 3. What can I tap now?
 
-For Home, the answer is:
+### 4.2 Preserve readable layers
 
-1. This is the Core Commons.
-2. The featured card art is active in the central Core machine.
-3. Claim, Battle, or use the side feature sockets.
+A strong screen usually has three visual layers:
 
-### 4.2 Avoid stacked-panel gravity
+1. **World or art layer**
+2. **Primary interactive layer**
+3. **Compact information layer**
 
-A mobile layout naturally tends to become vertical stacks of cards. Imago Core must resist that on spectacle screens.
+Do not merge all three into one dense card stack.
 
-Stacked panels are acceptable for admin tools, forms, settings, and dense management screens. They are not acceptable as the dominant Home composition.
+### 4.3 Avoid stacked-panel gravity
 
-### 4.3 Preserve open center space
+Mobile layouts naturally collapse into vertical stacks. That pattern is acceptable for admin tools, forms, settings, and dense management screens.
 
-Open space should feel intentional, not accidental.
+It should not govern Home, Pull hero presentation, reveal sequences, Battle, or Results.
 
-Bad negative space:
-
-- Empty gaps caused by weak positioning
-- Large text blocks floating without visual anchor
-- Dead space between unrelated panels
+### 4.4 Negative space must be intentional
 
 Good negative space:
 
-- Open chamber space around the Core device
-- Breathing room around the featured art portal
-- Clear separation between hotspots
-- Room depth behind the main focal object
+- Frames the featured art portal
+- Separates side hotspots
+- Gives banners clear visual rhythm
+- Leaves room around the waiting card back
+- Keeps reward moments legible
 
-### 4.4 Labels must remain obvious
+Bad negative space:
 
-Even when features are expressed as room objects, labels must remain legible. The user should never need to guess what a hotspot does.
+- Appears because content is weakly positioned
+- Separates unrelated blocks without visual purpose
+- Expands explanatory copy into empty sections
+- Makes a screen feel unfinished
 
-The UI can be atmospheric, but interaction must be clear.
+### 4.5 Touch clarity
+
+Every interactive element must remain visibly tappable.
+
+World-integrated objects may carry atmosphere, but labels, states, and hit areas must remain clear.
+
+### 4.6 Mobile rhythm
+
+Use the canonical 4px spacing scale:
+
+- 4px for optical adjustment
+- 8px for icon and chip gaps
+- 12px for compact groups
+- 16px for standard padding
+- 20px for comfortable panel padding
+- 24px for section separation
+- 32px for major composition gaps
 
 ---
 
@@ -163,486 +204,789 @@ The UI can be atmospheric, but interaction must be clear.
 
 **Lock status:** Locked for current direction.
 
-### 5.1 Home screen purpose
+### 5.1 Home purpose
 
 Home is the front lobby, front cover, and first impression of Imago Core.
 
 It should create two immediate feelings:
 
-1. Personal connection to the seven characters.
-2. Desire to collect and use their card variants.
+1. Personal connection to the seven characters
+2. Desire to collect and use their variants
 
-Home should make the player feel:
-
-> “I have entered the place where the collection lives.”
-
-Not:
-
-> “Here are my tasks for today.”
+Home should feel like entering the place where the collection lives.
 
 ### 5.2 Primary metaphor: The Core Commons
 
-The Home page should be built around the idea of **The Core Commons**.
+The Home page is **The Core Commons**.
 
-The Core Commons is a front-facing magical-tech chamber with subtle lounge elements. It is not a literal tavern, not a medieval guild hall, not a castle plaza, not a cold sci-fi server room, and not a generic fantasy dashboard.
-
-It should feel like a premium shared chamber where the Commune’s collectible identities are displayed, activated, and sent into battle.
+The Core Commons is a front-facing magical-tech chamber with restrained lounge warmth. It is a premium shared environment where the Commune's collectible identities are displayed, activated, and sent into battle.
 
 ### 5.3 Environmental character
 
 The Core Commons should combine:
 
 - Deep navy architecture
-- Dark glass and refined metal
+- Dark glass
+- Refined metal
 - Cool premium lighting
 - Controlled gold accents
-- Blue system-lit mechanical details
+- Blue system-lit mechanics
 - A central Core machine
-- Sparse lounge warmth
+- Sparse lounge elements
 - Subtle evidence of the seven Commune members
 - Dim dormant sockets for future features
 
-The lounge elements should be barely present to moderate. The room should not become a couch simulator. It should remain a Core chamber first, with human warmth second.
+Lounge elements should remain barely present to moderate.
 
-Possible lounge elements:
+Possible elements:
 
 - Low seating silhouettes
 - Side tables
-- shelves or display ledges
-- personal objects
-- soft practical lights
-- subtle fabric or cushion accents
-- character-color touches
+- Shelves or display ledges
+- Soft practical lights
+- Personal objects
+- Fabric or cushion accents
+- Character-color details
 
 Possible Commune identity marks:
 
-- Seven small plaques
+- Seven plaques
 - Seven color accents
 - Initial marks
-- personal object silhouettes
-- restrained banners or inset symbols
-- sevenfold structural marks around the Core
+- Personal object silhouettes
+- Inset symbols
+- Sevenfold structural divisions around the Core
 
 ### 5.4 Camera and perspective
 
-Home should use a mostly front-facing camera angle, with at most slight top-down perspective.
+The Home scene should be mostly front-facing with only slight top-down perspective.
 
-Avoid isometric room-map composition.
+It should read like a premium mobile game lobby stage. It should remain centered, spatial, and easy to understand on a phone.
 
-The composition should feel like a premium mobile game lobby wall/stage: readable, centered, and spatial, but not flattened into a dashboard.
-
-### 5.5 Overall Home layout
-
-The locked composition direction:
+### 5.5 Locked Home composition
 
 ```text
 [ Glass resource/account rail ]
 
         [ vertical oval featured-art portal ]
-        [ rarity-colored glowing border ]
-        [ slow hover / breathing motion ]
+        [ rarity-colored luminous border ]
+        [ slow hover motion ]
 
              [ rotating Core machine ]
-             [ card nameplate / metadata ]
+             [ attached nameplate ]
 
- [ side hotspot ]             [ side hotspot ]
- [ side hotspot ]             [ side hotspot ]
- [ side hotspot ]             [ side hotspot ]
+ [ hotspot ]                         [ hotspot ]
+ [ hotspot ]                         [ hotspot ]
+ [ hotspot ]                         [ hotspot ]
 
-        [ strong Battle gate/banner ]
+            [ Enter Battle gate ]
 
 [ Separate bottom navigation rail ]
 ```
 
-The center Core device anchors the screen.
-
-The featured portal and Core machine occupy the center top third of the usable screen, beneath the top resource rail and above the lower Battle invitation.
+The featured portal and Core machine occupy the center top third of the usable screen beneath the resource rail.
 
 ### 5.6 Central Core machine
 
-The Core machine is the Home page’s main symbolic object.
+The Core machine is the Home page's main symbolic object.
 
-It should feel like a manufactured identity apparatus: dark glass, metallic edges, blue system motion, gold priority accents, and rotating concentric rings.
-
-It should not feel like:
-
-- A magic mirror
-- A sun or star
-- A zodiac portal
-- A casino wheel
-- A neon cyberpunk device
-- A generic fantasy summoning circle
-
-Preferred forms:
+Its approved visual language:
 
 - Rotating concentric circles
 - Segmented rings
 - Dark-glass lens structure
 - Gold central aperture or edge
 - Blue system-lit inner mechanics
-- Seven restrained notches or divisions
+- Seven restrained divisions
 - Imprint-line detailing
+
+The machine should feel manufactured, active, and premium.
 
 ### 5.7 Featured Card presentation
 
-The Featured Card should not appear as a large full card frame dominating the page.
-
-Instead, Home should feature the card art inside a vertical oval Imago portal above the Core machine.
+The Featured Card appears as card art inside a vertical oval Imago portal above the Core machine.
 
 Rules:
 
-- The portal shows the card art only.
-- The portal border glows in the featured card’s rarity color.
-- The portal hovers slowly up and down in a restrained idle animation.
-- The full card can be opened from the portal or nameplate interaction.
-- The portal should make the character art desirable without turning Home into a card-inspection page.
+- Show card art only inside the portal.
+- Use the card's rarity color on the portal border and outer glow.
+- Keep the rarity edge slightly transparent.
+- Add slow vertical hover motion.
+- Keep the character face readable.
+- Make the portal tappable to open the full card.
+- Avoid placing card text over the art.
 
-The Featured Card should make the player feel the value of the collection, learn who the character is, and want to use the card in Battle.
+The Featured Card should communicate collection value and make the player want to use the card in Battle.
 
-### 5.8 Featured Card nameplate
+### 5.8 Attached nameplate
 
-The featured-art portal should remain visually clean. Card identity information should live as part of the Core machine below it.
+Card identity information belongs on a compact nameplate attached to the Core machine.
 
-The Core machine may carry a compact nameplate with:
+The nameplate may include:
 
 - Card title
 - Character identity
 - Rarity
 - Type
-- Optional compact stat or level hint
+- Optional compact level or stat hint
 
-The nameplate should feel attached to the machine, not pasted over the art.
-
-It should use dark glass, compact typography, and restrained rarity/character/type markers.
+Use dark glass, compact typography, and restrained identity markers.
 
 ### 5.9 Home hotspots
 
-Home should support up to six side hotspots, roughly three on each side of the central Core composition.
+Home supports up to six side hotspots, approximately three per side.
 
-This gives the room scale and future-proofing while keeping the center clear.
-
-The six planned socket families are:
+Planned socket families:
 
 1. Daily Ticket / Shop
 2. Garden
-3. Roulette / Prize Wheel
+3. Roulette or prize feature
 4. Quests / Missions
 5. Gift / Inbox
 6. Seasonal
 
-Not all sockets need to be active immediately.
-
-Dormant future sockets should appear as dim room objects, inactive plates, unlit devices, covered alcoves, or quiet silhouettes. This makes the world feel expandable without forcing fake functionality.
+Dormant future sockets should remain visible as dim environmental objects. They imply scale and future progression without pretending unavailable features already work.
 
 ### 5.10 Hotspot labels
 
-Hotspots should have always-visible labels.
+Hotspots must have always-visible labels.
 
-The label style should be short, premium, and readable. Labels should be integrated with the hotspot, not floating randomly.
+Labels should be:
 
-Preferred label behavior:
-
-- Short action-oriented wording
+- Short
 - High contrast
-- Small but clear icon support
-- Subtle glow or edge response when active
-- Dimmed styling when dormant
+- Integrated with the object
+- Supported by a clear icon where useful
+- Dimmed when dormant
 
-Avoid long explanatory copy.
+### 5.11 Daily Ticket / Shop smart socket
 
-### 5.11 Hotspot visual treatment
+Daily Ticket and Shop share one hotspot.
 
-The exact hotspot form depends on the final Home scene asset, but the governing principle is:
-
-> Home hotspots may look like world objects, but they must behave like premium mobile buttons.
-
-Possible treatments:
-
-- Smart plaques attached to room objects
-- Floating icon plates
-- Glass buttons over the scene
-- Small mechanical sockets
-- Labeled devices embedded into the chamber
-
-The system should remain visually flexible until the illustrated room asset is created.
-
-### 5.12 Daily Ticket / Shop smart socket
-
-Daily Ticket and Shop should share one hotspot location.
-
-Before the daily ticket is claimed, the smart label should read something like:
+Before claim:
 
 > **Claim Daily Ticket**
 
-After claim, the socket should become a quieter Shop entry:
+Approved attention state:
+
+- Restrained prismatic glow
+- Pulsing rainbow edge
+- Small sparkle or glint
+- Clear visual priority
+
+After claim:
 
 > **Shop**
 
-Unclaimed Daily Ticket must clearly call attention to itself.
+The prismatic effect disappears after claim.
 
-Approved unclaimed treatment:
+### 5.12 Battle invitation
 
-- Restrained prismatic glow around the button
-- Pulsing rainbow edge
-- Small sparkle/glint effect
-- Tasteful but unmistakable emphasis
+Battle is the main outgoing invitation from Home.
 
-The prismatic effect should be reserved for claimable reward energy. It should not become a normal app accent.
+Use a strong lower banner, threshold, or gate integrated with the scene.
 
-Avoid casino-style flashing, excessive coin noise, or generic RGB gaming hardware aesthetics.
-
-### 5.13 Battle invitation
-
-Battle should use the structural logic of a strong lower-third event banner or gate.
-
-It should not feel like a small utility button.
-
-Battle should feel like the main outgoing invitation from Home: the place where the collection is used.
-
-Possible visual metaphors:
-
-- Battle gate
-- Challenge gate
-- Venture gate
-- Arena entrance
-- Activated threshold
-- Lower scene banner with art and motion
-
-The user-facing label should likely remain simple and clear, such as:
-
-> **Battle**
-
-or
+Preferred user-facing label:
 
 > **Enter Battle**
 
-The flavor can live in the surrounding art direction rather than replacing the obvious label.
+Battle should be prominent without overpowering the featured portal.
 
-### 5.14 Top resource rail
+### 5.13 Top resource rail
 
-The top resource/account rail should behave like a glass overlay above the scene.
+The top resource and account rail should behave as a compact glass overlay.
 
-It should remain compact, readable, and game-like.
+It may contain:
 
-It may include:
-
-- Gold
 - Tickets
+- Gold
 - Energy
-- User/account controls
-- Logout/menu access
+- Account identity
+- Menu and logout access
 
-It should not become a heavy header panel that compresses the scene.
+It should preserve scene visibility and avoid compressing Home into a header-heavy layout.
 
-### 5.15 Bottom navigation
+### 5.14 Bottom navigation
 
-The bottom navigation rail should feel separate from the room.
+The bottom navigation rail remains separate from the room.
 
-It is a persistent game navigation system, not a room object.
+It is a persistent game navigation system with clear touch targets and stable placement.
 
-It should remain clear, touch-safe, and consistent across screens.
+### 5.15 Governing Home asset
 
-### 5.16 Background asset direction
+The governing illustrated asset is:
 
-The governing illustrated Core Commons asset is `public/assets/home-background.png`, served by the app at `/assets/home-background.png`.
+`public/assets/home-background.png`
 
-Home is implemented as a responsive 9:16 background stage with percentage-positioned HTML/CSS overlays. The source image remains unmodified and supplies the room, portal, Core machine, side sockets, threshold, and safe areas; interactive content is aligned to those structures rather than rebuilding or covering them with panels.
+The application path is:
 
-The asset should be designed specifically around the locked composition:
+`/assets/home-background.png`
 
-- Center Core machine
-- Vertical oval featured-art portal space
-- Left and right hotspot sockets
-- Lower Battle gate/banner area
-- Top rail safe space
-- Bottom nav safe space
-- Subtle Commune identity marks
-- Cool premium navy mood
-- Controlled gold accents
-- Blue system details
-- Sparse lounge warmth
+The scene is a responsive 9:16 stage. Interactive overlays align to the illustrated room rather than rebuilding the room with panels.
 
-The production overlay map keeps the locked portal, daily socket, Battle gate, and top rail coordinates. The compact machine nameplate begins at `y: 48.5%` with a `10.5%` minimum height instead of the initial `y: 44.5%`, `h: 14.5%` suggestion so the illustrated Core machine remains visible. Vault and Library use two restrained support sockets; the remaining illustrated sockets stay dormant without advertising unimplemented systems.
+### 5.16 Locked overlay reference
+
+Current approved percentage-based layout reference:
+
+- `topRail`: x 4, y 1.5, w 92, h 7
+- `nameplate`: x 31.5, y 9.4, w 36.8, h 3
+- `portal`: x 36.9, y 18.6, w 26.2, h 19.8
+- `coreSummon`: x 41.6, y 46.4, w 17, h 9.2
+- `daily`: x 79.5, y 19.4, w 13.5, h 9.3
+- `library`: x 79.9, y 30.7, w 13.5, h 9.3
+- `vault`: x 79.6, y 41.5, w 13.5, h 9.3
+- `battle`: centered above the bottom navigation
+
+These values are implementation references, not a replacement for visual review on real phone widths.
 
 ---
 
-## 6. Pull page art direction
+## 6. Pull page and reveal art direction
 
-**Lock status:** Not yet locked. Future interview required.
+**Lock status:** Locked for current direction.
 
-Working hypothesis:
+### 6.1 Pull experience purpose
 
-The Pull page should feel like the Core machine from Home expanding into a dedicated reveal apparatus.
+Pull should create:
 
-Open questions:
+1. Anticipation
+2. Discovery
 
-- Should Pull be the same Core machine in close-up, or a separate chamber?
-- Should the reveal emphasize the Core opening, the card forming, or the art appearing inside an Imprint portal?
-- How much spectacle should distinguish single pull from five-pull?
-- How should rarity reveals escalate without becoming casino-like?
-- How should duplicate, ownership, shard, or level information appear after reveal?
+The Core machine opens a portal to a possible variant of one of the seven Commune members. This suggests a soft multiverse without requiring explicit lore.
 
-Temporary doctrine:
+The complete visual progression is:
 
-- Pulls should feel valuable, precise, and personal.
-- Avoid slot-machine reels, casino lights, generic starbursts, and galaxy portals.
-- Reveal order should reinforce identity, affinity, rarity, then collection consequence.
+> **Browse banner → select pool → confirm pull → activate Core → pass through portal → form card → tap to reveal**
+
+### 6.2 Separation of responsibilities
+
+The Pull experience has three distinct layers:
+
+1. **Pull page:** sells the fantasy and identity of each pool.
+2. **Summon modal bottom sheet:** handles the transaction.
+3. **Reveal sequence:** delivers the reward.
+
+Do not place all three layers on the default Pull page.
+
+### 6.3 Default Pull page state
+
+The default Pull page is a vertical catalog of full-width landscape summon banners.
+
+The default page must not display Pull 1 or Pull 5 controls.
+
+The player first browses and selects a banner.
+
+### 6.4 Pull page hierarchy
+
+The page order is:
+
+1. Featured event hero
+2. Secondary featured or limited banners
+3. Additional themed or seasonal banners
+4. Standard Summon
+
+The page is allowed to use a more structured chassis than Home because it functions as a catalog. Its blocks should still feel like premium event graphics rather than ordinary app cards.
+
+### 6.5 Featured hero banner
+
+The featured hero occupies roughly the top third of the mobile screen.
+
+It should:
+
+- Dominate the first view
+- Use full-width landscape art
+- Show featured cards, character art, or sprites
+- Carry the pool name
+- Carry a clear CTA
+- Show time remaining for limited pools
+- Preserve a safe text area
+- Leave enough of the next banner visible to signal vertical scrolling
+
+### 6.6 Featured carousel support
+
+The hero area should support multiple concurrent featured events later.
+
+Future carousel behavior:
+
+- Manual swipe or explicit controls remain available.
+- Automatic rotation may be added later.
+- Auto-rotation pauses during interaction.
+- Only the hero area rotates.
+- The vertical banner list remains stable beneath it.
+- A single featured event is fully valid for the current version.
+
+### 6.7 Secondary banner rhythm
+
+Below the hero, the preferred mobile rhythm is:
+
+- One full secondary banner
+- One additional full banner
+- A third banner partially visible at the bottom edge
+
+This creates a clear invitation to continue scrolling.
+
+### 6.8 Banner chassis
+
+Every pool uses a consistent structural chassis.
+
+The chassis should define:
+
+- Stable aspect ratio
+- Shared corner treatment
+- Protected art crop behavior
+- Safe title area
+- CTA position
+- Optional timer position
+- Pool badge position
+- Border and glow behavior
+- Mobile text limits
+
+Artwork changes by pool. The page skeleton remains stable.
+
+### 6.9 Banner information
+
+A banner should communicate the pool fantasy with minimal text.
+
+Always-visible information may include:
+
+- Pool name
+- CTA
+- Featured status
+- Limited-time status
+- Countdown where applicable
+- Short theme or rate-up label
+
+Detailed odds and pool rules belong in modal layers.
+
+### 6.10 Limited-event timers
+
+Timed banners should show time remaining in a conspicuous but compact position.
+
+The timer may sit on the banner or immediately below it. It must preserve the artwork and remain easy to scan.
+
+### 6.11 Standard Summon
+
+Standard Summon remains premium and permanent.
+
+It should communicate stability through:
+
+- Strong branded art
+- Premium framing
+- No urgency timer
+- Slightly calmer glow than limited events
+- Clear always-available language
+
+The existing Standard Summon banner art direction is approved and may be replaced later if better art is created.
+
+### 6.12 Banner selection behavior
+
+Tapping a banner opens the **existing bottom-anchored modal sheet** for that pool.
+
+This behavior is locked.
+
+The sheet:
+
+- Is hidden by default
+- Opens only after a banner is tapped
+- Slides up from the bottom edge
+- Remains anchored to the bottom
+- Preserves its current height and layout behavior
+- Preserves backdrop dimming
+- Preserves drag-to-close behavior
+- Preserves tap-outside and cancel dismissal
+- Returns the user to the same banner catalog position when closed
+- Uses the same structural component for every pool
+
+Do not convert it into a centered dialog, floating middle card, or full-screen route.
+
+### 6.13 Summon modal content
+
+The bottom sheet contains:
+
+- Selected pool identity
+- Current Ticket balance
+- Pull 1 option
+- Pull 5 option
+- Cost for each option
+- Rates button
+- Confirm action
+- Cancel action
+
+Pull 1 is selected by default.
+
+Pull 1 and Pull 5 receive equal screen area.
+
+Costs remain explicit and readable.
+
+The sheet may receive limited visual customization for a major event, but its structure and behavior remain consistent.
+
+### 6.14 Rates and pool details
+
+The Rates control opens a dedicated modal or details layer.
+
+That layer may contain:
+
+- Exact rarity odds
+- Featured-card odds
+- Full pool contents
+- Pool-specific rules
+- Limited restrictions
+- Duplicate handling notes where required
+
+Detailed rate information should not crowd the banner catalog.
+
+### 6.15 Locked pre-reveal flow
+
+```text
+Pull page
+    ↓
+User taps a banner
+    ↓
+Bottom-anchored summon modal opens
+    ↓
+Pull 1 is selected by default
+    ↓
+User may select Pull 5 or inspect Rates
+    ↓
+User confirms
+    ↓
+Six-second Core transition video plays
+    ↓
+Deep-navy reveal stage appears
+    ↓
+Card back or five card backs materialize
+    ↓
+Player taps to reveal
+```
+
+### 6.16 Six-second transition video
+
+A user-created six-second video is the required bridge from pull confirmation into the reveal stage.
+
+The video:
+
+- Begins in the Home Core Commons background
+- Shows the central Core machine spinning up
+- Opens the portal
+- Moves the camera into the machine
+- Carries the camera through the portal
+- Ends on a nearly black deep-navy background
+- Hands off cleanly to the interactive card materialization sequence
+
+This video is a core part of the summon experience and should be treated as the first phase of the pull animation.
+
+Implementation must use the supplied video asset. Do not replace it with a generic CSS zoom or an unrelated loading animation. If the video file is not yet present in the repository, the implementation thread should pause only to obtain the final asset path or upload.
+
+### 6.17 Transition behavior
+
+During the video:
+
+- Pull input is locked.
+- The transition should play without page chrome competing for attention.
+- The video should cover the active game stage cleanly.
+- The final frame should visually match the reveal background closely enough to avoid a visible cut.
+- The reveal stage should initialize before or during the final portion of playback so the handoff feels immediate.
+
+### 6.18 Reveal stage composition
+
+After the video ends, the reveal space contains:
+
+- Deep Imago navy background, approximately `#070A18`
+- Low translucent blue-gray mist across the lower third
+- Sparse drifting particles
+- Faint blue ambient bloom
+- Optional extremely subtle Core-ring presence behind the card
+- One centered card back for a single pull
+- Five card backs for a five-pull
+
+The background should communicate depth while preserving a clean silhouette around the cards.
+
+### 6.19 Card-back materialization
+
+Recommended single-pull sequence:
+
+1. The navy stage settles.
+2. Mist enters or thickens across the lower third.
+3. A short pause creates anticipation.
+4. Small gold particles gather toward the center.
+5. A subtle vertical distortion forms.
+6. The card back materializes into the distortion.
+7. The card reaches full opacity.
+8. A small settling motion completes formation.
+9. The card waits for player input.
+
+The materialization should feel like a possible variant resolving into a collectible artifact.
+
+### 6.20 Waiting state
+
+The card back remains on screen until tapped.
+
+Approved idle motion:
+
+- Approximately 6 to 8 px of vertical travel
+- Approximately 5 to 6 second idle cycle
+- Less than 2 degrees of rotational drift
+- Subtle breathing glow
+
+The player controls the reveal moment.
+
+No rarity is confirmed before the tap.
+
+### 6.21 Tap response
+
+Tapping the card triggers a short response before the flip:
+
+1. A blue ripple or energy pulse crosses the card back.
+2. The Core responds with light, particles, or a restrained ring reaction.
+3. A high-rarity tell may occur.
+4. The card begins its flip.
+5. Rarity is confirmed when the card fully resolves face-up.
+
+### 6.22 Rarity tells
+
+Rarity remains hidden until the card resolves.
+
+Legendary and Mythic pulls may receive a brief tell immediately before the flip.
+
+Approved direction:
+
+- **Legendary:** concentrated gold flash, stronger metallic ring response, or heavier gold particle convergence
+- **Mythic:** violet-white rupture, restrained prismatic fracture, altered sound beat, or abnormal Core response
+
+Violet remains the Mythic anchor. Prismatic color is secondary.
+
+### 6.23 Single-pull pacing
+
+The single-pull reveal should be moderately cinematic.
+
+The six-second video provides the major camera movement. The interactive stage should then move efficiently from materialization to player tap to face-up resolution.
+
+The reveal should feel valuable without becoming slow during repeated play.
+
+### 6.24 Five-pull formation
+
+A five-pull uses one major Core activation and the same six-second transition video.
+
+After portal transit:
+
+- Five card backs materialize.
+- They arrange into a well-spaced pentagon presentation.
+- The pentagon is a layout, not a lore symbol.
+- Each card may be revealed individually in any order.
+- A visible **Reveal All** control reveals the remaining cards.
+- Reveal All may use a simultaneous flip or a rapid controlled cascade.
+
+Spacing must be tested at compact phone widths.
+
+### 6.25 Five-pull agency
+
+The player should retain control over reveal pacing.
+
+Before all cards are revealed:
+
+- Individual card taps remain available.
+- Reveal All remains visible.
+
+After all cards are revealed:
+
+- Reveal controls retire.
+- Result actions appear.
+
+### 6.26 Post-reveal direction
+
+The exact final result layout remains open, but the current direction should preserve:
+
+- Full card readability
+- Clear `NEW` or duplicate status
+- Ownership consequence
+- Pull Again access
+- View in Vault access
+- Fast continuation after the user has inspected the result
+
+For five-pulls, the established direction remains:
+
+- Reveal cards in the pentagon
+- Allow individual reveal or Reveal All
+- Show **View in Vault** and **Pull Again** after all five are revealed
+
+### 6.27 Pull motion hierarchy
+
+Pull motion follows this priority:
+
+1. Six-second transition video
+2. Mist and atmospheric motion
+3. Card materialization
+4. Card waiting motion
+5. Tap response
+6. Rarity tell
+7. Card flip
+8. Stable face-up inspection
+
+Only one major event should command attention at a time.
 
 ---
 
 ## 7. Battle page art direction
 
-**Lock status:** Not yet locked. Future interview required.
+**Lock status:** Open for interview.
 
-Working hypothesis:
+Working purpose:
 
-Battle should feel like the place where collectible artifacts become active.
+> Battle is where collectible artifacts become active.
 
-Possible directions to decide:
+Battle must communicate:
 
-- Tactical squad setup screen
-- Arena/challenge gate
-- Card-versus-card duel table
-- Mission/encounter preparation screen
+- Squad readiness
+- Enemy or encounter identity
+- Energy cost
+- Reward stakes
+- Tactical clarity
+- Active danger
 
-Temporary doctrine:
+Possible directions to resolve:
 
-- Battle must remain mechanically clear.
-- Squad choices, enemy information, energy cost, and rewards should be readable.
-- It should feel more active and dangerous than Vault/Library.
-- It should not become a plain form screen.
+- Tactical squad setup
+- Arena or challenge gate
+- Card-versus-card duel stage
+- Mission preparation screen
+
+Battle should feel more active than Vault and Library while remaining mechanically readable.
 
 ---
 
-## 8. Battle results and reward art direction
+## 8. Battle Results and reward art direction
 
-**Lock status:** Not yet locked. Future interview required.
+**Lock status:** Open for interview.
 
-Working hypothesis:
+Working purpose:
 
-Battle results should provide reward polish without slowing down repeated testing or play.
+> Results confirm consequence, reward, and progression.
 
-Open questions:
+Temporary rules:
 
-- Should victory/defeat feel cinematic or fast-functional?
-- Should rewards emerge from the Core, from cards, or from the battle gate?
-- How much motion should XP, gold, and progression receive?
-- Should winning with certain characters create character-color celebration details?
+- Results are readable first.
+- Rewards feel earned.
+- Gold marks meaningful reward moments.
+- Progression should be visible.
+- The player can proceed quickly.
+- Victory and defeat need distinct emotional treatment.
 
-Temporary doctrine:
+Open decisions:
 
-- Results should be readable first.
-- Rewards should feel earned.
-- Gold should mark meaningful reward moments.
-- The user should be able to proceed quickly.
+- Cinematic versus fast-functional balance
+- MVP presentation
+- Reward animation
+- XP and level-up treatment
+- Defeat recovery flow
 
 ---
 
 ## 9. Vault and Library art direction
 
-**Lock status:** Not yet locked. Future interview required.
+**Lock status:** Open for interview.
 
-Working hypothesis:
+Working distinction:
 
-Vault and Library should be more functional than Home/Pull/Battle, but still premium.
+- **Vault:** ownership, preservation, tactile value
+- **Library:** knowledge, catalog, completion, missing entries
 
-Vault is ownership. Library is knowledge.
+Temporary rules:
 
-Possible distinction:
-
-- Vault: owned, preserved, valuable, tactile.
-- Library: complete index, discovery, catalog, missing cards.
-
-Temporary doctrine:
-
-- Collection grids may use panels, but they should still feel like premium storage/display surfaces.
-- Cards should remain the visual heroes.
-- Filters and search must be readable and compact.
-- Do not overload these screens with Home-level spectacle.
+- Cards remain the visual heroes.
+- Filters and search stay compact.
+- Collection grids may use structured surfaces.
+- These routes should be more functional than Home and Pull.
+- Functional structure should still feel premium.
 
 ---
 
 ## 10. Modal and card inspection art direction
 
-**Lock status:** Not yet locked. Future interview required.
+**Lock status:** Partially locked.
 
-Working hypothesis:
+### 10.1 Modal principle
 
-Card inspection should feel like bringing a premium collectible close to the viewer.
+A modal should isolate one decision or one object.
 
-Possible directions:
+Modal content should remain focused and visually subordinate to the card, action, or decision being presented.
 
-- Holding a premium collectible close-up
-- Opening a character dossier
-- Viewing a card in a display case
-- Reading a battle-ready stat sheet
+### 10.2 Pull modal exception
 
-Temporary doctrine:
+The summon confirmation control is specifically a **bottom-anchored modal sheet**.
 
-- The full card should remain dominant.
-- Supporting stats and actions should orbit the card, not bury it.
-- Modal chrome should be dark glass, restrained, and readable.
-- Inspection should make the card feel owned and valuable.
+Its existing position, drag behavior, backdrop, and dismissal pattern are locked under Section 6.
+
+### 10.3 Card inspection
+
+Working purpose:
+
+> Card inspection should feel like bringing a premium collectible close to the viewer.
+
+Temporary rules:
+
+- The full card remains dominant.
+- Supporting stats orbit the card.
+- Actions remain clear.
+- Modal chrome uses dark glass.
+- Inspection should communicate ownership and value.
 
 ---
 
 ## 11. Navigation and resource display direction
 
-**Lock status:** Partially locked.
+### 11.1 Top resources
 
-### 11.1 Top resource rail
+Top resources behave as compact HUD information.
 
-Top resources should behave as compact HUD information.
+On Home, they appear as a glass overlay above the illustrated scene.
 
-On Home, the top rail is a glass overlay above the scene.
-
-On functional pages, it may become more standard, but should still avoid feeling like a heavy web-app header.
+On functional pages, they may use a more standard arrangement while avoiding a heavy web-app header.
 
 ### 11.2 Bottom navigation
 
-Bottom nav should remain separate, stable, and immediately understandable.
+Bottom navigation remains stable, separate, and immediately understandable.
 
-It may use System Blue for active navigation and restrained gold only where a primary prestige action truly deserves it.
+System Blue may identify the active route. Gold should appear only when a prestige action genuinely requires it.
 
-### 11.3 Resource colors
+### 11.3 Resource color roles
 
 - Gold currency may use Core Gold.
-- Energy may use System Blue or another approved functional treatment.
-- Tickets may use gold or prismatic treatment only when claimable or premium.
-- Resource pills should not compete with card rarity colors.
+- Energy should use a functional system treatment.
+- Tickets may use gold or prismatic emphasis only in special claimable or premium states.
+- Resource pills should not compete with rarity colors.
 
 ---
 
 ## 12. Typography hierarchy
 
-The typography system follows the canonical brand guide.
+Typography follows the canonical brand guide.
 
 ### 12.1 Libre Caslon Text
 
-Use for human, literary, ceremonial, and mythic moments:
+Use for:
 
 - Major hero titles
-- Chapter/event headings
-- Victory/defeat moments
-- premium collection milestones
-- story-flavored labels
+- Event headings
+- Victory and defeat moments
+- Collection milestones
+- Human and literary emphasis
 
 ### 12.2 Sora
 
-Use for engineered game UI:
+Use for:
 
 - Buttons
 - Card titles
 - Screen headings
 - Battle labels
-- Strong numeric displays
-- Major action labels
+- Major statistics
+- Strong action labels
 
 ### 12.3 Hanken Grotesk
 
-Use for readable body text:
+Use for:
 
-- Supporting copy
+- Body copy
 - Ability explanations
 - Forms
 - Empty states
@@ -650,19 +994,20 @@ Use for readable body text:
 
 ### 12.4 JetBrains Mono
 
-Use for structured values:
+Use for:
 
-- ATK, DEF, SPD
-- resource counts
-- metadata
-- rarity initials
-- admin-facing values
+- ATK, DEF, SPD, and PWR
+- Resource counts
+- Rates
+- Metadata
+- Rarity initials
+- Technical labels
 
-### 12.5 Home typography rule
+### 12.5 Spectacle-screen copy rule
 
-Home should avoid paragraphs.
+Home, Pull hero banners, reveals, and Results should avoid paragraphs.
 
-Use compact labels, short calls to action, card titles, and small metadata. The scene should do the emotional work.
+Use short titles, compact labels, concise CTA copy, and small metadata.
 
 ---
 
@@ -672,13 +1017,13 @@ Use compact labels, short calls to action, card titles, and small metadata. The 
 
 Glass is appropriate for:
 
-- Top resource overlay
-- card nameplates
-- compact hotspot labels
-- modal surfaces
-- functional overlays
+- Top resource overlays
+- Nameplates
+- Compact hotspot labels
+- Modal surfaces
+- Functional overlays
 
-Glass should not become a pile of dashboard cards on Home.
+Glass should not become the default answer for every Home or Pull element.
 
 ### 13.2 Gold
 
@@ -687,102 +1032,111 @@ Gold identifies what matters most right now.
 Use gold for:
 
 - Core accents
-- primary action emphasis
-- major reward states
+- Primary action emphasis
+- Major reward states
 - Legendary rarity
-- premium edges
-- selected or completed states
-
-Do not use gold for every heading, every panel border, or ordinary text.
+- Premium edges
+- Selected or completed states
 
 ### 13.3 Blue
 
-Blue is the system.
+Blue identifies system behavior.
 
 Use blue for:
 
-- interface activity
-- system motion
-- focus states
-- secondary actions
-- technical details
-- energy or processing cues
-
-Blue should not be the only visible color on Home.
+- Interface activity
+- Processing
+- Focus states
+- Technical details
+- Secondary actions
+- Tap response on the card back
 
 ### 13.4 Rarity colors
 
-Rarity color should appear on:
+Rarity color belongs on:
 
-- featured portal border
-- card frame/glow
-- reveal effects
-- rarity badges
-- limited accent rules
+- Featured portal borders
+- Card frames
+- Reveal effects
+- Rarity badges
+- Limited accent rules
 
-Rarity should not recolor the whole page.
+Rarity color should not recolor whole screens.
 
 ### 13.5 Character colors
 
 Character colors identify the person.
 
-Use them for subtle Commune identity marks, character chips, filters, and compact identity cues.
+Use them for:
 
-Do not use them as general UI theme colors.
+- Identity chips
+- Filters
+- Collection summaries
+- Subtle Commune marks
+- Compact progression cues
 
 ### 13.6 Prismatic effects
 
-Prismatic or rainbow effects are allowed only under strict conditions:
+Prismatic treatment is reserved for:
 
-- unclaimed Daily Ticket attention state
-- Mythic secondary reflection where appropriate
-- special reward or reveal moments if deliberately approved
+- Unclaimed Daily Ticket attention state
+- Mythic secondary reflection
+- Deliberately approved special reward moments
 
-Prismatic effects should be restrained, valuable, and rare.
+It should remain rare and valuable.
 
 ---
 
 ## 14. Motion principles
 
-### 14.1 Home idle motion
+### 14.1 Standard interaction motion
 
-Home may have gentle idle motion, but not constant noise.
+Use fast, restrained response for normal controls:
 
-Approved Home idle concepts:
+- Press scale
+- Opacity response
+- Edge light
+- Short glint
+- Smooth modal movement
 
-- featured art portal slowly hovering
-- subtle Core ring rotation
-- light breathing on active elements
-- restrained glint on unclaimed Daily Ticket
-- faint blue system motion inside the Core machine
+### 14.2 Home idle motion
 
-Avoid:
+Approved Home idle motion:
 
-- every hotspot pulsing
-- constant particle storms
-- large moving backgrounds
-- bounce-heavy UI
-- casino-style flashing
+- Featured art portal hover
+- Slow Core ring rotation
+- Faint blue system movement
+- Restrained Daily Ticket glint
 
-### 14.2 Interaction motion
+### 14.3 Pull motion
 
-Taps should respond quickly and clearly.
+Pull is one of the game's primary cinematic moments.
 
-Preferred interaction feel:
+Its major motion comes from the six-second transition video. The interactive reveal stage should then narrow attention through mist, materialization, waiting, tap response, and card flip.
 
-- quick press scale
-- opacity and glow response
-- edge light activation
-- short material glint
-- smooth modal open
+### 14.4 Reduced motion
 
-### 14.3 Reduced motion
+Reduced-motion presentation should preserve:
 
-Reduced-motion mode should preserve color, hierarchy, state, and static glow while removing repeated movement.
+- Color
+- State
+- Hierarchy
+- Static glow
+- Reveal order
+
+It should reduce or remove:
+
+- Camera motion
+- Repeated hovering
+- Traveling particles
+- Parallax
+- Repeated shimmer
+
+A reduced-motion alternative for the six-second video remains an implementation decision. It should preserve the transition from Core activation to reveal stage without requiring full camera movement.
 
 ---
 
-## 15. Do and don’t examples
+## 15. Do and don't examples
 
 ### 15.1 Home
 
@@ -790,39 +1144,73 @@ Do:
 
 - Build Home as a scene with landmarks.
 - Center the Core machine.
-- Show featured card art in a vertical oval portal.
-- Put card nameplate and metadata on the Core machine.
-- Use six side sockets as the long-term Home capacity.
-- Make Daily Ticket unmistakably claimable when ready.
+- Display featured art in the oval portal.
+- Use six side sockets as long-term capacity.
+- Make Daily Ticket unmistakable when claimable.
 - Give Battle a strong lower invitation.
-- Use dim dormant objects to imply future features.
 
-Do not:
+Don't:
 
-- Stack Daily Ticket, Featured Card, and Battle as ordinary panels.
-- Make the Featured Card occupy the whole screen.
-- Fill Home with explanatory paragraphs.
-- Use a literal medieval tavern skin.
-- Make everything blue-and-white with one gold button.
+- Stack Home actions as ordinary cards.
+- Let the Featured Card occupy the whole screen.
+- Fill Home with explanatory copy.
 - Make every object glow at the same priority.
-- Hide tap targets inside purely decorative art.
+- Hide tap targets inside decorative art.
 
-### 15.2 Global UI
+### 15.2 Pull page
 
 Do:
 
-- Let card art carry emotional weight.
+- Use a dominant featured hero.
+- Use a vertical list of full-width landscape banners.
+- Keep a consistent chassis.
+- Make Standard Summon feel permanent and premium.
+- Show limited timers clearly.
+- Open the summon bottom sheet only after banner selection.
+
+Don't:
+
+- Show Pull 1 or Pull 5 controls on the default page.
+- Turn the page into a store grid.
+- Give every banner equal visual priority.
+- Move the summon sheet to the center of the screen.
+- Replace the supplied transition video with a generic loading effect.
+
+### 15.3 Reveal
+
+Do:
+
+- Use the six-second Core transition video.
+- End on a matching deep-navy stage.
+- Let the card back materialize through mist and particles.
+- Wait for the player's tap.
+- Keep rarity hidden until resolution.
+- Preserve individual and Reveal All control for five-pulls.
+
+Don't:
+
+- Confirm rarity before the card resolves.
+- Fill the reveal stage with UI chrome.
+- Let multiple effects compete at once.
+- Rush past the waiting card back.
+- Use the pentagon as a mystical symbol.
+
+### 15.4 Global UI
+
+Do:
+
+- Let art carry emotional weight.
 - Keep mechanics clear.
-- Use gold sparingly.
+- Keep gold scarce.
 - Use blue for system behavior.
-- Keep rarity, type, and character color roles separate.
-- Preserve readable faces and card identity.
+- Preserve separate rarity, type, and character color roles.
+- Protect faces and identity.
 
-Do not:
+Don't:
 
-- Collapse rarity, type, and character identity into one color system.
-- Use stars, constellations, zodiac rings, or cosmic motifs as default decoration.
-- Turn premium artifact framing into generic fantasy filigree.
+- Collapse all color systems into one theme.
+- Use generic cosmic decoration as the default.
+- Turn premium framing into visual clutter.
 - Make functional screens sterile.
 - Make cinematic screens unreadable.
 
@@ -830,51 +1218,96 @@ Do not:
 
 ## 16. Codex translation guidance
 
-This document should guide implementation later, but it is not itself an implementation ticket.
+This document guides later implementation. It does not replace a scoped work order.
 
-When a Codex work order is eventually created, it should translate this document into careful steps without overriding the visual doctrine.
+### 16.1 Home implementation rule
 
-Critical instruction for future implementation:
+> **Implement Home as an illustrated scene with labeled interactive landmarks.**
 
-> Do not implement Home as stacked panels. Implement it as a scene with labeled interactive landmarks.
+Preserve:
 
-The illustrated Core Commons asset now exists at `public/assets/home-background.png`. The implemented Home must use that governing stage rather than falling back to a panel layout or a generic layered room approximation.
-
-The asset-led version must preserve:
-
-- central Core machine
-- featured vertical art portal
-- nameplate integrated with Core machine
-- side hotspot sockets
+- Governing Home background asset
+- Central Core machine
+- Featured oval portal
+- Attached nameplate
+- Side hotspot sockets
 - Daily Ticket / Shop smart state
-- Battle lower banner/gate
-- glass top resource rail
-- separate bottom nav
-- no dashboard stacking
+- Enter Battle gate
+- Glass top rail
+- Separate bottom navigation
+
+### 16.2 Pull implementation rule
+
+> **Implement Pull as a banner catalog, a locked bottom-anchored summon modal, and a separate cinematic reveal sequence.**
+
+Preserve:
+
+- Featured hero at the top
+- Vertical full-width banner list
+- Consistent banner chassis
+- Premium Standard Summon
+- Hidden-by-default pull controls
+- Existing bottom-sheet anchoring and dismissal behavior
+- Pull 1 default selection
+- Rates details layer
+- Six-second user-created transition video
+- Deep-navy mist reveal stage
+- Tap-to-reveal card back
+- Five-card pentagon with individual reveal and Reveal All
+
+### 16.3 Scope discipline
+
+Codex should avoid broad refactors while implementing visual direction.
+
+Preserve:
+
+- Pull API behavior
+- Ticket costs
+- Pool odds
+- Idempotency
+- Ownership persistence
+- Pull history
+- Existing telemetry contracts
+- Existing authentication and resource ownership
+
+### 16.4 Validation expectations
+
+Every Home or Pull implementation should be checked on:
+
+- Compact mobile width
+- Typical phone width
+- Desktop shell
+- Touch interaction
+- Keyboard focus where applicable
+- Reduced motion
+- Authenticated preview data
+- Pull-to-Vault ownership continuity
 
 ---
 
 ## 17. Open questions and future design decisions
 
-The Home screen direction is locked enough for future implementation planning.
+Home and Pull are locked enough for implementation.
 
-The following sections still require art-direction interviews:
+Remaining major art-direction interviews:
 
-1. Pull page philosophy
-2. Pull reveal sequence
-3. Single-pull versus five-pull spectacle
-4. Battle setup composition
-5. Battle results/reward presentation
-6. Card inspection modal philosophy
-7. Vault versus Library visual distinction
-8. Navigation polish across non-Home routes
-9. Resource-display treatment across screens
-10. Seasonal/event presentation
-11. Garden/farming visual metaphor
-12. Roulette/prize-wheel visual metaphor
-13. Quest/mission visual metaphor
-14. Gift/inbox visual metaphor
+1. Battle setup composition
+2. Battle arena presentation
+3. Battle Results and MVP treatment
+4. Reward animation and progression feedback
+5. Vault ownership presentation
+6. Library completion presentation
+7. Card inspection layout
+8. Global modal family beyond the locked summon sheet
+9. Seasonal Home socket treatment
+10. Garden visual metaphor
+11. Roulette visual metaphor
+12. Quest and mission presentation
+13. Gift and inbox presentation
+14. Pull post-reveal result layout
+15. Exact Legendary and Mythic sound and haptic language
+16. Reduced-motion replacement for the six-second Pull video
 
 Next recommended discussion area:
 
-> Pull page and reveal flow, because it shares the Core machine language with Home and will define the strongest recurring motion/rarity patterns in the app.
+> **Battle page philosophy and battle setup composition.**
