@@ -1,31 +1,18 @@
-/* Five-Pull entrance polish.
-   Keep every card at its final pentagon coordinates from the first frame, then
-   reveal them through a short opacity cascade. This avoids the slow transform
-   handoff that made cards appear to snap into place while loading. */
+/* Five-Pull stability override.
+   Cards render immediately at their final pentagon coordinates. Do not allow an
+   entrance animation to hide cards or take ownership of their positioning. */
 
 .pull-reveal-card--mini {
-  opacity: 0;
-  animation:
-    pullFiveCardAppear 280ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(80ms + var(--reveal-index, 0) * 45ms) both,
-    pullFiveCardIdle 5.6s ease-in-out calc(520ms + var(--reveal-index, 0) * 80ms) infinite;
-  will-change: opacity, transform;
-}
-
-@keyframes pullFiveCardAppear {
-  0% { opacity: 0; }
-  60% { opacity: 1; }
-  100% { opacity: 1; }
-}
-
-@keyframes pullFiveCardIdle {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(5px) rotate(0.45deg); }
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pull-reveal-card--mini {
-    opacity: 1;
-    animation: none;
-    transform: none;
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
   }
 }
