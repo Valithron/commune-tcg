@@ -50,10 +50,16 @@ test('Pull Again confirms in place and does not replay the cinematic', async () 
   assert.doesNotMatch(source, /core-summon-transition/);
 });
 
-test('Reveal route is full screen and rates use canonical server configuration', async () => {
+test('Reveal uses an immersive mobile shell and rates use canonical server configuration', async () => {
   const main = await read('src/main.js');
+  const appShell = await read('src/components/AppShell.js');
+  const containment = await read('src/styles/shell-containment.css');
   const catalogApi = await read('functions/api/pull-catalog.js');
-  assert.match(main, /pattern: '\/pull\/reveal'.*shell: 'battle'/);
+  assert.match(main, /pattern: '\/pull\/reveal'.*shell: 'immersive-player'/);
+  assert.match(main, /renderImmersiveAppShell/);
+  assert.match(appShell, /app-shell--immersive/);
+  assert.match(containment, /width: min\(100%, var\(--app-max-width\)\)/);
+  assert.match(containment, /card-inspection-backdrop/);
   assert.match(catalogApi, /getRarityOddsPercentages/);
   assert.match(catalogApi, /readPullPool/);
 });
