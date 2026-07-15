@@ -39,8 +39,9 @@ import './styles/submit-card-preview.css';
 import './styles/daily-loop.css';
 import './styles/home-commons.css';
 import './styles/home-layout-calibrator.css';
+import './styles/shell-containment.css';
 
-import { renderAppShell } from './components/AppShell.js';
+import { renderAppShell, renderImmersiveAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
 import { loadAuthUser } from './services/authClient.js';
@@ -85,7 +86,7 @@ const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
   { pattern: '/pull', navRoute: '/pull', shell: 'player', render: renderPull },
   { pattern: '/pull/confirm', navRoute: '/pull', shell: 'player', render: renderPullConfirm },
-  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'battle', render: renderPullReveal },
+  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'immersive-player', render: renderPullReveal },
   { pattern: '/pull/results', navRoute: '/pull', shell: 'player', render: renderPullResults },
   { pattern: '/pull/history', navRoute: '/pull', shell: 'player', render: renderPullHistory },
   { pattern: '/vault', navRoute: '/vault', shell: 'player', render: renderVault },
@@ -168,6 +169,7 @@ function renderError(error, shell) {
 
 async function renderShell(route, content) {
   if (route.shell === 'battle') return content;
+  if (route.shell === 'immersive-player') return renderImmersiveAppShell({ content });
   if (route.shell === 'admin') return renderAdminShell({ activeRoute: route.navRoute, content });
   return renderAppShell({ activeRoute: route.navRoute, content });
 }
