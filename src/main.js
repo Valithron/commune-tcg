@@ -12,6 +12,8 @@ import './styles/type-pool.css';
 import './styles/pull-sheet.css';
 import './styles/pull-reveal.css';
 import './styles/pull-reveal-multi.css';
+import './styles/pull-cinematic.css';
+import './styles/pull-reveal-v2.css';
 import './styles/library.css';
 import './styles/admin.css';
 import './styles/auth.css';
@@ -83,7 +85,7 @@ const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
   { pattern: '/pull', navRoute: '/pull', shell: 'player', render: renderPull },
   { pattern: '/pull/confirm', navRoute: '/pull', shell: 'player', render: renderPullConfirm },
-  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'player', render: renderPullReveal },
+  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'battle', render: renderPullReveal },
   { pattern: '/pull/results', navRoute: '/pull', shell: 'player', render: renderPullResults },
   { pattern: '/pull/history', navRoute: '/pull', shell: 'player', render: renderPullHistory },
   { pattern: '/vault', navRoute: '/vault', shell: 'player', render: renderVault },
@@ -166,9 +168,7 @@ function renderError(error, shell) {
 
 async function renderShell(route, content) {
   if (route.shell === 'battle') return content;
-  if (route.shell === 'admin') {
-    return renderAdminShell({ activeRoute: route.navRoute, content });
-  }
+  if (route.shell === 'admin') return renderAdminShell({ activeRoute: route.navRoute, content });
   return renderAppShell({ activeRoute: route.navRoute, content });
 }
 
