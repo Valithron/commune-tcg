@@ -95,7 +95,7 @@ const routeDefinitions = [
   { pattern: '/battle', navRoute: '/battle', shell: 'player', render: renderBattleHub },
   { pattern: '/battle/encounters', navRoute: '/battle', shell: 'player', render: renderEncounterSelect },
   { pattern: '/battle/squad', navRoute: '/battle', shell: 'player', render: renderSquadBuilder },
-  { pattern: '/battle/arena', navRoute: '/battle', shell: 'battle', render: renderBattleArena },
+  { pattern: '/battle/arena', navRoute: '/battle', shell: 'immersive-player', render: renderBattleArena },
   { pattern: '/battle/results', navRoute: '/battle', shell: 'player', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', shell: 'player', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/admin', shell: 'admin', render: renderAdminIndex },
@@ -166,7 +166,6 @@ function renderError(error, shell) {
 }
 
 async function renderShell(route, content) {
-  if (route.shell === 'battle') return content;
   if (route.shell === 'immersive-player') return renderImmersiveAppShell({ content });
   if (route.shell === 'admin') return renderAdminShell({ activeRoute: route.navRoute, content });
   return renderAppShell({ activeRoute: route.navRoute, content });
