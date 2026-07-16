@@ -1,7 +1,7 @@
 /* ============================================================================
    Mobile Shell Containment
-   Owns only the 30rem immersive chassis and viewport-level overlay bounds.
-   Reveal geometry belongs to pull-reveal-experience.css.
+   Owns only the 30rem immersive chassis and viewport-level player overlays.
+   Page geometry remains in each page's canonical stylesheet.
    ============================================================================ */
 
 .app-shell--immersive {
@@ -34,7 +34,12 @@
 
 .pull-cinematic,
 .pull-reveal-screen,
-.pull-reveal-missing {
+.pull-reveal-missing,
+.battle-arena,
+.battle-route-loading,
+.battle-arena-error {
+  width: 100%;
+  max-width: 100%;
   min-height: 100dvh;
 }
 
@@ -43,12 +48,13 @@
   max-width: 100%;
 }
 
-/* Fixed overlays cover the mobile application chassis, not the desktop browser. */
+/* Fixed player overlays cover the mobile application chassis, not the desktop browser. */
 .pull-sheet-overlay,
 .pull-rates-overlay,
 .pull-reveal-preview,
 .pull-repull-overlay,
-.card-inspection-backdrop {
+.card-inspection-backdrop,
+.energy-modal-backdrop {
   inset-block: 0;
   inset-inline: auto;
   left: 50%;
@@ -56,4 +62,11 @@
   width: min(100%, var(--app-max-width));
   max-width: 30rem;
   transform: translateX(-50%);
+}
+
+.pull-sheet,
+.pull-rates-panel,
+.card-inspection-modal,
+.energy-modal {
+  max-width: 100%;
 }
