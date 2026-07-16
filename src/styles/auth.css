@@ -1,1 +1,136 @@
-.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 10%,rgba(243,201,63,.16),transparent 30%),linear-gradient(135deg,#0a0d1d,#121833 65%,#080a14);color:var(--text-primary,#f7f4e9)}.auth-panel{width:min(760px,100%);border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:clamp(22px,4vw,44px);background:rgba(10,13,29,.88);box-shadow:0 30px 80px rgba(0,0,0,.35)}.auth-title{margin:.2em 0;font:800 clamp(2.4rem,7vw,5.2rem)/.9 Sora,system-ui,sans-serif;letter-spacing:-.06em}.auth-copy{max-width:620px;color:rgba(247,244,233,.72);font-size:1.05rem;line-height:1.5}.auth-error{margin:16px 0 0;border:1px solid rgba(232,93,79,.45);border-radius:14px;padding:12px 14px;background:rgba(232,93,79,.12);color:#ffd8d3;font-weight:800}.auth-slot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:22px 0}.auth-slot{border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:14px 12px;background:rgba(255,255,255,.045);color:inherit;text-align:left;cursor:pointer}.auth-slot strong,.auth-slot span{display:block}.auth-slot span{margin-top:4px;color:rgba(247,244,233,.58);font:800 .72rem JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:.06em}.auth-slot.is-active{border-color:var(--slot-color,#f3c93f);box-shadow:0 0 0 1px color-mix(in srgb,var(--slot-color,#f3c93f),transparent 35%),0 0 24px color-mix(in srgb,var(--slot-color,#f3c93f),transparent 74%)}.auth-form{display:grid;gap:12px;margin-top:14px}.auth-form label span{display:block;margin:0 0 7px;color:rgba(247,244,233,.62);font:800 .72rem JetBrains Mono,monospace;text-transform:uppercase;letter-spacing:.08em}.auth-form input{width:100%;min-height:48px;border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:0 14px;background:rgba(255,255,255,.06);color:inherit;font:800 1rem Hanken Grotesk,system-ui,sans-serif}.auth-form .button{margin-top:6px;min-height:50px}@media(max-width:680px){.auth-screen{padding:14px}.auth-panel{border-radius:22px}.auth-slot-grid{grid-template-columns:1fr 1fr}}
+/* ============================================================================
+   Player Authentication
+   Sign-in is part of the player application and uses the same 30rem chassis.
+   ============================================================================ */
+
+.auth-screen {
+  display: grid;
+  place-items: center;
+  width: min(100%, var(--app-max-width));
+  max-width: 30rem;
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 20% 10%, rgba(243, 201, 63, 0.16), transparent 30%),
+    linear-gradient(135deg, #0a0d1d, #121833 65%, #080a14);
+  color: var(--text-primary, #f7f4e9);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 5rem rgba(0, 0, 0, 0.45);
+}
+
+.auth-panel {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(1.35rem, 5vw, 2rem);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.5rem;
+  background: rgba(10, 13, 29, 0.88);
+  box-shadow: 0 1.8rem 5rem rgba(0, 0, 0, 0.35);
+}
+
+.auth-title {
+  margin: 0.2em 0;
+  font: 800 clamp(2.25rem, 12vw, 3.8rem) / 0.92 Sora, system-ui, sans-serif;
+  letter-spacing: -0.06em;
+}
+
+.auth-copy {
+  max-width: 100%;
+  color: rgba(247, 244, 233, 0.72);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.auth-error {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(232, 93, 79, 0.45);
+  border-radius: 0.85rem;
+  background: rgba(232, 93, 79, 0.12);
+  color: #ffd8d3;
+  font-weight: 800;
+}
+
+.auth-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1.35rem 0;
+}
+
+.auth-slot {
+  min-width: 0;
+  padding: 0.85rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.auth-slot strong,
+.auth-slot span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-slot span {
+  margin-top: 0.25rem;
+  color: rgba(247, 244, 233, 0.58);
+  font: 800 0.72rem JetBrains Mono, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.auth-slot.is-active {
+  border-color: var(--slot-color, #f3c93f);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--slot-color, #f3c93f), transparent 35%),
+    0 0 1.5rem color-mix(in srgb, var(--slot-color, #f3c93f), transparent 74%);
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.auth-form label span {
+  display: block;
+  margin: 0 0 0.45rem;
+  color: rgba(247, 244, 233, 0.62);
+  font: 800 0.72rem JetBrains Mono, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: 800 1rem Hanken Grotesk, system-ui, sans-serif;
+}
+
+.auth-form .button {
+  width: 100%;
+  min-height: 3.1rem;
+  margin-top: 0.35rem;
+}
+
+@media (max-width: 23rem) {
+  .auth-screen { padding-inline: 0.7rem; }
+  .auth-panel { padding: 1.15rem; border-radius: 1.2rem; }
+  .auth-title { font-size: 2.15rem; }
+  .auth-slot-grid { gap: 0.45rem; }
+  .auth-slot { padding: 0.7rem 0.55rem; }
+}
