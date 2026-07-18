@@ -172,6 +172,17 @@ async function renderShell(route, content) {
   return renderAppShell({ activeRoute: route.navRoute, content });
 }
 
+function restoreLibrarySubmitAction() {
+  const actionRow = appRoot.querySelector('.hero-panel .action-row');
+  if (!actionRow || actionRow.querySelector('a[href="#/submit"]')) return;
+
+  const submitLink = document.createElement('a');
+  submitLink.className = 'button button-primary';
+  submitLink.href = '#/submit';
+  submitLink.textContent = 'Submit Card';
+  actionRow.prepend(submitLink);
+}
+
 async function renderAuthGate(nextState = {}) {
   authRenderState = { ...authRenderState, ...nextState };
   appRoot.innerHTML = await renderSignIn(authRenderState);
@@ -205,6 +216,7 @@ async function renderRoute() {
     if (currentToken !== renderToken) return;
 
     appRoot.innerHTML = await renderShell(route, content);
+    if (route.render === renderLibrary) restoreLibrarySubmitAction();
     fitCardTitles(appRoot);
 
     if (route.render === renderHome) initHome(appRoot);
