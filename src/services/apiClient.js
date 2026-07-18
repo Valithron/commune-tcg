@@ -9,6 +9,7 @@ const apiRoutes = {
   vault: '/api/vault',
   submissionInventory: '/api/submission-inventory',
   submissionReviewAudit: '/api/submission-review-audit',
+  pullCatalog: '/api/pull-catalog',
   pullPool: '/api/pull-pool',
   pullSimulate: '/api/pull-simulate',
   pulls: '/api/pulls',

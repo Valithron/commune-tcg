@@ -19,17 +19,14 @@ export async function renderPullResults({ query = {} } = {}) {
       <h2 class="hero-title">${results.length ? (count === 5 ? 'Five artifacts revealed.' : 'One artifact revealed.') : 'No saved reveal.'}</h2>
       <p class="hero-copy">Results display only cards already resolved and granted by the authoritative pull endpoint.</p>
       <div class="action-row">
-        <a class="button button-primary" href="#/pull/confirm?count=${count}">Pull Again</a>
+        <a class="button button-primary" href="#/pull?confirm=1&count=${count}">Open Standard Summon</a>
         <a class="button button-secondary" href="#/vault">Go to Vault</a>
       </div>
     </section>
 
     <section>
       <div class="section-heading">
-        <div>
-          <span class="section-kicker">Revealed</span>
-          <h2 class="section-title">Result Cards</h2>
-        </div>
+        <div><span class="section-kicker">Revealed</span><h2 class="section-title">Result Cards</h2></div>
         <span class="status-pill">${count}-Pull</span>
       </div>
       <div class="card-grid result-grid">

@@ -10,8 +10,8 @@ import './styles/components.css';
 import './styles/account.css';
 import './styles/type-pool.css';
 import './styles/pull-sheet.css';
-import './styles/pull-reveal.css';
-import './styles/pull-reveal-multi.css';
+import './styles/pull-cinematic.css';
+import './styles/pull-reveal-experience.css';
 import './styles/library.css';
 import './styles/admin.css';
 import './styles/auth.css';
@@ -37,8 +37,9 @@ import './styles/submit-card-preview.css';
 import './styles/daily-loop.css';
 import './styles/home-commons.css';
 import './styles/home-layout-calibrator.css';
+import './styles/shell-containment.css';
 
-import { renderAppShell } from './components/AppShell.js';
+import { renderAppShell, renderImmersiveAppShell } from './components/AppShell.js';
 import { renderAdminShell } from './components/AdminShell.js';
 import { fitCardTitles } from './components/cardTitleFit.js';
 import { loadAuthUser } from './services/authClient.js';
@@ -83,7 +84,7 @@ const routeDefinitions = [
   { pattern: '/home', navRoute: '/home', shell: 'player', render: renderHome },
   { pattern: '/pull', navRoute: '/pull', shell: 'player', render: renderPull },
   { pattern: '/pull/confirm', navRoute: '/pull', shell: 'player', render: renderPullConfirm },
-  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'player', render: renderPullReveal },
+  { pattern: '/pull/reveal', navRoute: '/pull', shell: 'immersive-player', render: renderPullReveal },
   { pattern: '/pull/results', navRoute: '/pull', shell: 'player', render: renderPullResults },
   { pattern: '/pull/history', navRoute: '/pull', shell: 'player', render: renderPullHistory },
   { pattern: '/vault', navRoute: '/vault', shell: 'player', render: renderVault },
@@ -94,7 +95,7 @@ const routeDefinitions = [
   { pattern: '/battle', navRoute: '/battle', shell: 'player', render: renderBattleHub },
   { pattern: '/battle/encounters', navRoute: '/battle', shell: 'player', render: renderEncounterSelect },
   { pattern: '/battle/squad', navRoute: '/battle', shell: 'player', render: renderSquadBuilder },
-  { pattern: '/battle/arena', navRoute: '/battle', shell: 'battle', render: renderBattleArena },
+  { pattern: '/battle/arena', navRoute: '/battle', shell: 'immersive-player', render: renderBattleArena },
   { pattern: '/battle/results', navRoute: '/battle', shell: 'player', render: renderBattleResults },
   { pattern: '/submit', navRoute: '/library', shell: 'player', render: renderSubmitCard },
   { pattern: '/admin', navRoute: '/admin', shell: 'admin', render: renderAdminIndex },
@@ -165,10 +166,8 @@ function renderError(error, shell) {
 }
 
 async function renderShell(route, content) {
-  if (route.shell === 'battle') return content;
-  if (route.shell === 'admin') {
-    return renderAdminShell({ activeRoute: route.navRoute, content });
-  }
+  if (route.shell === 'immersive-player') return renderImmersiveAppShell({ content });
+  if (route.shell === 'admin') return renderAdminShell({ activeRoute: route.navRoute, content });
   return renderAppShell({ activeRoute: route.navRoute, content });
 }
 

@@ -1,0 +1,72 @@
+/* ============================================================================
+   Mobile Shell Containment
+   Owns only the 30rem immersive chassis and viewport-level player overlays.
+   Page geometry remains in each page's canonical stylesheet.
+   ============================================================================ */
+
+.app-shell--immersive {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, var(--app-max-width));
+  max-width: 30rem;
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding: 0;
+  overflow: hidden;
+  background: #070a18;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 5rem rgba(0, 0, 0, 0.5);
+}
+
+.screen-stack--immersive {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.screen-stack--immersive > * {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pull-cinematic,
+.pull-reveal-screen,
+.pull-reveal-missing,
+.battle-arena,
+.battle-route-loading,
+.battle-arena-error {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+}
+
+.pull-cinematic-video {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Fixed player overlays cover the mobile application chassis, not the desktop browser. */
+.pull-sheet-overlay,
+.pull-rates-overlay,
+.pull-reveal-preview,
+.pull-repull-overlay,
+.card-inspection-backdrop,
+.energy-modal-backdrop {
+  inset-block: 0;
+  inset-inline: auto;
+  left: 50%;
+  right: auto;
+  width: min(100%, var(--app-max-width));
+  max-width: 30rem;
+  transform: translateX(-50%);
+}
+
+.pull-sheet,
+.pull-rates-panel,
+.card-inspection-modal,
+.energy-modal {
+  max-width: 100%;
+}

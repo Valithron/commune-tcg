@@ -1,58 +1,31 @@
-/* ============================================================================
-   Pull Reveal Modal
-   Responsibility: render and initialize single- and five-card reveal flows,
-   including staged reveal, reveal-all, and expanded card preview.
-   ============================================================================ */
+/* Interactive single- and five-card reveal stage with direct repull support. */
 
 import { renderCardFrame } from './CardFrame.js';
 import { fitCardTitles } from './cardTitleFit.js';
 import { escapeHtml, titleCase } from './format.js';
+import { beginPullTransaction } from '../services/pullTransaction.js';
 import { clearPullRevealPayload } from '../services/pullRevealStore.js';
 
-const rarityRank = {
-  common: 1,
-  uncommon: 2,
-  rare: 3,
-  legendary: 4,
-  mythic: 5,
-};
-
 function getVaultCardHref(card) {
-  const cardId = card?.id || card?.ownedCardId || card?.owned_card_id || '';
-  return cardId ? `#/vault/card/${encodeURIComponent(cardId)}` : '#/vault';
+  const id = card?.id || card?.ownedCardId || card?.owned_card_id || '';
+  return id ? `#/vault/card/${encodeURIComponent(id)}` : '#/vault';
 }
 
 function getRarity(card) {
   return String(card?.rarity || 'common').toLowerCase();
 }
 
-function getDominantRarity(cards) {
-  return cards.reduce((best, card) => {
-    const rarity = getRarity(card);
-    return (rarityRank[rarity] || 1) > (rarityRank[best] || 1) ? rarity : best;
-  }, 'common');
-}
-
 function renderParticles() {
-  return Array.from({ length: 10 }, (_, index) => `
-    <span class="pull-reveal-particle pull-reveal-particle--${index + 1}"></span>
-  `).join('');
+  return Array.from({ length: 14 }, (_, index) => `<span class="pull-reveal-particle pull-reveal-particle--${index + 1}"></span>`).join('');
 }
 
-function renderRevealCard(card, index, { mini = false } = {}) {
+function renderRevealCard(card, index, mini = false) {
   const rarity = getRarity(card);
-  const name = card.name || 'Pulled card';
-
   return `
-    <div
-      class="pull-reveal-card${mini ? ' pull-reveal-card--mini' : ''}"
-      role="button"
-      tabindex="0"
-      data-pull-reveal-card
-      data-reveal-index="${index}"
-      data-rarity="${escapeHtml(rarity)}"
-      aria-label="Tap to reveal ${escapeHtml(name)}"
-    >
+    <div class="pull-reveal-card${mini ? ' pull-reveal-card--mini' : ''}" role="button" tabindex="0"
+      data-pull-reveal-card data-reveal-index="${index}" data-rarity="${escapeHtml(rarity)}"
+      style="--reveal-index:${index}" aria-label="Reveal hidden card ${index + 1}">
+      <span class="pull-reveal-ripple" aria-hidden="true"></span>
       <div class="pull-reveal-card-inner">
         <div class="pull-reveal-card-face pull-reveal-card-back" data-pull-reveal-back aria-hidden="false">
           <img src="/assets/commune-card-back.png" alt="Imago Core card back" />
@@ -65,368 +38,234 @@ function renderRevealCard(card, index, { mini = false } = {}) {
   `;
 }
 
-function renderPreviewModal(cards) {
+function renderPreview(cards) {
   return `
-    <div class="pull-reveal-preview" data-pull-reveal-preview hidden aria-hidden="true" tabindex="-1">
-      <div class="pull-reveal-preview-panel" data-pull-reveal-preview-panel role="dialog" aria-modal="true" aria-labelledby="pull-reveal-preview-title">
-        <button class="pull-reveal-preview-handle" type="button" data-pull-preview-close aria-label="Swipe down or tap to close card preview"></button>
-        <div class="pull-reveal-preview-copy">
-          <span class="section-kicker">Card Preview</span>
-          <h2 id="pull-reveal-preview-title">Expanded View</h2>
-        </div>
-        <button class="pull-reveal-preview-close" type="button" data-pull-preview-close aria-label="Close card preview">×</button>
-        <div class="pull-reveal-preview-cards">
-          ${cards.map((card, index) => `
-            <article class="pull-reveal-preview-card" data-pull-preview-card data-preview-index="${index}" hidden>
-              ${renderCardFrame(card, { context: 'pull', showOwnership: true, density: 'standard' })}
-            </article>
-          `).join('')}
-        </div>
+    <div class="pull-reveal-preview" data-pull-preview hidden aria-hidden="true">
+      <div class="pull-reveal-preview-panel" role="dialog" aria-modal="true" aria-label="Revealed card inspection">
+        <button class="pull-reveal-preview-close" type="button" data-pull-preview-close aria-label="Close card inspection">×</button>
+        ${cards.map((card, index) => `<article data-pull-preview-card data-preview-index="${index}" hidden>${renderCardFrame(card, { context: 'pull', showOwnership: true, density: 'standard' })}</article>`).join('')}
       </div>
+    </div>
+  `;
+}
+
+function renderRepullConfirmation({ count, ticketsAfter }) {
+  const cost = count === 5 ? 5 : 1;
+  const balance = Number(ticketsAfter || 0);
+  const affordable = balance >= cost;
+  return `
+    <div class="pull-repull-overlay" data-pull-repull hidden aria-hidden="true">
+      <section class="pull-repull-panel" role="dialog" aria-modal="true" aria-labelledby="pull-repull-title">
+        <span class="section-kicker">Standard Summon</span>
+        <h2 id="pull-repull-title">Pull ${count === 5 ? 'five more' : 'again'}?</h2>
+        <p>${count} Pull${count === 1 ? '' : 's'} · ${cost} Ticket${cost === 1 ? '' : 's'} · Balance 🎟 ${balance}</p>
+        <p class="pull-repull-status" data-pull-repull-status>${affordable ? 'The reveal stage will remain open. The cinematic will not replay.' : 'Not enough Tickets.'}</p>
+        <div class="pull-repull-actions">
+          <button class="button button-primary" type="button" data-pull-repull-confirm ${affordable ? '' : 'disabled'}>Confirm</button>
+          <button class="button button-secondary" type="button" data-pull-repull-close>Cancel</button>
+          ${affordable ? '' : '<a class="button button-secondary" href="#/shop">Open Store</a>'}
+        </div>
+      </section>
     </div>
   `;
 }
 
 function renderMissingReveal() {
   return `
-    <section class="hero-panel">
+    <section class="pull-reveal-missing">
       <span class="section-kicker">Reveal Expired</span>
-      <h2 class="hero-title">No card is waiting.</h2>
-      <p class="hero-copy">Start a fresh pull to open the reveal animation. This keeps refreshes from spending tickets again.</p>
-      <div class="action-row">
-        <a class="button button-primary" href="#/pull/confirm?count=1">Start 1 Pull</a>
-      </div>
+      <h1>No card is waiting.</h1>
+      <p>Start a fresh summon. Refreshing this page never spends another Ticket.</p>
+      <a class="button button-primary" href="#/pull">Return to Summons</a>
     </section>
   `;
 }
 
-function renderSingleReveal(card) {
-  const rarity = getRarity(card);
-  const cardName = card.name || 'Revealed Card';
-
+function renderSingle(cards, payload) {
+  const card = cards[0];
   return `
-    <section class="pull-reveal-screen" data-pull-reveal data-reveal-mode="single" data-rarity="${escapeHtml(rarity)}">
-      <div class="pull-reveal-atmosphere" aria-hidden="true">
-        ${renderParticles()}
-      </div>
-
+    <section class="pull-reveal-screen" data-pull-reveal data-reveal-mode="single" data-count="1" data-ticket-balance="${Number(payload.ticketsAfter || 0)}">
+      <div class="pull-reveal-atmosphere" aria-hidden="true">${renderParticles()}<span class="pull-reveal-mist"></span><span class="pull-reveal-rings"></span></div>
       <div class="pull-reveal-stage">
-        <div class="pull-reveal-copy" data-pull-reveal-copy>
-          <span class="section-kicker">One Pull</span>
-          <h2>Summon Ready</h2>
-          <p>Tap the card back to reveal what entered your Vault.</p>
-        </div>
-
-        <div class="pull-reveal-glow" aria-hidden="true"></div>
-        <div class="pull-reveal-burst" data-pull-reveal-burst aria-hidden="true"></div>
-
+        <div class="pull-reveal-copy" data-pull-reveal-copy><span class="section-kicker">Standard Summon</span><h1>Resonance Formed</h1><p>Tap the card back when you are ready.</p></div>
+        <div class="pull-reveal-core-response" data-pull-core-response aria-hidden="true"></div>
         ${renderRevealCard(card, 0)}
-
-        <div class="pull-reveal-prompt" data-pull-reveal-prompt>
-          <span class="pull-reveal-loader" aria-hidden="true"><span></span></span>
-          <p>Tap to Reveal</p>
-        </div>
-
-        <div class="pull-reveal-revealed-copy" data-pull-reveal-revealed-copy hidden>
-          <span>${escapeHtml(titleCase(rarity))}</span>
-          <strong>${escapeHtml(cardName)}</strong>
-        </div>
-
+        <div class="pull-reveal-prompt" data-pull-reveal-prompt>Tap to Reveal</div>
+        <div class="pull-reveal-result-copy" data-pull-result-copy hidden><span>${escapeHtml(titleCase(getRarity(card)))}</span><strong>${escapeHtml(card.name || 'Revealed Card')}</strong></div>
         <div class="pull-reveal-actions" data-pull-reveal-actions hidden>
-          <a class="button button-primary" href="${getVaultCardHref(card)}" data-pull-reveal-clear>View in Vault</a>
-          <a class="button button-secondary" href="#/pull/confirm?count=1" data-pull-reveal-clear>Pull Again</a>
+          <a class="button button-primary" href="${getVaultCardHref(card)}" data-pull-clear>View in Vault</a>
+          <button class="button button-secondary" type="button" data-pull-again>Pull Again</button>
         </div>
       </div>
+      ${renderRepullConfirmation({ count: 1, ticketsAfter: payload.ticketsAfter })}
     </section>
   `;
 }
 
-function renderFiveReveal(cards) {
-  const rarity = getDominantRarity(cards);
-
+function renderFive(cards, payload) {
   return `
-    <section class="pull-reveal-screen pull-reveal-screen--multi" data-pull-reveal data-reveal-mode="multi" data-rarity="${escapeHtml(rarity)}">
-      <div class="pull-reveal-atmosphere" aria-hidden="true">
-        ${renderParticles()}
-      </div>
-
+    <section class="pull-reveal-screen pull-reveal-screen--multi" data-pull-reveal data-reveal-mode="multi" data-count="5" data-ticket-balance="${Number(payload.ticketsAfter || 0)}">
+      <div class="pull-reveal-atmosphere" aria-hidden="true">${renderParticles()}<span class="pull-reveal-mist"></span><span class="pull-reveal-rings"></span></div>
       <div class="pull-reveal-stage pull-reveal-stage--multi">
-        <div class="pull-reveal-copy" data-pull-reveal-copy>
-          <h2>Five Seals Ready</h2>
-        </div>
-
-        <div class="pull-reveal-glow" aria-hidden="true"></div>
-        <div class="pull-reveal-burst" data-pull-reveal-burst aria-hidden="true"></div>
-
-        <div class="pull-reveal-five-layout" aria-label="Five pulled cards">
-          ${cards.map((card, index) => renderRevealCard(card, index, { mini: true })).join('')}
-        </div>
-
-        <div class="pull-reveal-prompt pull-reveal-prompt--multi" data-pull-reveal-prompt>
-          <span class="pull-reveal-loader" aria-hidden="true"><span></span></span>
-          <p>Choose a Card</p>
-        </div>
-
-        <button class="button button-primary pull-reveal-all" type="button" data-pull-reveal-all>
-          Reveal All
-        </button>
-
+        <div class="pull-reveal-copy" data-pull-reveal-copy><span class="section-kicker">Standard Summon</span><h1>Five Resonances</h1><p>Reveal them in any order.</p></div>
+        <div class="pull-reveal-core-response" data-pull-core-response aria-hidden="true"></div>
+        <div class="pull-reveal-five-layout" aria-label="Five hidden pulled cards">${cards.map((card, index) => renderRevealCard(card, index, true)).join('')}</div>
+        <div class="pull-reveal-prompt" data-pull-reveal-prompt>Choose a Card</div>
+        <button class="button button-primary pull-reveal-all" type="button" data-pull-reveal-all>Reveal All</button>
         <div class="pull-reveal-actions" data-pull-reveal-actions hidden>
-          <a class="button button-primary" href="#/vault" data-pull-reveal-clear>View in Vault</a>
-          <a class="button button-secondary" href="#/pull/confirm?count=5" data-pull-reveal-clear>Pull Again</a>
+          <a class="button button-primary" href="#/vault" data-pull-clear>View in Vault</a>
+          <button class="button button-secondary" type="button" data-pull-again>Pull Again</button>
         </div>
       </div>
-
-      ${renderPreviewModal(cards)}
+      ${renderPreview(cards)}
+      ${renderRepullConfirmation({ count: 5, ticketsAfter: payload.ticketsAfter })}
     </section>
   `;
 }
 
-export function renderPullRevealModal({ cards = [], count = 0 } = {}) {
-  const safeCards = cards.filter(Boolean);
-
-  if (!safeCards.length) {
-    return renderMissingReveal();
-  }
-
-  return safeCards.length >= 5 || Number(count) === 5
-    ? renderFiveReveal(safeCards.slice(0, 5))
-    : renderSingleReveal(safeCards[0]);
-}
-
-function updatePrompt(prompt, text) {
-  if (!prompt) {
-    return;
-  }
-
-  prompt.classList.add('is-revealed');
-  const promptCopy = prompt.querySelector('p');
-  if (promptCopy) {
-    promptCopy.textContent = text;
-  }
-}
-
-function initPreviewModal({ revealRoot, preview, previewPanel, previewCards, revealCards, isMulti }) {
-  let closeTimer = null;
-  let dragState = null;
-
-  function areAllCardsRevealed() {
-    return revealCards.length > 0 && revealCards.every((card) => card.classList.contains('is-revealed'));
-  }
-
-  function openPreview(index) {
-    if (!isMulti || !preview || !previewPanel || !areAllCardsRevealed()) {
-      return;
-    }
-
-    window.clearTimeout(closeTimer);
-    previewCards.forEach((card) => {
-      card.hidden = card.dataset.previewIndex !== String(index);
-    });
-    preview.hidden = false;
-    preview.setAttribute('aria-hidden', 'false');
-    preview.classList.remove('is-closing');
-    previewPanel.style.transform = '';
-
-    window.requestAnimationFrame(() => {
-      preview.classList.add('is-open');
-      preview.focus({ preventScroll: true });
-      fitCardTitles(preview);
-    });
-  }
-
-  function closePreview() {
-    if (!preview || !preview.classList.contains('is-open')) {
-      return;
-    }
-
-    preview.classList.remove('is-open');
-    preview.classList.add('is-closing');
-    preview.setAttribute('aria-hidden', 'true');
-    if (previewPanel) {
-      previewPanel.style.transform = '';
-    }
-
-    window.clearTimeout(closeTimer);
-    closeTimer = window.setTimeout(() => {
-      preview.classList.remove('is-closing');
-      preview.hidden = true;
-    }, 240);
-  }
-
-  preview?.addEventListener('click', (event) => {
-    if (event.target === preview) {
-      closePreview();
-    }
-  });
-
-  preview?.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      closePreview();
-    }
-  });
-
-  revealRoot.querySelectorAll('[data-pull-preview-close]').forEach((button) => {
-    button.addEventListener('click', closePreview);
-  });
-
-  previewPanel?.addEventListener('pointerdown', (event) => {
-    const target = event.target;
-    const isHandle = target.closest?.('[data-pull-preview-close]') || target.closest?.('.pull-reveal-preview-copy');
-    if (!isHandle) {
-      return;
-    }
-
-    dragState = {
-      startY: event.clientY,
-      distance: 0,
-    };
-    previewPanel.classList.add('is-dragging');
-    previewPanel.setPointerCapture?.(event.pointerId);
-  });
-
-  previewPanel?.addEventListener('pointermove', (event) => {
-    if (!dragState || !previewPanel) {
-      return;
-    }
-
-    const distance = Math.max(0, event.clientY - dragState.startY);
-    dragState.distance = distance;
-    previewPanel.style.transform = `translateY(${distance}px)`;
-    if (preview) {
-      preview.style.opacity = String(Math.max(0.35, 1 - distance / 360));
-    }
-  });
-
-  function endPreviewDrag() {
-    if (!dragState || !previewPanel) {
-      return;
-    }
-
-    const shouldClose = dragState.distance > 80;
-    dragState = null;
-    previewPanel.classList.remove('is-dragging');
-    previewPanel.style.transform = '';
-    if (preview) {
-      preview.style.opacity = '';
-    }
-
-    if (shouldClose) {
-      closePreview();
-    }
-  }
-
-  previewPanel?.addEventListener('pointerup', endPreviewDrag);
-  previewPanel?.addEventListener('pointercancel', endPreviewDrag);
-
-  return { openPreview };
+export function renderPullRevealModal(payload = {}) {
+  const cards = Array.isArray(payload.cards) ? payload.cards.filter(Boolean) : [];
+  if (!cards.length) return renderMissingReveal();
+  const count = Number(payload.count || cards.length) === 5 ? 5 : 1;
+  return count === 5 ? renderFive(cards.slice(0, 5), payload) : renderSingle(cards, payload);
 }
 
 export function initPullRevealModal(root) {
   const revealRoot = root.querySelector('[data-pull-reveal]');
-  if (!revealRoot) {
-    return;
-  }
+  if (!revealRoot) return;
 
-  const revealCards = Array.from(revealRoot.querySelectorAll('[data-pull-reveal-card]'));
+  const cards = [...revealRoot.querySelectorAll('[data-pull-reveal-card]')];
   const prompt = revealRoot.querySelector('[data-pull-reveal-prompt]');
   const actions = revealRoot.querySelector('[data-pull-reveal-actions]');
-  const revealedCopy = revealRoot.querySelector('[data-pull-reveal-revealed-copy]');
-  const copy = revealRoot.querySelector('[data-pull-reveal-copy]');
-  const burst = revealRoot.querySelector('[data-pull-reveal-burst]');
-  const revealAllButton = revealRoot.querySelector('[data-pull-reveal-all]');
-  const preview = revealRoot.querySelector('[data-pull-reveal-preview]');
-  const previewPanel = revealRoot.querySelector('[data-pull-reveal-preview-panel]');
-  const previewCards = Array.from(revealRoot.querySelectorAll('[data-pull-preview-card]'));
-  const isMulti = revealRoot.dataset.revealMode === 'multi';
-  const previewController = initPreviewModal({ revealRoot, preview, previewPanel, previewCards, revealCards, isMulti });
+  const resultCopy = revealRoot.querySelector('[data-pull-result-copy]');
+  const revealAll = revealRoot.querySelector('[data-pull-reveal-all]');
+  const coreResponse = revealRoot.querySelector('[data-pull-core-response]');
+  const repull = revealRoot.querySelector('[data-pull-repull]');
+  const repullStatus = revealRoot.querySelector('[data-pull-repull-status]');
+  const repullConfirm = revealRoot.querySelector('[data-pull-repull-confirm]');
+  const preview = revealRoot.querySelector('[data-pull-preview]');
+  const count = Number(revealRoot.dataset.count) === 5 ? 5 : 1;
+  let revealingAll = false;
 
-  function areAllCardsRevealed() {
-    return revealCards.length > 0 && revealCards.every((card) => card.classList.contains('is-revealed'));
+  function revealedCards() {
+    return cards.filter((card) => card.classList.contains('is-revealed'));
   }
 
-  function completeRevealIfReady() {
-    if (!areAllCardsRevealed()) {
-      return;
-    }
-
-    revealRoot.classList.add('is-revealed');
-    copy?.classList.add('is-revealed');
-    burst?.classList.add('is-active');
-    updatePrompt(prompt, isMulti ? 'Tap a Card to Inspect' : 'Revealed');
-
-    if (revealAllButton) {
-      revealAllButton.hidden = true;
-    }
-
+  function completeIfReady() {
+    const total = revealedCards().length;
+    if (prompt) prompt.textContent = total === cards.length ? 'Summon Complete' : `${total} of ${cards.length} Revealed`;
+    if (total !== cards.length) return;
+    revealRoot.classList.add('is-complete');
+    if (revealAll) revealAll.hidden = true;
     window.setTimeout(() => {
-      if (revealedCopy) {
-        revealedCopy.hidden = false;
-      }
-      if (actions) {
-        actions.hidden = false;
-      }
-    }, 560);
+      if (resultCopy) resultCopy.hidden = false;
+      if (actions) actions.hidden = false;
+    }, 480);
   }
 
-  function revealOne(revealCard) {
-    if (!revealCard || revealCard.classList.contains('is-revealed')) {
-      return;
-    }
+  function revealOne(card) {
+    if (!card || card.classList.contains('is-revealed') || card.classList.contains('is-charging')) return Promise.resolve();
+    const rarity = card.dataset.rarity || 'common';
+    card.classList.add('is-charging');
+    revealRoot.dataset.activeRarity = rarity;
+    coreResponse?.classList.remove('is-active', 'tell-legendary', 'tell-mythic');
+    void coreResponse?.offsetWidth;
+    coreResponse?.classList.add('is-active');
+    if (rarity === 'legendary') coreResponse?.classList.add('tell-legendary');
+    if (rarity === 'mythic') coreResponse?.classList.add('tell-mythic');
 
-    revealCard.classList.add('is-revealed');
-    revealCard.setAttribute('aria-label', 'Pulled card revealed');
-    revealCard.querySelector('[data-pull-reveal-back]')?.setAttribute('aria-hidden', 'true');
-    revealCard.querySelector('[data-pull-reveal-front]')?.setAttribute('aria-hidden', 'false');
-
-    if (!isMulti) {
-      completeRevealIfReady();
-      return;
-    }
-
-    const revealedCount = revealCards.filter((card) => card.classList.contains('is-revealed')).length;
-    updatePrompt(prompt, `${revealedCount} of ${revealCards.length} Revealed`);
-    completeRevealIfReady();
-  }
-
-  function revealAll() {
-    revealCards.forEach((revealCard, index) => {
-      if (revealCard.classList.contains('is-revealed')) {
-        return;
-      }
-
-      window.setTimeout(() => revealOne(revealCard), index * 90);
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        card.classList.remove('is-charging');
+        card.classList.add('is-revealed');
+        card.querySelector('[data-pull-reveal-back]')?.setAttribute('aria-hidden', 'true');
+        card.querySelector('[data-pull-reveal-front]')?.setAttribute('aria-hidden', 'false');
+        card.setAttribute('aria-label', 'Revealed card');
+        fitCardTitles(card);
+        completeIfReady();
+        resolve();
+      }, rarity === 'legendary' || rarity === 'mythic' ? 430 : 260);
     });
   }
 
-  revealCards.forEach((revealCard) => {
-    revealCard.addEventListener('click', () => {
-      if (isMulti && revealCard.classList.contains('is-revealed') && areAllCardsRevealed()) {
-        previewController.openPreview(revealCard.dataset.revealIndex || '0');
-        return;
-      }
+  function openPreview(index) {
+    if (!preview || revealedCards().length !== cards.length) return;
+    preview.querySelectorAll('[data-pull-preview-card]').forEach((card) => { card.hidden = card.dataset.previewIndex !== String(index); });
+    preview.hidden = false;
+    preview.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => preview.classList.add('is-open'));
+    fitCardTitles(preview);
+  }
 
-      revealOne(revealCard);
-    });
+  function closePreview() {
+    if (!preview) return;
+    preview.classList.remove('is-open');
+    preview.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => { preview.hidden = true; }, 220);
+  }
 
-    revealCard.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') {
-        return;
-      }
+  function activateCard(card) {
+    if (card.classList.contains('is-revealed')) openPreview(card.dataset.revealIndex || 0);
+    else revealOne(card);
+  }
 
+  cards.forEach((card) => {
+    card.addEventListener('click', () => activateCard(card));
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
-      if (isMulti && revealCard.classList.contains('is-revealed') && areAllCardsRevealed()) {
-        previewController.openPreview(revealCard.dataset.revealIndex || '0');
-        return;
-      }
-
-      revealOne(revealCard);
+      activateCard(card);
     });
   });
 
-  revealAllButton?.addEventListener('click', revealAll);
+  revealAll?.addEventListener('click', async () => {
+    if (revealingAll) return;
+    revealingAll = true;
+    revealAll.disabled = true;
+    for (const card of cards) {
+      if (!card.classList.contains('is-revealed')) {
+        await revealOne(card);
+        await new Promise((resolve) => window.setTimeout(resolve, 140));
+      }
+    }
+    revealingAll = false;
+  });
 
-  revealRoot.querySelectorAll('[data-pull-reveal-clear]').forEach((link) => {
-    link.addEventListener('click', () => clearPullRevealPayload());
+  revealRoot.querySelectorAll('[data-pull-preview-close]').forEach((button) => button.addEventListener('click', closePreview));
+  preview?.addEventListener('click', (event) => { if (event.target === preview) closePreview(); });
+  revealRoot.querySelectorAll('[data-pull-clear]').forEach((link) => link.addEventListener('click', clearPullRevealPayload));
+
+  function closeRepull() {
+    repull?.classList.remove('is-open');
+    repull?.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => { if (repull) repull.hidden = true; }, 180);
+  }
+
+  revealRoot.querySelector('[data-pull-again]')?.addEventListener('click', () => {
+    if (!repull) return;
+    repull.hidden = false;
+    repull.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => repull.classList.add('is-open'));
+  });
+  revealRoot.querySelectorAll('[data-pull-repull-close]').forEach((button) => button.addEventListener('click', closeRepull));
+  repull?.addEventListener('click', (event) => { if (event.target === repull) closeRepull(); });
+
+  repullConfirm?.addEventListener('click', async () => {
+    if (repullConfirm.disabled) return;
+    repullConfirm.disabled = true;
+    repullConfirm.textContent = 'Summoning…';
+    if (repullStatus) repullStatus.textContent = 'Creating one new protected Pull request…';
+    revealRoot.classList.add('is-rematerializing');
+    try {
+      const payload = await beginPullTransaction({ count, source: 'repull', forceNew: true });
+      root.innerHTML = renderPullRevealModal(payload);
+      fitCardTitles(root);
+      initPullRevealModal(root);
+    } catch (error) {
+      revealRoot.classList.remove('is-rematerializing');
+      repullConfirm.disabled = false;
+      repullConfirm.textContent = 'Try Again';
+      if (repullStatus) repullStatus.textContent = error.message;
+    }
   });
 }
